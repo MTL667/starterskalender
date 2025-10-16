@@ -9,6 +9,7 @@ interface Starter {
   name: string
   roleTitle?: string | null
   startDate: string
+  isCancelled?: boolean
   entity?: {
     id: string
     name: string
@@ -20,10 +21,14 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
   return (
     <div
       onClick={onClick}
-      className="border rounded-lg p-3 cursor-pointer hover:border-primary transition-colors bg-card"
+      className={`border rounded-lg p-3 cursor-pointer hover:border-primary transition-colors bg-card ${
+        starter.isCancelled ? 'opacity-60' : ''
+      }`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className="font-medium text-sm">{starter.name}</div>
+        <div className={`font-medium text-sm ${starter.isCancelled ? 'line-through text-muted-foreground' : ''}`}>
+          {starter.name}
+        </div>
         {starter.entity && (
           <Badge
             className="text-xs shrink-0"
@@ -36,8 +41,13 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
           </Badge>
         )}
       </div>
+      {starter.isCancelled && (
+        <div className="text-xs text-red-600 dark:text-red-400 font-medium mb-1">
+          ✕ Geannuleerd
+        </div>
+      )}
       {starter.roleTitle && (
-        <div className="text-xs text-muted-foreground mb-1">
+        <div className={`text-xs mb-1 ${starter.isCancelled ? 'text-muted-foreground line-through' : 'text-muted-foreground'}`}>
           {starter.roleTitle}
         </div>
       )}

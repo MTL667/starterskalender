@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { format } from 'date-fns'
-import { Trash2 } from 'lucide-react'
+import { Trash2, XCircle } from 'lucide-react'
 
 interface Starter {
   id: string
@@ -25,6 +25,9 @@ interface Starter {
   via?: string | null
   notes?: string | null
   startDate: string
+  isCancelled?: boolean
+  cancelledAt?: string | null
+  cancelReason?: string | null
   entity?: {
     id: string
   } | null
@@ -46,6 +49,8 @@ interface StarterDialogProps {
 export function StarterDialog({ open, onClose, starter, entities }: StarterDialogProps) {
   const isEdit = !!starter
   const [loading, setLoading] = useState(false)
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
   const [formData, setFormData] = useState({
     name: '',
     entityId: '',
@@ -142,11 +147,48 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
     }
   }
 
+  const handleCancel = async () => {
+    if (!starter) return
+
+    setLoading(true)
+
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cancelReason }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to cancel starter')
+      }
+
+      setCancelDialogOpen(false)
+      setCancelReason('')
+      onClose(true)
+      alert('Starter geannuleerd en notificaties verzonden')
+    } catch (error) {
+      console.error('Error cancelling starter:', error)
+      alert(error instanceof Error ? error.message : 'Fout bij annuleren')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? 'Starter Bewerken' : 'Nieuwe Starter'}</DialogTitle>
+    <>
+      <Dialog open={open} onOpenChange={() => onClose()}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {isEdit ? 'Starter Bewerken' : 'Nieuwe Starter'}
+              {starter?.isCancelled && (
+                <span className="ml-3 text-sm font-normal text-red-600 dark:text-red-400">
+                  (Geannuleerd)
+                </span>
+              )}
+            </DialogTitle>
           <DialogDescription>
             {isEdit ? 'Pas de gegevens van de starter aan.' : 'Voeg een nieuwe starter toe aan de kalender.'}
           </DialogDescription>

@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, UserPlus, Trash2 } from 'lucide-react'
+import { ArrowLeft, UserPlus, Trash2, Building2 } from 'lucide-react'
 import Link from 'next/link'
+import { UserMembershipsDialog } from '@/components/admin/user-memberships-dialog'
 
 interface User {
   id: string
@@ -44,6 +45,8 @@ export default function UsersAdminPage() {
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [membershipsDialogOpen, setMembershipsDialogOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -235,6 +238,17 @@ export default function UsersAdminPage() {
                       </SelectContent>
                     </Select>
                     <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedUser(user)
+                        setMembershipsDialogOpen(true)
+                      }}
+                    >
+                      <Building2 className="h-4 w-4 mr-2" />
+                      Entiteiten
+                    </Button>
+                    <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDeleteUser(user.id)}
@@ -319,6 +333,20 @@ export default function UsersAdminPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* User Memberships Dialog */}
+      {selectedUser && (
+        <UserMembershipsDialog
+          open={membershipsDialogOpen}
+          onClose={() => {
+            setMembershipsDialogOpen(false)
+            setSelectedUser(null)
+            fetchUsers() // Refresh to show updated memberships
+          }}
+          userId={selectedUser.id}
+          userName={selectedUser.name || selectedUser.email}
+        />
+      )}
     </div>
   )
 }

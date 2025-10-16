@@ -58,24 +58,29 @@ model Membership {
 }
 
 model Starter {
-  id         String    @id @default(cuid())
-  entityId   String?
-  entity     Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
-  name       String
-  region     String?   // Regio (dropdown)
-  roleTitle  String?   // Functie
-  via        String?   // Via (dropdown)
-  notes      String?   @db.Text // Extra info
-  startDate  DateTime  // Startdatum
-  weekNumber Int?      // Weeknummer (afgeleid, Monday-first)
-  year       Int       // Jaar
-  createdBy  String?   // User ID die het aanmaakte
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  entityId     String?
+  entity       Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  name         String
+  region       String?   // Regio (dropdown)
+  roleTitle    String?   // Functie
+  via          String?   // Via (dropdown)
+  notes        String?   @db.Text // Extra info
+  startDate    DateTime  // Startdatum
+  weekNumber   Int?      // Weeknummer (afgeleid, Monday-first)
+  year         Int       // Jaar
+  isCancelled  Boolean   @default(false) // Of de starter is geannuleerd
+  cancelledAt  DateTime? // Wanneer geannuleerd
+  cancelledBy  String?   // User ID die annuleerde
+  cancelReason String?   @db.Text // Reden van annulering
+  createdBy    String?   // User ID die het aanmaakte
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   @@index([year, startDate])
   @@index([entityId, year])
   @@index([weekNumber, year])
+  @@index([isCancelled])
 }
 
 model DropdownOption {
