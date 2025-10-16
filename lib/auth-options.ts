@@ -1,4 +1,4 @@
-import { NextAuthOptions } from 'next-auth'
+import { NextAuthOptions, Provider } from 'next-auth'
 import EmailProvider from 'next-auth/providers/email'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
@@ -13,17 +13,17 @@ export const authOptions: NextAuthOptions = {
       from: process.env.EMAIL_FROM,
     }),
     ...(oidcEnabled
-      ? [
+      ? ([
           {
             id: 'oidc',
             name: 'OIDC',
-            type: 'oauth' as const,
+            type: 'oauth',
             wellKnown: `${process.env.OIDC_ISSUER}/.well-known/openid-configuration`,
             clientId: process.env.OIDC_CLIENT_ID!,
             clientSecret: process.env.OIDC_CLIENT_SECRET!,
             authorization: { params: { scope: 'openid email profile' } },
             idToken: true,
-            checks: ['pkce', 'state'] as const,
+            checks: ['pkce', 'state'],
             profile(profile: any) {
               return {
                 id: profile.sub,
@@ -31,8 +31,8 @@ export const authOptions: NextAuthOptions = {
                 email: profile.email,
               }
             },
-          },
-        ]
+          } as Provider,
+        ] as Provider[])
       : []),
   ],
   session: {
