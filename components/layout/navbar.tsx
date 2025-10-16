@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Calendar, LayoutDashboard, Users, Settings, LogOut } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
 
 export function Navbar() {
@@ -66,17 +67,18 @@ export function Navbar() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex items-center space-x-2">
+          <div className="text-sm text-muted-foreground hidden sm:block">
             {session?.user?.name || session?.user?.email}
           </div>
+          <ThemeToggle />
           <Button
             variant="ghost"
             size="sm"
             onClick={() => signOut({ callbackUrl: '/auth/signin' })}
           >
             <LogOut className="h-4 w-4 mr-2" />
-            Uitloggen
+            <span className="hidden sm:inline">Uitloggen</span>
           </Button>
         </div>
       </div>
