@@ -2,7 +2,7 @@
 
 # Stage 1: Dependencies
 FROM node:18-alpine AS deps
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat openssl1.1-compat
 WORKDIR /app
 
 # Kopieer package files én prisma schema (nodig voor postinstall)
@@ -28,6 +28,9 @@ RUN npm run build
 FROM node:18-alpine AS runner
 WORKDIR /app
 
+# Installeer OpenSSL 1.1 compatibility voor Prisma
+RUN apk add --no-cache openssl1.1-compat
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -35,7 +38,7 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Kopieer public assets
-COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Kopieer Next.js build output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
