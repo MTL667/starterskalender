@@ -130,6 +130,47 @@ export async function sendReminderEmail(input: SendReminderEmailInput): Promise<
 }
 
 /**
+ * Stuurt een algemene e-mail
+ */
+export interface SendEmailInput {
+  to: string | string[]
+  subject: string
+  html: string
+  replyTo?: string
+}
+
+export async function sendEmail(input: SendEmailInput): Promise<void> {
+  const { to, subject, html, replyTo } = input
+
+  const recipients = Array.isArray(to) ? to : [to]
+
+  if (recipients.length === 0) {
+    console.warn('No recipients for email')
+    return
+  }
+
+  const msg = {
+    to: recipients,
+    from: process.env.SENDGRID_FROM_EMAIL || process.env.MAIL_FROM || 'noreply@example.com',
+    replyTo: replyTo || process.env.MAIL_REPLY_TO,
+    subject,
+    html,
+  }
+
+  try {
+    if (recipients.length === 1) {
+      await sgMail.send(msg)
+    } else {
+      await sgMail.sendMultiple(msg)
+    }
+    console.log(`Email sent to ${recipients.length} recipient(s)`)
+  } catch (error: any) {
+    console.error('Failed to send email:', error)
+    throw error
+  }
+}
+
+/**
  * Stuurt een test e-mail
  */
 export async function sendTestEmail(to: string): Promise<void> {
