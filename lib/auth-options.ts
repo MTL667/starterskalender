@@ -1,4 +1,4 @@
-import { NextAuthOptions, Provider } from 'next-auth'
+import { NextAuthOptions } from 'next-auth'
 import EmailProvider from 'next-auth/providers/email'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
       from: process.env.EMAIL_FROM,
     }),
     ...(oidcEnabled
-      ? ([
+      ? [
           {
             id: 'oidc',
             name: 'OIDC',
@@ -31,8 +31,8 @@ export const authOptions: NextAuthOptions = {
                 email: profile.email,
               }
             },
-          } as Provider,
-        ] as Provider[])
+          } as any,
+        ]
       : []),
   ],
   session: {
