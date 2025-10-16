@@ -6,8 +6,9 @@ FROM node:18-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Kopieer package files
+# Kopieer package files én prisma schema (nodig voor postinstall)
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 
 # Gebruik npm install met legacy peer deps voor robuustere builds
 RUN npm install --legacy-peer-deps --frozen-lockfile
@@ -16,16 +17,14 @@ RUN npm install --legacy-peer-deps --frozen-lockfile
 FROM node:18-alpine AS builder
 WORKDIR /app
 
+# Kopieer node_modules (inclusief gegenereerde Prisma client)
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Environment variabelen voor build
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Prisma generate
-RUN npx prisma generate
-
-# Build Next.js
+# Build Next.js (Prisma is al gegenereerd in deps stage)
 RUN npm run build
 
 # Stage 3: Runner
