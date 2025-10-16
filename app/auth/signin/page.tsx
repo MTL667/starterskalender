@@ -2,53 +2,43 @@
 
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import Link from 'next/link'
 
 export default function SignInPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError('')
 
     try {
-      await signIn('email', { email, redirect: false })
-      setSuccess(true)
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError('Ongeldige inloggegevens')
+      } else if (result?.ok) {
+        router.push('/dashboard')
+      }
     } catch (error) {
       console.error('Error signing in:', error)
-      alert('Er is een fout opgetreden. Probeer opnieuw.')
+      setError('Er is een fout opgetreden. Probeer opnieuw.')
     } finally {
       setLoading(false)
     }
-  }
-
-  const handleOIDC = () => {
-    signIn('oidc', { callbackUrl: '/dashboard' })
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Check je e-mail</CardTitle>
-            <CardDescription>
-              We hebben je een magic link gestuurd naar {email}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Klik op de link in de e-mail om in te loggen.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    )
   }
 
   return (
@@ -62,6 +52,12 @@ export default function SignInPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 text-red-800 p-3 rounded-md text-sm">
+                {error}
+              </div>
+            )}
+
             <div>
               <Label htmlFor="email">E-mailadres</Label>
               <Input
@@ -71,35 +67,34 @@ export default function SignInPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="jouw@email.com"
                 required
+                autoComplete="email"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="password">Wachtwoord</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                autoComplete="current-password"
               />
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Bezig...' : 'Verstuur magic link'}
+              {loading ? 'Bezig met inloggen...' : 'Inloggen'}
             </Button>
           </form>
 
-          {process.env.NEXT_PUBLIC_OIDC_ENABLED === 'true' && (
-            <>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-muted-foreground">Of</span>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleOIDC}
-              >
-                Inloggen met OIDC
-              </Button>
-            </>
-          )}
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            Nog geen account?{' '}
+            <Link href="/auth/register" className="text-primary hover:underline">
+              Registreer hier
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

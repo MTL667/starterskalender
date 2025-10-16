@@ -1,39 +1,43 @@
 import { NextAuthOptions } from 'next-auth'
-import EmailProvider from 'next-auth/providers/email'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
+import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from './prisma'
-
-const oidcEnabled = process.env.OIDC_ENABLED === 'true'
+import { compare } from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
-    EmailProvider({
-      server: process.env.EMAIL_SERVER,
-      from: process.env.EMAIL_FROM,
-    }),
-    ...(oidcEnabled
-      ? [
-          {
-            id: 'oidc',
-            name: 'OIDC',
-            type: 'oauth',
-            wellKnown: `${process.env.OIDC_ISSUER}/.well-known/openid-configuration`,
-            clientId: process.env.OIDC_CLIENT_ID!,
-            clientSecret: process.env.OIDC_CLIENT_SECRET!,
-            authorization: { params: { scope: 'openid email profile' } },
-            idToken: true,
-            checks: ['pkce', 'state'],
-            profile(profile: any) {
-              return {
-                id: profile.sub,
-                name: profile.name,
-                email: profile.email,
-              }
-            },
-          } as any,
-        ]
-      : []),
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Wachtwoord", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Email en wachtwoord zijn verplicht')
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        })
+
+        if (!user || !user.password) {
+          throw new Error('Ongeldige inloggegevens')
+        }
+
+        const isPasswordValid = await compare(credentials.password, user.password)
+
+        if (!isPasswordValid) {
+          throw new Error('Ongeldige inloggegevens')
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        }
+      }
+    })
   ],
   session: {
     strategy: 'jwt',
@@ -45,50 +49,20 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   callbacks: {
-    async signIn({ user, account }) {
-      if (!user.email) return false
-
-      // Maak user aan indien nog niet bestaat
-      const existingUser = await prisma.user.findUnique({
-        where: { email: user.email },
-      })
-
-      if (!existingUser) {
-        await prisma.user.create({
-          data: {
-            email: user.email,
-            name: user.name,
-            role: 'ENTITY_VIEWER', // Default rol
-          },
-        })
-      }
-
-      return true
-    },
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        const user = await prisma.user.findUnique({
-          where: { email: session.user.email! },
-          select: {
-            id: true,
-            role: true,
-            twoFAEnabled: true,
-          },
-        })
-
-        if (user) {
-          session.user.id = user.id
-          session.user.role = user.role
-          session.user.twoFAEnabled = user.twoFAEnabled
-        }
-      }
-      return session
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        token.role = user.role
       }
       return token
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string
+        session.user.role = token.role as any
+        session.user.twoFAEnabled = false // TODO: implement if needed
+      }
+      return session
     },
   },
   events: {
