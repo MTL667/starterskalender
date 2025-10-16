@@ -1,0 +1,104 @@
+// Prisma schema voor Starterskalender
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  HR_ADMIN
+  ENTITY_EDITOR
+  ENTITY_VIEWER
+  GLOBAL_VIEWER
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String?
+  role         Role         @default(ENTITY_VIEWER)
+  memberships  Membership[]
+  twoFASecret  String?      // TOTP secret voor 2FA
+  twoFAEnabled Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([email])
+}
+
+model Entity {
+  id           String       @id @default(cuid())
+  name         String       @unique
+  colorHex     String       // Kleur voor badges/kaartjes
+  isActive     Boolean      @default(true)
+  notifyEmails String[]     // Array van e-mailadressen voor reminders
+  memberships  Membership[]
+  starters     Starter[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([isActive])
+}
+
+model Membership {
+  id       String  @id @default(cuid())
+  userId   String
+  entityId String
+  canEdit  Boolean @default(false) // false = viewer, true = editor
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity   Entity  @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityId])
+  @@index([userId])
+  @@index([entityId])
+}
+
+model Starter {
+  id         String    @id @default(cuid())
+  entityId   String?
+  entity     Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  name       String
+  region     String?   // Regio (dropdown)
+  roleTitle  String?   // Functie
+  via        String?   // Via (dropdown)
+  notes      String?   @db.Text // Extra info
+  startDate  DateTime  // Startdatum
+  weekNumber Int?      // Weeknummer (afgeleid, Monday-first)
+  year       Int       // Jaar
+  createdBy  String?   // User ID die het aanmaakte
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([year, startDate])
+  @@index([entityId, year])
+  @@index([weekNumber, year])
+}
+
+model DropdownOption {
+  id       String  @id @default(cuid())
+  group    String  // bv. "Regio", "Via", etc.
+  label    String  // Weergave label
+  value    String  // Interne waarde
+  order    Int     @default(0) // Sorteervolgorde
+  isActive Boolean @default(true)
+
+  @@index([group, isActive])
+  @@index([group, order])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?  // User ID
+  action    String   // CREATE, UPDATE, DELETE, EMAIL_SENT, etc.
+  target    String?  // Resource type + ID (bv. "Starter:abc123")
+  meta      Json?    // Extra metadata
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
+}
+

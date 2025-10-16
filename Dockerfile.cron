@@ -1,0 +1,32 @@
+# Dockerfile voor cron service (email reminders)
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Installeer dependencies
+COPY package.json package-lock.json* ./
+RUN npm ci --only=production
+
+# Kopieer applicatie code
+COPY prisma ./prisma
+COPY lib ./lib
+COPY tsconfig.json ./
+
+# Genereer Prisma client
+RUN npx prisma generate
+
+# Installeer cron
+RUN apk add --no-cache dcron
+
+# Maak crontab
+RUN echo "0 8 * * * cd /app && /usr/local/bin/tsx lib/cron/email-reminder.ts >> /var/log/cron.log 2>&1" > /etc/crontabs/root
+
+# Maak log file
+RUN touch /var/log/cron.log
+
+# Start script
+COPY docker-entrypoint-cron.sh /
+RUN chmod +x /docker-entrypoint-cron.sh
+
+CMD ["/docker-entrypoint-cron.sh"]
+
