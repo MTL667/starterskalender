@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
             clientSecret: process.env.OIDC_CLIENT_SECRET!,
             authorization: { params: { scope: 'openid email profile' } },
             idToken: true,
-            checks: ['pkce', 'state'],
+            checks: ['pkce', 'state'] as const,
             profile(profile: any) {
               return {
                 id: profile.sub,
