@@ -167,14 +167,13 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
             <div>
               <Label htmlFor="entityId">Entiteit</Label>
               <Select
-                value={formData.entityId}
+                value={formData.entityId || undefined}
                 onValueChange={(value) => setFormData({ ...formData, entityId: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecteer entiteit" />
+                  <SelectValue placeholder="Selecteer entiteit (optioneel)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Geen entiteit</SelectItem>
                   {entities.map(entity => (
                     <SelectItem key={entity.id} value={entity.id}>
                       {entity.name}
