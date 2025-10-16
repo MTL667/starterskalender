@@ -278,7 +278,19 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
 
           <DialogFooter className="mt-6">
             <div className="flex justify-between w-full">
-              <div>
+              <div className="flex gap-2">
+                {isEdit && !starter?.isCancelled && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950"
+                    onClick={() => setCancelDialogOpen(true)}
+                    disabled={loading}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Annuleren
+                  </Button>
+                )}
                 {isEdit && (
                   <Button
                     type="button"
@@ -298,17 +310,51 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                   onClick={() => onClose()}
                   disabled={loading}
                 >
-                  Annuleren
+                  Sluiten
                 </Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Bezig...' : isEdit ? 'Opslaan' : 'Toevoegen'}
-                </Button>
+                {!starter?.isCancelled && (
+                  <Button type="submit" disabled={loading}>
+                    {loading ? 'Bezig...' : isEdit ? 'Opslaan' : 'Toevoegen'}
+                  </Button>
+                )}
               </div>
             </div>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Cancel Confirmation Dialog */}
+    <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Starter Annuleren</DialogTitle>
+          <DialogDescription>
+            Weet je zeker dat je deze starter wilt annuleren? Er wordt een notificatie verzonden naar alle betrokkenen.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-4">
+          <Label htmlFor="cancelReason">Reden (optioneel)</Label>
+          <Textarea
+            id="cancelReason"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="Bijv: Starter heeft afgezien van de functie"
+            rows={3}
+            className="mt-2"
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setCancelDialogOpen(false)} disabled={loading}>
+            Terug
+          </Button>
+          <Button variant="destructive" onClick={handleCancel} disabled={loading}>
+            {loading ? 'Bezig...' : 'Bevestig Annulering'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
   )
 }
 
