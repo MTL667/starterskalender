@@ -18,10 +18,14 @@ type ViewMode = 'week' | 'month' | 'year'
 interface Starter {
   id: string
   name: string
+  language?: string
   roleTitle?: string | null
   region?: string | null
+  via?: string | null
+  notes?: string | null
   startDate: string
   weekNumber: number | null
+  isCancelled?: boolean
   entity?: {
     id: string
     name: string
@@ -319,7 +323,7 @@ export function CalendarView({ initialYear }: { initialYear: number }) {
         </div>
       ) : viewMode === 'year' ? (
         // Jaar view: toon alle weken
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: weeksInYear }, (_, i) => i + 1).map(weekNum => {
             const weekStarters = startersByWeek.get(weekNum) || []
             
@@ -328,7 +332,7 @@ export function CalendarView({ initialYear }: { initialYear: number }) {
                 <div className="font-semibold mb-3 text-sm text-muted-foreground">
                   Week {weekNum}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {weekStarters.length === 0 ? (
                     <div className="text-sm text-muted-foreground text-center py-4">
                       Geen starters
@@ -382,7 +386,7 @@ export function CalendarView({ initialYear }: { initialYear: number }) {
                         (Week {getWeek(date, { weekStartsOn: 1, firstWeekContainsDate: 4 })})
                       </span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {dayStarters.map(starter => (
                         <StarterCard
                           key={starter.id}
