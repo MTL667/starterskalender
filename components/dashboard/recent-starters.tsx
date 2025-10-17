@@ -12,6 +12,7 @@ interface Starter {
   language?: string
   roleTitle?: string | null
   startDate: string
+  isCancelled?: boolean
   entity?: {
     id: string
     name: string
@@ -24,18 +25,28 @@ export function RecentStarters({ year }: { year: number }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Start van vandaag
+    
     fetch(`/api/starters?year=${year}`)
       .then(res => res.json())
       .then(data => {
-        // Sorteer op startDate descending en neem de laatste 5
-        const recent = data.sort((a: Starter, b: Starter) => 
-          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
-        ).slice(0, 5)
-        setStarters(recent)
+        // Filter op aankomende starters (vanaf vandaag) en niet geannuleerd
+        const upcoming = data
+          .filter((s: Starter) => {
+            const startDate = new Date(s.startDate)
+            return startDate >= today && !s.isCancelled
+          })
+          // Sorteer op startDate ascending (vroegste eerst)
+          .sort((a: Starter, b: Starter) => 
+            new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+          )
+          .slice(0, 5) // Neem de eerste 5
+        setStarters(upcoming)
         setLoading(false)
       })
       .catch(error => {
-        console.error('Error fetching recent starters:', error)
+        console.error('Error fetching upcoming starters:', error)
         setLoading(false)
       })
   }, [year])
@@ -44,8 +55,8 @@ export function RecentStarters({ year }: { year: number }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recente Starters</CardTitle>
-          <CardDescription>De laatst toegevoegde starters in {year}</CardDescription>
+          <CardTitle>Aankomende Starters</CardTitle>
+          <CardDescription>De eerstvolgende starters in {year}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
@@ -59,13 +70,13 @@ export function RecentStarters({ year }: { year: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recente Starters</CardTitle>
-        <CardDescription>De laatst toegevoegde starters in {year}</CardDescription>
+        <CardTitle>Aankomende Starters</CardTitle>
+        <CardDescription>De eerstvolgende starters in {year}</CardDescription>
       </CardHeader>
       <CardContent>
         {starters.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            Geen starters gevonden
+            Geen aankomende starters
           </div>
         ) : (
           <div className="space-y-4">
