@@ -44,6 +44,7 @@ interface JobRole {
   id: string
   title: string
   entityId: string
+  isActive: boolean
 }
 
 interface StarterDialogProps {
