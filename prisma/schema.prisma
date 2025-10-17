@@ -62,6 +62,7 @@ model Starter {
   entityId     String?
   entity       Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
   name         String
+  language     String    @default("NL") // Taal: NL of FR
   region       String?   // Regio (dropdown)
   roleTitle    String?   // Functie
   via          String?   // Via (dropdown)

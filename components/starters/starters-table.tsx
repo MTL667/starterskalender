@@ -14,6 +14,7 @@ import { StarterDialog } from '@/components/kalender/starter-dialog'
 interface Starter {
   id: string
   name: string
+  language?: string
   roleTitle?: string | null
   region?: string | null
   via?: string | null
@@ -95,6 +96,7 @@ export function StartersTable({ initialYear }: { initialYear: number }) {
   const exportCSV = () => {
     const csvData = filteredStarters.map(s => ({
       Naam: s.name,
+      Taal: s.language || 'NL',
       Functie: s.roleTitle || '',
       Regio: s.region || '',
       Via: s.via || '',
@@ -186,6 +188,7 @@ export function StartersTable({ initialYear }: { initialYear: number }) {
               <thead className="border-b">
                 <tr className="text-left text-sm text-muted-foreground">
                   <th className="pb-3 font-medium">Naam</th>
+                  <th className="pb-3 font-medium">Taal</th>
                   <th className="pb-3 font-medium">Functie</th>
                   <th className="pb-3 font-medium">Regio</th>
                   <th className="pb-3 font-medium">Via</th>
@@ -202,6 +205,11 @@ export function StartersTable({ initialYear }: { initialYear: number }) {
                     className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
                   >
                     <td className="py-3 font-medium">{starter.name}</td>
+                    <td className="py-3 text-sm">
+                      <span title={starter.language === 'NL' ? 'Nederlands' : 'Frans'}>
+                        {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'} {starter.language || 'NL'}
+                      </span>
+                    </td>
                     <td className="py-3 text-sm">{starter.roleTitle || '-'}</td>
                     <td className="py-3 text-sm">{starter.region || '-'}</td>
                     <td className="py-3 text-sm">{starter.via || '-'}</td>

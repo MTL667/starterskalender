@@ -9,6 +9,7 @@ import { nl } from 'date-fns/locale'
 interface Starter {
   id: string
   name: string
+  language?: string
   roleTitle?: string | null
   startDate: string
   entity?: {
@@ -74,7 +75,14 @@ export function RecentStarters({ year }: { year: number }) {
                 className="flex items-center justify-between border-b pb-3 last:border-0"
               >
                 <div className="flex-1">
-                  <div className="font-medium">{starter.name}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-medium">{starter.name}</div>
+                    {starter.language && (
+                      <span className="text-sm" title={starter.language === 'NL' ? 'Nederlands' : 'Frans'}>
+                        {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}
+                      </span>
+                    )}
+                  </div>
                   {starter.roleTitle && (
                     <div className="text-sm text-muted-foreground">
                       {starter.roleTitle}

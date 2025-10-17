@@ -7,6 +7,7 @@ import { nl } from 'date-fns/locale'
 interface Starter {
   id: string
   name: string
+  language?: string
   roleTitle?: string | null
   startDate: string
   isCancelled?: boolean
@@ -26,8 +27,15 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <div className={`font-medium text-sm ${starter.isCancelled ? 'line-through text-muted-foreground' : ''}`}>
-          {starter.name}
+        <div className="flex items-center gap-1.5">
+          <div className={`font-medium text-sm ${starter.isCancelled ? 'line-through text-muted-foreground' : ''}`}>
+            {starter.name}
+          </div>
+          {starter.language && (
+            <span className="text-xs" title={starter.language === 'NL' ? 'Nederlands' : 'Frans'}>
+              {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}
+            </span>
+          )}
         </div>
         {starter.entity && (
           <Badge

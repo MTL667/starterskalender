@@ -9,6 +9,7 @@ import { normalizeString } from '@/lib/utils'
 
 const UpdateStarterSchema = z.object({
   name: z.string().min(1).optional(),
+  language: z.enum(['NL', 'FR']).optional(),
   entityId: z.string().nullable().optional(),
   region: z.string().nullable().optional(),
   roleTitle: z.string().nullable().optional(),
@@ -68,6 +69,7 @@ export async function PATCH(
     const updateData: any = {}
 
     if (data.name !== undefined) updateData.name = normalizeString(data.name)
+    if (data.language !== undefined) updateData.language = data.language
     if (data.entityId !== undefined) updateData.entityId = data.entityId
     if (data.region !== undefined) updateData.region = normalizeString(data.region)
     if (data.roleTitle !== undefined) updateData.roleTitle = normalizeString(data.roleTitle)

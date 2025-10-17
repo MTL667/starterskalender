@@ -20,6 +20,7 @@ import { Trash2, XCircle } from 'lucide-react'
 interface Starter {
   id: string
   name: string
+  language?: string
   roleTitle?: string | null
   region?: string | null
   via?: string | null
@@ -53,6 +54,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
   const [cancelReason, setCancelReason] = useState('')
   const [formData, setFormData] = useState({
     name: '',
+    language: 'NL',
     entityId: '',
     roleTitle: '',
     region: '',
@@ -65,6 +67,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
     if (starter) {
       setFormData({
         name: starter.name,
+        language: starter.language || 'NL',
         entityId: starter.entity?.id || '',
         roleTitle: starter.roleTitle || '',
         region: starter.region || '',
@@ -75,6 +78,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
     } else {
       setFormData({
         name: '',
+        language: 'NL',
         entityId: '',
         roleTitle: '',
         region: '',
@@ -92,6 +96,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
     try {
       const data = {
         name: formData.name,
+        language: formData.language,
         entityId: formData.entityId || null,
         roleTitle: formData.roleTitle || null,
         region: formData.region || null,
@@ -204,6 +209,22 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
+            </div>
+
+            <div>
+              <Label htmlFor="language">Taal *</Label>
+              <Select
+                value={formData.language}
+                onValueChange={(value) => setFormData({ ...formData, language: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NL">🇳🇱 Nederlands (NL)</SelectItem>
+                  <SelectItem value="FR">🇫🇷 Frans (FR)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

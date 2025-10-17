@@ -9,6 +9,7 @@ import { normalizeString } from '@/lib/utils'
 
 const StarterSchema = z.object({
   name: z.string().min(1),
+  language: z.enum(['NL', 'FR']).default('NL'),
   entityId: z.string().nullable().optional(),
   region: z.string().nullable().optional(),
   roleTitle: z.string().nullable().optional(),
@@ -95,6 +96,7 @@ export async function POST(request: NextRequest) {
     const starter = await prisma.starter.create({
       data: {
         name: normalizeString(data.name)!,
+        language: data.language,
         entityId: data.entityId,
         region: normalizeString(data.region),
         roleTitle: normalizeString(data.roleTitle),
