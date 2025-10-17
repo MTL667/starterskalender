@@ -2,7 +2,7 @@ import { requireAdmin } from '@/lib/auth-utils'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Building2, Users, Settings, Mail, FileText } from 'lucide-react'
+import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban } from 'lucide-react'
 
 export default async function AdminPage() {
   const user = await requireAdmin().catch(() => null)
@@ -17,6 +17,18 @@ export default async function AdminPage() {
       description: 'Beheer entiteiten, kleuren en e-mailnotificaties',
       icon: Building2,
       href: '/admin/entities',
+    },
+    {
+      title: 'Functies',
+      description: 'Beheer functies per entiteit',
+      icon: Briefcase,
+      href: '/admin/job-roles',
+    },
+    {
+      title: 'Periode Blokkades',
+      description: 'Blokkeer periodes voor entiteiten en functies',
+      icon: Ban,
+      href: '/admin/blocked-periods',
     },
     {
       title: 'Gebruikers',
