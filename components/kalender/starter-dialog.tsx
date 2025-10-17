@@ -40,6 +40,12 @@ interface Entity {
   colorHex: string
 }
 
+interface JobRole {
+  id: string
+  title: string
+  entityId: string
+}
+
 interface StarterDialogProps {
   open: boolean
   onClose: (refreshData?: boolean) => void
@@ -52,6 +58,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
   const [loading, setLoading] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
+  const [jobRoles, setJobRoles] = useState<JobRole[]>([])
   const [formData, setFormData] = useState({
     name: '',
     language: 'NL',
@@ -62,6 +69,18 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
     notes: '',
     startDate: format(new Date(), 'yyyy-MM-dd'),
   })
+
+  // Laad job roles voor de gekozen entiteit
+  useEffect(() => {
+    if (formData.entityId) {
+      fetch(`/api/job-roles?entityId=${formData.entityId}`)
+        .then(res => res.json())
+        .then(data => setJobRoles(data.filter((r: JobRole) => r.isActive)))
+        .catch(err => console.error('Error loading job roles:', err))
+    } else {
+      setJobRoles([])
+    }
+  }, [formData.entityId])
 
   useEffect(() => {
     if (starter) {
@@ -94,6 +113,31 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
     setLoading(true)
 
     try {
+      // Valideer blokkades (alleen bij nieuwe starters of als datum gewijzigd)
+      if (!isEdit || formData.startDate !== format(new Date(starter.startDate), 'yyyy-MM-dd')) {
+        const validationRes = await fetch('/api/blocked-periods', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            entityId: formData.entityId,
+            jobRoleTitle: formData.roleTitle,
+            startDate: new Date(formData.startDate).toISOString(),
+          }),
+        })
+
+        const validation = await validationRes.json()
+        if (validation.blocked) {
+          alert(
+            `Deze periode is geblokkeerd!\n\n` +
+            `Functie: ${validation.jobRole}\n` +
+            `Periode: ${format(new Date(validation.period.startDate), 'dd MMM yyyy')} - ${format(new Date(validation.period.endDate), 'dd MMM yyyy')}\n` +
+            `Reden: ${validation.reason || 'Geen reden opgegeven'}`
+          )
+          setLoading(false)
+          return
+        }
+      }
+
       const data = {
         name: formData.name,
         language: formData.language,
@@ -231,7 +275,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
               <Label htmlFor="entityId">Entiteit</Label>
               <Select
                 value={formData.entityId || undefined}
-                onValueChange={(value) => setFormData({ ...formData, entityId: value })}
+                onValueChange={(value) => setFormData({ ...formData, entityId: value, roleTitle: '' })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecteer entiteit (optioneel)" />
@@ -248,11 +292,36 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
 
             <div>
               <Label htmlFor="roleTitle">Functie</Label>
-              <Input
-                id="roleTitle"
-                value={formData.roleTitle}
-                onChange={(e) => setFormData({ ...formData, roleTitle: e.target.value })}
-              />
+              {formData.entityId && jobRoles.length > 0 ? (
+                <Select
+                  value={formData.roleTitle || undefined}
+                  onValueChange={(value) => setFormData({ ...formData, roleTitle: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecteer functie (optioneel)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {jobRoles.map(role => (
+                      <SelectItem key={role.id} value={role.title}>
+                        {role.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  id="roleTitle"
+                  value={formData.roleTitle}
+                  onChange={(e) => setFormData({ ...formData, roleTitle: e.target.value })}
+                  placeholder={formData.entityId ? 'Geen functies beschikbaar' : 'Selecteer eerst een entiteit'}
+                  disabled={!formData.entityId}
+                />
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                {formData.entityId 
+                  ? (jobRoles.length > 0 ? 'Kies een functie uit de lijst' : 'Geen functies beschikbaar voor deze entiteit')
+                  : 'Selecteer eerst een entiteit om functies te zien'}
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
