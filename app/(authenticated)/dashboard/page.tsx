@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { YTDStats } from '@/components/dashboard/ytd-stats'
 import { RecentStarters } from '@/components/dashboard/recent-starters'
 import { MonthlyCharts } from '@/components/dashboard/monthly-charts'
+import { EntityMonthlyCharts } from '@/components/dashboard/entity-monthly-charts'
 import Link from 'next/link'
 import { Calendar, Users, Settings } from 'lucide-react'
 
@@ -83,6 +84,11 @@ export default async function DashboardPage() {
       {/* Monthly Charts */}
       <div className="mt-8">
         <MonthlyCharts year={currentYear} />
+      </div>
+
+      {/* Entity Monthly Charts */}
+      <div className="mt-8">
+        <EntityMonthlyCharts year={currentYear} />
       </div>
     </div>
   )
