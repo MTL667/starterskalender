@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { YTDStats } from '@/components/dashboard/ytd-stats'
 import { RecentStarters } from '@/components/dashboard/recent-starters'
+import { MonthlyCharts } from '@/components/dashboard/monthly-charts'
 import Link from 'next/link'
 import { Calendar, Users, Settings } from 'lucide-react'
 
@@ -71,12 +72,17 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {/* Aankomende Starters */}
+      <div className="mb-8">
+        <RecentStarters year={currentYear} />
+      </div>
+
       {/* YTD Statistics */}
       <YTDStats year={currentYear} />
 
-      {/* Recent Starters */}
+      {/* Monthly Charts */}
       <div className="mt-8">
-        <RecentStarters year={currentYear} />
+        <MonthlyCharts year={currentYear} />
       </div>
     </div>
   )

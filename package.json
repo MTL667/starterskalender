@@ -50,6 +50,7 @@
     "react": "^18.3.0",
     "react-day-picker": "^8.10.0",
     "react-dom": "^18.3.0",
+    "recharts": "^3.3.0",
     "speakeasy": "^2.0.0",
     "tailwind-merge": "^2.2.0",
     "tailwindcss-animate": "^1.0.7",
