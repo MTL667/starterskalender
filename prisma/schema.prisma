@@ -31,15 +31,17 @@ model User {
 }
 
 model Entity {
-  id           String       @id @default(cuid())
-  name         String       @unique
-  colorHex     String       // Kleur voor badges/kaartjes
-  isActive     Boolean      @default(true)
-  notifyEmails String[]     // Array van e-mailadressen voor reminders
-  memberships  Membership[]
-  starters     Starter[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id             String          @id @default(cuid())
+  name           String          @unique
+  colorHex       String          // Kleur voor badges/kaartjes
+  isActive       Boolean         @default(true)
+  notifyEmails   String[]        // Array van e-mailadressen voor reminders
+  memberships    Membership[]
+  starters       Starter[]
+  jobRoles       JobRole[]
+  blockedPeriods BlockedPeriod[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([isActive])
 }
@@ -94,6 +96,42 @@ model DropdownOption {
 
   @@index([group, isActive])
   @@index([group, order])
+}
+
+model JobRole {
+  id             String          @id @default(cuid())
+  entityId       String
+  entity         Entity          @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  title          String          // Functietitel (bv. "Senior Developer")
+  description    String?         @db.Text // Optionele beschrijving
+  isActive       Boolean         @default(true)
+  order          Int             @default(0) // Sorteervolgorde
+  blockedPeriods BlockedPeriod[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([entityId, title])
+  @@index([entityId, isActive])
+  @@index([entityId, order])
+}
+
+model BlockedPeriod {
+  id          String   @id @default(cuid())
+  entityId    String
+  entity      Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  jobRoleId   String?  // Optioneel: specifieke functie blokkeren (null = alle functies)
+  jobRole     JobRole? @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
+  startDate   DateTime // Begin van geblokkeerde periode
+  endDate     DateTime // Einde van geblokkeerde periode
+  reason      String?  @db.Text // Reden voor blokkade
+  isActive    Boolean  @default(true)
+  createdBy   String?  // User ID die blokkade aanmaakte
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([entityId, isActive])
+  @@index([jobRoleId, isActive])
+  @@index([startDate, endDate])
 }
 
 model AuditLog {
