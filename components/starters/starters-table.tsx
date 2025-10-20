@@ -33,7 +33,7 @@ interface Entity {
   colorHex: string
 }
 
-export function StartersTable({ initialYear }: { initialYear: number }) {
+export function StartersTable({ initialYear, canEdit }: { initialYear: number; canEdit: boolean }) {
   const [year, setYear] = useState(initialYear)
   const [starters, setStarters] = useState<Starter[]>([])
   const [entities, setEntities] = useState<Entity[]>([])
@@ -157,10 +157,12 @@ export function StartersTable({ initialYear }: { initialYear: number }) {
               Export CSV
             </Button>
 
-            <Button onClick={() => { setSelectedStarter(null); setDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nieuwe Starter
-            </Button>
+            {canEdit && (
+              <Button onClick={() => { setSelectedStarter(null); setDialogOpen(true); }}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nieuwe Starter
+              </Button>
+            )}
           </div>
         </div>
 
@@ -248,6 +250,7 @@ export function StartersTable({ initialYear }: { initialYear: number }) {
         onClose={handleDialogClose}
         starter={selectedStarter}
         entities={entities}
+        canEdit={canEdit}
       />
     </Card>
   )

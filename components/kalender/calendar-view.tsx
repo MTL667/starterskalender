@@ -39,7 +39,7 @@ interface Entity {
   colorHex: string
 }
 
-export function CalendarView({ initialYear }: { initialYear: number }) {
+export function CalendarView({ initialYear, canEdit }: { initialYear: number; canEdit: boolean }) {
   const today = new Date()
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(today) // Voor week/maand navigatie
@@ -287,10 +287,12 @@ export function CalendarView({ initialYear }: { initialYear: number }) {
               </SelectContent>
             </Select>
 
-            <Button onClick={handleNewStarter}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nieuw
-            </Button>
+            {canEdit && (
+              <Button onClick={handleNewStarter}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nieuw
+              </Button>
+            )}
             <Button variant="outline" onClick={exportCSV}>
               <Download className="h-4 w-4 mr-2" />
               CSV
@@ -418,6 +420,7 @@ export function CalendarView({ initialYear }: { initialYear: number }) {
         onClose={handleDialogClose}
         starter={selectedStarter}
         entities={entities}
+        canEdit={canEdit}
       />
     </div>
   )

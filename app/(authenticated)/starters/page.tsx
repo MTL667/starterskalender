@@ -10,6 +10,10 @@ export default async function StartersPage() {
   }
 
   const currentYear = new Date().getFullYear()
+  
+  // Check if user has edit rights (can create starters)
+  const canEdit = user.role === 'HR_ADMIN' || 
+    user.memberships.some(m => m.canEdit)
 
   return (
     <div className="container mx-auto py-8">
@@ -20,7 +24,7 @@ export default async function StartersPage() {
         </p>
       </div>
 
-      <StartersTable initialYear={currentYear} />
+      <StartersTable initialYear={currentYear} canEdit={canEdit} />
     </div>
   )
 }

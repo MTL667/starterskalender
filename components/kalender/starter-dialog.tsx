@@ -52,9 +52,10 @@ interface StarterDialogProps {
   onClose: (refreshData?: boolean) => void
   starter: Starter | null
   entities: Entity[]
+  canEdit: boolean
 }
 
-export function StarterDialog({ open, onClose, starter, entities }: StarterDialogProps) {
+export function StarterDialog({ open, onClose, starter, entities, canEdit }: StarterDialogProps) {
   const isEdit = !!starter
   const [loading, setLoading] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
@@ -253,6 +254,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
+                disabled={!canEdit}
               />
             </div>
 
@@ -261,6 +263,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
               <Select
                 value={formData.language}
                 onValueChange={(value) => setFormData({ ...formData, language: value })}
+                disabled={!canEdit}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -277,6 +280,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
               <Select
                 value={formData.entityId || undefined}
                 onValueChange={(value) => setFormData({ ...formData, entityId: value, roleTitle: '' })}
+                disabled={!canEdit}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecteer entiteit (optioneel)" />
@@ -297,6 +301,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                 <Select
                   value={formData.roleTitle || undefined}
                   onValueChange={(value) => setFormData({ ...formData, roleTitle: value })}
+                  disabled={!canEdit}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecteer functie (optioneel)" />
@@ -315,7 +320,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                   value={formData.roleTitle}
                   onChange={(e) => setFormData({ ...formData, roleTitle: e.target.value })}
                   placeholder={formData.entityId ? 'Geen functies beschikbaar' : 'Selecteer eerst een entiteit'}
-                  disabled={!formData.entityId}
+                  disabled={!formData.entityId || !canEdit}
                 />
               )}
               <p className="text-xs text-muted-foreground mt-1">
@@ -332,6 +337,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                   id="region"
                   value={formData.region}
                   onChange={(e) => setFormData({ ...formData, region: e.target.value })}
+                  disabled={!canEdit}
                 />
               </div>
 
@@ -341,6 +347,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                   id="via"
                   value={formData.via}
                   onChange={(e) => setFormData({ ...formData, via: e.target.value })}
+                  disabled={!canEdit}
                 />
               </div>
             </div>
@@ -353,6 +360,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                 required
+                disabled={!canEdit}
               />
             </div>
 
@@ -363,6 +371,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={4}
+                disabled={!canEdit}
               />
             </div>
           </div>
@@ -370,7 +379,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
           <DialogFooter className="mt-6">
             <div className="flex justify-between w-full">
               <div className="flex gap-2">
-                {isEdit && !starter?.isCancelled && (
+                {canEdit && isEdit && !starter?.isCancelled && (
                   <Button
                     type="button"
                     variant="outline"
@@ -382,7 +391,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                     Annuleren
                   </Button>
                 )}
-                {isEdit && (
+                {canEdit && isEdit && (
                   <Button
                     type="button"
                     variant="destructive"
@@ -403,7 +412,7 @@ export function StarterDialog({ open, onClose, starter, entities }: StarterDialo
                 >
                   Sluiten
                 </Button>
-                {!starter?.isCancelled && (
+                {canEdit && !starter?.isCancelled && (
                   <Button type="submit" disabled={loading}>
                     {loading ? 'Bezig...' : isEdit ? 'Opslaan' : 'Toevoegen'}
                   </Button>
