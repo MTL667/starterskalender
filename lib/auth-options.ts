@@ -105,6 +105,39 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NEXTAUTH_URL?.startsWith('https://'),
       },
     },
+    // OAuth state cookie - zeer permissief voor proxy compatibility
+    state: {
+      name: 'next-auth.state',
+      options: {
+        httpOnly: true,
+        sameSite: 'none', // CRITICAL: Allow cross-site for Azure AD redirect
+        path: '/',
+        secure: true, // Must be true when sameSite=none
+        maxAge: 900, // 15 minutes
+      },
+    },
+    // PKCE code verifier cookie
+    pkceCodeVerifier: {
+      name: 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
+        path: '/',
+        secure: true,
+        maxAge: 900,
+      },
+    },
+    // Nonce cookie
+    nonce: {
+      name: 'next-auth.nonce',
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
+        path: '/',
+        secure: true,
+        maxAge: 900,
+      },
+    },
   },
   pages: {
     signIn: '/auth/signin',
