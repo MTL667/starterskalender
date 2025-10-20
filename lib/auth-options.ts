@@ -50,7 +50,7 @@ async function isTenantAllowed(tenantId: string | undefined): Promise<boolean> {
 
 export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === 'development',
-  trustHost: true, // Required for proxies like Easypanel
+  // Note: Set NEXTAUTH_TRUST_HOST=true in environment variables for proxy support
   providers: [
     AzureADProvider({
       clientId: process.env.AZURE_AD_CLIENT_ID!,

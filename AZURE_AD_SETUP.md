@@ -72,6 +72,7 @@ ALLOWED_TENANT_IDS="tenant-id-1,tenant-id-2"
 # NextAuth
 NEXTAUTH_URL="https://your-domain.com"
 NEXTAUTH_SECRET="generate-with-openssl-rand-base64-32"
+NEXTAUTH_TRUST_HOST="true"  # REQUIRED for proxies (Easypanel, Vercel, etc.)
 
 # Database
 DATABASE_URL="postgresql://user:password@host:5432/dbname"
