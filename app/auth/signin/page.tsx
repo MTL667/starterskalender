@@ -42,7 +42,7 @@ function SignInForm() {
       await signIn('azure-ad', { callbackUrl: '/dashboard' })
     } catch (error) {
       console.error('Error signing in:', error)
-      setError('Er is een fout opgetreden. Probeer opnieuw.')
+      setError('Er is een fout opgetreden. Klik opnieuw op "Inloggen met Microsoft" om het opnieuw te proberen.')
       setLoading(false)
     }
   }

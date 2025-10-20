@@ -49,6 +49,7 @@ async function isTenantAllowed(tenantId: string | undefined): Promise<boolean> {
 }
 
 export const authOptions: NextAuthOptions = {
+  debug: process.env.NODE_ENV === 'development',
   providers: [
     AzureADProvider({
       clientId: process.env.AZURE_AD_CLIENT_ID!,
@@ -59,8 +60,12 @@ export const authOptions: NextAuthOptions = {
           scope: 'openid profile email offline_access',
           // Request additional claims
           prompt: 'select_account',
+          response_type: 'code',
+          response_mode: 'query',
         },
       },
+      // Disable PKCE to simplify OAuth flow
+      checks: ['state'],
       // Request tenant ID in ID token
       token: {
         params: {
@@ -86,32 +91,17 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 dagen
   },
+  useSecureCookies: process.env.NEXTAUTH_URL?.startsWith('https://'),
   cookies: {
     sessionToken: {
-      name: `__Secure-next-auth.session-token`,
+      name: process.env.NEXTAUTH_URL?.startsWith('https://') 
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: true, // HTTPS required
-      },
-    },
-    callbackUrl: {
-      name: `__Secure-next-auth.callback-url`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: true,
-      },
-    },
-    csrfToken: {
-      name: `__Host-next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: true,
+        secure: process.env.NEXTAUTH_URL?.startsWith('https://'),
       },
     },
   },
