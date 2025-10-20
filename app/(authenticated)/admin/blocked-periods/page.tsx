@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Trash2, Calendar } from 'lucide-react'
+import { Plus, Trash2, Calendar, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
 
@@ -49,9 +49,15 @@ export default function BlockedPeriodsPage() {
   const [blockedPeriods, setBlockedPeriods] = useState<BlockedPeriod[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    entityId: string
+    jobRoleId: string | undefined
+    startDate: string
+    endDate: string
+    reason: string
+  }>({
     entityId: '',
-    jobRoleId: '',
+    jobRoleId: undefined,
     startDate: '',
     endDate: '',
     reason: '',
@@ -82,7 +88,7 @@ export default function BlockedPeriodsPage() {
   const handleNew = () => {
     setFormData({
       entityId: '',
-      jobRoleId: '',
+      jobRoleId: undefined,
       startDate: '',
       endDate: '',
       reason: '',
@@ -225,7 +231,7 @@ export default function BlockedPeriodsPage() {
               <Label htmlFor="entityId">Entiteit *</Label>
               <Select
                 value={formData.entityId}
-                onValueChange={(value) => setFormData({ ...formData, entityId: value, jobRoleId: '' })}
+                onValueChange={(value) => setFormData({ ...formData, entityId: value, jobRoleId: undefined })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecteer entiteit" />
@@ -242,25 +248,39 @@ export default function BlockedPeriodsPage() {
 
             <div>
               <Label htmlFor="jobRoleId">Functie (optioneel)</Label>
-              <Select
-                value={formData.jobRoleId}
-                onValueChange={(value) => setFormData({ ...formData, jobRoleId: value })}
-                disabled={!formData.entityId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Alle functies" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Alle functies</SelectItem>
-                  {availableJobRoles.map(role => (
-                    <SelectItem key={role.id} value={role.id}>
-                      {role.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select
+                  value={formData.jobRoleId || undefined}
+                  onValueChange={(value) => setFormData({ ...formData, jobRoleId: value })}
+                  disabled={!formData.entityId}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Alle functies" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableJobRoles.map(role => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formData.jobRoleId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setFormData({ ...formData, jobRoleId: undefined })}
+                    title="Selectie wissen"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Laat leeg om alle functies te blokkeren
+                {formData.jobRoleId 
+                  ? 'Klik op X om alle functies te blokkeren'
+                  : 'Selecteer een functie of laat leeg om alle functies te blokkeren'}
               </p>
             </div>
 
