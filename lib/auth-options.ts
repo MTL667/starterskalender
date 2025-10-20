@@ -1,6 +1,5 @@
 import { NextAuthOptions } from 'next-auth'
 import AzureADProvider from 'next-auth/providers/azure-ad'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
 
 // Tenant Allowlist - lijst van toegestane Azure AD tenant IDs
@@ -50,7 +49,6 @@ async function isTenantAllowed(tenantId: string | undefined): Promise<boolean> {
 }
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
     AzureADProvider({
       clientId: process.env.AZURE_AD_CLIENT_ID!,
