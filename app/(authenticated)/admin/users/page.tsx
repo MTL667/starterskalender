@@ -38,6 +38,7 @@ const ROLES = [
   { value: 'ENTITY_EDITOR', label: 'Entity Editor' },
   { value: 'ENTITY_VIEWER', label: 'Entity Viewer' },
   { value: 'GLOBAL_VIEWER', label: 'Global Viewer' },
+  { value: 'NONE', label: 'None (Guest - No Access)' },
 ]
 
 export default function UsersAdminPage() {

@@ -1,43 +1,33 @@
 import { NextAuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
+import AzureADProvider from 'next-auth/providers/azure-ad'
+import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
-import { compare } from 'bcryptjs'
+
+// Tenant Allowlist - lijst van toegestane Azure AD tenant IDs
+// Voeg hier de tenant IDs toe van organisaties die toegang mogen hebben
+const ALLOWED_TENANTS = (process.env.ALLOWED_TENANT_IDS || '')
+  .split(',')
+  .map(t => t.trim())
+  .filter(Boolean)
+
+// Als de allowlist leeg is, log een waarschuwing (alleen in development)
+if (ALLOWED_TENANTS.length === 0 && process.env.NODE_ENV === 'development') {
+  console.warn('⚠️  ALLOWED_TENANT_IDS is niet geconfigureerd - alle tenants worden toegelaten in development!')
+}
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Wachtwoord", type: "password" }
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID!,
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+      tenantId: 'common', // Multi-tenant: accepteer alle Azure AD tenants
+      authorization: {
+        params: {
+          scope: 'openid profile email offline_access',
+        },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email en wachtwoord zijn verplicht')
-        }
-
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
-
-        if (!user || !user.password) {
-          throw new Error('Ongeldige inloggegevens')
-        }
-
-        const isPasswordValid = await compare(credentials.password, user.password)
-
-        if (!isPasswordValid) {
-          throw new Error('Ongeldige inloggegevens')
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        }
-      }
-    })
+    }),
   ],
   session: {
     strategy: 'jwt',
@@ -45,36 +35,165 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    verifyRequest: '/auth/verify',
     error: '/auth/error',
+    newUser: '/auth/welcome', // Redirect nieuwe users naar welcome pagina
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id
-        token.role = user.role
+    async signIn({ user, account, profile }) {
+      try {
+        // Extract Azure AD claims
+        const tenantId = (account?.tid || profile?.tid) as string | undefined
+        const oid = (account?.oid || profile?.oid) as string | undefined
+        const email = user.email?.toLowerCase()
+
+        if (!email) {
+          console.error('❌ SignIn denied: no email')
+          return false
+        }
+
+        // Check tenant allowlist (skip in development if allowlist is empty)
+        if (ALLOWED_TENANTS.length > 0) {
+          if (!tenantId || !ALLOWED_TENANTS.includes(tenantId)) {
+            console.error(`❌ SignIn denied: tenant ${tenantId} not in allowlist`)
+            return false // Deny access - tenant not allowed
+          }
+        }
+
+        // Find or create user
+        let dbUser = await prisma.user.findUnique({
+          where: { email },
+        })
+
+        if (!dbUser) {
+          // First login - create guest user with NONE role
+          console.log(`✅ Creating new guest user: ${email} (tenant: ${tenantId})`)
+          dbUser = await prisma.user.create({
+            data: {
+              email,
+              name: user.name || email.split('@')[0],
+              role: 'NONE', // Guest role - no permissions
+              tenantId,
+              oid,
+            },
+          })
+
+          // Log audit trail
+          const { createAuditLog } = await import('./audit')
+          await createAuditLog({
+            actorId: dbUser.id,
+            action: 'LOGIN',
+            meta: {
+              email,
+              tenantId,
+              firstLogin: true,
+              message: 'New user created as guest (role=NONE)',
+            },
+          })
+        } else {
+          // Existing user - update Azure AD fields if needed
+          if (dbUser.tenantId !== tenantId || dbUser.oid !== oid) {
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: {
+                tenantId,
+                oid,
+                name: user.name || dbUser.name,
+              },
+            })
+          }
+
+          // Log audit trail
+          const { createAuditLog } = await import('./audit')
+          await createAuditLog({
+            actorId: dbUser.id,
+            action: 'LOGIN',
+            meta: { email, tenantId },
+          })
+        }
+
+        return true
+      } catch (error) {
+        console.error('❌ SignIn error:', error)
+        return false
       }
+    },
+
+    async jwt({ token, user, account, profile }) {
+      // Initial sign in
+      if (user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email! },
+          include: {
+            memberships: {
+              include: {
+                entity: true,
+              },
+            },
+          },
+        })
+
+        if (dbUser) {
+          token.id = dbUser.id
+          token.role = dbUser.role
+          token.tenantId = dbUser.tenantId
+          token.oid = dbUser.oid
+          token.memberships = dbUser.memberships.map(m => ({
+            entityId: m.entityId,
+            entityName: m.entity.name,
+            canEdit: m.canEdit,
+          }))
+        }
+      }
+
+      // Refresh user data on each token refresh (to get updated roles/memberships)
+      if (token.email && !user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          include: {
+            memberships: {
+              include: {
+                entity: true,
+              },
+            },
+          },
+        })
+
+        if (dbUser) {
+          token.role = dbUser.role
+          token.memberships = dbUser.memberships.map(m => ({
+            entityId: m.entityId,
+            entityName: m.entity.name,
+            canEdit: m.canEdit,
+          }))
+        }
+      }
+
       return token
     },
+
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
         session.user.role = token.role as any
-        session.user.twoFAEnabled = false // TODO: implement if needed
+        session.user.tenantId = token.tenantId as string | undefined
+        session.user.oid = token.oid as string | undefined
+        session.user.memberships = (token.memberships as any) || []
+        session.user.twoFAEnabled = false
       }
       return session
     },
   },
   events: {
-    async signIn({ user }) {
-      // Log de login
-      const { createAuditLog } = await import('./audit')
-      await createAuditLog({
-        actorId: user.id,
-        action: 'LOGIN',
-        meta: { email: user.email },
-      })
+    async signOut({ token }) {
+      // Log de logout
+      if (token?.id) {
+        const { createAuditLog } = await import('./audit')
+        await createAuditLog({
+          actorId: token.id as string,
+          action: 'LOGOUT',
+          meta: { email: token.email },
+        })
+      }
     },
   },
 }
-

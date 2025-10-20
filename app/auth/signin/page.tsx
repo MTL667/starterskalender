@@ -1,103 +1,109 @@
 'use client'
 
 import { signIn } from 'next-auth/react'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import Link from 'next/link'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2, AlertCircle } from 'lucide-react'
 
 export default function SignInPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        setError('Ongeldige inloggegevens')
-      } else if (result?.ok) {
-        router.push('/dashboard')
+  // Check for error in URL
+  useEffect(() => {
+    const errorParam = searchParams?.get('error')
+    if (errorParam) {
+      switch (errorParam) {
+        case 'AccessDenied':
+          setError('Toegang geweigerd. Je organisatie is niet toegestaan om in te loggen, of je account is nog niet goedgekeurd.')
+          break
+        case 'Configuration':
+          setError('Configuratiefout. Neem contact op met de beheerder.')
+          break
+        case 'Verification':
+          setError('Verificatiefout. Probeer opnieuw in te loggen.')
+          break
+        default:
+          setError('Er is een fout opgetreden bij het inloggen. Probeer het opnieuw.')
       }
+    }
+  }, [searchParams])
+
+  const handleSignIn = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      // Redirect to Azure AD for authentication
+      await signIn('azure-ad', { callbackUrl: '/dashboard' })
     } catch (error) {
       console.error('Error signing in:', error)
       setError('Er is een fout opgetreden. Probeer opnieuw.')
-    } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Inloggen</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Starterskalender</CardTitle>
           <CardDescription>
-            Log in op de Starterskalender
+            Log in met je organisatie account
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-800 p-3 rounded-md text-sm">
-                {error}
-              </div>
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <Button 
+            onClick={handleSignIn} 
+            className="w-full" 
+            size="lg"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Aan het inloggen...
+              </>
+            ) : (
+              <>
+                <svg className="mr-2 h-5 w-5" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                  <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                  <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                  <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                </svg>
+                Inloggen met Microsoft
+              </>
             )}
+          </Button>
 
-            <div>
-              <Label htmlFor="email">E-mailadres</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="jouw@email.com"
-                required
-                autoComplete="email"
-              />
-            </div>
+          <div className="pt-4 border-t text-center">
+            <p className="text-sm text-muted-foreground">
+              Door in te loggen ga je akkoord met het gebruik van je organisatie credentials.
+            </p>
+          </div>
 
-            <div>
-              <Label htmlFor="password">Wachtwoord</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Bezig met inloggen...' : 'Inloggen'}
-            </Button>
-          </form>
-
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            Nog geen account?{' '}
-            <Link href="/auth/register" className="text-primary hover:underline">
-              Registreer hier
-            </Link>
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
+            <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+              Eerste keer hier?
+            </p>
+            <p className="text-blue-800 dark:text-blue-200">
+              Log in met je organisatie account. Je account wordt automatisch aangemaakt en wacht op goedkeuring door een beheerder.
+            </p>
           </div>
         </CardContent>
       </Card>
     </div>
   )
 }
-

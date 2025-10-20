@@ -13,14 +13,20 @@ enum Role {
   ENTITY_EDITOR
   ENTITY_VIEWER
   GLOBAL_VIEWER
+  NONE
 }
 
 model User {
   id           String       @id @default(cuid())
   email        String       @unique
-  password     String       // Hashed password (bcrypt)
+  password     String?      // Optional: legacy auth only
   name         String?
-  role         Role         @default(ENTITY_VIEWER)
+  role         Role         @default(NONE) // New users start as NONE (guest)
+  
+  // Azure AD / Entra ID fields
+  tenantId     String?      // Azure AD tenant ID (tid claim)
+  oid          String?      // Azure AD object ID (oid claim)
+  
   memberships  Membership[]
   twoFASecret  String?      // TOTP secret voor 2FA
   twoFAEnabled Boolean      @default(false)
@@ -28,6 +34,8 @@ model User {
   updatedAt    DateTime     @updatedAt
 
   @@index([email])
+  @@index([tenantId])
+  @@index([oid])
 }
 
 model Entity {
