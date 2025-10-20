@@ -142,6 +142,21 @@ model BlockedPeriod {
   @@index([startDate, endDate])
 }
 
+model AllowedTenant {
+  id          String   @id @default(cuid())
+  tenantId    String   @unique // Azure AD Tenant ID
+  tenantName  String   // Organisatie naam voor display
+  domain      String?  // Primary domain (optioneel, bijv. "company.com")
+  isActive    Boolean  @default(true)
+  notes       String?  @db.Text // Admin notities
+  createdBy   String?  // User ID die het toevoegde
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId, isActive])
+  @@index([isActive])
+}
+
 model AuditLog {
   id        String   @id @default(cuid())
   actorId   String?  // User ID

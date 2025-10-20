@@ -4,15 +4,49 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from './prisma'
 
 // Tenant Allowlist - lijst van toegestane Azure AD tenant IDs
-// Voeg hier de tenant IDs toe van organisaties die toegang mogen hebben
-const ALLOWED_TENANTS = (process.env.ALLOWED_TENANT_IDS || '')
+// Kan via database (AllowedTenant model) OF via environment variable
+const ENV_ALLOWED_TENANTS = (process.env.ALLOWED_TENANT_IDS || '')
   .split(',')
   .map(t => t.trim())
   .filter(Boolean)
 
-// Als de allowlist leeg is, log een waarschuwing (alleen in development)
-if (ALLOWED_TENANTS.length === 0 && process.env.NODE_ENV === 'development') {
-  console.warn('⚠️  ALLOWED_TENANT_IDS is niet geconfigureerd - alle tenants worden toegelaten in development!')
+/**
+ * Check if a tenant is allowed to access the application
+ * Priority: Database > Environment Variable > Development Mode
+ */
+async function isTenantAllowed(tenantId: string | undefined): Promise<boolean> {
+  if (!tenantId) return false
+
+  // Check database first
+  try {
+    const dbAllowedTenant = await prisma.allowedTenant.findFirst({
+      where: {
+        tenantId,
+        isActive: true,
+      },
+    })
+    
+    if (dbAllowedTenant) {
+      return true
+    }
+  } catch (error) {
+    console.error('Error checking database for allowed tenant:', error)
+    // Fall through to env var check
+  }
+
+  // Fallback to environment variable
+  if (ENV_ALLOWED_TENANTS.length > 0) {
+    return ENV_ALLOWED_TENANTS.includes(tenantId)
+  }
+
+  // In development without any allowlist, allow all tenants
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`⚠️  No allowlist configured - allowing tenant ${tenantId} in development mode`)
+    return true
+  }
+
+  // In production without allowlist, deny by default
+  return false
 }
 
 export const authOptions: NextAuthOptions = {
@@ -52,12 +86,11 @@ export const authOptions: NextAuthOptions = {
           return false
         }
 
-        // Check tenant allowlist (skip in development if allowlist is empty)
-        if (ALLOWED_TENANTS.length > 0) {
-          if (!tenantId || !ALLOWED_TENANTS.includes(tenantId)) {
-            console.error(`❌ SignIn denied: tenant ${tenantId} not in allowlist`)
-            return false // Deny access - tenant not allowed
-          }
+        // Check tenant allowlist (database or env var)
+        const tenantAllowed = await isTenantAllowed(tenantId)
+        if (!tenantAllowed) {
+          console.error(`❌ SignIn denied: tenant ${tenantId} not in allowlist`)
+          return false // Deny access - tenant not allowed
         }
 
         // Find or create user
