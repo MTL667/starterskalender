@@ -41,9 +41,10 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       try {
-        // Extract Azure AD claims
-        const tenantId = (account?.tid || profile?.tid) as string | undefined
-        const oid = (account?.oid || profile?.oid) as string | undefined
+        // Extract Azure AD claims from account object
+        // Azure AD returns tid (tenant id) and oid (object id) in the token
+        const tenantId = (account as any)?.tid as string | undefined
+        const oid = (account as any)?.oid as string | undefined
         const email = user.email?.toLowerCase()
 
         if (!email) {
