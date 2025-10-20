@@ -136,8 +136,8 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           token.id = dbUser.id
           token.role = dbUser.role
-          token.tenantId = dbUser.tenantId
-          token.oid = dbUser.oid
+          token.tenantId = dbUser.tenantId ?? undefined
+          token.oid = dbUser.oid ?? undefined
           token.memberships = dbUser.memberships.map(m => ({
             entityId: m.entityId,
             entityName: m.entity.name,
