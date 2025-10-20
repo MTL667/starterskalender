@@ -57,7 +57,28 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           scope: 'openid profile email offline_access',
+          // Request additional claims
+          prompt: 'select_account',
         },
+      },
+      // Request tenant ID in ID token
+      token: {
+        params: {
+          scope: 'openid profile email offline_access',
+        },
+      },
+      // Explicitly request profile with tenant info
+      profile(profile: any) {
+        return {
+          id: profile.sub || profile.oid,
+          name: profile.name,
+          email: profile.email || profile.upn || profile.preferred_username,
+          image: null,
+          // Preserve Azure AD specific claims
+          tid: profile.tid,
+          oid: profile.oid,
+          tenantId: profile.tid,
+        }
       },
     }),
   ],
@@ -73,15 +94,51 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       try {
-        // Extract Azure AD claims from account object
-        // Azure AD returns tid (tenant id) and oid (object id) in the token
-        const tenantId = (account as any)?.tid as string | undefined
-        const oid = (account as any)?.oid as string | undefined
+        // Debug: Log what we receive from Azure AD
+        console.log('🔍 SignIn Debug:', {
+          accountKeys: account ? Object.keys(account) : 'no account',
+          profileKeys: profile ? Object.keys(profile) : 'no profile',
+        })
+
+        // Extract Azure AD claims - try multiple sources
+        // Azure AD can send tenant ID in different places
+        const tenantId = 
+          (account as any)?.tenantId || // NextAuth normalized
+          (account as any)?.tid ||       // Raw Azure AD claim
+          (profile as any)?.tid ||       // Profile claim
+          (profile as any)?.tenantId ||  // Profile normalized
+          undefined
+        
+        const oid = 
+          (account as any)?.oid || 
+          (profile as any)?.oid ||
+          undefined
+
         const email = user.email?.toLowerCase()
+
+        console.log('🔍 Extracted claims:', { 
+          tenantId, 
+          oid, 
+          email,
+          hasAccount: !!account,
+          hasProfile: !!profile
+        })
 
         if (!email) {
           console.error('❌ SignIn denied: no email')
           return false
+        }
+
+        if (!tenantId) {
+          console.error('❌ SignIn denied: tenant ID not found in token')
+          console.error('Account object:', JSON.stringify(account, null, 2))
+          console.error('Profile object:', JSON.stringify(profile, null, 2))
+          // In development, allow for testing
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️  Allowing login in development despite missing tenant ID')
+          } else {
+            return false
+          }
         }
 
         // Check tenant allowlist (database or env var)
