@@ -7,9 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { Search, Download, Plus } from 'lucide-react'
+import { Search, Download, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
+
+type SortColumn = 'name' | 'roleTitle' | 'region' | 'startDate' | 'entity'
+type SortDirection = 'asc' | 'desc'
 
 interface Starter {
   id: string
@@ -42,6 +45,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   const [selectedEntity, setSelectedEntity] = useState<string>('all')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
+  const [sortColumn, setSortColumn] = useState<SortColumn>('startDate')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   useEffect(() => {
     setLoading(true)
@@ -60,22 +65,76 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       })
   }, [year])
 
-  const filteredStarters = starters.filter(starter => {
-    if (selectedEntity !== 'all' && starter.entity?.id !== selectedEntity) {
-      return false
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      // Toggle direction if clicking the same column
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      // New column, default to ascending
+      setSortColumn(column)
+      setSortDirection('asc')
     }
+  }
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      return (
-        starter.name.toLowerCase().includes(query) ||
-        starter.roleTitle?.toLowerCase().includes(query) ||
-        starter.region?.toLowerCase().includes(query)
-      )
+  const getSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 inline opacity-0 group-hover:opacity-50" />
     }
+    return sortDirection === 'asc' 
+      ? <ArrowUp className="h-4 w-4 ml-1 inline" />
+      : <ArrowDown className="h-4 w-4 ml-1 inline" />
+  }
 
-    return true
-  })
+  const filteredStarters = starters
+    .filter(starter => {
+      if (selectedEntity !== 'all' && starter.entity?.id !== selectedEntity) {
+        return false
+      }
+
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase()
+        return (
+          starter.name.toLowerCase().includes(query) ||
+          starter.roleTitle?.toLowerCase().includes(query) ||
+          starter.region?.toLowerCase().includes(query)
+        )
+      }
+
+      return true
+    })
+    .sort((a, b) => {
+      let aValue: string | number | Date
+      let bValue: string | number | Date
+
+      switch (sortColumn) {
+        case 'name':
+          aValue = a.name.toLowerCase()
+          bValue = b.name.toLowerCase()
+          break
+        case 'roleTitle':
+          aValue = (a.roleTitle || '').toLowerCase()
+          bValue = (b.roleTitle || '').toLowerCase()
+          break
+        case 'region':
+          aValue = (a.region || '').toLowerCase()
+          bValue = (b.region || '').toLowerCase()
+          break
+        case 'startDate':
+          aValue = new Date(a.startDate).getTime()
+          bValue = new Date(b.startDate).getTime()
+          break
+        case 'entity':
+          aValue = (a.entity?.name || '').toLowerCase()
+          bValue = (b.entity?.name || '').toLowerCase()
+          break
+        default:
+          return 0
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
 
   const handleRowClick = (starter: Starter) => {
     setSelectedStarter(starter)
@@ -189,14 +248,39 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
             <table className="w-full">
               <thead className="border-b">
                 <tr className="text-left text-sm text-muted-foreground">
-                  <th className="pb-3 font-medium">Naam</th>
+                  <th 
+                    className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => handleSort('name')}
+                  >
+                    Naam {getSortIcon('name')}
+                  </th>
                   <th className="pb-3 font-medium">Taal</th>
-                  <th className="pb-3 font-medium">Functie</th>
-                  <th className="pb-3 font-medium">Regio</th>
+                  <th 
+                    className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => handleSort('roleTitle')}
+                  >
+                    Functie {getSortIcon('roleTitle')}
+                  </th>
+                  <th 
+                    className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => handleSort('region')}
+                  >
+                    Regio {getSortIcon('region')}
+                  </th>
                   <th className="pb-3 font-medium">Via</th>
-                  <th className="pb-3 font-medium">Startdatum</th>
+                  <th 
+                    className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => handleSort('startDate')}
+                  >
+                    Startdatum {getSortIcon('startDate')}
+                  </th>
                   <th className="pb-3 font-medium">Week</th>
-                  <th className="pb-3 font-medium">Entiteit</th>
+                  <th 
+                    className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
+                    onClick={() => handleSort('entity')}
+                  >
+                    Entiteit {getSortIcon('entity')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
