@@ -72,9 +72,7 @@ export async function POST(
       include: {
         materials: {
           include: {
-            material: {
-              where: { isActive: true },
-            },
+            material: true,
           },
         },
       },
@@ -87,9 +85,19 @@ export async function POST(
       )
     }
 
+    // Filter active materials only
+    const activeMaterials = jobRole.materials.filter(jrm => jrm.material.isActive)
+
+    if (activeMaterials.length === 0) {
+      return NextResponse.json(
+        { message: 'No active materials assigned to this role' },
+        { status: 200 }
+      )
+    }
+
     // Create starter materials (skip if already exists)
     const createdMaterials = []
-    for (const jrm of jobRole.materials) {
+    for (const jrm of activeMaterials) {
       const existing = await prisma.starterMaterial.findUnique({
         where: {
           starterId_materialId: {
