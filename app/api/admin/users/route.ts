@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         name: true,
         role: true,
         createdAt: true,
+        lastLoginAt: true,
         memberships: {
           include: {
             entity: {

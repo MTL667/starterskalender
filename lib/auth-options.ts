@@ -216,6 +216,7 @@ export const authOptions: NextAuthOptions = {
               role: 'NONE', // Guest role - no permissions
               tenantId,
               oid,
+              lastLoginAt: new Date(),
             },
           })
 
@@ -232,17 +233,16 @@ export const authOptions: NextAuthOptions = {
             },
           })
         } else {
-          // Existing user - update Azure AD fields if needed
-          if (dbUser.tenantId !== tenantId || dbUser.oid !== oid) {
-            await prisma.user.update({
-              where: { id: dbUser.id },
-              data: {
-                tenantId,
-                oid,
-                name: user.name || dbUser.name,
-              },
-            })
-          }
+          // Existing user - update Azure AD fields and last login timestamp
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              tenantId,
+              oid,
+              name: user.name || dbUser.name,
+              lastLoginAt: new Date(),
+            },
+          })
 
           // Log audit trail
           const { createAuditLog } = await import('./audit')

@@ -32,6 +32,7 @@ model User {
   twoFAEnabled Boolean      @default(false)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
+  lastLoginAt  DateTime?    // Tijdstip van laatste succesvolle login
 
   @@index([email])
   @@index([tenantId])

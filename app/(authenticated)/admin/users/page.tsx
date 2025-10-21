@@ -18,6 +18,7 @@ interface User {
   name: string | null
   role: string
   createdAt: string
+  lastLoginAt: string | null
   memberships: {
     id: string
     entityId: string
@@ -211,6 +212,14 @@ export default function UsersAdminPage() {
                       <div>
                         <p className="font-medium">{user.name || 'Geen naam'}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
+                        {user.lastLoginAt && (
+                          <p className="text-xs text-muted-foreground">
+                            Laatste login: {new Date(user.lastLoginAt).toLocaleString('nl-BE', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })}
+                          </p>
+                        )}
                       </div>
                       <Badge className={getRoleBadgeColor(user.role)}>
                         {ROLES.find(r => r.value === user.role)?.label || user.role}
