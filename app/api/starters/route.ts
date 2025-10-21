@@ -16,6 +16,10 @@ const StarterSchema = z.object({
   via: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   startDate: z.string().datetime(),
+  hasExperience: z.boolean().default(false),
+  experienceSince: z.string().datetime().nullable().optional(),
+  experienceRole: z.string().nullable().optional(),
+  experienceEntity: z.string().nullable().optional(),
 })
 
 // GET - List starters met filtering
@@ -105,6 +109,10 @@ export async function POST(request: NextRequest) {
         startDate,
         weekNumber,
         year,
+        hasExperience: data.hasExperience,
+        experienceSince: data.experienceSince ? new Date(data.experienceSince) : null,
+        experienceRole: normalizeString(data.experienceRole),
+        experienceEntity: normalizeString(data.experienceEntity),
         createdBy: user.id,
       },
       include: {

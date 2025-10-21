@@ -85,6 +85,13 @@ model Starter {
   cancelledAt  DateTime? // Wanneer geannuleerd
   cancelledBy  String?   // User ID die annuleerde
   cancelReason String?   @db.Text // Reden van annulering
+  
+  // Ervaring velden
+  hasExperience    Boolean   @default(false) // Heeft de starter relevante werkervaring?
+  experienceSince  DateTime? // Startdatum van ervaring (om duur te berekenen)
+  experienceRole   String?   // Functie waarin ervaring opgedaan
+  experienceEntity String?   // Entiteit/bedrijf waar ervaring opgedaan (vrij veld)
+  
   createdBy    String?   // User ID die het aanmaakte
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt

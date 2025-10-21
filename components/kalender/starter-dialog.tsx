@@ -14,8 +14,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { Trash2, XCircle } from 'lucide-react'
+import { getExperienceText } from '@/lib/experience-utils'
 
 interface Starter {
   id: string
@@ -29,6 +31,10 @@ interface Starter {
   isCancelled?: boolean
   cancelledAt?: string | null
   cancelReason?: string | null
+  hasExperience?: boolean
+  experienceSince?: string | null
+  experienceRole?: string | null
+  experienceEntity?: string | null
   entity?: {
     id: string
   } | null
@@ -70,6 +76,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     via: '',
     notes: '',
     startDate: format(new Date(), 'yyyy-MM-dd'),
+    hasExperience: false,
+    experienceSince: '',
+    experienceRole: '',
+    experienceEntity: '',
   })
 
   // Laad job roles voor de gekozen entiteit
@@ -95,6 +105,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         via: starter.via || '',
         notes: starter.notes || '',
         startDate: format(new Date(starter.startDate), 'yyyy-MM-dd'),
+        hasExperience: starter.hasExperience || false,
+        experienceSince: starter.experienceSince ? format(new Date(starter.experienceSince), 'yyyy-MM-dd') : '',
+        experienceRole: starter.experienceRole || '',
+        experienceEntity: starter.experienceEntity || '',
       })
     } else {
       setFormData({
@@ -106,6 +120,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         via: '',
         notes: '',
         startDate: format(new Date(), 'yyyy-MM-dd'),
+        hasExperience: false,
+        experienceSince: '',
+        experienceRole: '',
+        experienceEntity: '',
       })
     }
   }, [starter, open])
@@ -149,6 +167,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         via: formData.via || null,
         notes: formData.notes || null,
         startDate: new Date(formData.startDate).toISOString(),
+        hasExperience: formData.hasExperience,
+        experienceSince: formData.hasExperience && formData.experienceSince 
+          ? new Date(formData.experienceSince).toISOString() 
+          : null,
+        experienceRole: formData.hasExperience ? (formData.experienceRole || null) : null,
+        experienceEntity: formData.hasExperience ? (formData.experienceEntity || null) : null,
       }
 
       const url = isEdit ? `/api/starters/${starter.id}` : '/api/starters'
@@ -373,6 +397,78 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 rows={4}
                 disabled={!canEdit}
               />
+            </div>
+
+            {/* Ervaring sectie */}
+            <div className="border-t pt-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <Checkbox
+                  id="hasExperience"
+                  checked={formData.hasExperience}
+                  onCheckedChange={(checked) => 
+                    setFormData({ 
+                      ...formData, 
+                      hasExperience: checked as boolean,
+                      // Reset ervaring velden als uitgevinkt
+                      experienceSince: checked ? formData.experienceSince : '',
+                      experienceRole: checked ? formData.experienceRole : '',
+                      experienceEntity: checked ? formData.experienceEntity : '',
+                    })
+                  }
+                  disabled={!canEdit}
+                />
+                <Label htmlFor="hasExperience" className="font-medium cursor-pointer">
+                  Heeft relevante werkervaring
+                </Label>
+              </div>
+
+              {formData.hasExperience && (
+                <div className="space-y-4 pl-6 border-l-2 border-muted">
+                  <div>
+                    <Label htmlFor="experienceSince">
+                      Ervaring sinds *
+                      {formData.experienceSince && (
+                        <span className="ml-2 text-sm font-normal text-muted-foreground">
+                          ({getExperienceText(formData.experienceSince)})
+                        </span>
+                      )}
+                    </Label>
+                    <Input
+                      id="experienceSince"
+                      type="date"
+                      value={formData.experienceSince}
+                      onChange={(e) => setFormData({ ...formData, experienceSince: e.target.value })}
+                      max={format(new Date(), 'yyyy-MM-dd')}
+                      disabled={!canEdit}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Datum waarop de starter begon met deze functie/ervaring
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="experienceRole">Functie</Label>
+                    <Input
+                      id="experienceRole"
+                      value={formData.experienceRole}
+                      onChange={(e) => setFormData({ ...formData, experienceRole: e.target.value })}
+                      placeholder="Bijv: Senior Developer, HR Manager, ..."
+                      disabled={!canEdit}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="experienceEntity">Bedrijf/Entiteit</Label>
+                    <Input
+                      id="experienceEntity"
+                      value={formData.experienceEntity}
+                      onChange={(e) => setFormData({ ...formData, experienceEntity: e.target.value })}
+                      placeholder="Bijv: Acme Corp, Consultancy XYZ, ..."
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
