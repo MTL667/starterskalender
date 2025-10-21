@@ -78,6 +78,8 @@ model Starter {
   roleTitle    String?   // Functie
   via          String?   // Via (dropdown)
   notes        String?   @db.Text // Extra info
+  phoneNumber  String?   // Telefoonnummer (optioneel, kan later toegevoegd)
+  desiredEmail String?   // Gewenst mailadres
   startDate    DateTime  // Startdatum
   weekNumber   Int?      // Weeknummer (afgeleid, Monday-first)
   year         Int       // Jaar
@@ -92,9 +94,10 @@ model Starter {
   experienceRole   String?   // Functie waarin ervaring opgedaan
   experienceEntity String?   // Entiteit/bedrijf waar ervaring opgedaan (vrij veld)
   
-  createdBy    String?   // User ID die het aanmaakte
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdBy        String?           // User ID die het aanmaakte
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  starterMaterials StarterMaterial[] // Materiaal toegewezen aan deze starter
 
   @@index([year, startDate])
   @@index([entityId, year])
@@ -118,13 +121,14 @@ model JobRole {
   id             String          @id @default(cuid())
   entityId       String
   entity         Entity          @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  title          String          // Functietitel (bv. "Senior Developer")
-  description    String?         @db.Text // Optionele beschrijving
-  isActive       Boolean         @default(true)
-  order          Int             @default(0) // Sorteervolgorde
+  title          String             // Functietitel (bv. "Senior Developer")
+  description    String?            @db.Text // Optionele beschrijving
+  isActive       Boolean            @default(true)
+  order          Int                @default(0) // Sorteervolgorde
   blockedPeriods BlockedPeriod[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  materials      JobRoleMaterial[]  // Materiaal gekoppeld aan deze functie
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   @@unique([entityId, title])
   @@index([entityId, isActive])
@@ -163,6 +167,57 @@ model AllowedTenant {
 
   @@index([tenantId, isActive])
   @@index([isActive])
+}
+
+model Material {
+  id          String            @id @default(cuid())
+  name        String            @unique // Materiaalnaam (bv. "Laptop", "Telefoon", "Badge")
+  description String?           @db.Text // Optionele beschrijving
+  category    String?           // Categorie (bv. "Hardware", "Software", "Toegang")
+  isActive    Boolean           @default(true)
+  order       Int               @default(0) // Sorteervolgorde
+  jobRoles    JobRoleMaterial[] // Functies die dit materiaal nodig hebben
+  starterMaterials StarterMaterial[] // Starters aan wie dit materiaal is toegewezen
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([isActive])
+  @@index([category, isActive])
+  @@index([order])
+}
+
+model JobRoleMaterial {
+  id        String   @id @default(cuid())
+  jobRoleId String
+  jobRole   JobRole  @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
+  materialId String
+  material  Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  isRequired Boolean  @default(true) // Of het materiaal verplicht is voor deze functie
+  notes     String?  @db.Text // Extra notities (bv. "Alleen voor senior niveau")
+  createdAt DateTime @default(now())
+
+  @@unique([jobRoleId, materialId])
+  @@index([jobRoleId])
+  @@index([materialId])
+}
+
+model StarterMaterial {
+  id          String    @id @default(cuid())
+  starterId   String
+  starter     Starter   @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  materialId  String
+  material    Material  @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  isProvided  Boolean   @default(false) // Of het materiaal is verstrekt
+  providedAt  DateTime? // Wanneer verstrekt
+  providedBy  String?   // User ID die het heeft verstrekt
+  notes       String?   @db.Text // Extra notities
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([starterId, materialId])
+  @@index([starterId])
+  @@index([materialId])
+  @@index([isProvided])
 }
 
 model AuditLog {
