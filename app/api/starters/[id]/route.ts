@@ -20,6 +20,8 @@ const UpdateStarterSchema = z.object({
   experienceSince: z.string().datetime().nullable().optional(),
   experienceRole: z.string().nullable().optional(),
   experienceEntity: z.string().nullable().optional(),
+  phoneNumber: z.string().nullable().optional(),
+  desiredEmail: z.string().email().nullable().optional(),
 })
 
 // GET - Get single starter
@@ -83,6 +85,8 @@ export async function PATCH(
     if (data.experienceSince !== undefined) updateData.experienceSince = data.experienceSince ? new Date(data.experienceSince) : null
     if (data.experienceRole !== undefined) updateData.experienceRole = normalizeString(data.experienceRole)
     if (data.experienceEntity !== undefined) updateData.experienceEntity = normalizeString(data.experienceEntity)
+    if (data.phoneNumber !== undefined) updateData.phoneNumber = normalizeString(data.phoneNumber)
+    if (data.desiredEmail !== undefined) updateData.desiredEmail = normalizeString(data.desiredEmail)
 
     if (data.startDate) {
       const startDate = new Date(data.startDate)

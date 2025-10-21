@@ -20,6 +20,8 @@ const StarterSchema = z.object({
   experienceSince: z.string().datetime().nullable().optional(),
   experienceRole: z.string().nullable().optional(),
   experienceEntity: z.string().nullable().optional(),
+  phoneNumber: z.string().nullable().optional(),
+  desiredEmail: z.string().email().nullable().optional(),
 })
 
 // GET - List starters met filtering
@@ -113,6 +115,8 @@ export async function POST(request: NextRequest) {
         experienceSince: data.experienceSince ? new Date(data.experienceSince) : null,
         experienceRole: normalizeString(data.experienceRole),
         experienceEntity: normalizeString(data.experienceEntity),
+        phoneNumber: normalizeString(data.phoneNumber),
+        desiredEmail: normalizeString(data.desiredEmail),
         createdBy: user.id,
       },
       include: {

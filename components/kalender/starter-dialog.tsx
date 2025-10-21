@@ -35,6 +35,8 @@ interface Starter {
   experienceSince?: string | null
   experienceRole?: string | null
   experienceEntity?: string | null
+  phoneNumber?: string | null
+  desiredEmail?: string | null
   entity?: {
     id: string
   } | null
@@ -80,6 +82,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     experienceSince: '',
     experienceRole: '',
     experienceEntity: '',
+    phoneNumber: '',
+    desiredEmail: '',
   })
 
   // Laad job roles voor de gekozen entiteit
@@ -109,6 +113,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         experienceSince: starter.experienceSince ? format(new Date(starter.experienceSince), 'yyyy-MM-dd') : '',
         experienceRole: starter.experienceRole || '',
         experienceEntity: starter.experienceEntity || '',
+        phoneNumber: starter.phoneNumber || '',
+        desiredEmail: starter.desiredEmail || '',
       })
     } else {
       setFormData({
@@ -124,6 +130,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         experienceSince: '',
         experienceRole: '',
         experienceEntity: '',
+        phoneNumber: '',
+        desiredEmail: '',
       })
     }
   }, [starter, open])
@@ -173,6 +181,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
           : null,
         experienceRole: formData.hasExperience ? (formData.experienceRole || null) : null,
         experienceEntity: formData.hasExperience ? (formData.experienceEntity || null) : null,
+        phoneNumber: formData.phoneNumber || null,
+        desiredEmail: formData.desiredEmail || null,
       }
 
       const url = isEdit ? `/api/starters/${starter.id}` : '/api/starters'
@@ -397,6 +407,39 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 rows={4}
                 disabled={!canEdit}
               />
+            </div>
+
+            {/* Contactgegevens */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="phoneNumber">Telefoonnummer</Label>
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  value={formData.phoneNumber}
+                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                  placeholder="+32 123 45 67 89"
+                  disabled={!canEdit}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Optioneel - Kan later worden toegevoegd
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="desiredEmail">Gewenst E-mailadres</Label>
+                <Input
+                  id="desiredEmail"
+                  type="email"
+                  value={formData.desiredEmail}
+                  onChange={(e) => setFormData({ ...formData, desiredEmail: e.target.value })}
+                  placeholder="voornaam.achternaam@bedrijf.be"
+                  disabled={!canEdit}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Voorgesteld zakelijk mailadres
+                </p>
+              </div>
             </div>
 
             {/* Ervaring sectie */}
