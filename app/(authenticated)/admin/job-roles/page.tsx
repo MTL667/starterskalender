@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Package } from 'lucide-react'
+import { JobRoleMaterialsDialog } from '@/components/admin/job-role-materials-dialog'
 
 interface Entity {
   id: string
@@ -37,6 +38,8 @@ export default function JobRolesPage() {
   const [selectedEntity, setSelectedEntity] = useState<string>('all')
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [materialsDialogOpen, setMaterialsDialogOpen] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<JobRole | null>(null)
   const [editingRole, setEditingRole] = useState<JobRole | null>(null)
   const [formData, setFormData] = useState({
     entityId: '',
@@ -216,6 +219,17 @@ export default function JobRolesPage() {
                           </div>
                           <div className="flex gap-2">
                             <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedRole(role)
+                                setMaterialsDialogOpen(true)
+                              }}
+                            >
+                              <Package className="h-4 w-4 mr-2" />
+                              Materialen
+                            </Button>
+                            <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handleEdit(role)}
@@ -320,6 +334,13 @@ export default function JobRolesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Materials Dialog */}
+      <JobRoleMaterialsDialog
+        open={materialsDialogOpen}
+        onClose={() => setMaterialsDialogOpen(false)}
+        jobRole={selectedRole}
+      />
     </div>
   )
 }

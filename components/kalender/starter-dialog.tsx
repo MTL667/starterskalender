@@ -69,6 +69,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [jobRoles, setJobRoles] = useState<JobRole[]>([])
+  const [starterMaterials, setStarterMaterials] = useState<any[]>([])
   const [formData, setFormData] = useState({
     name: '',
     language: 'NL',
@@ -97,6 +98,18 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       setJobRoles([])
     }
   }, [formData.entityId])
+
+  // Laad materials voor bestaande starter
+  useEffect(() => {
+    if (starter?.id) {
+      fetch(`/api/starters/${starter.id}/materials`)
+        .then(res => res.json())
+        .then(data => setStarterMaterials(data))
+        .catch(err => console.error('Error loading materials:', err))
+    } else {
+      setStarterMaterials([])
+    }
+  }, [starter?.id])
 
   useEffect(() => {
     if (starter) {
@@ -198,6 +211,21 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         throw new Error('Failed to save starter')
       }
 
+      // Als nieuwe starter, wijs automatisch materials toe van de job role
+      if (!isEdit && formData.roleTitle && formData.entityId) {
+        const starterData = await res.json()
+        if (starterData.id) {
+          try {
+            await fetch(`/api/starters/${starterData.id}/materials`, {
+              method: 'POST',
+            })
+          } catch (materialError) {
+            console.error('Error assigning materials:', materialError)
+            // Niet fataal, gewoon doorgaan
+          }
+        }
+      }
+
       onClose(true)
     } catch (error) {
       console.error('Error saving starter:', error)
@@ -258,6 +286,29 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       alert(error instanceof Error ? error.message : 'Fout bij annuleren')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleMaterialToggle = async (materialId: string, isProvided: boolean) => {
+    if (!starter) return
+
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/materials/${materialId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isProvided }),
+      })
+
+      if (res.ok) {
+        // Reload materials
+        const materialsRes = await fetch(`/api/starters/${starter.id}/materials`)
+        if (materialsRes.ok) {
+          setStarterMaterials(await materialsRes.json())
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling material:', error)
+      alert('Fout bij bijwerken materiaal')
     }
   }
 
@@ -513,6 +564,65 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 </div>
               )}
             </div>
+
+            {/* Materialen sectie (alleen bij edit) */}
+            {isEdit && starterMaterials.length > 0 && (
+              <div className="border-t pt-4">
+                <Label className="text-base font-semibold mb-3 block">
+                  Benodigde Materialen
+                </Label>
+                <div className="space-y-2">
+                  {starterMaterials.map((sm: any) => (
+                    <div
+                      key={sm.id}
+                      className="flex items-start justify-between p-3 border rounded-lg"
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        <Checkbox
+                          id={`material-${sm.materialId}`}
+                          checked={sm.isProvided}
+                          onCheckedChange={(checked) =>
+                            handleMaterialToggle(sm.materialId, checked as boolean)
+                          }
+                          disabled={!canEdit}
+                        />
+                        <div className="flex-1">
+                          <Label
+                            htmlFor={`material-${sm.materialId}`}
+                            className="cursor-pointer font-normal"
+                          >
+                            {sm.material.name}
+                            {sm.material.category && (
+                              <Badge variant="outline" className="ml-2 text-xs">
+                                {sm.material.category}
+                              </Badge>
+                            )}
+                          </Label>
+                          {sm.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {sm.notes}
+                            </p>
+                          )}
+                          {sm.isProvided && sm.providedAt && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              ✓ Verstrekt op{' '}
+                              {new Date(sm.providedAt).toLocaleDateString('nl-BE', {
+                                dateStyle: 'short',
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {canEdit && (
+                  <p className="text-xs text-muted-foreground mt-3">
+                    Vink af welke materialen al zijn verstrekt aan de starter
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <DialogFooter className="mt-6">
