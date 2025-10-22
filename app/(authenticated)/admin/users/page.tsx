@@ -167,6 +167,23 @@ export default function UsersAdminPage() {
     }
   }
 
+  // Sort users: first by role (in ROLES order), then alphabetically by name
+  const sortedUsers = [...users].sort((a, b) => {
+    // Get role order from ROLES array
+    const roleOrderA = ROLES.findIndex(r => r.value === a.role)
+    const roleOrderB = ROLES.findIndex(r => r.value === b.role)
+    
+    // If roles are different, sort by role order
+    if (roleOrderA !== roleOrderB) {
+      return roleOrderA - roleOrderB
+    }
+    
+    // If roles are the same, sort alphabetically by name
+    const nameA = (a.name || a.email).toLowerCase()
+    const nameB = (b.name || b.email).toLowerCase()
+    return nameA.localeCompare(nameB)
+  })
+
   return (
     <div className="container mx-auto py-8 max-w-6xl">
       <Link href="/admin">
@@ -202,7 +219,7 @@ export default function UsersAdminPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {users.map((user) => (
+              {sortedUsers.map((user) => (
                 <div
                   key={user.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
