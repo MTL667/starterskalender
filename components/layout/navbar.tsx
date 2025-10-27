@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Calendar, LayoutDashboard, Users, Settings, LogOut } from 'lucide-react'
+import { Calendar, LayoutDashboard, Users, Settings, LogOut, User } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
 
@@ -71,6 +71,15 @@ export function Navbar() {
           <div className="text-sm text-muted-foreground hidden sm:block">
             {session?.user?.name || session?.user?.email}
           </div>
+          <Link href="/profiel">
+            <Button
+              variant={isActive('/profiel') ? 'default' : 'ghost'}
+              size="sm"
+            >
+              <User className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Profiel</span>
+            </Button>
+          </Link>
           <ThemeToggle />
           <Button
             variant="ghost"

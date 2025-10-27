@@ -2,7 +2,7 @@ import { requireAdmin } from '@/lib/auth-utils'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package } from 'lucide-react'
+import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen } from 'lucide-react'
 
 export default async function AdminPage() {
   const user = await requireAdmin().catch(() => null)
@@ -35,6 +35,12 @@ export default async function AdminPage() {
       description: 'Beheer benodigde materialen voor functies',
       icon: Package,
       href: '/admin/materials',
+    },
+    {
+      title: 'Email Templates',
+      description: 'Beheer email templates voor notificaties',
+      icon: MailOpen,
+      href: '/admin/email-templates',
     },
     {
       title: 'Azure AD Tenants',
