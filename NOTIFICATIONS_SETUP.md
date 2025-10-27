@@ -9,6 +9,48 @@ Het notificatiesysteem verstuurt automatisch emails naar gebruikers op basis van
 - 📈 **Kwartaal Overzicht**: Eerste dag van het nieuwe kwartaal
 - 🎉 **Jaarlijks Overzicht**: 1 januari
 
+## ✨ Email Strategie: Gecombineerde Digest
+
+**Alle emails zijn gecombineerd per user voor minimale inbox clutter.**
+
+### Hoe het werkt
+
+**Per User:**
+- Systeem verzamelt ALLE starters van ALLE entiteiten waar de user toegang tot heeft
+- Groepeert per entiteit binnen de email
+- Verstuurt **1 gecombineerde email** in plaats van meerdere aparte emails
+
+**Voorbeeld:**
+
+**❌ Oude aanpak (veel emails):**
+```
+📧 Email 1: "2 starters volgende week bij Entiteit Noord"
+📧 Email 2: "1 starter volgende week bij Entiteit Midden"
+📧 Email 3: "3 starters volgende week bij Entiteit Oost"
+```
+
+**✅ Nieuwe aanpak (1 email):**
+```
+📧 Email 1: "6 starters beginnen volgende week"
+
+Entiteit Noord (2)
+- Jan Jansen 🇳🇱 | Sales Manager | Start: 3 nov
+- Piet Peters 🇳🇱 | Developer | Start: 5 nov
+
+Entiteit Midden (1)
+- Marie Martens 🇫🇷 | HR Manager | Start: 6 nov
+
+Entiteit Oost (3)
+- ...
+```
+
+### Voordelen
+
+✅ **Minder emails** - 1 digest per dag/maand/kwartaal/jaar  
+✅ **Overzichtelijk** - Alle info op 1 plek  
+✅ **Gegroepeerd** - Per entiteit georganiseerd  
+✅ **Schaalbaar** - Werkt goed met 1 of 100 entiteiten  
+
 ## Database Migratie
 
 **Stap 1: Push schema naar database**

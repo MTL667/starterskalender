@@ -93,93 +93,128 @@ export async function GET(req: Request) {
     let emailsSent = 0
     const errors: string[] = []
 
-    // Groepeer per entiteit
-    const startersByEntity = starters.reduce((acc, starter) => {
-      const entityId = starter.entityId!
-      if (!acc[entityId]) {
-        acc[entityId] = {
-          entityName: starter.entity!.name,
-          starters: [],
-        }
-      }
-      acc[entityId].starters.push(starter)
-      return acc
-    }, {} as Record<string, { entityName: string; starters: typeof starters }>)
-
-    // Voor elke entiteit, verstuur summary
-    for (const [entityId, data] of Object.entries(startersByEntity)) {
-      // Haal users op met quarterlySummary enabled
-      const usersWithAccess = await prisma.user.findMany({
-        where: {
-          OR: [
-            { role: 'HR_ADMIN' },
-            {
-              memberships: {
-                some: { entityId },
-              },
-            },
-          ],
-        },
-        include: {
-          notificationPreferences: {
-            where: {
-              entityId,
-              quarterlySummary: true,
-            },
+    // Haal alle users op die quarterlySummary enabled hebben
+    const allUsers = await prisma.user.findMany({
+      include: {
+        notificationPreferences: {
+          where: {
+            quarterlySummary: true,
+          },
+          include: {
+            entity: true,
           },
         },
-      })
+        memberships: {
+          include: {
+            entity: true,
+          },
+        },
+      },
+    })
 
-      const eligibleUsers = usersWithAccess.filter(
-        user =>
-          user.role === 'HR_ADMIN' ||
-          user.notificationPreferences.length > 0
+    // Voor elke user, verzamel starters van hun toegankelijke entiteiten
+    for (const user of allUsers) {
+      // Bepaal welke entiteiten deze user mag zien
+      let accessibleEntityIds: string[]
+      
+      if (user.role === 'HR_ADMIN') {
+        accessibleEntityIds = user.notificationPreferences.map(p => p.entityId)
+      } else {
+        const preferencesMap = new Set(user.notificationPreferences.map(p => p.entityId))
+        accessibleEntityIds = user.memberships
+          .filter(m => preferencesMap.has(m.entityId))
+          .map(m => m.entityId)
+      }
+
+      if (accessibleEntityIds.length === 0) {
+        continue
+      }
+
+      // Filter starters voor deze user's toegankelijke entiteiten
+      const userStarters = starters.filter(s => 
+        s.entityId && accessibleEntityIds.includes(s.entityId)
       )
 
-      // Verstuur email naar elke eligible user
-      for (const user of eligibleUsers) {
-        try {
-          const variables = getQuarterlySummaryVariables(
-            user.name || user.email,
-            user.email,
-            data.entityName,
+      if (userStarters.length === 0) {
+        continue // Geen starters voor deze user
+      }
+
+      try {
+        // Groepeer starters per entiteit voor overzicht
+        const startersByEntity = userStarters.reduce((acc, starter) => {
+          const entityName = starter.entity!.name
+          if (!acc[entityName]) {
+            acc[entityName] = []
+          }
+          acc[entityName].push(starter)
+          return acc
+        }, {} as Record<string, typeof userStarters>)
+
+        // Genereer HTML lijst
+        const startersListHtml = Object.entries(startersByEntity)
+          .map(([entityName, starters]) => {
+            const starterItems = starters.map(s => {
+              const flag = s.language === 'FR' ? '🇫🇷' : '🇳🇱'
+              const roleHtml = s.roleTitle ? '<span style="color: #6b7280;">' + s.roleTitle + '</span><br/>' : ''
+              const dateStr = new Date(s.startDate).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })
+              return '<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;"><strong>' + s.name + '</strong> ' + flag + '<br/>' + roleHtml + '<span style="color: #6b7280; font-size: 14px;">Start: ' + dateStr + '</span></li>'
+            }).join('')
+            return '<div style="margin-bottom: 20px;"><h3 style="color: #1f2937; margin-bottom: 10px;">' + entityName + ' (' + starters.length + ')</h3><ul style="list-style-type: none; padding: 0;">' + starterItems + '</ul></div>'
+          }).join('')
+
+        const entityNames = Object.keys(startersByEntity).join(', ')
+
+        const subject = `📈 Kwartaaloverzicht Q${quarter} ${year} - ${userStarters.length} starters`
+        const html = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1f2937;">📈 Kwartaaloverzicht Q${quarter} ${year}</h2>
+            
+            <p style="color: #4b5563; line-height: 1.6;">
+              Hallo ${user.name || user.email},
+            </p>
+            
+            <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
+              <h3 style="margin: 0; color: #15803d; font-size: 36px;">${userStarters.length}</h3>
+              <p style="margin: 5px 0 0 0; color: #15803d;">Nieuwe starters dit kwartaal</p>
+            </div>
+            
+            ${startersListHtml}
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+            
+            <p style="color: #9ca3af; font-size: 12px;">
+              Kwartaaloverzicht voor ${entityNames}.
+              <br/>
+              Wijzig je voorkeuren in je profielinstellingen.
+            </p>
+          </div>
+        `
+
+        await sendEmail({
+          to: user.email,
+          subject,
+          html,
+        })
+
+        emailsSent++
+
+        // Log audit
+        await logAudit({
+          action: 'SEND_MAIL',
+          actorId: 'SYSTEM',
+          target: 'QUARTERLY_SUMMARY_DIGEST',
+          meta: {
+            type: 'QUARTERLY_SUMMARY',
+            recipient: user.email,
             quarter,
             year,
-            data.starters.map(s => ({
-              ...s,
-              startDate: s.startDate,
-            }))
-          )
-
-          const subject = renderEmailTemplate(template.subject, variables)
-          const html = renderEmailTemplate(template.body, variables)
-
-          await sendEmail({
-            to: user.email,
-            subject,
-            html,
-          })
-
-          emailsSent++
-
-          // Log audit
-          await logAudit({
-            action: 'SEND_MAIL',
-            actorId: 'SYSTEM',
-            target: `Entity:${entityId}`,
-            meta: {
-              type: 'QUARTERLY_SUMMARY',
-              recipient: user.email,
-              entityName: data.entityName,
-              quarter,
-              year,
-              startersCount: data.starters.length,
-            },
-          })
-        } catch (error) {
-          console.error(`Failed to send email to ${user.email}:`, error)
-          errors.push(`${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`)
-        }
+            startersCount: userStarters.length,
+            entities: entityNames.split(', '),
+          },
+        })
+      } catch (error) {
+        console.error(`Failed to send email to ${user.email}:`, error)
+        errors.push(`${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
 
@@ -189,7 +224,6 @@ export async function GET(req: Request) {
       quarter,
       year,
       totalStarters: starters.length,
-      entities: Object.keys(startersByEntity).length,
       errors: errors.length > 0 ? errors : undefined,
     })
   } catch (error) {
