@@ -51,14 +51,27 @@ export async function GET() {
       )
     }
 
+    // Voor HR_ADMIN: haal alle entiteiten op
+    // Voor andere users: alleen memberships
+    let accessibleEntities: string[]
+    
+    if (user.role === 'HR_ADMIN') {
+      const allEntities = await prisma.entity.findMany({
+        where: { isActive: true },
+        select: { id: true },
+      })
+      accessibleEntities = allEntities.map(e => e.id)
+    } else {
+      accessibleEntities = user.memberships.map(m => m.entityId)
+    }
+
     // Maak default preferences aan voor entiteiten zonder preferences
     const entitiesWithPreferences = new Set(
       user.notificationPreferences.map(p => p.entityId)
     )
 
-    const entitiesToCreate = user.memberships
-      .filter(m => !entitiesWithPreferences.has(m.entityId))
-      .map(m => m.entityId)
+    const entitiesToCreate = accessibleEntities
+      .filter(entityId => !entitiesWithPreferences.has(entityId))
 
     if (entitiesToCreate.length > 0) {
       await Promise.all(
