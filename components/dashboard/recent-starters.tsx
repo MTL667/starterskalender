@@ -24,7 +24,16 @@ export function RecentStarters({ year }: { year: number }) {
   const [starters, setStarters] = useState<Starter[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Check if starter is within 7 days from now
+  // Check if starter starts today
+  const isToday = (startDate: string): boolean => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const start = new Date(startDate)
+    start.setHours(0, 0, 0, 0)
+    return start.getTime() === today.getTime()
+  }
+
+  // Check if starter is within 7 days from now (but not today)
   const isWithin7Days = (startDate: string): boolean => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -32,7 +41,7 @@ export function RecentStarters({ year }: { year: number }) {
     start.setHours(0, 0, 0, 0)
     const diffInMs = start.getTime() - today.getTime()
     const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24))
-    return diffInDays >= 0 && diffInDays <= 7
+    return diffInDays >= 1 && diffInDays <= 7
   }
 
   useEffect(() => {
@@ -92,14 +101,19 @@ export function RecentStarters({ year }: { year: number }) {
         ) : (
           <div className="space-y-4">
             {starters.map(starter => {
+              const startingToday = isToday(starter.startDate)
               const within7Days = isWithin7Days(starter.startDate)
+              const isHighlighted = startingToday || within7Days
+              
               return (
                 <div
                   key={starter.id}
                   className={`flex items-center justify-between border-b pb-3 last:border-0 transition-colors ${
-                    within7Days 
-                      ? 'bg-amber-50 dark:bg-amber-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-amber-500 shadow-sm' 
-                      : ''
+                    startingToday
+                      ? 'bg-green-50 dark:bg-green-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-green-500 shadow-sm'
+                      : within7Days 
+                        ? 'bg-amber-50 dark:bg-amber-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-amber-500 shadow-sm' 
+                        : ''
                   }`}
                 >
                   <div className="flex-1">
@@ -110,7 +124,12 @@ export function RecentStarters({ year }: { year: number }) {
                           {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}
                         </span>
                       )}
-                      {within7Days && (
+                      {startingToday && (
+                        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700">
+                          ✨ Start vandaag
+                        </Badge>
+                      )}
+                      {within7Days && !startingToday && (
                         <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-200 dark:border-amber-700">
                           🔔 Start binnenkort
                         </Badge>
@@ -133,7 +152,13 @@ export function RecentStarters({ year }: { year: number }) {
                         {starter.entity.name}
                       </Badge>
                     )}
-                    <div className={`text-sm ${within7Days ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                    <div className={`text-sm ${
+                      startingToday 
+                        ? 'font-semibold text-green-700 dark:text-green-400' 
+                        : within7Days 
+                          ? 'font-semibold text-amber-700 dark:text-amber-400' 
+                          : 'text-muted-foreground'
+                    }`}>
                       {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: nl })}
                     </div>
                   </div>
