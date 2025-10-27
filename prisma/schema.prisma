@@ -16,23 +16,31 @@ enum Role {
   NONE
 }
 
+enum NotificationType {
+  WEEKLY_REMINDER    // 1 week voor opstart
+  MONTHLY_SUMMARY    // Maandelijkse samenvatting
+  QUARTERLY_SUMMARY  // Kwartaal samenvatting
+  YEARLY_SUMMARY     // Jaarlijks overzicht
+}
+
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  password     String?      // Optional: legacy auth only
-  name         String?
-  role         Role         @default(NONE) // New users start as NONE (guest)
+  id                      String                   @id @default(cuid())
+  email                   String                   @unique
+  password                String?                  // Optional: legacy auth only
+  name                    String?
+  role                    Role                     @default(NONE) // New users start as NONE (guest)
   
   // Azure AD / Entra ID fields
-  tenantId     String?      // Azure AD tenant ID (tid claim)
-  oid          String?      // Azure AD object ID (oid claim)
+  tenantId                String?                  // Azure AD tenant ID (tid claim)
+  oid                     String?                  // Azure AD object ID (oid claim)
   
-  memberships  Membership[]
-  twoFASecret  String?      // TOTP secret voor 2FA
-  twoFAEnabled Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  lastLoginAt  DateTime?    // Tijdstip van laatste succesvolle login
+  memberships             Membership[]
+  notificationPreferences NotificationPreference[]
+  twoFASecret             String?                  // TOTP secret voor 2FA
+  twoFAEnabled            Boolean                  @default(false)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  lastLoginAt             DateTime?                // Tijdstip van laatste succesvolle login
 
   @@index([email])
   @@index([tenantId])
@@ -40,17 +48,18 @@ model User {
 }
 
 model Entity {
-  id             String          @id @default(cuid())
-  name           String          @unique
-  colorHex       String          // Kleur voor badges/kaartjes
-  isActive       Boolean         @default(true)
-  notifyEmails   String[]        // Array van e-mailadressen voor reminders
-  memberships    Membership[]
-  starters       Starter[]
-  jobRoles       JobRole[]
-  blockedPeriods BlockedPeriod[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                      String                   @id @default(cuid())
+  name                    String                   @unique
+  colorHex                String                   // Kleur voor badges/kaartjes
+  isActive                Boolean                  @default(true)
+  notifyEmails            String[]                 // Array van e-mailadressen voor reminders (legacy)
+  memberships             Membership[]
+  starters                Starter[]
+  jobRoles                JobRole[]
+  blockedPeriods          BlockedPeriod[]
+  notificationPreferences NotificationPreference[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   @@index([isActive])
 }
@@ -218,6 +227,48 @@ model StarterMaterial {
   @@index([starterId])
   @@index([materialId])
   @@index([isProvided])
+}
+
+// Notificatie voorkeuren per gebruiker per entiteit
+model NotificationPreference {
+  id               String           @id @default(cuid())
+  userId           String
+  entityId         String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity           Entity           @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  
+  // Notificatie toggles per type
+  weeklyReminder   Boolean          @default(true)  // 1 week voor opstart
+  monthlySummary   Boolean          @default(true)  // Maandelijkse samenvatting
+  quarterlySummary Boolean          @default(true)  // Kwartaal samenvatting
+  yearlySummary    Boolean          @default(true)  // Jaarlijks overzicht
+  
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([userId, entityId])
+  @@index([userId])
+  @@index([entityId])
+}
+
+// Email templates voor notificaties
+model EmailTemplate {
+  id          String           @id @default(cuid())
+  type        NotificationType @unique // WEEKLY_REMINDER, MONTHLY_SUMMARY, etc.
+  subject     String           // Email onderwerp (met variabelen)
+  body        String           @db.Text // Email body HTML (met variabelen)
+  isActive    Boolean          @default(true)
+  
+  // Beschrijving van beschikbare variabelen
+  description String?          @db.Text
+  
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  createdBy   String?          // User ID die template aanmaakte
+  updatedBy   String?          // User ID die template laatst wijzigde
+
+  @@index([type])
+  @@index([isActive])
 }
 
 model AuditLog {
