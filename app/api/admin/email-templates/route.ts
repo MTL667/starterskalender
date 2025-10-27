@@ -41,7 +41,7 @@ const CreateTemplateSchema = z.object({
 export async function POST(req: Request) {
   const authResult = await requireAdmin()
   if (authResult instanceof NextResponse) return authResult
-  const { user } = authResult
+  const user = authResult
 
   try {
     const body = await req.json()

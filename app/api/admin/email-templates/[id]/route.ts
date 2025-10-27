@@ -47,7 +47,7 @@ export async function PATCH(
 ) {
   const authResult = await requireAdmin()
   if (authResult instanceof NextResponse) return authResult
-  const { user } = authResult
+  const user = authResult
 
   try {
     const template = await prisma.emailTemplate.findUnique({

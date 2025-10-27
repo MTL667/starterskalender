@@ -38,3 +38,6 @@ export async function createAuditLog(input: AuditLogInput): Promise<void> {
   }
 }
 
+// Alias for convenience
+export const logAudit = createAuditLog
+
