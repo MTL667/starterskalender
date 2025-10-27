@@ -89,9 +89,9 @@ export async function GET(req: Request) {
     }, {} as Record<string, { entityName: string; starters: typeof starters }>)
 
     // Genereer optionele stats HTML per entiteit
-    const generateStatsHtml = (starters: typeof starters) => {
+    const generateStatsHtml = (starterList: typeof starters) => {
       // Groepeer per maand
-      const byMonth = starters.reduce((acc, s) => {
+      const byMonth = starterList.reduce((acc, s) => {
         const month = new Date(s.startDate).getMonth()
         acc[month] = (acc[month] || 0) + 1
         return acc
