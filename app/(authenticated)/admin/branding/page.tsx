@@ -11,6 +11,7 @@ export default function BrandingPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadLogo()
@@ -19,10 +20,25 @@ export default function BrandingPage() {
   async function loadLogo() {
     try {
       const response = await fetch('/api/system/settings')
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `API error: ${response.status}`)
+      }
+      
       const settings = await response.json()
+      console.log('Loaded settings:', settings)
+      
+      // Check if settings has an error property (from API)
+      if (settings.error) {
+        throw new Error(settings.error)
+      }
+      
       setLogoUrl(settings.logo_url || null)
+      setError(null)
     } catch (error) {
       console.error('Error loading logo:', error)
+      setError(error instanceof Error ? error.message : 'Fout bij laden van logo')
     } finally {
       setLoading(false)
     }
@@ -48,11 +64,15 @@ export default function BrandingPage() {
       }
 
       const data = await response.json()
+      console.log('Upload response:', data)
       setLogoUrl(data.logoUrl)
+      setError(null)
       alert('Logo succesvol geüpload!')
     } catch (error) {
       console.error('Error uploading logo:', error)
-      alert(error instanceof Error ? error.message : 'Fout bij uploaden')
+      const errorMsg = error instanceof Error ? error.message : 'Fout bij uploaden'
+      setError(errorMsg)
+      alert(errorMsg)
     } finally {
       setUploading(false)
       // Reset input
@@ -96,6 +116,32 @@ export default function BrandingPage() {
           Pas het logo en de uitstraling van de applicatie aan
         </p>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <Card className="border-destructive bg-destructive/10">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-3">
+              <div className="text-destructive">⚠️</div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-destructive mb-1">Database Error</h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {error}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <strong>Oplossing:</strong> Run het volgende commando in de Easypanel terminal:
+                </p>
+                <pre className="mt-2 p-3 bg-black/10 rounded text-sm font-mono">
+                  npx prisma db push
+                </pre>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Dit maakt de SystemSettings tabel aan in de database.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

@@ -20,12 +20,23 @@ export function Navbar() {
   useEffect(() => {
     // Load logo from system settings
     fetch('/api/system/settings')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`)
+        }
+        return res.json()
+      })
       .then(settings => {
-        setLogoUrl(settings.logo_url || null)
+        // Only set logo if no error and logo_url exists
+        if (!settings.error && settings.logo_url) {
+          setLogoUrl(settings.logo_url)
+        } else {
+          setLogoUrl(null)
+        }
       })
       .catch(error => {
-        console.error('Error loading logo:', error)
+        console.error('Error loading logo (will use text fallback):', error)
+        setLogoUrl(null)
       })
       .finally(() => {
         setLogoLoading(false)

@@ -20,8 +20,18 @@ export async function GET() {
     return NextResponse.json(settingsObject)
   } catch (error) {
     console.error('Error fetching system settings:', error)
+    
+    // Check if it's a Prisma error (table doesn't exist)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const isPrismaError = errorMessage.includes('relation') || errorMessage.includes('does not exist')
+    
     return NextResponse.json(
-      { error: 'Failed to fetch system settings' },
+      { 
+        error: isPrismaError 
+          ? 'SystemSettings table does not exist. Run: npx prisma db push'
+          : 'Failed to fetch system settings',
+        details: errorMessage
+      },
       { status: 500 }
     )
   }
