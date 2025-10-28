@@ -11,13 +11,7 @@ export default async function AdminPage() {
     redirect('/dashboard')
   }
 
-  const adminSections = [
-    {
-      title: 'Branding',
-      description: 'Pas het logo en de uitstraling aan',
-      icon: Palette,
-      href: '/admin/branding',
-    },
+  const organisationSections = [
     {
       title: 'Entiteiten',
       description: 'Beheer entiteiten, kleuren en e-mailnotificaties',
@@ -31,10 +25,10 @@ export default async function AdminPage() {
       href: '/admin/job-roles',
     },
     {
-      title: 'Periode Blokkades',
-      description: 'Blokkeer periodes voor entiteiten en functies',
-      icon: Ban,
-      href: '/admin/blocked-periods',
+      title: 'Gebruikers',
+      description: 'Beheer gebruikers, rollen en toegangsrechten',
+      icon: Users,
+      href: '/admin/users',
     },
     {
       title: 'Materialen',
@@ -43,10 +37,19 @@ export default async function AdminPage() {
       href: '/admin/materials',
     },
     {
-      title: 'Email Templates',
-      description: 'Beheer email templates voor notificaties',
-      icon: MailOpen,
-      href: '/admin/email-templates',
+      title: 'Periode Blokkades',
+      description: 'Blokkeer periodes voor entiteiten en functies',
+      icon: Ban,
+      href: '/admin/blocked-periods',
+    },
+  ]
+
+  const systemSections = [
+    {
+      title: 'Audit Log',
+      description: 'Bekijk de audit trail van alle acties',
+      icon: FileText,
+      href: '/admin/audit-log',
     },
     {
       title: 'Azure AD Tenants',
@@ -55,10 +58,10 @@ export default async function AdminPage() {
       href: '/admin/allowed-tenants',
     },
     {
-      title: 'Gebruikers',
-      description: 'Beheer gebruikers, rollen en toegangsrechten',
-      icon: Users,
-      href: '/admin/users',
+      title: 'Branding',
+      description: 'Pas het logo en de uitstraling aan',
+      icon: Palette,
+      href: '/admin/branding',
     },
     {
       title: 'Dropdowns',
@@ -73,10 +76,10 @@ export default async function AdminPage() {
       href: '/admin/mail-test',
     },
     {
-      title: 'Audit Log',
-      description: 'Bekijk de audit trail van alle acties',
-      icon: FileText,
-      href: '/admin/audit-log',
+      title: 'E-mailtemplates',
+      description: 'Beheer email templates voor notificaties',
+      icon: MailOpen,
+      href: '/admin/email-templates',
     },
   ]
 
@@ -89,25 +92,60 @@ export default async function AdminPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {adminSections.map((section) => {
-          const Icon = section.icon
-          return (
-            <Link key={section.href} href={section.href}>
-              <Card className="cursor-pointer hover:border-primary transition-colors h-full">
-                <CardHeader>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Icon className="h-5 w-5 text-primary" />
+      {/* Organisatie Section */}
+      <div className="mb-10">
+        <div className="flex items-center gap-2 mb-4">
+          <Building2 className="h-6 w-6 text-primary" />
+          <h2 className="text-2xl font-semibold">Organisatie</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {organisationSections.map((section) => {
+            const Icon = section.icon
+            return (
+              <Link key={section.href} href={section.href}>
+                <Card className="cursor-pointer hover:border-primary transition-colors h-full">
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <CardTitle className="text-lg">{section.title}</CardTitle>
                     </div>
-                    <CardTitle className="text-lg">{section.title}</CardTitle>
-                  </div>
-                  <CardDescription>{section.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-          )
-        })}
+                    <CardDescription>{section.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* System Section */}
+      <div>
+        <div className="flex items-center gap-2 mb-4">
+          <Settings className="h-6 w-6 text-primary" />
+          <h2 className="text-2xl font-semibold">Systeembeheer</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {systemSections.map((section) => {
+            const Icon = section.icon
+            return (
+              <Link key={section.href} href={section.href}>
+                <Card className="cursor-pointer hover:border-primary transition-colors h-full">
+                  <CardHeader>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <CardTitle className="text-lg">{section.title}</CardTitle>
+                    </div>
+                    <CardDescription>{section.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
