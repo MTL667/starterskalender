@@ -7,19 +7,47 @@ import { Button } from '@/components/ui/button'
 import { Calendar, LayoutDashboard, Users, Settings, LogOut, User } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
+import { useState, useEffect } from 'react'
 
 export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [logoLoading, setLogoLoading] = useState(true)
 
   const isActive = (path: string) => pathname === path
+
+  useEffect(() => {
+    // Load logo from system settings
+    fetch('/api/system/settings')
+      .then(res => res.json())
+      .then(settings => {
+        setLogoUrl(settings.logo_url || null)
+      })
+      .catch(error => {
+        console.error('Error loading logo:', error)
+      })
+      .finally(() => {
+        setLogoLoading(false)
+      })
+  }, [])
 
   return (
     <nav className="border-b bg-background">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
         <div className="flex items-center space-x-6">
-          <Link href="/dashboard" className="font-bold text-xl">
-            Starterskalender
+          <Link href="/dashboard" className="flex items-center">
+            {logoLoading ? (
+              <span className="font-bold text-xl">Starterskalender</span>
+            ) : logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt="Logo" 
+                className="h-10 object-contain"
+              />
+            ) : (
+              <span className="font-bold text-xl">Starterskalender</span>
+            )}
           </Link>
 
           <div className="hidden md:flex space-x-1">
