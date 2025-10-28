@@ -174,9 +174,11 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
  * Stuurt een test e-mail
  */
 export async function sendTestEmail(to: string): Promise<void> {
+  const fromEmail = process.env.SENDGRID_FROM_EMAIL || process.env.MAIL_FROM || 'noreply@example.com'
+  
   const msg = {
     to,
-    from: process.env.MAIL_FROM || 'noreply@example.com',
+    from: fromEmail,
     replyTo: process.env.MAIL_REPLY_TO,
     subject: 'Starterskalender - Test E-mail',
     html: `
@@ -188,13 +190,17 @@ export async function sendTestEmail(to: string): Promise<void> {
 </head>
 <body style="font-family: sans-serif; padding: 40px; background: #f9fafb;">
   <div style="max-width: 600px; margin: 0 auto; background: white; padding: 32px; border-radius: 8px;">
-    <h1 style="color: #1f2937; margin: 0 0 16px;">Test E-mail</h1>
+    <h1 style="color: #1f2937; margin: 0 0 16px;">✅ Test E-mail</h1>
     <p style="color: #6b7280; margin: 0;">
       Dit is een test e-mail vanuit de Starterskalender applicatie.
-      Als je deze e-mail ontvangt, is de SendGrid integratie correct geconfigureerd.
+      Als je deze e-mail ontvangt, is de SendGrid integratie correct geconfigureerd!
     </p>
-    <p style="color: #9ca3af; margin-top: 24px; font-size: 14px;">
-      Verzonden op ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: nl })}
+    <div style="background: #f3f4f6; padding: 16px; margin-top: 24px; border-radius: 4px;">
+      <p style="margin: 0; font-size: 14px; color: #6b7280;"><strong>Van:</strong> ${fromEmail}</p>
+      <p style="margin: 8px 0 0 0; font-size: 14px; color: #6b7280;"><strong>Verzonden op:</strong> ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: nl })}</p>
+    </div>
+    <p style="color: #9ca3af; margin-top: 24px; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 16px;">
+      Deze email is automatisch verzonden vanuit Starterskalender als test van de email functionaliteit.
     </p>
   </div>
 </body>
@@ -202,21 +208,61 @@ export async function sendTestEmail(to: string): Promise<void> {
     `,
   }
 
+  console.log('[SendGrid] Sending test email...')
+  console.log('[SendGrid] From:', msg.from)
+  console.log('[SendGrid] To:', msg.to)
+  console.log('[SendGrid] API Key present:', !!process.env.SENDGRID_API_KEY)
+
   try {
-    await sgMail.send(msg)
+    const response = await sgMail.send(msg)
+    console.log('[SendGrid] ✅ Email sent successfully!')
+    console.log('[SendGrid] Response status:', response[0]?.statusCode)
+    
     await createAuditLog({
       action: 'EMAIL_SENT',
       target: 'TEST_EMAIL',
-      meta: { recipient: to },
+      meta: { recipient: to, from: fromEmail },
     })
   } catch (error: any) {
-    console.error('Failed to send test email:', error)
+    console.error('[SendGrid] ❌ Failed to send test email')
+    console.error('[SendGrid] Error code:', error.code)
+    console.error('[SendGrid] Error message:', error.message)
+    
+    if (error.response) {
+      console.error('[SendGrid] Response status:', error.response?.statusCode)
+      console.error('[SendGrid] Response body:', JSON.stringify(error.response.body, null, 2))
+    }
+    
     await createAuditLog({
       action: 'EMAIL_FAILED',
       target: 'TEST_EMAIL',
-      meta: { error: error.message, recipient: to },
+      meta: { 
+        error: error.message, 
+        recipient: to,
+        from: fromEmail,
+        code: error.code,
+        statusCode: error.response?.statusCode
+      },
     })
-    throw error
+    
+    // Create more user-friendly error message
+    let userMessage = 'Failed to send email'
+    
+    if (error.code === 403) {
+      userMessage = 'SendGrid API key is invalid or lacks send permissions'
+    } else if (error.code === 401) {
+      userMessage = 'SendGrid authentication failed - check your API key'
+    } else if (error.response?.body?.errors) {
+      const errors = error.response.body.errors
+      userMessage = errors.map((e: any) => e.message || e.field).join(', ')
+    } else if (error.message) {
+      userMessage = error.message
+    }
+    
+    const enhancedError = new Error(userMessage)
+    ;(enhancedError as any).originalError = error
+    ;(enhancedError as any).code = error.code
+    throw enhancedError
   }
 }
 
