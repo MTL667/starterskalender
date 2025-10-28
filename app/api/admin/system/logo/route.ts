@@ -54,8 +54,8 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(bytes)
     await writeFile(filepath, buffer)
 
-    // Save logo URL to database
-    const logoUrl = `/uploads/${filename}`
+    // Save logo URL to database (use API route for serving)
+    const logoUrl = `/api/uploads/${filename}`
     await prisma.systemSettings.upsert({
       where: { key: 'logo_url' },
       update: {
