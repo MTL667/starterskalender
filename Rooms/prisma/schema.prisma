@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  EXTERNAL
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum IdentityProvider {
+  MICROSOFT
+  MANUAL
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+model AllowedTenant {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenantId  String   @unique // Azure AD Tenant ID (GUID)
+  name      String?
+  active    Boolean  @default(true)
+}
+
+model User {
+  id               String           @id @default(cuid())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  email            String           @unique
+  name             String?
+  role             Role             @default(EXTERNAL)
+  identityProvider IdentityProvider @default(MANUAL)
+  msTenantId       String?          // Azure AD Tenant ID
+  msOid            String?          // Object ID / Subject claim
+  twoFactorEnabled Boolean          @default(false)
+  totpSecret       String?          // Encrypted TOTP secret
+  recoveryCodes    String?          // Hashed JSON array
+  status           UserStatus       @default(INVITED)
+  bookings         Booking[]
+}
+
+model Room {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  name            String
+  capacity        Int
+  location        String?
+  msResourceEmail String?  // Resource mailbox email
+  hourlyRateCents Int      @default(0) // For external rentals
+  active          Boolean  @default(true)
+  bookings        Booking[]
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  roomId        String
+  room          Room     @relation(fields: [roomId], references: [id])
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
+  externalEmail String?
+  title         String
+  description   String?
+  start         DateTime
+  end           DateTime
+  status        BookingStatus @default(PENDING)
+  msEventId     String?  // Graph event id in resource mailbox
+  msICalUid     String?  // For idempotency
+}

@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: rooms
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"
+
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://app:app@db:5432/rooms
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: devsecret
+      EMAIL_SERVER: smtp://mailhog:1025
+      EMAIL_FROM: bookings@example.local
+      AZURE_TENANT_ID: placeholder
+      AZURE_CLIENT_ID: placeholder
+      AZURE_CLIENT_SECRET: placeholder
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    command: ["npm", "run", "dev"]
+
+volumes:
+  pgdata:
+
