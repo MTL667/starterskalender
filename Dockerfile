@@ -38,17 +38,18 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Kopieer public assets
+# Kopieer Next.js build output (standalone already includes public folder)
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# In standalone mode, public files need to be in the root
+# Copy public assets to root (where standalone expects them)
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Maak uploads folder aan met correcte permissions
+# Maak uploads folder aan met correcte permissions  
 RUN mkdir -p /app/public/uploads && \
     chown -R nextjs:nodejs /app/public/uploads && \
     chmod 755 /app/public/uploads
-
-# Kopieer Next.js build output
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Kopieer Prisma schema en generated client
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
