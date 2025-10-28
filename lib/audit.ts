@@ -11,6 +11,12 @@ export type AuditAction =
   | 'LOGIN'
   | 'LOGOUT'
   | 'INVITE_SENT'
+  | 'BOOKING_CREATED'
+  | 'BOOKING_UPDATED'
+  | 'BOOKING_CANCELLED'
+  | 'ROOM_CREATED'
+  | 'ROOM_UPDATED'
+  | 'ROOM_DELETED'
 
 export interface AuditLogInput {
   actorId?: string

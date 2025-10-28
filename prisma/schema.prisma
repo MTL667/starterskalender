@@ -23,12 +23,31 @@ enum NotificationType {
   YEARLY_SUMMARY     // Jaarlijks overzicht
 }
 
+enum IdentityProvider {
+  MICROSOFT
+  MANUAL
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
 model User {
   id                      String                   @id @default(cuid())
   email                   String                   @unique
   password                String?                  // Optional: legacy auth only
   name                    String?
   role                    Role                     @default(NONE) // New users start as NONE (guest)
+  identityProvider        IdentityProvider         @default(MANUAL)
+  status                  UserStatus               @default(INVITED)
   
   // Azure AD / Entra ID fields
   tenantId                String?                  // Azure AD tenant ID (tid claim)
@@ -38,6 +57,7 @@ model User {
   notificationPreferences NotificationPreference[]
   twoFASecret             String?                  // TOTP secret voor 2FA
   twoFAEnabled            Boolean                  @default(false)
+  bookings                Booking[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   lastLoginAt             DateTime?                // Tijdstip van laatste succesvolle login
@@ -45,6 +65,8 @@ model User {
   @@index([email])
   @@index([tenantId])
   @@index([oid])
+  @@index([status])
+  @@index([identityProvider])
 }
 
 model Entity {
@@ -295,5 +317,47 @@ model SystemSettings {
   updatedBy String?  // User ID die instelling laatst wijzigde
 
   @@index([key])
+}
+
+// Room booking models
+model Room {
+  id               String       @id @default(cuid())
+  name             String
+  capacity         Int
+  location         String?
+  msResourceEmail  String?       // Microsoft resource mailbox email (bijv. room-1@domain)
+  hourlyRateCents  Int          @default(0) // Voor verhuur
+  active           Boolean      @default(true)
+  bookings         Booking[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([active])
+  @@index([msResourceEmail])
+}
+
+model Booking {
+  id           String        @id @default(cuid())
+  roomId       String
+  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  externalEmail String?
+  title        String
+  description  String?
+  start        DateTime
+  end          DateTime
+  status       BookingStatus @default(PENDING)
+  msEventId    String?       // Graph event id in resource mailbox
+  msICalUid    String?       // Voor idempotentie
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdBy    String?       // User ID die het aanmaakte
+  updatedBy    String?       // User ID die laatst wijzigde
+
+  @@index([roomId, start, end])
+  @@index([userId])
+  @@index([status])
+  @@index([msEventId])
 }
 
