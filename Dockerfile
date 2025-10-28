@@ -41,6 +41,11 @@ RUN adduser --system --uid 1001 nextjs
 # Kopieer public assets
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
+# Maak uploads folder aan met correcte permissions
+RUN mkdir -p /app/public/uploads && \
+    chown -R nextjs:nodejs /app/public/uploads && \
+    chmod 755 /app/public/uploads
+
 # Kopieer Next.js build output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
