@@ -16,3 +16,6 @@ README.md
 docker-compose*.yml
 Dockerfile*
 .dockerignore
+
+# Exclude other apps
+Rooms/
