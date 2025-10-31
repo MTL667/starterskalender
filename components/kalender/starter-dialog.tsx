@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { Trash2, XCircle } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
+import { useSession } from 'next-auth/react'
 
 interface Starter {
   id: string
@@ -65,6 +66,7 @@ interface StarterDialogProps {
 }
 
 export function StarterDialog({ open, onClose, starter, entities, canEdit }: StarterDialogProps) {
+  const { data: session } = useSession()
   const isEdit = !!starter
   const [loading, setLoading] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
@@ -87,6 +89,34 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     phoneNumber: '',
     desiredEmail: '',
   })
+
+  // Check if user can edit extra info (notes)
+  // Everyone except NONE can edit notes for entities they have access to
+  const canEditExtraInfo = (() => {
+    if (!session?.user) return false
+    if (session.user.role === 'NONE') return false
+    
+    // HR_ADMIN can edit everything
+    if (session.user.role === 'HR_ADMIN') return true
+    
+    // For other roles, check if they have access to this entity
+    if (starter?.entity?.id) {
+      const hasAccess = session.user.memberships?.some(
+        m => m.entityId === starter.entity?.id
+      )
+      return hasAccess || false
+    }
+    
+    // For new starters, check if they have access to selected entity
+    if (formData.entityId && !isEdit) {
+      const hasAccess = session.user.memberships?.some(
+        m => m.entityId === formData.entityId
+      )
+      return hasAccess || false
+    }
+    
+    return false
+  })()
 
   // Laad job roles voor de gekozen entiteit
   useEffect(() => {
@@ -149,6 +179,31 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       })
     }
   }, [starter, open])
+
+  const handleSaveExtraInfo = async () => {
+    if (!isEdit || !starter) return
+    
+    setLoading(true)
+
+    try {
+      const res = await fetch(`/api/starters/${starter.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notes: formData.notes || null }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to save extra info')
+      }
+
+      onClose(true)
+    } catch (error) {
+      console.error('Error saving extra info:', error)
+      alert('Fout bij opslaan. Probeer opnieuw.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -451,13 +506,19 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             </div>
 
             <div>
-              <Label htmlFor="notes">Extra Info</Label>
+              <Label htmlFor="notes">
+                Extra Info
+                {!canEdit && canEditExtraInfo && (
+                  <span className="text-xs text-muted-foreground ml-2">(Je kunt dit veld bewerken)</span>
+                )}
+              </Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={4}
-                disabled={!canEdit}
+                disabled={!canEditExtraInfo}
+                placeholder={canEditExtraInfo ? "Voeg extra informatie toe..." : "Geen extra informatie"}
               />
             </div>
 
@@ -665,6 +726,15 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 {canEdit && !starter?.isCancelled && (
                   <Button type="submit" disabled={loading}>
                     {loading ? 'Bezig...' : isEdit ? 'Opslaan' : 'Toevoegen'}
+                  </Button>
+                )}
+                {!canEdit && canEditExtraInfo && isEdit && !starter?.isCancelled && (
+                  <Button 
+                    type="button" 
+                    onClick={handleSaveExtraInfo} 
+                    disabled={loading}
+                  >
+                    {loading ? 'Bezig...' : 'Extra Info Opslaan'}
                   </Button>
                 )}
               </div>
