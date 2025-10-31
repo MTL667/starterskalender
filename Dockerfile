@@ -29,8 +29,8 @@ RUN npm run build
 FROM node:18-alpine3.19 AS runner
 WORKDIR /app
 
-# Installeer OpenSSL voor Prisma
-RUN apk add --no-cache openssl
+# Installeer OpenSSL voor Prisma, curl voor cron jobs, en su-exec voor user switching
+RUN apk add --no-cache openssl curl su-exec
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -55,12 +55,19 @@ RUN mkdir -p /app/public/uploads && \
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
-USER nextjs
+# Installeer cron jobs (als root)
+COPY crontab /etc/crontabs/root
+RUN chmod 0644 /etc/crontabs/root
+
+# Kopieer start script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh && chown nextjs:nodejs /app/start.sh
 
 EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Start both crond and Next.js via start script
+CMD ["/app/start.sh"]
 
