@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import { StarterDialog } from '@/components/kalender/starter-dialog'
+import { useSession } from 'next-auth/react'
 
 interface Starter {
   id: string
@@ -20,9 +22,22 @@ interface Starter {
   } | null
 }
 
+interface Entity {
+  id: string
+  name: string
+  colorHex: string
+}
+
 export function RecentStarters({ year }: { year: number }) {
+  const { data: session } = useSession()
   const [starters, setStarters] = useState<Starter[]>([])
+  const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
+
+  // Check if user can edit starters
+  const canEdit = session?.user?.role === 'HR_ADMIN' || session?.user?.role === 'ENTITY_EDITOR'
 
   // Check if starter starts today
   const isToday = (startDate: string): boolean => {
@@ -44,15 +59,55 @@ export function RecentStarters({ year }: { year: number }) {
     return diffInDays >= 1 && diffInDays <= 7
   }
 
+  const handleStarterClick = (starter: Starter) => {
+    setSelectedStarter(starter)
+    setDialogOpen(true)
+  }
+
+  const handleDialogClose = (refreshData?: boolean) => {
+    setDialogOpen(false)
+    setSelectedStarter(null)
+    
+    if (refreshData) {
+      // Refresh the starters list
+      setLoading(true)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      fetch(`/api/starters?year=${year}`)
+        .then(res => res.json())
+        .then(data => {
+          const upcoming = data
+            .filter((s: Starter) => {
+              const startDate = new Date(s.startDate)
+              return startDate >= today && !s.isCancelled
+            })
+            .sort((a: Starter, b: Starter) => 
+              new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+            )
+            .slice(0, 5)
+          setStarters(upcoming)
+          setLoading(false)
+        })
+        .catch(error => {
+          console.error('Error fetching upcoming starters:', error)
+          setLoading(false)
+        })
+    }
+  }
+
   useEffect(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0) // Start van vandaag
     
-    fetch(`/api/starters?year=${year}`)
-      .then(res => res.json())
-      .then(data => {
+    // Fetch both starters and entities
+    Promise.all([
+      fetch(`/api/starters?year=${year}`).then(res => res.json()),
+      fetch('/api/entities').then(res => res.json())
+    ])
+      .then(([startersData, entitiesData]) => {
         // Filter op aankomende starters (vanaf vandaag) en niet geannuleerd
-        const upcoming = data
+        const upcoming = startersData
           .filter((s: Starter) => {
             const startDate = new Date(s.startDate)
             return startDate >= today && !s.isCancelled
@@ -63,10 +118,11 @@ export function RecentStarters({ year }: { year: number }) {
           )
           .slice(0, 5) // Neem de eerste 5
         setStarters(upcoming)
+        setEntities(entitiesData)
         setLoading(false)
       })
       .catch(error => {
-        console.error('Error fetching upcoming starters:', error)
+        console.error('Error fetching data:', error)
         setLoading(false)
       })
   }, [year])
@@ -108,13 +164,22 @@ export function RecentStarters({ year }: { year: number }) {
               return (
                 <div
                   key={starter.id}
-                  className={`flex items-center justify-between border-b pb-3 last:border-0 transition-colors ${
+                  onClick={() => handleStarterClick(starter)}
+                  className={`flex items-center justify-between border-b pb-3 last:border-0 transition-all cursor-pointer hover:scale-[1.02] ${
                     startingToday
-                      ? 'bg-green-50 dark:bg-green-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-green-500 shadow-sm'
+                      ? 'bg-green-50 dark:bg-green-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-green-500 shadow-sm hover:shadow-md hover:bg-green-100 dark:hover:bg-green-900/30'
                       : within7Days 
-                        ? 'bg-amber-50 dark:bg-amber-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-amber-500 shadow-sm' 
-                        : ''
+                        ? 'bg-amber-50 dark:bg-amber-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-amber-500 shadow-sm hover:shadow-md hover:bg-amber-100 dark:hover:bg-amber-900/30' 
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-900/20'
                   }`}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleStarterClick(starter)
+                    }
+                  }}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -168,6 +233,17 @@ export function RecentStarters({ year }: { year: number }) {
           </div>
         )}
       </CardContent>
+
+      {/* Starter Dialog */}
+      {dialogOpen && (
+        <StarterDialog
+          open={dialogOpen}
+          onClose={handleDialogClose}
+          starter={selectedStarter}
+          canEdit={canEdit}
+          entities={entities}
+        />
+      )}
     </Card>
   )
 }
