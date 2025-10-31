@@ -7,9 +7,13 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { Search, Download, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
+import { ExportDropdown } from '@/components/ui/export-dropdown'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 type SortColumn = 'name' | 'roleTitle' | 'region' | 'startDate' | 'entity'
 type SortDirection = 'asc' | 'desc'
@@ -178,6 +182,85 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     a.click()
   }
 
+  const exportPDF = () => {
+    const doc = new jsPDF()
+    
+    // Titel
+    doc.setFontSize(18)
+    doc.text('Starters Overzicht', 14, 22)
+    doc.setFontSize(11)
+    doc.text(`Jaar: ${year}`, 14, 30)
+    
+    // Data voorbereiden
+    const tableData = filteredStarters.map(s => [
+      s.name,
+      s.language || 'NL',
+      s.roleTitle || '',
+      s.region || '',
+      s.via || '',
+      new Date(s.startDate).toLocaleDateString('nl-BE'),
+      s.weekNumber?.toString() || '',
+      s.entity?.name || '',
+    ])
+
+    // Tabel maken
+    autoTable(doc, {
+      head: [['Naam', 'Taal', 'Functie', 'Regio', 'Via', 'Startdatum', 'Week', 'Entiteit']],
+      body: tableData,
+      startY: 35,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [59, 130, 246] }, // Blauw
+      columnStyles: {
+        0: { cellWidth: 30 }, // Naam
+        1: { cellWidth: 12 }, // Taal
+        2: { cellWidth: 25 }, // Functie
+        3: { cellWidth: 20 }, // Regio
+        4: { cellWidth: 20 }, // Via
+        5: { cellWidth: 22 }, // Startdatum
+        6: { cellWidth: 12 }, // Week
+        7: { cellWidth: 25 }, // Entiteit
+      },
+    })
+
+    // Download
+    doc.save(`starters-${year}.pdf`)
+  }
+
+  const exportXLS = () => {
+    const xlsData = filteredStarters.map(s => ({
+      'Naam': s.name,
+      'Taal': s.language || 'NL',
+      'Functie': s.roleTitle || '',
+      'Regio': s.region || '',
+      'Via': s.via || '',
+      'Startdatum': new Date(s.startDate).toLocaleDateString('nl-BE'),
+      'Week': s.weekNumber || '',
+      'Entiteit': s.entity?.name || '',
+    }))
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(xlsData)
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 25 }, // Naam
+      { wch: 8 },  // Taal
+      { wch: 20 }, // Functie
+      { wch: 15 }, // Regio
+      { wch: 15 }, // Via
+      { wch: 15 }, // Startdatum
+      { wch: 10 }, // Week
+      { wch: 20 }, // Entiteit
+    ]
+
+    // Create workbook
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Starters')
+
+    // Download
+    XLSX.writeFile(wb, `starters-${year}.xlsx`)
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -211,10 +294,11 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
               </SelectContent>
             </Select>
 
-            <Button onClick={exportCSV} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
+            <ExportDropdown
+              onExportCSV={exportCSV}
+              onExportPDF={exportPDF}
+              onExportXLS={exportXLS}
+            />
 
             {canEdit && (
               <Button onClick={() => { setSelectedStarter(null); setDialogOpen(true); }}>

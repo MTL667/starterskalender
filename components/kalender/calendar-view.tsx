@@ -5,13 +5,17 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { ChevronLeft, ChevronRight, Plus, Search, Download, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Search, Calendar } from 'lucide-react'
 import { StarterCard } from './starter-card'
 import { StarterDialog } from './starter-dialog'
 import { getWeeksInYear } from '@/lib/week-utils'
 import { Badge } from '@/components/ui/badge'
+import { ExportDropdown } from '@/components/ui/export-dropdown'
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, getWeek, getMonth, getYear, addWeeks, addMonths, addYears, format } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 type ViewMode = 'week' | 'month' | 'year'
 
@@ -210,8 +214,71 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `starters-${year}.csv`
+    a.download = `starters-kalender-${year}.csv`
     a.click()
+  }
+
+  const exportPDF = async () => {
+    const doc = new jsPDF()
+    
+    // Titel
+    doc.setFontSize(18)
+    doc.text('Starterskalender', 14, 22)
+    doc.setFontSize(11)
+    doc.text(`Jaar: ${year}`, 14, 30)
+    
+    // Data voorbereiden
+    const tableData = filteredStarters.map(s => [
+      s.name,
+      s.roleTitle || '',
+      s.region || '',
+      new Date(s.startDate).toLocaleDateString('nl-BE'),
+      s.weekNumber?.toString() || '',
+      s.entity?.name || '',
+    ])
+
+    // Tabel maken
+    autoTable(doc, {
+      head: [['Naam', 'Functie', 'Regio', 'Startdatum', 'Week', 'Entiteit']],
+      body: tableData,
+      startY: 35,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [59, 130, 246] }, // Blauw
+    })
+
+    // Download
+    doc.save(`starters-kalender-${year}.pdf`)
+  }
+
+  const exportXLS = async () => {
+    const xlsData = filteredStarters.map(s => ({
+      'Naam': s.name,
+      'Functie': s.roleTitle || '',
+      'Regio': s.region || '',
+      'Startdatum': new Date(s.startDate).toLocaleDateString('nl-BE'),
+      'Week': s.weekNumber || '',
+      'Entiteit': s.entity?.name || '',
+    }))
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(xlsData)
+    
+    // Set column widths
+    ws['!cols'] = [
+      { wch: 25 }, // Naam
+      { wch: 20 }, // Functie
+      { wch: 15 }, // Regio
+      { wch: 15 }, // Startdatum
+      { wch: 10 }, // Week
+      { wch: 20 }, // Entiteit
+    ]
+
+    // Create workbook
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Starters')
+
+    // Download
+    XLSX.writeFile(wb, `starters-kalender-${year}.xlsx`)
   }
 
   return (
@@ -293,10 +360,11 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                 Nieuw
               </Button>
             )}
-            <Button variant="outline" onClick={exportCSV}>
-              <Download className="h-4 w-4 mr-2" />
-              CSV
-            </Button>
+            <ExportDropdown
+              onExportCSV={exportCSV}
+              onExportPDF={exportPDF}
+              onExportXLS={exportXLS}
+            />
           </div>
         </div>
       </Card>

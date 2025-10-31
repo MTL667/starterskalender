@@ -315,12 +315,12 @@ export const authOptions: NextAuthOptions = {
 
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as any
-        session.user.tenantId = token.tenantId as string | undefined
-        session.user.oid = token.oid as string | undefined
-        session.user.memberships = (token.memberships as any) || []
-        session.user.twoFAEnabled = false
+        (session.user as any).id = token.id as string
+        ;(session.user as any).role = token.role as any
+        ;(session.user as any).tenantId = token.tenantId as string | undefined
+        ;(session.user as any).oid = token.oid as string | undefined
+        ;(session.user as any).memberships = (token.memberships as any) || []
+        ;(session.user as any).twoFAEnabled = false
       }
       return session
     },
