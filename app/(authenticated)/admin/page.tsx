@@ -2,7 +2,7 @@ import { requireAdmin } from '@/lib/auth-utils'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette } from 'lucide-react'
+import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock } from 'lucide-react'
 
 export default async function AdminPage() {
   const user = await requireAdmin().catch(() => null)
@@ -62,6 +62,12 @@ export default async function AdminPage() {
       description: 'Pas het logo en de uitstraling aan',
       icon: Palette,
       href: '/admin/branding',
+    },
+    {
+      title: 'Cron Jobs',
+      description: 'Handmatig email notificaties versturen',
+      icon: Clock,
+      href: '/admin/cron-jobs',
     },
     {
       title: 'Dropdowns',
