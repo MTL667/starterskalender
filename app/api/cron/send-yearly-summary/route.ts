@@ -7,6 +7,7 @@ import {
   DEFAULT_TEMPLATES,
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
+import { verifyCronAuth } from '@/lib/cron-auth'
 
 /**
  * Cron Job: Jaarlijks overzicht
@@ -15,8 +16,14 @@ import { logAudit } from '@/lib/audit'
  * Verstuurt overzicht van alle starters van vorig jaar
  * 
  * Easypanel Cron: 0 11 1 1 *
+ * 
+ * Security: Requires CRON_SECRET via Authorization header or ?secret= query param
  */
 export async function GET(req: Request) {
+  // Verify authorization
+  const authError = verifyCronAuth(req)
+  if (authError) return authError
+
   try {
     const now = new Date()
     const year = now.getFullYear() - 1 // Vorig jaar

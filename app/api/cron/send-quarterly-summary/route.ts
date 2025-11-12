@@ -7,6 +7,7 @@ import {
   DEFAULT_TEMPLATES,
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
+import { verifyCronAuth } from '@/lib/cron-auth'
 
 /**
  * Cron Job: Kwartaal overzicht
@@ -15,8 +16,14 @@ import { logAudit } from '@/lib/audit'
  * Q1: 1 april, Q2: 1 juli, Q3: 1 oktober, Q4: 1 januari
  * 
  * Easypanel Cron: 0 10 1 1,4,7,10 *
+ * 
+ * Security: Requires CRON_SECRET via Authorization header or ?secret= query param
  */
 export async function GET(req: Request) {
+  // Verify authorization
+  const authError = verifyCronAuth(req)
+  if (authError) return authError
+
   try {
     const now = new Date()
     const currentMonth = now.getMonth() + 1 // 1-12

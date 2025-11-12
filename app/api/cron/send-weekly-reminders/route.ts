@@ -7,6 +7,7 @@ import {
   DEFAULT_TEMPLATES,
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
+import { verifyCronAuth } from '@/lib/cron-auth'
 
 /**
  * Cron Job: Wekelijkse reminder - 1 week voor startdatum
@@ -15,8 +16,14 @@ import { logAudit } from '@/lib/audit'
  * Verstuurt reminders voor starters die over exact 7 dagen beginnen
  * 
  * Easypanel Cron: 0 8 * * *
+ * 
+ * Security: Requires CRON_SECRET via Authorization header or ?secret= query param
  */
 export async function GET(req: Request) {
+  // Verify authorization
+  const authError = verifyCronAuth(req)
+  if (authError) return authError
+
   try {
     // Bereken datum over 7 dagen
     const today = new Date()
