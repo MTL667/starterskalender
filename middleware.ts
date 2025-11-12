@@ -36,12 +36,16 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - api/auth (NextAuth routes)
+     * - api/cron (Cron job endpoints - hebben eigen CRON_SECRET auth)
+     * - api/health (Health check endpoints - publiek)
+     * - api/system (System endpoints like logo - publiek)
+     * - api/uploads (Uploaded files - publiek)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - auth/signin (signin page)
      * - auth/error (error page)
      */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|auth/signin|auth/error).*)',
+    '/((?!api/auth|api/cron|api/health|api/system|api/uploads|_next/static|_next/image|favicon.ico|auth/signin|auth/error).*)',
   ],
 }
