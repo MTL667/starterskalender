@@ -52,34 +52,87 @@ export async function POST(req: Request) {
     if (!cronSecret) {
       console.error('⚠️ CRON_SECRET not set! Cannot trigger cron job.')
       return NextResponse.json(
-        { error: 'CRON_SECRET not configured. Please set this environment variable.' },
+        { 
+          error: 'CRON_SECRET niet geconfigureerd', 
+          details: 'Voeg CRON_SECRET toe aan je environment variables en rebuild de app.',
+          debugInfo: 'Environment variable CRON_SECRET is missing'
+        },
         { status: 500 }
       )
     }
 
     // Construct the full URL for the cron endpoint
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const fullUrl = `${baseUrl}${endpoint}`
+    // Try multiple base URL strategies
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    
+    // Remove trailing slash if present
+    const cleanBaseUrl = baseUrl.replace(/\/$/, '')
+    const fullUrl = `${cleanBaseUrl}${endpoint}`
 
     console.log(`🔧 Admin trigger: ${user.email} is manually triggering ${endpoint}`)
+    console.log(`🌐 Full URL: ${fullUrl}`)
+    console.log(`🔑 Using CRON_SECRET: ${cronSecret.substring(0, 10)}...`)
 
     // Call the cron endpoint with CRON_SECRET
-    const response = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${cronSecret}`,
-        'Content-Type': 'application/json',
-      },
-    })
+    let response: Response
+    let data: any
 
-    const data = await response.json()
+    try {
+      response = await fetch(fullUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${cronSecret}`,
+          'Content-Type': 'application/json',
+        },
+        // Add timeout
+        signal: AbortSignal.timeout(30000), // 30 seconds
+      })
 
-    if (!response.ok) {
-      console.error('❌ Cron job failed:', data)
+      // Try to parse JSON, but handle non-JSON responses
+      const contentType = response.headers.get('content-type')
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json()
+      } else {
+        const text = await response.text()
+        console.error('❌ Non-JSON response:', text)
+        data = { error: 'Invalid response format', rawResponse: text }
+      }
+    } catch (fetchError: any) {
+      console.error('❌ Fetch error:', fetchError)
+      
       return NextResponse.json(
         {
-          error: 'Cron job failed',
-          details: data.error || data.message || 'Unknown error',
+          error: 'Kan cron job niet bereiken',
+          details: fetchError.message || 'Network error',
+          debugInfo: {
+            url: fullUrl,
+            error: fetchError.name,
+            message: fetchError.message,
+            cause: fetchError.cause?.toString(),
+          }
+        },
+        { status: 500 }
+      )
+    }
+
+    if (!response.ok) {
+      console.error('❌ Cron job failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        data,
+      })
+      
+      return NextResponse.json(
+        {
+          error: 'Cron job gefaald',
+          details: data.error || data.message || response.statusText || 'Unknown error',
+          debugInfo: {
+            status: response.status,
+            statusText: response.statusText,
+            endpoint,
+            url: fullUrl,
+            responseData: data,
+          }
         },
         { status: response.status }
       )
@@ -93,7 +146,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: data.message || 'Cron job executed successfully',
+      message: data.message || 'Cron job uitgevoerd!',
       emailsSent: data.emailsSent,
       usersNotified: data.usersNotified,
       timestamp: new Date().toISOString(),

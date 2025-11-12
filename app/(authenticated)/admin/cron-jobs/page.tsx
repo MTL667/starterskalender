@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, CheckCircle2, Clock, Send, Loader2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Clock, Send, Loader2, Info } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 interface CronJob {
@@ -22,6 +22,7 @@ interface JobResult {
   emailsSent?: number
   usersNotified?: string[]
   error?: string
+  debugInfo?: string
 }
 
 const cronJobs: CronJob[] = [
@@ -62,6 +63,22 @@ const cronJobs: CronJob[] = [
 export default function CronJobsPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [results, setResults] = useState<Record<string, JobResult>>({})
+  const [diagnostics, setDiagnostics] = useState<any>(null)
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(true)
+
+  // Load diagnostics on mount
+  useEffect(() => {
+    fetch('/api/admin/cron-diagnostics')
+      .then(res => res.json())
+      .then(data => {
+        setDiagnostics(data)
+        setDiagnosticsLoading(false)
+      })
+      .catch(error => {
+        console.error('Error loading diagnostics:', error)
+        setDiagnosticsLoading(false)
+      })
+  }, [])
 
   const triggerJob = async (job: CronJob) => {
     setLoading(job.id)
@@ -87,12 +104,18 @@ export default function CronJobsPage() {
           },
         }))
       } else {
+        // Enhanced error display
+        const errorMessage = data.error || 'Onbekende fout'
+        const errorDetails = data.details || data.message || ''
+        const debugInfo = data.debugInfo ? JSON.stringify(data.debugInfo, null, 2) : ''
+        
         setResults(prev => ({
           ...prev,
           [job.id]: {
             success: false,
-            message: 'Fout bij verzenden',
-            error: data.error || 'Onbekende fout',
+            message: errorMessage,
+            error: errorDetails,
+            debugInfo,
           },
         }))
       }
@@ -119,6 +142,31 @@ export default function CronJobsPage() {
           Handmatig email notificaties versturen of testen
         </p>
       </div>
+
+      {/* Diagnostics Alert */}
+      {!diagnosticsLoading && diagnostics && diagnostics.recommendations && (
+        <Alert variant={diagnostics.recommendations[0].startsWith('✅') ? 'default' : 'destructive'}>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Configuratie Status</AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc list-inside space-y-1 mt-2">
+              {diagnostics.recommendations.map((rec: string, idx: number) => (
+                <li key={idx}>{rec}</li>
+              ))}
+            </ul>
+            {!diagnostics.environment.cronSecret.configured && (
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-sm font-medium mb-1">Hoe te fixen:</p>
+                <ol className="list-decimal list-inside space-y-1 text-sm">
+                  <li>Generate CRON_SECRET: <code className="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded">node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code></li>
+                  <li>Voeg toe aan Easypanel environment variables</li>
+                  <li>Rebuild de app</li>
+                </ol>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Alert>
         <AlertCircle className="h-4 w-4" />
@@ -229,9 +277,19 @@ export default function CronJobsPage() {
                         )}
 
                         {result.error && (
-                          <p className="text-sm text-red-800 dark:text-red-200">
-                            {result.error}
-                          </p>
+                          <div className="text-sm text-red-800 dark:text-red-200 space-y-2">
+                            <p className="font-medium">{result.error}</p>
+                            {result.debugInfo && (
+                              <details className="mt-2">
+                                <summary className="cursor-pointer hover:underline text-xs">
+                                  Toon debug info
+                                </summary>
+                                <pre className="mt-2 text-xs bg-red-100 dark:bg-red-900/30 p-2 rounded overflow-x-auto">
+                                  {result.debugInfo}
+                                </pre>
+                              </details>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
