@@ -59,6 +59,50 @@ export function RecentStarters({ year }: { year: number }) {
     return diffInDays >= 1 && diffInDays <= 7
   }
 
+  // Get upcoming starters with complete last day
+  // Shows at least minCount starters, but includes all starters from the last shown date
+  const getUpcomingStarters = (allStarters: Starter[], minCount: number = 5): Starter[] => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Filter and sort upcoming starters
+    const upcoming = allStarters
+      .filter((s: Starter) => {
+        const startDate = new Date(s.startDate)
+        return startDate >= today && !s.isCancelled
+      })
+      .sort((a: Starter, b: Starter) => 
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      )
+
+    if (upcoming.length <= minCount) {
+      return upcoming
+    }
+
+    // Take first minCount starters
+    const initial = upcoming.slice(0, minCount)
+    
+    // Get the date of the last starter in initial list
+    const lastDate = new Date(initial[initial.length - 1].startDate)
+    lastDate.setHours(0, 0, 0, 0)
+
+    // Find all starters on that same date (including those after position minCount)
+    const result: Starter[] = []
+    for (const starter of upcoming) {
+      const starterDate = new Date(starter.startDate)
+      starterDate.setHours(0, 0, 0, 0)
+      
+      // Include if before last date, or on last date
+      if (starterDate.getTime() <= lastDate.getTime()) {
+        result.push(starter)
+      } else {
+        break // We're past the last date
+      }
+    }
+
+    return result
+  }
+
   const handleStarterClick = (starter: Starter) => {
     setSelectedStarter(starter)
     setDialogOpen(true)
@@ -71,21 +115,11 @@ export function RecentStarters({ year }: { year: number }) {
     if (refreshData) {
       // Refresh the starters list
       setLoading(true)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
       
       fetch(`/api/starters?year=${year}`)
         .then(res => res.json())
         .then(data => {
-          const upcoming = data
-            .filter((s: Starter) => {
-              const startDate = new Date(s.startDate)
-              return startDate >= today && !s.isCancelled
-            })
-            .sort((a: Starter, b: Starter) => 
-              new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-            )
-            .slice(0, 5)
+          const upcoming = getUpcomingStarters(data, 5)
           setStarters(upcoming)
           setLoading(false)
         })
@@ -97,26 +131,14 @@ export function RecentStarters({ year }: { year: number }) {
   }
 
   useEffect(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0) // Start van vandaag
-    
     // Fetch both starters and entities
     Promise.all([
       fetch(`/api/starters?year=${year}`).then(res => res.json()),
       fetch('/api/entities').then(res => res.json())
     ])
       .then(([startersData, entitiesData]) => {
-        // Filter op aankomende starters (vanaf vandaag) en niet geannuleerd
-        const upcoming = startersData
-          .filter((s: Starter) => {
-            const startDate = new Date(s.startDate)
-            return startDate >= today && !s.isCancelled
-          })
-          // Sorteer op startDate ascending (vroegste eerst)
-          .sort((a: Starter, b: Starter) => 
-            new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
-          )
-          .slice(0, 5) // Neem de eerste 5
+        // Get upcoming starters with complete last day
+        const upcoming = getUpcomingStarters(startersData, 5)
         setStarters(upcoming)
         setEntities(entitiesData)
         setLoading(false)
