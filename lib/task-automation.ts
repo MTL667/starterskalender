@@ -92,12 +92,10 @@ export async function createAutomaticTasks(starter: any) {
 
       // Fallback naar global assignment (entityId = null)
       if (!assignedToId) {
-        const globalAssignment = await prisma.taskAssignment.findUnique({
+        const globalAssignment = await prisma.taskAssignment.findFirst({
           where: {
-            entityId_taskType: {
-              entityId: null as any,
-              taskType: template.type,
-            },
+            entityId: null,
+            taskType: template.type,
           },
         })
         if (globalAssignment) {
@@ -162,7 +160,7 @@ export async function createAutomaticTasks(starter: any) {
                 taskType: template.type,
               },
               {
-                entityId: null as any,
+                entityId: null,
                 taskType: template.type,
               },
             ],
