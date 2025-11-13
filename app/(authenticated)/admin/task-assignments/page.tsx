@@ -56,8 +56,12 @@ export default function TaskAssignmentsPage() {
 
       if (assignmentsRes.ok) {
         const data = await assignmentsRes.json()
+        console.log('Task assignments data:', data)
+        console.log('Users:', data.users)
         setAssignments(data.assignments || [])
         setUsers(data.users || [])
+      } else {
+        console.error('Failed to fetch task assignments:', await assignmentsRes.text())
       }
 
       if (entitiesRes.ok) {
@@ -212,11 +216,22 @@ export default function TaskAssignmentsPage() {
                   <SelectValue placeholder="Selecteer gebruiker..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name || user.email}
-                    </SelectItem>
-                  ))}
+                  {users.length === 0 ? (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      Geen gebruikers gevonden
+                    </div>
+                  ) : (
+                    users.map((user: any) => (
+                      <SelectItem key={user.id} value={user.id}>
+                        {user.name || user.email}
+                        {user.status !== 'ACTIVE' && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            ({user.status})
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

@@ -29,13 +29,13 @@ export async function GET(req: Request) {
         role: {
           not: 'NONE',
         },
-        status: 'ACTIVE',
       },
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
+        status: true,
       },
       orderBy: {
         name: 'asc',

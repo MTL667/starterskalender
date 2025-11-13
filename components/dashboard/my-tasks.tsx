@@ -13,6 +13,7 @@ interface Task {
   id: string
   title: string
   priority: string
+  status?: string
   dueDate?: string
   starter?: {
     name: string
@@ -34,25 +35,39 @@ export function MyTasks() {
   const { data: session } = useSession()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [hasTasks, setHasTasks] = useState(false)
 
   useEffect(() => {
     if (session?.user) {
       fetchMyTasks()
+    } else {
+      setLoading(false)
     }
   }, [session])
 
   const fetchMyTasks = async () => {
     try {
-      const res = await fetch('/api/tasks?assignedToMe=true&status=PENDING&status=IN_PROGRESS')
+      const res = await fetch('/api/tasks?assignedToMe=true')
       if (res.ok) {
         const data = await res.json()
-        setTasks(data.slice(0, 5)) // Top 5 taken
+        // Als user OOIT taken heeft (ook completed), toon widget
+        setHasTasks(data.length > 0)
+        // Maar toon alleen pending/in_progress
+        const activeTasks = data.filter(
+          (t: Task) => t.status !== 'COMPLETED' && t.status !== 'CANCELLED'
+        )
+        setTasks(activeTasks.slice(0, 5)) // Top 5 taken
       }
     } catch (error) {
       console.error('Error fetching my tasks:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  // Als user geen taken heeft, toon widget helemaal niet
+  if (!loading && !hasTasks) {
+    return null
   }
 
   const urgentCount = tasks.filter(t => t.priority === 'URGENT').length
