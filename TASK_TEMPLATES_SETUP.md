@@ -65,22 +65,17 @@ npm run db:seed-tasks
 **Output:**
 ```
 🌱 Seeding task templates...
-✅ Created: Email account aanmaken voor {{starterName}}
+✅ Created: Mailadres toewijzen aan {{starterName}}
 ✅ Created: Telefoonnummer toewijzen aan {{starterName}}
-✅ Created: Laptop voorbereiden voor {{starterName}}
-✅ Created: Accounts aanmaken voor {{starterName}}
-✅ Created: Contract klaarmaken voor {{starterName}}
-✅ Created: Badge aanmaken voor {{starterName}}
-✅ Created: Personeelsdossier aanmaken voor {{starterName}}
-✅ Created: Werkplek toewijzen aan {{starterName}}
-✅ Created: Parkeerplaats regelen voor {{starterName}}
-✅ Created: Sleutels klaarmaken voor {{starterName}}
-✅ Created: Welkomstgesprek plannen met {{starterName}}
-✅ Created: Team introductie voor {{starterName}}
-✅ Created: Onboarding plan opstellen voor {{starterName}}
+✅ Created: Betrokken materialen voorzien voor {{starterName}}
 
 🎉 Seeding complete!
-✅ Created: 13 templates
+✅ Created: 3 task template(s)
+
+📋 Templates in database:
+   1. Mailadres toewijzen (IT_SETUP) - 7 dagen voor start
+   2. Telefoonnummer toewijzen (IT_SETUP) - 5 dagen voor start
+   3. Betrokken materialen voorzien (IT_SETUP) - 3 dagen voor start
 ```
 
 **Dit script is idempotent** - je kan het meerdere keren runnen zonder duplicates te maken.
@@ -89,78 +84,40 @@ npm run db:seed-tasks
 
 ## 📋 Ingebouwde Task Templates
 
-### **IT_SETUP (4 templates)**
+### **IT_SETUP (3 templates)**
 
-1. **Email account aanmaken**
+1. **Mailadres toewijzen**
    - Priority: HIGH
    - Deadline: 7 dagen voor start
-   - Beschrijving: Active Directory / Microsoft 365 account
+   - Beschrijving: Email account aanmaken in Azure AD / Microsoft 365
+   - Details: 
+     - Gebruikt het gewenste mailadres uit het starter profiel
+     - Licentie toewijzen
+     - Inloggegevens versturen
+     - Account testen
 
 2. **Telefoonnummer toewijzen**
-   - Priority: MEDIUM
+   - Priority: HIGH
    - Deadline: 5 dagen voor start
-   - Beschrijving: Telefooncentrale configureren
+   - Beschrijving: Telefoonnummer reserveren en configureren
+   - Details:
+     - Check beschikbare nummers
+     - Configureer in telefooncentrale
+     - Koppel aan email account voor voicemail
+     - Test in- en uitgaande gesprekken
 
-3. **Laptop voorbereiden**
+3. **Betrokken materialen voorzien**
    - Priority: HIGH
    - Deadline: 3 dagen voor start
-   - Beschrijving: Windows installeren + software
-
-4. **Accounts aanmaken**
-   - Priority: MEDIUM
-   - Deadline: 5 dagen voor start
-   - Beschrijving: ERP, CRM, tijdregistratie, etc.
-
-### **HR_ADMIN (3 templates)**
-
-5. **Contract klaarmaken**
-   - Priority: HIGH
-   - Deadline: 10 dagen voor start
-   - Beschrijving: Arbeidscontract voorbereiden
-
-6. **Badge aanmaken**
-   - Priority: MEDIUM
-   - Deadline: 3 dagen voor start
-   - Beschrijving: Toegangsbadge met foto
-
-7. **Personeelsdossier aanmaken**
-   - Priority: MEDIUM
-   - Deadline: Op startdatum
-   - Beschrijving: ID, diploma's, contract, RSZ
-
-### **FACILITIES (3 templates)**
-
-8. **Werkplek toewijzen**
-   - Priority: MEDIUM
-   - Deadline: 2 dagen voor start
-   - Beschrijving: Bureau, stoel, monitor
-
-9. **Parkeerplaats regelen**
-   - Priority: LOW
-   - Deadline: 1 dag voor start
-   - Beschrijving: Parkeerkaart en plaatsnummer
-
-10. **Sleutels klaarmaken**
-    - Priority: MEDIUM
-    - Deadline: 1 dag voor start
-    - Beschrijving: Hoofdingang, kantoor, locker
-
-### **MANAGER_ACTION (3 templates)**
-
-11. **Welkomstgesprek plannen**
-    - Priority: HIGH
-    - Deadline: Op startdatum
-    - Beschrijving: Rondleiding, verwachtingen
-
-12. **Team introductie**
-    - Priority: MEDIUM
-    - Deadline: Op startdatum
-    - Beschrijving: Voorstelling aan team
-
-13. **Onboarding plan opstellen**
-    - Priority: HIGH
-    - Deadline: 5 dagen voor start
-    - Beschrijving: Training schema eerste 30 dagen
+   - Beschrijving: Alle benodigde materialen klaarzetten
+   - Details:
+     - Laptop/desktop met software
+     - Monitor(en), toetsenbord, muis
+     - Headset voor Teams
+     - Mobiele telefoon indien nodig
+     - Toegangsbadge
+     - Zie materialen lijst in starter profiel
+     - Vink af in systeem welke materialen verstrekt zijn
 
 ---
 
@@ -231,26 +188,25 @@ Vul in:
 **4. Check Resultaat:**
 
 **Kevin ziet:**
-- 🔔 **4 nieuwe notificaties** in bell icon
-- 📧 **4 emails** in inbox
-- 📊 **Dashboard widget** toont 4 taken
+- 🔔 **3 nieuwe notificaties** in bell icon
+- 📧 **3 emails** in inbox
+- 📊 **Dashboard widget** toont 3 taken
 
 **Taken:**
 ```
-✅ Email account aanmaken voor Jan Janssens
+✅ Mailadres toewijzen aan Jan Janssens
    Deadline: 8 januari (7 dagen voor start)
+   Priority: HIGH
    Status: In wachtrij
    
 ✅ Telefoonnummer toewijzen aan Jan Janssens
-   Deadline: 10 januari
+   Deadline: 10 januari (5 dagen voor start)
+   Priority: HIGH
    Status: In wachtrij
    
-✅ Laptop voorbereiden voor Jan Janssens
-   Deadline: 12 januari
-   Status: In wachtrij
-   
-✅ Accounts aanmaken voor Jan Janssens
-   Deadline: 10 januari
+✅ Betrokken materialen voorzien voor Jan Janssens
+   Deadline: 12 januari (3 dagen voor start)
+   Priority: HIGH
    Status: In wachtrij
 ```
 
