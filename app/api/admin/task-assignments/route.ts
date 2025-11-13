@@ -96,36 +96,59 @@ export async function POST(req: Request) {
 
     console.log('🔧 Normalized entityId:', normalizedEntityId)
 
-    // Upsert assignment (create or update)
-    const assignment = await prisma.taskAssignment.upsert({
+    // Check if assignment already exists
+    // Note: Can't use upsert with null in unique constraint, so we use findFirst + create/update
+    const existingAssignment = await prisma.taskAssignment.findFirst({
       where: {
-        entityId_taskType: {
-          entityId: normalizedEntityId as any,
-          taskType,
-        },
-      },
-      update: {
-        assignedToId,
-        notifyChannel: notifyChannel || 'BOTH',
-        updatedAt: new Date(),
-      },
-      create: {
-        entityId: normalizedEntityId as any,
+        entityId: normalizedEntityId,
         taskType,
-        assignedToId,
-        notifyChannel: notifyChannel || 'BOTH',
-        createdBy: user.id,
-      },
-      include: {
-        entity: {
-          select: {
-            id: true,
-            name: true,
-            colorHex: true,
-          },
-        },
       },
     })
+
+    let assignment
+
+    if (existingAssignment) {
+      // Update existing
+      console.log('📝 Updating existing assignment:', existingAssignment.id)
+      assignment = await prisma.taskAssignment.update({
+        where: { id: existingAssignment.id },
+        data: {
+          assignedToId,
+          notifyChannel: notifyChannel || 'BOTH',
+          updatedAt: new Date(),
+        },
+        include: {
+          entity: {
+            select: {
+              id: true,
+              name: true,
+              colorHex: true,
+            },
+          },
+        },
+      })
+    } else {
+      // Create new
+      console.log('✨ Creating new assignment')
+      assignment = await prisma.taskAssignment.create({
+        data: {
+          entityId: normalizedEntityId,
+          taskType,
+          assignedToId,
+          notifyChannel: notifyChannel || 'BOTH',
+          createdBy: user.id,
+        },
+        include: {
+          entity: {
+            select: {
+              id: true,
+              name: true,
+              colorHex: true,
+            },
+          },
+        },
+      })
+    }
 
     // Get assignee details
     const assignee = await prisma.user.findUnique({
