@@ -40,6 +40,35 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum TaskType {
+  IT_SETUP           // IT-gerelateerde taken (email, telefoon, accounts)
+  HR_ADMIN           // HR administratie (contract, badges)
+  FACILITIES         // Facilities (werkplek, parkeerplaats)
+  MANAGER_ACTION     // Manager acties (welkomstgesprek, intro)
+  CUSTOM             // Custom taken
+}
+
+enum TaskStatus {
+  PENDING            // Nog niet gestart
+  IN_PROGRESS        // Bezig
+  BLOCKED            // Geblokkeerd (wacht op iets/iemand)
+  COMPLETED          // Voltooid
+  CANCELLED          // Geannuleerd
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NotificationChannelType {
+  IN_APP             // In-app notificatie (bell icon)
+  EMAIL              // Email notificatie
+  BOTH               // Beide
+}
+
 model User {
   id                      String                   @id @default(cuid())
   email                   String                   @unique
@@ -58,6 +87,10 @@ model User {
   twoFASecret             String?                  // TOTP secret voor 2FA
   twoFAEnabled            Boolean                  @default(false)
   bookings                Booking[]
+  assignedTasks           Task[]                   @relation("TaskAssignee") // Taken toegewezen aan deze user
+  createdTasks            Task[]                   @relation("TaskCreator")  // Taken aangemaakt door deze user
+  completedTasks          Task[]                   @relation("TaskCompleter") // Taken voltooid door deze user
+  notifications           Notification[]           // In-app notificaties voor deze user
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   lastLoginAt             DateTime?                // Tijdstip van laatste succesvolle login
@@ -80,6 +113,8 @@ model Entity {
   jobRoles                JobRole[]
   blockedPeriods          BlockedPeriod[]
   notificationPreferences NotificationPreference[]
+  tasks                   Task[]                   // Taken gekoppeld aan deze entiteit
+  taskAssignments         TaskAssignment[]         // Taak verantwoordelijken voor deze entiteit
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -129,6 +164,7 @@ model Starter {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   starterMaterials StarterMaterial[] // Materiaal toegewezen aan deze starter
+  tasks            Task[]            // Taken gekoppeld aan deze starter
 
   @@index([year, startDate])
   @@index([entityId, year])
@@ -317,6 +353,128 @@ model SystemSettings {
   updatedBy String?  // User ID die instelling laatst wijzigde
 
   @@index([key])
+}
+
+// Task Management System
+
+// Task Templates - Voor automatische taak creatie
+model TaskTemplate {
+  id                String                   @id @default(cuid())
+  type              TaskType                 // Type taak
+  title             String                   // Taak titel (met variabelen: {{starterName}}, {{entityName}})
+  description       String?                  @db.Text // Beschrijving (met variabelen)
+  priority          TaskPriority             @default(MEDIUM)
+  daysUntilDue      Int                      @default(7) // Aantal dagen vanaf startDate tot deadline
+  isActive          Boolean                  @default(true)
+  autoAssign        Boolean                  @default(true) // Automatisch toewijzen bij nieuwe starter
+  
+  // Optionele filters - wanneer moet deze template worden toegepast?
+  forEntityIds      String[]                 // Lege array = alle entiteiten
+  forJobRoleTitles  String[]                 // Lege array = alle functies
+  
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  createdBy         String?                  // User ID
+
+  @@index([type, isActive])
+  @@index([autoAssign, isActive])
+}
+
+// Taken
+model Task {
+  id              String          @id @default(cuid())
+  type            TaskType        // Type taak
+  title           String          // Taak titel
+  description     String?         @db.Text // Beschrijving
+  status          TaskStatus      @default(PENDING)
+  priority        TaskPriority    @default(MEDIUM)
+  
+  // Koppelingen
+  starterId       String?         // Optioneel gekoppeld aan starter
+  starter         Starter?        @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  entityId        String?         // Optioneel gekoppeld aan entiteit
+  entity          Entity?         @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  
+  // Toewijzing
+  assignedToId    String?         // User ID van verantwoordelijke
+  assignedTo      User?           @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedAt      DateTime?       // Wanneer toegewezen
+  
+  // Deadlines
+  dueDate         DateTime?       // Deadline
+  
+  // Voltooiing
+  completedAt     DateTime?
+  completedById   String?
+  completedBy     User?           @relation("TaskCompleter", fields: [completedById], references: [id], onDelete: SetNull)
+  completionNotes String?         @db.Text // Notities bij voltooiing
+  
+  // Blokkering
+  blockedReason   String?         @db.Text // Waarom geblokkeerd
+  
+  // Metadata
+  createdById     String?
+  createdBy       User?           @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Template tracking
+  templateId      String?         // Als aangemaakt vanuit template
+  
+  @@index([status, assignedToId])
+  @@index([starterId, status])
+  @@index([entityId, status])
+  @@index([assignedToId, dueDate])
+  @@index([type, status])
+  @@index([dueDate])
+}
+
+// Taak verantwoordelijken per entiteit en taak type
+model TaskAssignment {
+  id            String     @id @default(cuid())
+  entityId      String?    // null = global default voor alle entiteiten
+  entity        Entity?    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  taskType      TaskType   // Type taak
+  assignedToId  String     // User ID van verantwoordelijke
+  
+  // Notificatie instellingen
+  notifyChannel NotificationChannelType @default(BOTH)
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  createdBy     String?    // User ID die assignment aanmaakte
+
+  @@unique([entityId, taskType]) // Per entiteit+type slechts 1 verantwoordelijke
+  @@index([entityId, taskType])
+  @@index([assignedToId])
+}
+
+// In-app notificaties
+model Notification {
+  id          String    @id @default(cuid())
+  userId      String    // Ontvanger
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        String    // TASK_ASSIGNED, TASK_DUE_SOON, TASK_COMPLETED, etc.
+  title       String    // Notificatie titel
+  message     String    @db.Text // Notificatie bericht
+  
+  // Koppelingen (optioneel)
+  taskId      String?   // Gekoppeld aan taak
+  starterId   String?   // Gekoppeld aan starter
+  
+  // Link naar relevante pagina
+  linkUrl     String?   // bv. "/taken/abc123"
+  
+  // Status
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([taskId])
 }
 
 // Room booking models

@@ -6,6 +6,7 @@ import { filterStartersByRBAC, canMutateStarter, isHRAdmin } from '@/lib/rbac'
 import { calculateWeekNumber, getYearInTimezone } from '@/lib/week-utils'
 import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
+import { createAutomaticTasks } from '@/lib/task-automation'
 
 const StarterSchema = z.object({
   name: z.string().min(1),
@@ -130,6 +131,15 @@ export async function POST(request: NextRequest) {
       target: `Starter:${starter.id}`,
       meta: { name: starter.name, entityId: starter.entityId },
     })
+
+    // Automatisch taken aanmaken op basis van templates
+    try {
+      const tasks = await createAutomaticTasks(starter)
+      console.log(`✅ Created ${tasks.length} automatic tasks for starter ${starter.name}`)
+    } catch (taskError) {
+      console.error('Failed to create automatic tasks:', taskError)
+      // Don't fail the starter creation if task creation fails
+    }
 
     return NextResponse.json(starter, { status: 201 })
   } catch (error) {

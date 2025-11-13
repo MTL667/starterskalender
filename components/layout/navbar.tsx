@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Calendar, LayoutDashboard, Users, Settings, LogOut, User } from 'lucide-react'
+import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { NotificationBell } from '@/components/layout/notification-bell'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 
@@ -92,6 +93,16 @@ export function Navbar() {
               </Button>
             </Link>
 
+            <Link href="/taken">
+              <Button
+                variant={isActive('/taken') ? 'default' : 'ghost'}
+                size="sm"
+              >
+                <CheckSquare className="h-4 w-4 mr-2" />
+                Taken
+              </Button>
+            </Link>
+
             {session?.user?.role === 'HR_ADMIN' && (
               <Link href="/admin">
                 <Button
@@ -110,6 +121,7 @@ export function Navbar() {
           <div className="text-sm text-muted-foreground hidden sm:block">
             {session?.user?.name || session?.user?.email}
           </div>
+          <NotificationBell />
           <Link href="/profiel">
             <Button
               variant={isActive('/profiel') ? 'default' : 'ghost'}
