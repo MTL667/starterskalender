@@ -90,6 +90,7 @@ model User {
   assignedTasks           Task[]                   @relation("TaskAssignee") // Taken toegewezen aan deze user
   createdTasks            Task[]                   @relation("TaskCreator")  // Taken aangemaakt door deze user
   completedTasks          Task[]                   @relation("TaskCompleter") // Taken voltooid door deze user
+  taskAssignments         TaskAssignment[]         @relation("TaskAssignmentUser") // Task assignments voor deze user
   notifications           Notification[]           // In-app notificaties voor deze user
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
@@ -436,6 +437,7 @@ model TaskAssignment {
   entity        Entity?    @relation(fields: [entityId], references: [id], onDelete: Cascade)
   taskType      TaskType   // Type taak
   assignedToId  String     // User ID van verantwoordelijke
+  assignedTo    User       @relation("TaskAssignmentUser", fields: [assignedToId], references: [id], onDelete: Cascade)
   
   // Notificatie instellingen
   notifyChannel NotificationChannelType @default(BOTH)
