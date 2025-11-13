@@ -85,16 +85,23 @@ export default function TaskAssignmentsPage() {
     setMessage(null)
 
     try {
+      const payload = {
+        entityId: selectedEntity === 'global' ? null : selectedEntity,
+        taskType: selectedTaskType,
+        assignedToId: selectedUser,
+        notifyChannel: selectedChannel,
+      }
+
+      console.log('💾 Saving task assignment:', payload)
+
       const res = await fetch('/api/admin/task-assignments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entityId: selectedEntity === 'global' ? null : selectedEntity,
-          taskType: selectedTaskType,
-          assignedToId: selectedUser,
-          notifyChannel: selectedChannel,
-        }),
+        body: JSON.stringify(payload),
       })
+
+      const data = await res.json()
+      console.log('📥 Response:', data)
 
       if (res.ok) {
         setMessage({ type: 'success', text: 'Verantwoordelijke opgeslagen!' })
@@ -105,10 +112,15 @@ export default function TaskAssignmentsPage() {
         setSelectedUser('')
         setSelectedChannel('BOTH')
       } else {
-        throw new Error('Failed to save')
+        console.error('❌ Save failed:', data)
+        setMessage({ 
+          type: 'error', 
+          text: `Fout bij opslaan: ${data.details || data.error || 'Onbekende fout'}` 
+        })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Fout bij opslaan' })
+      console.error('❌ Exception during save:', error)
+      setMessage({ type: 'error', text: `Fout bij opslaan: ${(error as Error).message}` })
     } finally {
       setSaving(false)
     }

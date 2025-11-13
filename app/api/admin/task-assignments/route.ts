@@ -82,6 +82,8 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { entityId, taskType, assignedToId, notifyChannel } = body
 
+    console.log('📝 Task assignment request:', { entityId, taskType, assignedToId, notifyChannel })
+
     if (!taskType || !assignedToId) {
       return NextResponse.json(
         { error: 'taskType and assignedToId are required' },
@@ -89,11 +91,16 @@ export async function POST(req: Request) {
       )
     }
 
+    // Normalize entityId: "global" string should become null
+    const normalizedEntityId = (!entityId || entityId === 'global') ? null : entityId
+
+    console.log('🔧 Normalized entityId:', normalizedEntityId)
+
     // Upsert assignment (create or update)
     const assignment = await prisma.taskAssignment.upsert({
       where: {
         entityId_taskType: {
-          entityId: (entityId || null) as any,
+          entityId: normalizedEntityId as any,
           taskType,
         },
       },
@@ -103,7 +110,7 @@ export async function POST(req: Request) {
         updatedAt: new Date(),
       },
       create: {
-        entityId: (entityId || null) as any,
+        entityId: normalizedEntityId as any,
         taskType,
         assignedToId,
         notifyChannel: notifyChannel || 'BOTH',
@@ -151,9 +158,18 @@ export async function POST(req: Request) {
       assignee,
     }, { status: 201 })
   } catch (error) {
-    console.error('Error creating/updating task assignment:', error)
+    console.error('❌ Error creating/updating task assignment:', error)
+    console.error('Error details:', {
+      name: (error as Error).name,
+      message: (error as Error).message,
+      stack: (error as Error).stack,
+    })
     return NextResponse.json(
-      { error: 'Failed to create/update task assignment', details: (error as Error).message },
+      { 
+        error: 'Failed to create/update task assignment', 
+        details: (error as Error).message,
+        name: (error as Error).name,
+      },
       { status: 500 }
     )
   }
