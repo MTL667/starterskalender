@@ -74,6 +74,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [jobRoles, setJobRoles] = useState<JobRole[]>([])
   const [starterMaterials, setStarterMaterials] = useState<any[]>([])
   const [tasks, setTasks] = useState<any[]>([])
+  const [isITResponsible, setIsITResponsible] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     language: 'NL',
@@ -119,6 +120,18 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     return false
   })()
 
+  // Check if user can edit contact info (email & phone)
+  // Only HR_ADMIN or IT_SETUP responsible can edit these fields
+  const canEditContactInfo = (() => {
+    if (!session?.user) return false
+    
+    // HR_ADMIN can always edit
+    if (session.user.role === 'HR_ADMIN') return true
+    
+    // IT_SETUP verantwoordelijke can edit
+    return isITResponsible
+  })()
+
   // Laad job roles voor de gekozen entiteit
   useEffect(() => {
     if (formData.entityId) {
@@ -157,6 +170,31 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       setTasks([])
     }
   }, [starter?.id])
+
+  // Check of huidige user IT_SETUP verantwoordelijke is voor deze entiteit
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setIsITResponsible(false)
+      return
+    }
+
+    const entityId = starter?.entity?.id || formData.entityId
+    if (!entityId) {
+      setIsITResponsible(false)
+      return
+    }
+
+    // Check via dedicated endpoint
+    fetch(`/api/task-assignments/check-responsibility?entityId=${entityId}&taskType=IT_SETUP`)
+      .then(res => res.json())
+      .then(data => {
+        setIsITResponsible(data.isResponsible || false)
+      })
+      .catch(err => {
+        console.error('Error checking IT responsibility:', err)
+        setIsITResponsible(false)
+      })
+  }, [session?.user?.id, starter?.entity?.id, formData.entityId])
 
   useEffect(() => {
     if (starter) {
@@ -215,6 +253,34 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       onClose(true)
     } catch (error) {
       console.error('Error saving extra info:', error)
+      alert('Fout bij opslaan. Probeer opnieuw.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveContactInfo = async () => {
+    if (!isEdit || !starter) return
+    
+    setLoading(true)
+
+    try {
+      const res = await fetch(`/api/starters/${starter.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          phoneNumber: formData.phoneNumber || null,
+          desiredEmail: formData.desiredEmail || null,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error('Failed to save contact info')
+      }
+
+      onClose(true)
+    } catch (error) {
+      console.error('Error saving contact info:', error)
       alert('Fout bij opslaan. Probeer opnieuw.')
     } finally {
       setLoading(false)
@@ -541,14 +607,21 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             {/* Contactgegevens */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="phoneNumber">Telefoonnummer</Label>
+                <Label htmlFor="phoneNumber">
+                  Telefoonnummer
+                  {!canEditContactInfo && isEdit && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (Alleen IT verantwoordelijke)
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="phoneNumber"
                   type="tel"
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                   placeholder="+32 123 45 67 89"
-                  disabled={!canEdit}
+                  disabled={!canEditContactInfo}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Optioneel - Kan later worden toegevoegd
@@ -556,14 +629,21 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
 
               <div>
-                <Label htmlFor="desiredEmail">Gewenst E-mailadres</Label>
+                <Label htmlFor="desiredEmail">
+                  Gewenst E-mailadres
+                  {!canEditContactInfo && isEdit && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (Alleen IT verantwoordelijke)
+                    </span>
+                  )}
+                </Label>
                 <Input
                   id="desiredEmail"
                   type="email"
                   value={formData.desiredEmail}
                   onChange={(e) => setFormData({ ...formData, desiredEmail: e.target.value })}
                   placeholder="voornaam.achternaam@bedrijf.be"
-                  disabled={!canEdit}
+                  disabled={!canEditContactInfo}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   Voorgesteld zakelijk mailadres
@@ -815,6 +895,16 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     disabled={loading}
                   >
                     {loading ? 'Bezig...' : 'Extra Info Opslaan'}
+                  </Button>
+                )}
+                {!canEdit && canEditContactInfo && isEdit && !starter?.isCancelled && (
+                  <Button 
+                    type="button" 
+                    onClick={handleSaveContactInfo} 
+                    disabled={loading}
+                    variant="secondary"
+                  >
+                    {loading ? 'Bezig...' : 'Contact Gegevens Opslaan'}
                   </Button>
                 )}
               </div>
