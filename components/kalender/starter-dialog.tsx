@@ -73,6 +73,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [cancelReason, setCancelReason] = useState('')
   const [jobRoles, setJobRoles] = useState<JobRole[]>([])
   const [starterMaterials, setStarterMaterials] = useState<any[]>([])
+  const [tasks, setTasks] = useState<any[]>([])
   const [formData, setFormData] = useState({
     name: '',
     language: 'NL',
@@ -139,6 +140,21 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         .catch(err => console.error('Error loading materials:', err))
     } else {
       setStarterMaterials([])
+    }
+  }, [starter?.id])
+
+  // Laad taken voor bestaande starter
+  useEffect(() => {
+    if (starter?.id) {
+      fetch(`/api/tasks?starterId=${starter.id}`)
+        .then(res => res.json())
+        .then(data => setTasks(data || []))
+        .catch(err => {
+          console.error('Error loading tasks:', err)
+          setTasks([])
+        })
+    } else {
+      setTasks([])
     }
   }, [starter?.id])
 
@@ -683,6 +699,70 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     Vink af welke materialen al zijn verstrekt aan de starter
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Taken sectie (alleen bij edit) */}
+            {isEdit && tasks.length > 0 && (
+              <div className="border-t pt-4">
+                <Label className="text-base font-semibold mb-3 block">
+                  Gekoppelde Taken ({tasks.length})
+                </Label>
+                <div className="space-y-2">
+                  {tasks.slice(0, 5).map((task: any) => (
+                    <div
+                      key={task.id}
+                      className="flex items-start justify-between p-3 border rounded-lg hover:bg-accent transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          {task.status === 'COMPLETED' ? (
+                            <span className="text-green-500">✓</span>
+                          ) : task.priority === 'URGENT' ? (
+                            <span className="text-red-500">🚨</span>
+                          ) : task.priority === 'HIGH' ? (
+                            <span className="text-orange-500">⚠️</span>
+                          ) : (
+                            <span className="text-blue-500">📋</span>
+                          )}
+                          <span className={task.status === 'COMPLETED' ? 'line-through text-muted-foreground' : ''}>
+                            {task.title}
+                          </span>
+                        </div>
+                        {task.assignedTo && (
+                          <p className="text-xs text-muted-foreground mt-1 ml-6">
+                            Toegewezen aan: {task.assignedTo.name || task.assignedTo.email}
+                          </p>
+                        )}
+                        {task.dueDate && task.status !== 'COMPLETED' && (
+                          <p className="text-xs text-muted-foreground mt-1 ml-6">
+                            Deadline: {new Date(task.dueDate).toLocaleDateString('nl-BE')}
+                          </p>
+                        )}
+                      </div>
+                      <Badge
+                        variant={task.status === 'COMPLETED' ? 'outline' : 'default'}
+                        className="text-xs"
+                      >
+                        {task.status === 'COMPLETED' ? 'Voltooid' :
+                         task.status === 'IN_PROGRESS' ? 'Bezig' :
+                         task.status === 'BLOCKED' ? 'Geblokkeerd' : 'In wachtrij'}
+                      </Badge>
+                    </div>
+                  ))}
+                  {tasks.length > 5 && (
+                    <p className="text-xs text-muted-foreground text-center pt-2">
+                      ... en {tasks.length - 5} meer taken
+                    </p>
+                  )}
+                </div>
+                <a
+                  href="/taken"
+                  className="text-xs text-primary hover:underline mt-3 block"
+                  target="_blank"
+                >
+                  Bekijk alle taken →
+                </a>
               </div>
             )}
           </div>
