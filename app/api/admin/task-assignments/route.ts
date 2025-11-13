@@ -93,7 +93,7 @@ export async function POST(req: Request) {
     const assignment = await prisma.taskAssignment.upsert({
       where: {
         entityId_taskType: {
-          entityId: entityId || null,
+          entityId: (entityId || null) as any,
           taskType,
         },
       },
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
         updatedAt: new Date(),
       },
       create: {
-        entityId: entityId || null,
+        entityId: (entityId || null) as any,
         taskType,
         assignedToId,
         notifyChannel: notifyChannel || 'BOTH',
