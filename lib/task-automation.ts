@@ -147,7 +147,7 @@ export async function createAutomaticTasks(starter: any) {
             message: `Je hebt een nieuwe taak: "${title}" voor starter ${starter.name}`,
             taskId: task.id,
             starterId: starter.id,
-            linkUrl: `/taken/${task.id}`,
+            linkUrl: `/taken?taskId=${task.id}`,
           },
         })
 

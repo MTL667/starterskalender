@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -134,6 +135,8 @@ const getStatusIcon = (status: string) => {
 
 export default function TakenPage() {
   const { data: session } = useSession()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
@@ -144,6 +147,39 @@ export default function TakenPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [assignedToMe, setAssignedToMe] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Check for taskId in URL (from notification click)
+  useEffect(() => {
+    const taskId = searchParams.get('taskId')
+    if (taskId && tasks.length > 0) {
+      // Find task in loaded tasks
+      const task = tasks.find(t => t.id === taskId)
+      if (task) {
+        setSelectedTask(task)
+        setDialogOpen(true)
+        // Remove taskId from URL
+        router.replace('/taken', { scroll: false })
+      } else {
+        // Task not in filtered list, fetch it directly
+        fetchSpecificTask(taskId)
+      }
+    }
+  }, [searchParams, tasks])
+
+  const fetchSpecificTask = async (taskId: string) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`)
+      if (res.ok) {
+        const task = await res.json()
+        setSelectedTask(task)
+        setDialogOpen(true)
+        // Remove taskId from URL
+        router.replace('/taken', { scroll: false })
+      }
+    } catch (error) {
+      console.error('Error fetching specific task:', error)
+    }
+  }
 
   useEffect(() => {
     fetchTasks()
