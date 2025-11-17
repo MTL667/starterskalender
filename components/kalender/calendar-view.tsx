@@ -61,6 +61,16 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   // Bepaal het jaar om te fetchen op basis van view mode
   const fetchYear = viewMode === 'year' ? year : getYear(currentDate)
 
+  // Synchroniseer year state met currentDate in week/month mode
+  useEffect(() => {
+    if (viewMode !== 'year') {
+      const currentYear = getYear(currentDate)
+      if (currentYear !== year) {
+        setYear(currentYear)
+      }
+    }
+  }, [currentDate, viewMode, year])
+
   // Fetch starters en entities
   useEffect(() => {
     setLoading(true)
@@ -179,6 +189,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       setYear(getYear(today))
     } else {
       setCurrentDate(today)
+      // Year wordt automatisch gesynchroniseerd door useEffect
     }
   }
 
