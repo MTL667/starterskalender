@@ -521,3 +521,23 @@ model Booking {
   @@index([msEventId])
 }
 
+// Email verzendingen loggen (voor cron jobs en task notifications)
+model EmailLog {
+  id              String           @id @default(cuid())
+  type            NotificationType // WEEKLY_REMINDER, MONTHLY_SUMMARY, etc.
+  recipient       String           // Email adres van ontvanger
+  recipientUserId String?          // User ID als bekend
+  subject         String           // Email onderwerp
+  startersCount   Int?             // Aantal starters in email (indien van toepassing)
+  entities        String[]         // Entiteit namen (indien van toepassing)
+  status          String           @default("SENT") // SENT, FAILED, BOUNCED
+  errorMessage    String?          @db.Text // Foutmelding indien gefaald
+  metadata        Json?            // Extra metadata (bijv. task IDs, starter IDs)
+  sentAt          DateTime         @default(now())
+
+  @@index([type, sentAt])
+  @@index([recipient, sentAt])
+  @@index([recipientUserId])
+  @@index([status])
+}
+

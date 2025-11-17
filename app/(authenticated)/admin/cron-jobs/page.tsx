@@ -25,6 +25,37 @@ interface JobResult {
   debugInfo?: string
 }
 
+interface EmailLog {
+  id: string
+  recipient: string
+  subject: string
+  startersCount: number | null
+  entities: string[]
+  status: string
+  errorMessage: string | null
+  sentAt: string
+}
+
+// Helper functie voor "time ago" formatting
+function formatTimeAgo(date: Date): string {
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return 'nu'
+  if (diffMins < 60) return `${diffMins}m geleden`
+  if (diffHours < 24) return `${diffHours}u geleden`
+  if (diffDays < 7) return `${diffDays}d geleden`
+  
+  return date.toLocaleDateString('nl-BE', { 
+    day: 'numeric', 
+    month: 'short',
+    year: diffDays > 365 ? 'numeric' : undefined
+  })
+}
+
 const cronJobs: CronJob[] = [
   {
     id: 'weekly',
@@ -65,6 +96,8 @@ export default function CronJobsPage() {
   const [results, setResults] = useState<Record<string, JobResult>>({})
   const [diagnostics, setDiagnostics] = useState<any>(null)
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(true)
+  const [emailLogs, setEmailLogs] = useState<Record<string, EmailLog[]>>({})
+  const [logsLoading, setLogsLoading] = useState(true)
 
   // Load diagnostics on mount
   useEffect(() => {
@@ -77,6 +110,20 @@ export default function CronJobsPage() {
       .catch(error => {
         console.error('Error loading diagnostics:', error)
         setDiagnosticsLoading(false)
+      })
+  }, [])
+
+  // Load email logs on mount
+  useEffect(() => {
+    fetch('/api/admin/email-logs')
+      .then(res => res.json())
+      .then(data => {
+        setEmailLogs(data)
+        setLogsLoading(false)
+      })
+      .catch(error => {
+        console.error('Error loading email logs:', error)
+        setLogsLoading(false)
       })
   }, [])
 
@@ -103,6 +150,12 @@ export default function CronJobsPage() {
             usersNotified: data.usersNotified,
           },
         }))
+        
+        // Refresh email logs na succesvolle verzending
+        fetch('/api/admin/email-logs')
+          .then(res => res.json())
+          .then(data => setEmailLogs(data))
+          .catch(err => console.error('Error refreshing logs:', err))
       } else {
         // Enhanced error display
         const errorMessage = data.error || 'Onbekende fout'
@@ -132,6 +185,17 @@ export default function CronJobsPage() {
     } finally {
       setLoading(null)
     }
+  }
+
+  const getJobEmailLogs = (jobId: string): EmailLog[] => {
+    const typeMap: Record<string, string> = {
+      weekly: 'WEEKLY_REMINDER',
+      monthly: 'MONTHLY_SUMMARY',
+      quarterly: 'QUARTERLY_SUMMARY',
+      yearly: 'YEARLY_SUMMARY',
+    }
+    const type = typeMap[jobId]
+    return type ? emailLogs[type] || [] : []
   }
 
   return (
@@ -221,6 +285,65 @@ export default function CronJobsPage() {
                     </>
                   )}
                 </Button>
+
+                {/* Email Logs - Laatste verzendingen */}
+                {!logsLoading && getJobEmailLogs(job.id).length > 0 && (
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium mb-3 text-muted-foreground">
+                      📧 Laatste Verzendingen
+                    </h4>
+                    <div className="space-y-2">
+                      {getJobEmailLogs(job.id).slice(0, 3).map((log) => {
+                        const date = new Date(log.sentAt)
+                        const timeAgo = formatTimeAgo(date)
+                        const isSuccess = log.status === 'SENT'
+                        
+                        return (
+                          <div
+                            key={log.id}
+                            className="text-xs p-2 rounded border bg-card"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  {isSuccess ? (
+                                    <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />
+                                  ) : (
+                                    <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
+                                  )}
+                                  <span className="font-medium truncate">
+                                    {log.recipient}
+                                  </span>
+                                </div>
+                                {log.startersCount !== null && (
+                                  <p className="text-muted-foreground ml-5 mt-0.5">
+                                    {log.startersCount} starter{log.startersCount !== 1 ? 's' : ''}
+                                    {log.entities.length > 0 && (
+                                      <span> • {log.entities.join(', ')}</span>
+                                    )}
+                                  </p>
+                                )}
+                                {log.errorMessage && (
+                                  <p className="text-red-600 dark:text-red-400 ml-5 mt-0.5">
+                                    {log.errorMessage}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="text-muted-foreground whitespace-nowrap text-xs">
+                                {timeAgo}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {getJobEmailLogs(job.id).length > 3 && (
+                        <p className="text-xs text-muted-foreground text-center pt-1">
+                          ... en {getJobEmailLogs(job.id).length - 3} oudere verzendingen
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {result && (
                   <div

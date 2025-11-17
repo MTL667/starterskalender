@@ -190,6 +190,24 @@ export async function GET(req: Request) {
 
         emailsSent++
 
+        // Log email verzending
+        await prisma.emailLog.create({
+          data: {
+            type: 'MONTHLY_SUMMARY',
+            recipient: user.email,
+            recipientUserId: user.id,
+            subject,
+            startersCount: userStarters.length,
+            entities: Object.keys(startersByEntity),
+            status: 'SENT',
+            metadata: {
+              month,
+              year,
+              starterIds: userStarters.map(s => s.id),
+            },
+          },
+        })
+
         // Log audit
         await logAudit({
           action: 'SEND_MAIL',
@@ -206,7 +224,24 @@ export async function GET(req: Request) {
         })
       } catch (error) {
         console.error(`Failed to send email to ${user.email}:`, error)
-        errors.push(`${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error'
+        errors.push(`${user.email}: ${errorMsg}`)
+        
+        // Log gefaalde email
+        try {
+          await prisma.emailLog.create({
+            data: {
+              type: 'MONTHLY_SUMMARY',
+              recipient: user.email,
+              recipientUserId: user.id,
+              subject: 'Failed to send',
+              status: 'FAILED',
+              errorMessage: errorMsg,
+            },
+          })
+        } catch (logError) {
+          console.error('Failed to log email error:', logError)
+        }
       }
     }
 
