@@ -36,6 +36,13 @@ interface EmailLog {
   sentAt: string
 }
 
+interface RecipientPreview {
+  email: string
+  name: string | null
+  startersCount: number
+  entities: string[]
+}
+
 // Helper functie voor "time ago" formatting
 function formatTimeAgo(date: Date): string {
   const now = new Date()
@@ -98,6 +105,10 @@ export default function CronJobsPage() {
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(true)
   const [emailLogs, setEmailLogs] = useState<Record<string, EmailLog[]>>({})
   const [logsLoading, setLogsLoading] = useState(true)
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null)
+  const [recipientPreviews, setRecipientPreviews] = useState<Record<string, RecipientPreview[]>>({})
+  const [selectedRecipients, setSelectedRecipients] = useState<Record<string, Set<string>>>({})
+  const [showRecipients, setShowRecipients] = useState<Record<string, boolean>>({})
 
   // Load diagnostics on mount
   useEffect(() => {
@@ -127,15 +138,80 @@ export default function CronJobsPage() {
       })
   }, [])
 
+  const previewRecipients = async (job: CronJob) => {
+    setPreviewLoading(job.id)
+
+    try {
+      const response = await fetch('/api/admin/cron-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: job.endpoint }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setRecipientPreviews(prev => ({ ...prev, [job.id]: data.recipients }))
+        
+        // Standaard alle recipients selecteren
+        const allEmails = new Set<string>(data.recipients.map((r: RecipientPreview) => r.email))
+        setSelectedRecipients(prev => ({ ...prev, [job.id]: allEmails }))
+        
+        // Toon recipient lijst
+        setShowRecipients(prev => ({ ...prev, [job.id]: true }))
+      } else {
+        alert(`Fout bij ophalen ontvangers: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Error previewing recipients:', error)
+      alert('Fout bij ophalen ontvangers')
+    } finally {
+      setPreviewLoading(null)
+    }
+  }
+
+  const toggleRecipient = (jobId: string, email: string) => {
+    setSelectedRecipients(prev => {
+      const current = prev[jobId] || new Set()
+      const updated = new Set(current)
+      
+      if (updated.has(email)) {
+        updated.delete(email)
+      } else {
+        updated.add(email)
+      }
+      
+      return { ...prev, [jobId]: updated }
+    })
+  }
+
+  const selectAllRecipients = (jobId: string, selectAll: boolean) => {
+    setSelectedRecipients(prev => {
+      const preview = recipientPreviews[jobId] || []
+      const updated = selectAll 
+        ? new Set(preview.map(r => r.email))
+        : new Set<string>()
+      
+      return { ...prev, [jobId]: updated }
+    })
+  }
+
   const triggerJob = async (job: CronJob) => {
     setLoading(job.id)
     setResults(prev => ({ ...prev, [job.id]: { success: false, message: 'Bezig met verzenden...' } }))
 
     try {
+      // Haal geselecteerde recipients op (indien preview gedaan is)
+      const selected = selectedRecipients[job.id]
+      const recipientsArray = selected ? Array.from(selected) : []
+
       const response = await fetch(`/api/admin/trigger-cron`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint: job.endpoint }),
+        body: JSON.stringify({ 
+          endpoint: job.endpoint,
+          recipients: recipientsArray.length > 0 ? recipientsArray : undefined,
+        }),
       })
 
       const data = await response.json()
@@ -267,9 +343,96 @@ export default function CronJobsPage() {
                   <span>{job.schedule}</span>
                 </div>
 
+                {/* Preview Recipients Button */}
+                <Button
+                  onClick={() => previewRecipients(job)}
+                  disabled={previewLoading === job.id || isLoading}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {previewLoading === job.id ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Ontvangers ophalen...
+                    </>
+                  ) : (
+                    <>
+                      👥 Toon Ontvangers
+                      {recipientPreviews[job.id]?.length > 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          {recipientPreviews[job.id].length}
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </Button>
+
+                {/* Recipient Selection */}
+                {showRecipients[job.id] && recipientPreviews[job.id] && (
+                  <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">
+                        Selecteer Ontvangers ({selectedRecipients[job.id]?.size || 0} geselecteerd)
+                      </h4>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => selectAllRecipients(job.id, true)}
+                          className="h-7 text-xs"
+                        >
+                          Alles
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => selectAllRecipients(job.id, false)}
+                          className="h-7 text-xs"
+                        >
+                          Geen
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="max-h-60 overflow-y-auto space-y-1">
+                      {recipientPreviews[job.id].map((recipient) => {
+                        const isSelected = selectedRecipients[job.id]?.has(recipient.email) || false
+                        
+                        return (
+                          <label
+                            key={recipient.email}
+                            className="flex items-start gap-2 p-2 rounded hover:bg-accent cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleRecipient(job.id, recipient.email)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium truncate">
+                                {recipient.name || recipient.email}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {recipient.email !== recipient.name && (
+                                  <span className="block truncate">{recipient.email}</span>
+                                )}
+                                {recipient.startersCount} starter{recipient.startersCount !== 1 ? 's' : ''}
+                                {recipient.entities.length > 0 && (
+                                  <span> • {recipient.entities.join(', ')}</span>
+                                )}
+                              </div>
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <Button
                   onClick={() => triggerJob(job)}
-                  disabled={isLoading}
+                  disabled={isLoading || (showRecipients[job.id] && (selectedRecipients[job.id]?.size || 0) === 0)}
                   className="w-full"
                   variant={result?.success ? 'outline' : 'default'}
                 >
@@ -281,7 +444,9 @@ export default function CronJobsPage() {
                   ) : (
                     <>
                       <Send className="mr-2 h-4 w-4" />
-                      Nu Verzenden
+                      {showRecipients[job.id] && (selectedRecipients[job.id]?.size || 0) > 0
+                        ? `Verzenden naar ${selectedRecipients[job.id]?.size} ontvanger${(selectedRecipients[job.id]?.size || 0) !== 1 ? 's' : ''}`
+                        : 'Nu Verzenden'}
                     </>
                   )}
                 </Button>

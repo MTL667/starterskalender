@@ -25,6 +25,12 @@ export async function GET(req: Request) {
   if (authError) return authError
 
   try {
+    // Check voor recipient filtering (optioneel - voor manuele triggers)
+    const { searchParams } = new URL(req.url)
+    const recipientsParam = searchParams.get('recipients')
+    const selectedRecipients = recipientsParam
+      ? recipientsParam.split(',').map(r => r.trim())
+      : null
     // Bereken datum over 7 dagen
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -104,6 +110,10 @@ export async function GET(req: Request) {
 
     // Voor elke user, verzamel starters van hun toegankelijke entiteiten
     for (const user of allUsers) {
+      // Skip deze user als recipients gefilterd zijn en deze user niet in de lijst staat
+      if (selectedRecipients && !selectedRecipients.includes(user.email)) {
+        continue
+      }
       // Bepaal welke entiteiten deze user mag zien
       let accessibleEntityIds: string[]
       

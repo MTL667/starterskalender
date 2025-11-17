@@ -22,7 +22,7 @@ export async function POST(req: Request) {
         { status: 401 }
       )
     }
-    const { endpoint } = await req.json()
+    const { endpoint, recipients } = await req.json()
 
     if (!endpoint) {
       return NextResponse.json(
@@ -30,6 +30,9 @@ export async function POST(req: Request) {
         { status: 400 }
       )
     }
+
+    // Recipients is optional - array van email adressen
+    const selectedRecipients: string[] = recipients || []
 
     // Validate endpoint
     const validEndpoints = [
@@ -67,11 +70,20 @@ export async function POST(req: Request) {
     
     // Remove trailing slash if present
     const cleanBaseUrl = baseUrl.replace(/\/$/, '')
-    const fullUrl = `${cleanBaseUrl}${endpoint}`
+    
+    // Add recipients as query param if provided
+    let fullUrl = `${cleanBaseUrl}${endpoint}`
+    if (selectedRecipients.length > 0) {
+      const recipientsParam = encodeURIComponent(selectedRecipients.join(','))
+      fullUrl += `?recipients=${recipientsParam}`
+    }
 
     console.log(`🔧 Admin trigger: ${user.email} is manually triggering ${endpoint}`)
     console.log(`🌐 Full URL: ${fullUrl}`)
     console.log(`🔑 Using CRON_SECRET: ${cronSecret.substring(0, 10)}...`)
+    if (selectedRecipients.length > 0) {
+      console.log(`📧 Selected recipients: ${selectedRecipients.join(', ')}`)
+    }
 
     // Call the cron endpoint with CRON_SECRET
     let response: Response
