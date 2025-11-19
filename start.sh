@@ -6,7 +6,7 @@ echo "🚀 Starting Starterskalender..."
 
 # Sync database schema (push schema changes without migrations)
 echo "🗄️  Syncing database schema..."
-su-exec nextjs:nodejs npx prisma db push --accept-data-loss
+su-exec nextjs:nodejs node node_modules/.bin/prisma db push --accept-data-loss
 
 # Start crond in de achtergrond (als root)
 echo "📅 Starting cron daemon..."
