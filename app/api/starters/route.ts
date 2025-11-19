@@ -16,6 +16,7 @@ const StarterSchema = z.object({
   roleTitle: z.string().nullable().optional(),
   via: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  contractSignedOn: z.string().datetime().nullable().optional(),
   startDate: z.string().datetime(),
   hasExperience: z.boolean().default(false),
   experienceSince: z.string().datetime().nullable().optional(),
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
         roleTitle: normalizeString(data.roleTitle),
         via: normalizeString(data.via),
         notes: data.notes, // Behoud originele notes
+        contractSignedOn: data.contractSignedOn ? new Date(data.contractSignedOn) : null,
         startDate,
         weekNumber,
         year,

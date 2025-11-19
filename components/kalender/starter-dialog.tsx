@@ -29,6 +29,7 @@ interface Starter {
   region?: string | null
   via?: string | null
   notes?: string | null
+  contractSignedOn?: string | null
   startDate: string
   isCancelled?: boolean
   cancelledAt?: string | null
@@ -83,6 +84,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     region: '',
     via: '',
     notes: '',
+    contractSignedOn: '',
     startDate: format(new Date(), 'yyyy-MM-dd'),
     hasExperience: false,
     experienceSince: '',
@@ -206,6 +208,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         region: starter.region || '',
         via: starter.via || '',
         notes: starter.notes || '',
+        contractSignedOn: starter.contractSignedOn ? format(new Date(starter.contractSignedOn), 'yyyy-MM-dd') : '',
         startDate: format(new Date(starter.startDate), 'yyyy-MM-dd'),
         hasExperience: starter.hasExperience || false,
         experienceSince: starter.experienceSince ? format(new Date(starter.experienceSince), 'yyyy-MM-dd') : '',
@@ -223,6 +226,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         region: '',
         via: '',
         notes: '',
+        contractSignedOn: '',
         startDate: format(new Date(), 'yyyy-MM-dd'),
         hasExperience: false,
         experienceSince: '',
@@ -325,6 +329,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         region: formData.region || null,
         via: formData.via || null,
         notes: formData.notes || null,
+        contractSignedOn: formData.contractSignedOn 
+          ? new Date(formData.contractSignedOn).toISOString() 
+          : null,
         startDate: new Date(formData.startDate).toISOString(),
         hasExperience: formData.hasExperience,
         experienceSince: formData.hasExperience && formData.experienceSince 
@@ -575,16 +582,32 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="startDate">Startdatum *</Label>
-              <Input
-                id="startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                required
-                disabled={!canEdit}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contractSignedOn">Contract getekend op</Label>
+                <Input
+                  id="contractSignedOn"
+                  type="date"
+                  value={formData.contractSignedOn}
+                  onChange={(e) => setFormData({ ...formData, contractSignedOn: e.target.value })}
+                  disabled={!canEdit}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Optioneel - Datum waarop het contract is ondertekend
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="startDate">Startdatum *</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  required
+                  disabled={!canEdit}
+                />
+              </div>
             </div>
 
             <div>
