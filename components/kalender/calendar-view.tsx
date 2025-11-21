@@ -74,11 +74,14 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   // Fetch starters en entities
   useEffect(() => {
     setLoading(true)
+    console.log(`📅 Fetching starters for year: ${fetchYear}, currentDate:`, currentDate, `viewMode: ${viewMode}`)
     Promise.all([
       fetch(`/api/starters?year=${fetchYear}`).then(res => res.json()),
       fetch('/api/entities').then(res => res.json()),
     ])
       .then(([startersData, entitiesData]) => {
+        console.log(`✅ Received ${startersData.length} starters for year ${fetchYear}`)
+        console.log('Starters:', startersData.map((s: Starter) => ({ name: s.name, startDate: s.startDate, year: (s as any).year, weekNumber: s.weekNumber })))
         setStarters(startersData)
         setEntities(entitiesData)
         setLoading(false)
@@ -87,19 +90,22 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
         console.error('Error fetching data:', error)
         setLoading(false)
       })
-  }, [fetchYear])
+  }, [fetchYear, currentDate, viewMode])
 
   // Bepaal de datum range voor filtering op basis van view mode
   let dateRangeStart: Date, dateRangeEnd: Date
   if (viewMode === 'week') {
     dateRangeStart = startOfWeek(currentDate, { weekStartsOn: 1 })
     dateRangeEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
+    console.log(`📆 Week view - Range: ${format(dateRangeStart, 'yyyy-MM-dd')} to ${format(dateRangeEnd, 'yyyy-MM-dd')}`)
   } else if (viewMode === 'month') {
     dateRangeStart = startOfMonth(currentDate)
     dateRangeEnd = endOfMonth(currentDate)
+    console.log(`📆 Month view - Range: ${format(dateRangeStart, 'yyyy-MM-dd')} to ${format(dateRangeEnd, 'yyyy-MM-dd')}`)
   } else {
     dateRangeStart = startOfYear(new Date(year, 0, 1))
     dateRangeEnd = endOfYear(new Date(year, 0, 1))
+    console.log(`📆 Year view - Range: ${format(dateRangeStart, 'yyyy-MM-dd')} to ${format(dateRangeEnd, 'yyyy-MM-dd')}`)
   }
 
   // Filter starters
@@ -107,7 +113,8 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     // Filter op datum range (voor week en maand view)
     if (viewMode !== 'year') {
       const starterDate = new Date(starter.startDate)
-      if (starterDate < dateRangeStart || starterDate > dateRangeEnd) {
+      const inRange = starterDate >= dateRangeStart && starterDate <= dateRangeEnd
+      if (!inRange) {
         return false
       }
     }
