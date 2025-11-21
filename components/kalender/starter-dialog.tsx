@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 
@@ -76,6 +76,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [starterMaterials, setStarterMaterials] = useState<any[]>([])
   const [tasks, setTasks] = useState<any[]>([])
   const [isITResponsible, setIsITResponsible] = useState(false)
+  const [copiedField, setCopiedField] = useState<'phone' | 'email' | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     language: 'NL',
@@ -457,6 +458,25 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
+  const handleCopy = async (field: 'phone' | 'email') => {
+    const value = field === 'phone' ? formData.phoneNumber : formData.desiredEmail
+    
+    if (!value) return
+
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedField(field)
+      
+      // Reset na 2 seconden
+      setTimeout(() => {
+        setCopiedField(null)
+      }, 2000)
+    } catch (error) {
+      console.error('Error copying to clipboard:', error)
+      alert('Kon niet kopiëren naar clipboard')
+    }
+  }
+
   return (
     <>
       <Dialog open={open} onOpenChange={() => onClose()}>
@@ -638,16 +658,39 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     </span>
                   )}
                 </Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                  placeholder="+32 123 45 67 89"
-                  disabled={!canEditContactInfo}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    placeholder="+32 123 45 67 89"
+                    disabled={!canEditContactInfo}
+                    className="flex-1"
+                  />
+                  {formData.phoneNumber && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleCopy('phone')}
+                      className="shrink-0"
+                      title="Kopieer telefoonnummer"
+                    >
+                      {copiedField === 'phone' ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Optioneel - Kan later worden toegevoegd
+                  {formData.phoneNumber 
+                    ? copiedField === 'phone' 
+                      ? '✓ Gekopieerd naar clipboard!' 
+                      : 'Klik op het icoon om te kopiëren'
+                    : 'Optioneel - Kan later worden toegevoegd'}
                 </p>
               </div>
 
@@ -660,16 +703,39 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     </span>
                   )}
                 </Label>
-                <Input
-                  id="desiredEmail"
-                  type="email"
-                  value={formData.desiredEmail}
-                  onChange={(e) => setFormData({ ...formData, desiredEmail: e.target.value })}
-                  placeholder="voornaam.achternaam@bedrijf.be"
-                  disabled={!canEditContactInfo}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="desiredEmail"
+                    type="email"
+                    value={formData.desiredEmail}
+                    onChange={(e) => setFormData({ ...formData, desiredEmail: e.target.value })}
+                    placeholder="voornaam.achternaam@bedrijf.be"
+                    disabled={!canEditContactInfo}
+                    className="flex-1"
+                  />
+                  {formData.desiredEmail && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleCopy('email')}
+                      className="shrink-0"
+                      title="Kopieer emailadres"
+                    >
+                      {copiedField === 'email' ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Voorgesteld zakelijk mailadres
+                  {formData.desiredEmail 
+                    ? copiedField === 'email' 
+                      ? '✓ Gekopieerd naar clipboard!' 
+                      : 'Klik op het icoon om te kopiëren'
+                    : 'Voorgesteld zakelijk mailadres'}
                 </p>
               </div>
             </div>
