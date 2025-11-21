@@ -79,6 +79,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [isITResponsible, setIsITResponsible] = useState(false)
   const [copiedField, setCopiedField] = useState<'phone' | 'email' | null>(null)
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false)
+  const [hasSignatureTemplate, setHasSignatureTemplate] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     language: 'NL',
@@ -200,6 +201,25 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         setIsITResponsible(false)
       })
   }, [session?.user?.id, starter?.entity?.id, formData.entityId])
+
+  // Check of entiteit een signature template heeft
+  useEffect(() => {
+    const entityId = starter?.entity?.id || formData.entityId
+    if (!entityId) {
+      setHasSignatureTemplate(false)
+      return
+    }
+
+    fetch(`/api/signature-templates?entityId=${entityId}`)
+      .then(res => res.json())
+      .then(data => {
+        setHasSignatureTemplate(data.length > 0)
+      })
+      .catch(err => {
+        console.error('Error checking signature template:', err)
+        setHasSignatureTemplate(false)
+      })
+  }, [starter?.entity?.id, formData.entityId])
 
   useEffect(() => {
     if (starter) {
@@ -479,8 +499,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
-  // Check of alle velden voor signature generatie ingevuld zijn
+  // Check of alle velden voor signature generatie ingevuld zijn en template bestaat
   const canGenerateSignature = !!(
+    hasSignatureTemplate &&
     formData.name &&
     formData.roleTitle &&
     formData.phoneNumber &&
@@ -1054,6 +1075,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
           phoneNumber: formData.phoneNumber,
           desiredEmail: formData.desiredEmail,
         }}
+        entityId={starter?.entity?.id || formData.entityId}
       />
     )}
 

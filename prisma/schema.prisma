@@ -116,6 +116,7 @@ model Entity {
   notificationPreferences NotificationPreference[]
   tasks                   Task[]                   // Taken gekoppeld aan deze entiteit
   taskAssignments         TaskAssignment[]         // Taak verantwoordelijken voor deze entiteit
+  signatureTemplate       SignatureTemplate?       // Email signature template voor deze entiteit
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -540,5 +541,21 @@ model EmailLog {
   @@index([recipient, sentAt])
   @@index([recipientUserId])
   @@index([status])
+}
+
+// Email Signature Templates per Entiteit
+model SignatureTemplate {
+  id           String   @id @default(cuid())
+  entityId     String   @unique // Eén template per entiteit
+  entity       Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  name         String   // Naam van de template (bijv. "ACEG Standard")
+  htmlTemplate String   @db.Text // De HTML template met placeholders
+  isActive     Boolean  @default(true) // Of de template actief is
+  createdBy    String   // User ID die de template heeft aangemaakt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([entityId])
+  @@index([isActive])
 }
 
