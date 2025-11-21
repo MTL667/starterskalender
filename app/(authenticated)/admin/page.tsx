@@ -2,7 +2,7 @@ import { requireAdmin } from '@/lib/auth-utils'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope, FileSignature } from 'lucide-react'
+import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope } from 'lucide-react'
 
 export default async function AdminPage() {
   const user = await requireAdmin().catch(() => null)
@@ -51,12 +51,6 @@ export default async function AdminPage() {
   ]
 
   const systemSections = [
-    {
-      title: 'Signature Generator',
-      description: 'Genereer professionele email signatures voor Outlook',
-      icon: FileSignature,
-      href: '/admin/signature-generator',
-    },
     {
       title: 'Audit Log',
       description: 'Bekijk de audit trail van alle acties',

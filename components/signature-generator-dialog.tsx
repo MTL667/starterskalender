@@ -1,25 +1,32 @@
 'use client'
 
 import { useState } from 'react'
-import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Copy, Mail, User, Phone, Briefcase, Check } from 'lucide-react'
+import { Copy, Check } from 'lucide-react'
 
-export default function SignatureGeneratorPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    jobTitle: '',
-    phone: '',
-    email: '',
-  })
-  
-  const [generatedSignature, setGeneratedSignature] = useState<string>('')
+interface SignatureGeneratorDialogProps {
+  open: boolean
+  onClose: () => void
+  starterData: {
+    name: string
+    roleTitle: string
+    phoneNumber: string
+    desiredEmail: string
+  }
+}
+
+export function SignatureGeneratorDialog({ open, onClose, starterData }: SignatureGeneratorDialogProps) {
   const [copied, setCopied] = useState(false)
 
   const generateSignature = () => {
-    const signature = `<table cellpadding='0' cellspacing='0' border='0' class='sh-src' style='margin: 0px; border-collapse: collapse; width: 600px;' width='600'>
+    return `<table cellpadding='0' cellspacing='0' border='0' class='sh-src' style='margin: 0px; border-collapse: collapse; width: 600px;' width='600'>
       <tr>
             <td style='padding: 0px 1px 0px 0px;'>
                   <table cellpadding='0' cellspacing='0' border='0' style='margin: 0px; border-collapse: collapse;'>
@@ -50,10 +57,10 @@ export default function SignatureGeneratorPage() {
                                           <tr>
                                                 <td style='padding: 10px 1px 10px 0px; white-space: nowrap;'>
                                                       <p style='font-family: Helvetica, sans-serif; font-size: 24px; line-height: 1.44; font-weight: 700; color: #0084ba; white-space: normal; margin: 1px 1px 1px 1px;'>
-                                                            ${formData.name}
+                                                            ${starterData.name}
                                                       </p>
                                                       <p style='font-family: Helvetica, sans-serif; font-size: 16px; line-height: 1.44; white-space: normal; color:#0084ba; margin: 1px;'>
-                                                            ${formData.jobTitle}
+                                                            ${starterData.roleTitle}
                                                       </p>
                                                       <p style='font-weight:bold; font-family: Helvetica, sans-serif; font-size: 12px; line-height: 1.44; white-space: normal; color:#0084ba; margin: 1px;'>
                                                             Signature Design Lab
@@ -74,8 +81,8 @@ export default function SignatureGeneratorPage() {
                                                                   </td>
                                                                   <td style='white-space: nowrap; padding: 0px 1px 0px 0px; vertical-align: middle;'> 
                                                                         <p style='margin: 1px;'>
-                                                                              <a href='mailto:${formData.email}' target='_blank' style='font-family: Helvetica, sans-serif; font-size: 12px; line-height: 1.2; white-space: nowrap; color: #0084ba; text-decoration: none !important;'>
-                                                                                    ${formData.email}
+                                                                              <a href='mailto:${starterData.desiredEmail}' target='_blank' style='font-family: Helvetica, sans-serif; font-size: 12px; line-height: 1.2; white-space: nowrap; color: #0084ba; text-decoration: none !important;'>
+                                                                                    ${starterData.desiredEmail}
                                                                               </a>
                                                                         </p>
                                                                   </td>
@@ -91,8 +98,8 @@ export default function SignatureGeneratorPage() {
                                                                   </td>
                                                                   <td style='white-space: nowrap; padding: 0px 1px 0px 0px; vertical-align: middle;'>
                                                                         <p style='margin: 1px;'>
-                                                                              <a href='tel:${formData.phone.replace(/\s/g, '')}' target='_blank' style='font-family: Helvetica, sans-serif; font-size: 12px; line-height: 1.2; white-space: nowrap; color: #0084ba; text-decoration: none !important;'>
-                                                                                    ${formData.phone}
+                                                                              <a href='tel:${starterData.phoneNumber.replace(/\s/g, '')}' target='_blank' style='font-family: Helvetica, sans-serif; font-size: 12px; line-height: 1.2; white-space: nowrap; color: #0084ba; text-decoration: none !important;'>
+                                                                                    ${starterData.phoneNumber}
                                                                               </a>
                                                                         </p>
                                                                   </td>
@@ -208,13 +215,13 @@ export default function SignatureGeneratorPage() {
             </td>
       </tr>
 </table>`
-
-    setGeneratedSignature(signature)
   }
+
+  const signature = generateSignature()
 
   const handleCopySignature = async () => {
     try {
-      await navigator.clipboard.writeText(generatedSignature)
+      await navigator.clipboard.writeText(signature)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
@@ -223,101 +230,23 @@ export default function SignatureGeneratorPage() {
     }
   }
 
-  const isFormValid = formData.name && formData.jobTitle && formData.phone && formData.email
-
   return (
-    <div className="container mx-auto py-8 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Email Signature Generator</h1>
-        <p className="text-muted-foreground">
-          Genereer een professionele email signature voor Outlook
-        </p>
-      </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Email Signature Generator</DialogTitle>
+          <DialogDescription>
+            Gegenereerde signature voor {starterData.name}
+          </DialogDescription>
+        </DialogHeader>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Formulier */}
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-6">Gegevens Invullen</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Naam *
-              </Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Jan Peeters"
-                className="mt-2"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="jobTitle" className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4" />
-                Functie *
-              </Label>
-              <Input
-                id="jobTitle"
-                value={formData.jobTitle}
-                onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                placeholder="HR Manager"
-                className="mt-2"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="phone" className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
-                Telefoonnummer (Mobiel) *
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+32(0)123 45 67 89"
-                className="mt-2"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Formaat: +32(0)123 45 67 89
+        <div className="space-y-6">
+          {/* Visual Preview */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-muted-foreground">
+                VISUELE PREVIEW:
               </p>
-            </div>
-
-            <div>
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                E-mailadres *
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="jan.peeters@aceg.be"
-                className="mt-2"
-              />
-            </div>
-
-            <Button 
-              onClick={generateSignature} 
-              disabled={!isFormValid}
-              className="w-full mt-6"
-              size="lg"
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Genereer Signature
-            </Button>
-          </div>
-        </Card>
-
-        {/* Preview & Copy */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Preview & Kopiëren</h2>
-            {generatedSignature && (
               <Button 
                 onClick={handleCopySignature}
                 variant="outline"
@@ -335,59 +264,43 @@ export default function SignatureGeneratorPage() {
                   </>
                 )}
               </Button>
-            )}
+            </div>
+            <div className="border rounded-lg p-6 bg-white">
+              <div 
+                dangerouslySetInnerHTML={{ __html: signature }}
+                className="signature-preview"
+              />
+            </div>
           </div>
 
-          {!generatedSignature ? (
-            <div className="border-2 border-dashed rounded-lg p-12 text-center text-muted-foreground">
-              <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p className="text-sm">
-                Vul de gegevens in en klik op "Genereer Signature"
-              </p>
+          {/* HTML Code */}
+          <div>
+            <p className="text-sm font-semibold text-muted-foreground mb-2">
+              HTML CODE (voor Outlook):
+            </p>
+            <div className="bg-slate-50 dark:bg-slate-900 border rounded-lg p-4 max-h-[300px] overflow-y-auto">
+              <pre className="text-xs font-mono whitespace-pre-wrap break-all">
+                {signature}
+              </pre>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Visual Preview */}
-              <div className="border rounded-lg p-4 bg-white">
-                <p className="text-xs text-muted-foreground mb-3 font-semibold">
-                  VISUELE PREVIEW:
-                </p>
-                <div 
-                  dangerouslySetInnerHTML={{ __html: generatedSignature }}
-                  className="signature-preview"
-                />
-              </div>
+          </div>
 
-              {/* HTML Code */}
-              <div>
-                <p className="text-xs text-muted-foreground mb-2 font-semibold">
-                  HTML CODE (voor Outlook):
-                </p>
-                <div className="bg-slate-50 dark:bg-slate-900 border rounded-lg p-4 max-h-[400px] overflow-y-auto">
-                  <pre className="text-xs font-mono whitespace-pre-wrap break-all">
-                    {generatedSignature}
-                  </pre>
-                </div>
-              </div>
-
-              {/* Instructies */}
-              <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <p className="text-sm font-semibold mb-2 text-blue-900 dark:text-blue-100">
-                  📋 Instructies voor Outlook:
-                </p>
-                <ol className="text-xs space-y-1 text-blue-800 dark:text-blue-200 list-decimal list-inside">
-                  <li>Klik op "Kopieer HTML" hierboven</li>
-                  <li>Open Outlook → Bestand → Opties → E-mail → Handtekeningen</li>
-                  <li>Maak nieuwe handtekening of bewerk bestaande</li>
-                  <li>Klik in het tekstvak en druk Ctrl+V (plakken)</li>
-                  <li>Klik OK om op te slaan</li>
-                </ol>
-              </div>
-            </div>
-          )}
-        </Card>
-      </div>
-    </div>
+          {/* Instructies */}
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <p className="text-sm font-semibold mb-2 text-blue-900 dark:text-blue-100">
+              📋 Instructies voor Outlook:
+            </p>
+            <ol className="text-sm space-y-1 text-blue-800 dark:text-blue-200 list-decimal list-inside">
+              <li>Klik op "Kopieer HTML" hierboven</li>
+              <li>Open Outlook → Bestand → Opties → E-mail → Handtekeningen</li>
+              <li>Maak nieuwe handtekening of bewerk bestaande</li>
+              <li>Klik in het tekstvak en druk Ctrl+V (plakken)</li>
+              <li>Klik OK om op te slaan</li>
+            </ol>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

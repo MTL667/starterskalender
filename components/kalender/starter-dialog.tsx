@@ -17,9 +17,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
+import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
 
 interface Starter {
   id: string
@@ -77,6 +78,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [tasks, setTasks] = useState<any[]>([])
   const [isITResponsible, setIsITResponsible] = useState(false)
   const [copiedField, setCopiedField] = useState<'phone' | 'email' | null>(null)
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     language: 'NL',
@@ -477,6 +479,14 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
+  // Check of alle velden voor signature generatie ingevuld zijn
+  const canGenerateSignature = !!(
+    formData.name &&
+    formData.roleTitle &&
+    formData.phoneNumber &&
+    formData.desiredEmail
+  )
+
   return (
     <>
       <Dialog open={open} onOpenChange={() => onClose()}>
@@ -646,6 +656,36 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 placeholder={canEditExtraInfo ? "Voeg extra informatie toe..." : "Geen extra informatie"}
               />
             </div>
+
+            {/* Signature Generator Button */}
+            {canGenerateSignature && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 border-2 border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                      <FileSignature className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                      Email Signature Genereren
+                    </h3>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                      Alle contactgegevens zijn ingevuld! Genereer een professionele email signature voor deze starter.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={() => setSignatureDialogOpen(true)}
+                      className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+                      size="sm"
+                    >
+                      <FileSignature className="h-4 w-4 mr-2" />
+                      Genereer Signature
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Contactgegevens */}
             <div className="grid grid-cols-2 gap-4">
@@ -1002,6 +1042,20 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         </form>
       </DialogContent>
     </Dialog>
+
+    {/* Signature Generator Dialog */}
+    {canGenerateSignature && (
+      <SignatureGeneratorDialog
+        open={signatureDialogOpen}
+        onClose={() => setSignatureDialogOpen(false)}
+        starterData={{
+          name: formData.name,
+          roleTitle: formData.roleTitle,
+          phoneNumber: formData.phoneNumber,
+          desiredEmail: formData.desiredEmail,
+        }}
+      />
+    )}
 
     {/* Cancel Confirmation Dialog */}
     <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
