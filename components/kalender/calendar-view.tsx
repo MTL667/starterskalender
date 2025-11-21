@@ -74,13 +74,38 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   // Fetch starters en entities
   useEffect(() => {
     setLoading(true)
-    console.log(`📅 Fetching starters for year: ${fetchYear}, currentDate:`, currentDate, `viewMode: ${viewMode}`)
+    
+    // Bepaal of we meerdere jaren moeten fetchen (voor cross-year weeks/months)
+    const yearsToFetch = new Set<number>([fetchYear])
+    
+    if (viewMode !== 'year') {
+      // Check of de periode de jaargrens overschrijdt
+      const rangeStart = viewMode === 'week' 
+        ? startOfWeek(currentDate, { weekStartsOn: 1 })
+        : startOfMonth(currentDate)
+      const rangeEnd = viewMode === 'week'
+        ? endOfWeek(currentDate, { weekStartsOn: 1 })
+        : endOfMonth(currentDate)
+      
+      const startYear = getYear(rangeStart)
+      const endYear = getYear(rangeEnd)
+      
+      yearsToFetch.add(startYear)
+      yearsToFetch.add(endYear)
+    }
+    
+    const years = Array.from(yearsToFetch)
+    console.log(`📅 Fetching starters for years: ${years.join(', ')}, currentDate:`, currentDate, `viewMode: ${viewMode}`)
+    
     Promise.all([
-      fetch(`/api/starters?year=${fetchYear}`).then(res => res.json()),
+      // Fetch starters voor alle benodigde jaren
+      Promise.all(years.map(y => 
+        fetch(`/api/starters?year=${y}`).then(res => res.json())
+      )).then(results => results.flat()),
       fetch('/api/entities').then(res => res.json()),
     ])
       .then(([startersData, entitiesData]) => {
-        console.log(`✅ Received ${startersData.length} starters for year ${fetchYear}`)
+        console.log(`✅ Received ${startersData.length} starters for years ${years.join(', ')}`)
         console.log('Starters:', startersData.map((s: Starter) => ({ name: s.name, startDate: s.startDate, year: (s as any).year, weekNumber: s.weekNumber })))
         setStarters(startersData)
         setEntities(entitiesData)
