@@ -419,7 +419,7 @@ export function SignatureBuilder({ initialConfig, onChange }: SignatureBuilderPr
                             value={comp.value || ''}
                             onChange={(e) => updateComponent(comp.id, { value: e.target.value })}
                             placeholder="Waarde..."
-                            size="sm"
+                            className="h-8 text-sm"
                           />
                         )}
                         {comp.enabled && comp.placeholder && (
@@ -504,7 +504,7 @@ export function SignatureBuilder({ initialConfig, onChange }: SignatureBuilderPr
                             value={social.url}
                             onChange={(e) => updateSocial(social.platform, { url: e.target.value })}
                             placeholder={`https://${social.platform}.com/...`}
-                            size="sm"
+                            className="h-8 text-sm"
                           />
                         )}
                       </div>
