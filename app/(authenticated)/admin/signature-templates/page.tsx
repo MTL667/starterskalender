@@ -25,7 +25,7 @@ interface SignatureTemplate {
   entity: Entity
 }
 
-const DEFAULT_TEMPLATE = `<table cellpadding='0' cellspacing='0' border='0' class='sh-src' style='margin: 0px; border-collapse: collapse; width: 600px;' width='600'>
+export default function SignatureTemplatesPage() {
   <tr>
     <td style='padding: 0px 1px 0px 0px;'>
       <table cellpadding='0' cellspacing='0' border='0' style='margin: 0px; border-collapse: collapse;'>
