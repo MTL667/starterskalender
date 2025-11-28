@@ -13,7 +13,7 @@ interface Starter {
   name: string
   language?: string
   roleTitle?: string | null
-  contractSignedOn: string
+  contractSignedOn?: string | null
   startDate: string
   isCancelled?: boolean
   entity?: {

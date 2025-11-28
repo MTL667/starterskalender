@@ -12,7 +12,7 @@ interface MonthlyData {
 
 interface Starter {
   id: string
-  contractSignedOn: string
+  contractSignedOn?: string | null
   startDate: string
   isCancelled?: boolean
 }

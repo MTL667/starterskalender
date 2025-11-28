@@ -82,7 +82,7 @@ export async function PATCH(
     if (data.roleTitle !== undefined) updateData.roleTitle = normalizeString(data.roleTitle)
     if (data.via !== undefined) updateData.via = normalizeString(data.via)
     if (data.notes !== undefined) updateData.notes = data.notes
-    if (data.contractSignedOn !== undefined) updateData.contractSignedOn = new Date(data.contractSignedOn)
+    if (data.contractSignedOn !== undefined) updateData.contractSignedOn = data.contractSignedOn ? new Date(data.contractSignedOn) : null
     if (data.hasExperience !== undefined) updateData.hasExperience = data.hasExperience
     if (data.experienceSince !== undefined) updateData.experienceSince = data.experienceSince ? new Date(data.experienceSince) : null
     if (data.experienceRole !== undefined) updateData.experienceRole = normalizeString(data.experienceRole)

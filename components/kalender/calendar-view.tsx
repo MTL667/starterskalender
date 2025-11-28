@@ -27,7 +27,7 @@ interface Starter {
   region?: string | null
   via?: string | null
   notes?: string | null
-  contractSignedOn: string
+  contractSignedOn?: string | null
   startDate: string
   weekNumber: number | null
   isCancelled?: boolean

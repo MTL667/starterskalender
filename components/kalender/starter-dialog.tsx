@@ -30,7 +30,7 @@ interface Starter {
   region?: string | null
   via?: string | null
   notes?: string | null
-  contractSignedOn: string
+  contractSignedOn?: string | null
   startDate: string
   isCancelled?: boolean
   cancelledAt?: string | null
@@ -641,11 +641,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   type="date"
                   value={formData.contractSignedOn}
                   onChange={(e) => setFormData({ ...formData, contractSignedOn: e.target.value })}
-                  required
                   disabled={!canEdit}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Datum waarop het contract is ondertekend
+                  Sterk aanbevolen - Datum waarop het contract is ondertekend
                 </p>
               </div>
 

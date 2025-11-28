@@ -6,7 +6,7 @@ interface Starter {
   name: string
   language?: string
   roleTitle?: string | null
-  contractSignedOn: Date | string
+  contractSignedOn?: Date | string | null
   startDate: Date | string
   entity?: {
     name: string
