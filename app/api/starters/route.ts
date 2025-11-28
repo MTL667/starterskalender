@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
     const startDate = new Date(data.startDate)
     const weekNumber = calculateWeekNumber(startDate)
     const year = getYearInTimezone(startDate)
+    const contractSignedOn = new Date(data.contractSignedOn)
 
     const starter = await prisma.starter.create({
       data: {
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
         roleTitle: normalizeString(data.roleTitle),
         via: normalizeString(data.via),
         notes: data.notes, // Behoud originele notes
-        contractSignedOn: data.contractSignedOn ? new Date(data.contractSignedOn) : null,
+        contractSignedOn,
         startDate,
         weekNumber,
         year,
