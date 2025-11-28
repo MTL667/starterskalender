@@ -13,6 +13,7 @@ interface Entity {
 
 interface Starter {
   id: string
+  contractSignedOn: string
   startDate: string
   isCancelled?: boolean
   entityId?: string | null

@@ -12,6 +12,7 @@ interface Starter {
   region?: string | null
   via?: string | null
   notes?: string | null
+  contractSignedOn: string
   startDate: string
   isCancelled?: boolean
   entity?: {
