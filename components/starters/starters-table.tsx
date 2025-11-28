@@ -26,6 +26,7 @@ interface Starter {
   language?: string
   roleTitle?: string | null
   region?: string | null
+  contractSignedOn: string
   startDate: string
   weekNumber: number | null
   hasExperience?: boolean
