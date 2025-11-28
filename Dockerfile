@@ -51,10 +51,14 @@ RUN mkdir -p /app/public/uploads && \
     chown -R nextjs:nodejs /app/public/uploads && \
     chmod 755 /app/public/uploads
 
-# Kopieer Prisma schema en generated client
+# Kopieer package.json voor dependencies info
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+
+# Kopieer Prisma dependencies (complete set voor CLI en runtime)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin ./node_modules/.bin
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 # Kopieer migrations folder voor database fixes
