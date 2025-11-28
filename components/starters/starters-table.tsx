@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { ExportDropdown } from '@/components/ui/export-dropdown'
+import { getExperienceText } from '@/lib/experience-utils'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -24,9 +26,12 @@ interface Starter {
   language?: string
   roleTitle?: string | null
   region?: string | null
-  via?: string | null
   startDate: string
   weekNumber: number | null
+  hasExperience?: boolean
+  experienceSince?: string | null
+  experienceRole?: string | null
+  experienceEntity?: string | null
   entity?: {
     id: string
     name: string
@@ -162,7 +167,13 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       Taal: s.language || 'NL',
       Functie: s.roleTitle || '',
       Regio: s.region || '',
-      Via: s.via || '',
+      Ervaring: s.hasExperience 
+        ? (s.experienceEntity || s.experienceRole 
+          ? `${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`
+          : s.experienceSince 
+            ? getExperienceText(s.experienceSince)
+            : 'Ja')
+        : 'Nee',
       Startdatum: new Date(s.startDate).toLocaleDateString('nl-BE'),
       Week: s.weekNumber || '',
       Entiteit: s.entity?.name || '',
@@ -197,7 +208,13 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       s.language || 'NL',
       s.roleTitle || '',
       s.region || '',
-      s.via || '',
+      s.hasExperience 
+        ? (s.experienceEntity || s.experienceRole 
+          ? `${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`
+          : s.experienceSince 
+            ? getExperienceText(s.experienceSince)
+            : 'Ja')
+        : 'Nee',
       new Date(s.startDate).toLocaleDateString('nl-BE'),
       s.weekNumber?.toString() || '',
       s.entity?.name || '',
@@ -205,7 +222,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
     // Tabel maken
     autoTable(doc, {
-      head: [['Naam', 'Taal', 'Functie', 'Regio', 'Via', 'Startdatum', 'Week', 'Entiteit']],
+      head: [['Naam', 'Taal', 'Functie', 'Regio', 'Ervaring', 'Startdatum', 'Week', 'Entiteit']],
       body: tableData,
       startY: 35,
       styles: { fontSize: 8 },
@@ -215,7 +232,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         1: { cellWidth: 12 }, // Taal
         2: { cellWidth: 25 }, // Functie
         3: { cellWidth: 20 }, // Regio
-        4: { cellWidth: 20 }, // Via
+        4: { cellWidth: 25 }, // Ervaring
         5: { cellWidth: 22 }, // Startdatum
         6: { cellWidth: 12 }, // Week
         7: { cellWidth: 25 }, // Entiteit
@@ -232,7 +249,13 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       'Taal': s.language || 'NL',
       'Functie': s.roleTitle || '',
       'Regio': s.region || '',
-      'Via': s.via || '',
+      'Ervaring': s.hasExperience 
+        ? (s.experienceEntity || s.experienceRole 
+          ? `${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`
+          : s.experienceSince 
+            ? getExperienceText(s.experienceSince)
+            : 'Ja')
+        : 'Nee',
       'Startdatum': new Date(s.startDate).toLocaleDateString('nl-BE'),
       'Week': s.weekNumber || '',
       'Entiteit': s.entity?.name || '',
@@ -247,7 +270,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       { wch: 8 },  // Taal
       { wch: 20 }, // Functie
       { wch: 15 }, // Regio
-      { wch: 15 }, // Via
+      { wch: 25 }, // Ervaring
       { wch: 15 }, // Startdatum
       { wch: 10 }, // Week
       { wch: 20 }, // Entiteit
@@ -351,7 +374,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                   >
                     Regio {getSortIcon('region')}
                   </th>
-                  <th className="pb-3 font-medium">Via</th>
+                  <th className="pb-3 font-medium">Ervaring</th>
                   <th 
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
                     onClick={() => handleSort('startDate')}
@@ -382,7 +405,22 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                     </td>
                     <td className="py-3 text-sm">{starter.roleTitle || '-'}</td>
                     <td className="py-3 text-sm">{starter.region || '-'}</td>
-                    <td className="py-3 text-sm">{starter.via || '-'}</td>
+                    <td className="py-3 text-sm">
+                      {starter.hasExperience ? (
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox checked disabled className="pointer-events-none" />
+                          <span className="text-xs">
+                            {starter.experienceEntity || starter.experienceRole 
+                              ? `${starter.experienceEntity || ''}${starter.experienceEntity && starter.experienceRole ? ' - ' : ''}${starter.experienceRole || ''}`
+                              : starter.experienceSince 
+                                ? getExperienceText(starter.experienceSince)
+                                : 'Ja'}
+                          </span>
+                        </div>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
                     <td className="py-3 text-sm">
                       {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: nl })}
                     </td>
