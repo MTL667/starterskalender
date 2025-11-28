@@ -148,7 +148,7 @@ model Starter {
   notes             String?   @db.Text // Extra info
   phoneNumber       String?   // Telefoonnummer (optioneel, kan later toegevoegd)
   desiredEmail      String?   // Gewenst mailadres
-  contractSignedOn  DateTime? // Datum waarop contract getekend is
+  contractSignedOn  DateTime  // Datum waarop contract getekend is (verplicht)
   startDate         DateTime  // Startdatum
   weekNumber        Int?      // Weeknummer (afgeleid, Monday-first)
   year              Int       // Jaar

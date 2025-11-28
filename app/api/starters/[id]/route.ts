@@ -15,7 +15,7 @@ const UpdateStarterSchema = z.object({
   roleTitle: z.string().nullable().optional(),
   via: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  contractSignedOn: z.string().datetime().nullable().optional(),
+  contractSignedOn: z.string().datetime().optional(),
   startDate: z.string().datetime().optional(),
   hasExperience: z.boolean().optional(),
   experienceSince: z.string().datetime().nullable().optional(),
