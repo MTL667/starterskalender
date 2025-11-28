@@ -162,22 +162,30 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   }
 
   const exportCSV = () => {
-    const csvData = filteredStarters.map(s => ({
-      Naam: s.name,
-      Taal: s.language || 'NL',
-      Functie: s.roleTitle || '',
-      Regio: s.region || '',
-      Ervaring: s.hasExperience 
-        ? (s.experienceEntity || s.experienceRole 
-          ? `${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`
-          : s.experienceSince 
-            ? getExperienceText(s.experienceSince)
-            : 'Ja')
-        : 'Nee',
-      Startdatum: new Date(s.startDate).toLocaleDateString('nl-BE'),
-      Week: s.weekNumber || '',
-      Entiteit: s.entity?.name || '',
-    }))
+    const csvData = filteredStarters.map(s => {
+      let experienceText = 'Nee'
+      if (s.hasExperience) {
+        const parts: string[] = []
+        if (s.experienceEntity || s.experienceRole) {
+          parts.push(`${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`)
+        }
+        if (s.experienceSince) {
+          parts.push(getExperienceText(s.experienceSince))
+        }
+        experienceText = parts.length > 0 ? parts.join(' | ') : 'Ja'
+      }
+      
+      return {
+        Naam: s.name,
+        Taal: s.language || 'NL',
+        Functie: s.roleTitle || '',
+        Regio: s.region || '',
+        Ervaring: experienceText,
+        Startdatum: new Date(s.startDate).toLocaleDateString('nl-BE'),
+        Week: s.weekNumber || '',
+        Entiteit: s.entity?.name || '',
+      }
+    })
 
     const headers = Object.keys(csvData[0] || {})
     const csv = [
@@ -203,22 +211,30 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     doc.text(`Jaar: ${year}`, 14, 30)
     
     // Data voorbereiden
-    const tableData = filteredStarters.map(s => [
-      s.name,
-      s.language || 'NL',
-      s.roleTitle || '',
-      s.region || '',
-      s.hasExperience 
-        ? (s.experienceEntity || s.experienceRole 
-          ? `${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`
-          : s.experienceSince 
-            ? getExperienceText(s.experienceSince)
-            : 'Ja')
-        : 'Nee',
-      new Date(s.startDate).toLocaleDateString('nl-BE'),
-      s.weekNumber?.toString() || '',
-      s.entity?.name || '',
-    ])
+    const tableData = filteredStarters.map(s => {
+      let experienceText = 'Nee'
+      if (s.hasExperience) {
+        const parts: string[] = []
+        if (s.experienceEntity || s.experienceRole) {
+          parts.push(`${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`)
+        }
+        if (s.experienceSince) {
+          parts.push(getExperienceText(s.experienceSince))
+        }
+        experienceText = parts.length > 0 ? parts.join(' | ') : 'Ja'
+      }
+      
+      return [
+        s.name,
+        s.language || 'NL',
+        s.roleTitle || '',
+        s.region || '',
+        experienceText,
+        new Date(s.startDate).toLocaleDateString('nl-BE'),
+        s.weekNumber?.toString() || '',
+        s.entity?.name || '',
+      ]
+    })
 
     // Tabel maken
     autoTable(doc, {
@@ -244,22 +260,30 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   }
 
   const exportXLS = () => {
-    const xlsData = filteredStarters.map(s => ({
-      'Naam': s.name,
-      'Taal': s.language || 'NL',
-      'Functie': s.roleTitle || '',
-      'Regio': s.region || '',
-      'Ervaring': s.hasExperience 
-        ? (s.experienceEntity || s.experienceRole 
-          ? `${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`
-          : s.experienceSince 
-            ? getExperienceText(s.experienceSince)
-            : 'Ja')
-        : 'Nee',
-      'Startdatum': new Date(s.startDate).toLocaleDateString('nl-BE'),
-      'Week': s.weekNumber || '',
-      'Entiteit': s.entity?.name || '',
-    }))
+    const xlsData = filteredStarters.map(s => {
+      let experienceText = 'Nee'
+      if (s.hasExperience) {
+        const parts: string[] = []
+        if (s.experienceEntity || s.experienceRole) {
+          parts.push(`${s.experienceEntity || ''}${s.experienceEntity && s.experienceRole ? ' - ' : ''}${s.experienceRole || ''}`)
+        }
+        if (s.experienceSince) {
+          parts.push(getExperienceText(s.experienceSince))
+        }
+        experienceText = parts.length > 0 ? parts.join(' | ') : 'Ja'
+      }
+      
+      return {
+        'Naam': s.name,
+        'Taal': s.language || 'NL',
+        'Functie': s.roleTitle || '',
+        'Regio': s.region || '',
+        'Ervaring': experienceText,
+        'Startdatum': new Date(s.startDate).toLocaleDateString('nl-BE'),
+        'Week': s.weekNumber || '',
+        'Entiteit': s.entity?.name || '',
+      }
+    })
 
     // Create worksheet
     const ws = XLSX.utils.json_to_sheet(xlsData)
@@ -407,15 +431,25 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                     <td className="py-3 text-sm">{starter.region || '-'}</td>
                     <td className="py-3 text-sm">
                       {starter.hasExperience ? (
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox checked disabled className="pointer-events-none" />
-                          <span className="text-xs">
-                            {starter.experienceEntity || starter.experienceRole 
-                              ? `${starter.experienceEntity || ''}${starter.experienceEntity && starter.experienceRole ? ' - ' : ''}${starter.experienceRole || ''}`
-                              : starter.experienceSince 
-                                ? getExperienceText(starter.experienceSince)
-                                : 'Ja'}
-                          </span>
+                        <div className="flex items-start gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Checkbox checked disabled className="pointer-events-none mt-0.5" />
+                          <div className="flex flex-col">
+                            {(starter.experienceEntity || starter.experienceRole) && (
+                              <span className="text-xs font-medium">
+                                {starter.experienceEntity || ''}
+                                {starter.experienceEntity && starter.experienceRole ? ' - ' : ''}
+                                {starter.experienceRole || ''}
+                              </span>
+                            )}
+                            {starter.experienceSince && (
+                              <span className="text-xs text-muted-foreground">
+                                {getExperienceText(starter.experienceSince)}
+                              </span>
+                            )}
+                            {!starter.experienceEntity && !starter.experienceRole && !starter.experienceSince && (
+                              <span className="text-xs">Ja</span>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         '-'
