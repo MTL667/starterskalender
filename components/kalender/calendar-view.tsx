@@ -229,8 +229,20 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   // Formateer de huidige periode voor display
   const getPeriodLabel = () => {
     if (viewMode === 'week') {
-      const weekNum = getWeek(currentDate, { weekStartsOn: 1, firstWeekContainsDate: 4 })
-      return `Week ${weekNum} - ${format(currentDate, 'yyyy')}`
+      const monday = startOfWeek(currentDate, { weekStartsOn: 1 })
+      const sunday = endOfWeek(currentDate, { weekStartsOn: 1 })
+      
+      // Check of maandag en zondag in hetzelfde jaar zijn
+      const mondayYear = getYear(monday)
+      const sundayYear = getYear(sunday)
+      
+      if (mondayYear === sundayYear) {
+        // Zelfde jaar: "5 januari - 11 januari 2026"
+        return `${format(monday, 'd MMMM', { locale: nl })} - ${format(sunday, 'd MMMM yyyy', { locale: nl })}`
+      } else {
+        // Verschillende jaren: "30 december 2025 - 5 januari 2026"
+        return `${format(monday, 'd MMMM yyyy', { locale: nl })} - ${format(sunday, 'd MMMM yyyy', { locale: nl })}`
+      }
     } else if (viewMode === 'month') {
       return format(currentDate, 'MMMM yyyy', { locale: nl })
     } else {
