@@ -114,13 +114,19 @@ export function RecentStarters({ year }: { year: number }) {
     setSelectedStarter(null)
     
     if (refreshData) {
-      // Refresh the starters list
+      // Refresh the starters list - fetch current and next year
       setLoading(true)
       
-      fetch(`/api/starters?year=${year}`)
-        .then(res => res.json())
-        .then(data => {
-          const upcoming = getUpcomingStarters(data, 5)
+      const currentYear = new Date().getFullYear()
+      const nextYear = currentYear + 1
+      
+      Promise.all([
+        fetch(`/api/starters?year=${currentYear}`).then(res => res.json()),
+        fetch(`/api/starters?year=${nextYear}`).then(res => res.json())
+      ])
+        .then(([currentYearData, nextYearData]) => {
+          const allStarters = [...currentYearData, ...nextYearData]
+          const upcoming = getUpcomingStarters(allStarters, 5)
           setStarters(upcoming)
           setLoading(false)
         })
@@ -132,14 +138,19 @@ export function RecentStarters({ year }: { year: number }) {
   }
 
   useEffect(() => {
-    // Fetch both starters and entities
+    // Fetch both current year and next year to ensure we always show upcoming starters
+    const currentYear = new Date().getFullYear()
+    const nextYear = currentYear + 1
+    
     Promise.all([
-      fetch(`/api/starters?year=${year}`).then(res => res.json()),
+      fetch(`/api/starters?year=${currentYear}`).then(res => res.json()),
+      fetch(`/api/starters?year=${nextYear}`).then(res => res.json()),
       fetch('/api/entities').then(res => res.json())
     ])
-      .then(([startersData, entitiesData]) => {
-        // Get upcoming starters with complete last day
-        const upcoming = getUpcomingStarters(startersData, 5)
+      .then(([currentYearData, nextYearData, entitiesData]) => {
+        // Combine both years and get upcoming starters
+        const allStarters = [...currentYearData, ...nextYearData]
+        const upcoming = getUpcomingStarters(allStarters, 5)
         setStarters(upcoming)
         setEntities(entitiesData)
         setLoading(false)
@@ -148,7 +159,7 @@ export function RecentStarters({ year }: { year: number }) {
         console.error('Error fetching data:', error)
         setLoading(false)
       })
-  }, [year])
+  }, []) // No dependency on year anymore - always fetch current + next year
 
   if (loading) {
     return (
@@ -170,7 +181,7 @@ export function RecentStarters({ year }: { year: number }) {
     <Card>
       <CardHeader>
         <CardTitle>Aankomende Starters</CardTitle>
-        <CardDescription>De eerstvolgende starters in {year}</CardDescription>
+        <CardDescription>De eerstvolgende starters</CardDescription>
       </CardHeader>
       <CardContent>
         {starters.length === 0 ? (
