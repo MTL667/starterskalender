@@ -1,8 +1,8 @@
 # Multi-stage build voor Next.js applicatie
 
 # Stage 1: Dependencies
-# Use Alpine 3.19 which has OpenSSL 1.1 support
-FROM node:18-alpine3.19 AS deps
+# Use Node 20 for Next.js 16+ support (requires >=20.9.0)
+FROM node:20-alpine3.19 AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY prisma ./prisma
 RUN npm ci --legacy-peer-deps
 
 # Stage 2: Builder
-FROM node:18-alpine3.19 AS builder
+FROM node:20-alpine3.19 AS builder
 WORKDIR /app
 
 # Kopieer node_modules (inclusief gegenereerde Prisma client)
@@ -26,7 +26,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # Stage 3: Runner
-FROM node:18-alpine3.19 AS runner
+FROM node:20-alpine3.19 AS runner
 WORKDIR /app
 
 # Installeer OpenSSL voor Prisma, curl voor cron jobs, en su-exec voor user switching
