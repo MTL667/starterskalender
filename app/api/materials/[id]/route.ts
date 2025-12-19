@@ -15,16 +15,17 @@ const UpdateMaterialSchema = z.object({
 // PATCH - Update material
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAdmin()
 
     const body = await request.json()
     const data = UpdateMaterialSchema.parse(body)
 
     const material = await prisma.material.update({
-      where: { id: params.id },
+      where: { id: id },
       data,
     })
 
@@ -51,14 +52,15 @@ export async function PATCH(
 // DELETE - Delete material
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAdmin()
 
     // Check if material is in use
     const material = await prisma.material.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         _count: {
           select: {
@@ -81,13 +83,13 @@ export async function DELETE(
     }
 
     await prisma.material.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     await createAuditLog({
       actorId: user.id,
       action: 'DELETE',
-      target: `Material:${params.id}`,
+      target: `Material:${id}`,
       meta: { name: material.name },
     })
 

@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // POST /api/tasks/[id]/complete - Markeer taak als voltooid
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,9 +15,10 @@ export async function POST(
     }
 
     const user = session.user as any
+    const { id } = await params
 
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         starter: true,
         assignedTo: {
@@ -56,7 +57,7 @@ export async function POST(
 
     // Update task naar COMPLETED
     const updatedTask = await prisma.task.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status: 'COMPLETED',
         completedAt: new Date(),

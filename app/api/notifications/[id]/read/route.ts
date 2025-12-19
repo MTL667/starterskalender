@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // POST /api/notifications/[id]/read - Markeer notificatie als gelezen
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,8 +14,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const notification = await prisma.notification.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!notification) {
@@ -31,7 +33,7 @@ export async function POST(
     }
 
     const updatedNotification = await prisma.notification.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         isRead: true,
         readAt: new Date(),

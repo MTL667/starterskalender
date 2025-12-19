@@ -28,16 +28,17 @@ const UpdateStarterSchema = z.object({
 // GET - Get single starter
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const starter = await prisma.starter.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         entity: true,
       },
@@ -57,15 +58,16 @@ export async function GET(
 // PATCH - Update starter
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const canMutate = await canMutateStarter(user, params.id)
+    const canMutate = await canMutateStarter(user, id)
     if (!canMutate) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
@@ -98,7 +100,7 @@ export async function PATCH(
     }
 
     const starter = await prisma.starter.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: {
         entity: true,
@@ -125,21 +127,22 @@ export async function PATCH(
 // DELETE - Delete starter
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const canMutate = await canMutateStarter(user, params.id)
+    const canMutate = await canMutateStarter(user, id)
     if (!canMutate) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const starter = await prisma.starter.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: { id: true, name: true },
     })
 
@@ -148,13 +151,13 @@ export async function DELETE(
     }
 
     await prisma.starter.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     await createAuditLog({
       actorId: user.id,
       action: 'DELETE',
-      target: `Starter:${params.id}`,
+      target: `Starter:${id}`,
       meta: { name: starter.name },
     })
 

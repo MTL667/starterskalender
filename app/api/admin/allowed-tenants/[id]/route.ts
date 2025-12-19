@@ -13,16 +13,17 @@ const UpdateAllowedTenantSchema = z.object({
 // PATCH - Update allowed tenant
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAdmin()
+    const { id } = await params
     const body = await req.json()
 
     const validated = UpdateAllowedTenantSchema.parse(body)
 
     const allowedTenant = await prisma.allowedTenant.update({
-      where: { id: params.id },
+      where: { id },
       data: validated,
     })
 
@@ -58,13 +59,14 @@ export async function PATCH(
 // DELETE - Remove allowed tenant
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAdmin()
+    const { id } = await params
 
     const allowedTenant = await prisma.allowedTenant.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!allowedTenant) {
@@ -75,7 +77,7 @@ export async function DELETE(
     }
 
     await prisma.allowedTenant.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     // Log audit

@@ -13,13 +13,15 @@ const AddMaterialSchema = z.object({
 // GET - Get materials for a job role
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin()
 
+    const { id } = await params
+
     const materials = await prisma.jobRoleMaterial.findMany({
-      where: { jobRoleId: params.id },
+      where: { jobRoleId: id },
       include: {
         material: true,
       },
@@ -43,11 +45,12 @@ export async function GET(
 // POST - Add material to job role
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await requireAdmin()
 
+    const { id } = await params
     const body = await request.json()
     const data = AddMaterialSchema.parse(body)
 
@@ -55,7 +58,7 @@ export async function POST(
     const existing = await prisma.jobRoleMaterial.findUnique({
       where: {
         jobRoleId_materialId: {
-          jobRoleId: params.id,
+          jobRoleId: id,
           materialId: data.materialId,
         },
       },
@@ -70,7 +73,7 @@ export async function POST(
 
     const jobRoleMaterial = await prisma.jobRoleMaterial.create({
       data: {
-        jobRoleId: params.id,
+        jobRoleId: id,
         materialId: data.materialId,
         isRequired: data.isRequired,
         notes: data.notes,

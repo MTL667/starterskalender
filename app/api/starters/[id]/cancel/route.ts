@@ -12,7 +12,7 @@ const CancelSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,12 +21,13 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const data = CancelSchema.parse(body)
 
     // Get starter met entity info
     const starter = await prisma.starter.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         entity: {
           include: {
@@ -68,7 +69,7 @@ export async function POST(
 
     // Update starter
     const updatedStarter = await prisma.starter.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         isCancelled: true,
         cancelledAt: new Date(),

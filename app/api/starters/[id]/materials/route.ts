@@ -6,7 +6,7 @@ import { createAuditLog } from '@/lib/audit'
 // GET - Get materials for a starter
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser()
@@ -14,8 +14,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     const materials = await prisma.starterMaterial.findMany({
-      where: { starterId: params.id },
+      where: { starterId: id },
       include: {
         material: true,
       },
@@ -36,7 +38,7 @@ export async function GET(
 // POST - Automatically assign materials from job role to starter
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const user = await getCurrentUser()
@@ -44,9 +46,11 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
+
     // Get starter with role
     const starter = await prisma.starter.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         roleTitle: true,

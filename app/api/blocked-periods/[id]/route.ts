@@ -15,9 +15,10 @@ const UpdateBlockedPeriodSchema = z.object({
 // PATCH - Update blocked period (alleen HR_ADMIN)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user || !isHRAdmin(user)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -33,7 +34,7 @@ export async function PATCH(
     if (data.isActive !== undefined) updateData.isActive = data.isActive
 
     const blockedPeriod = await prisma.blockedPeriod.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: {
         entity: true,
@@ -61,16 +62,17 @@ export async function PATCH(
 // DELETE - Delete blocked period (alleen HR_ADMIN)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user || !isHRAdmin(user)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const blockedPeriod = await prisma.blockedPeriod.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!blockedPeriod) {
@@ -78,13 +80,13 @@ export async function DELETE(
     }
 
     await prisma.blockedPeriod.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     await createAuditLog({
       actorId: user.id,
       action: 'DELETE',
-      target: `BlockedPeriod:${params.id}`,
+      target: `BlockedPeriod:${id}`,
       meta: { entityId: blockedPeriod.entityId },
     })
 

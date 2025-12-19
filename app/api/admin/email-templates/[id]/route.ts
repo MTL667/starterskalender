@@ -6,14 +6,15 @@ import { z } from 'zod'
 // GET: Haal een specifieke email template op
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAdmin()
   if (authResult instanceof NextResponse) return authResult
 
   try {
+    const { id } = await params
     const template = await prisma.emailTemplate.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!template) {
@@ -43,15 +44,16 @@ const UpdateTemplateSchema = z.object({
 // PATCH: Update een email template
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAdmin()
   if (authResult instanceof NextResponse) return authResult
   const user = authResult
 
   try {
+    const { id } = await params
     const template = await prisma.emailTemplate.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!template) {
@@ -65,7 +67,7 @@ export async function PATCH(
     const data = UpdateTemplateSchema.parse(body)
 
     const updated = await prisma.emailTemplate.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...data,
         updatedBy: user.id,
@@ -92,14 +94,15 @@ export async function PATCH(
 // DELETE: Verwijder een email template
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = await requireAdmin()
   if (authResult instanceof NextResponse) return authResult
 
   try {
+    const { id } = await params
     const template = await prisma.emailTemplate.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!template) {
@@ -110,7 +113,7 @@ export async function DELETE(
     }
 
     await prisma.emailTemplate.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ success: true })

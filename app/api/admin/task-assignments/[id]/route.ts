@@ -5,13 +5,14 @@ import { prisma } from '@/lib/prisma'
 // DELETE /api/admin/task-assignments/[id] - Verwijder assignment
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAdmin()
 
     const assignment = await prisma.taskAssignment.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!assignment) {
@@ -19,7 +20,7 @@ export async function DELETE(
     }
 
     await prisma.taskAssignment.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     // Audit log
@@ -27,9 +28,9 @@ export async function DELETE(
       data: {
         actorId: user.id,
         action: 'TASK_ASSIGNMENT_DELETED',
-        target: `TaskAssignment:${params.id}`,
+        target: `TaskAssignment:${id}`,
         meta: {
-          assignmentId: params.id,
+          assignmentId: id,
           entityId: assignment.entityId,
           taskType: assignment.taskType,
         },

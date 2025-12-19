@@ -15,9 +15,10 @@ const UpdateJobRoleSchema = z.object({
 // PATCH - Update job role (alleen HR_ADMIN)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user || !isHRAdmin(user)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -27,7 +28,7 @@ export async function PATCH(
     const data = UpdateJobRoleSchema.parse(body)
 
     const jobRole = await prisma.jobRole.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...(data.title !== undefined && { title: data.title }),
         ...(data.description !== undefined && { description: data.description }),
@@ -59,16 +60,17 @@ export async function PATCH(
 // DELETE - Delete job role (alleen HR_ADMIN)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getCurrentUser()
     if (!user || !isHRAdmin(user)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const jobRole = await prisma.jobRole.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: { id: true, title: true },
     })
 
@@ -77,13 +79,13 @@ export async function DELETE(
     }
 
     await prisma.jobRole.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     await createAuditLog({
       actorId: user.id,
       action: 'DELETE',
-      target: `JobRole:${params.id}`,
+      target: `JobRole:${id}`,
       meta: { title: jobRole.title },
     })
 

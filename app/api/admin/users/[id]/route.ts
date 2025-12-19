@@ -12,9 +12,10 @@ const UpdateUserSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session?.user) {
@@ -30,7 +31,7 @@ export async function PATCH(
     const data = UpdateUserSchema.parse(body)
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id: id },
       data,
       select: {
         id: true,
@@ -59,9 +60,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     
     if (!session?.user) {
@@ -74,12 +76,12 @@ export async function DELETE(
     }
 
     // Prevent deleting self
-    if (params.id === session.user.id) {
+    if (id === session.user.id) {
       return NextResponse.json({ error: 'Je kunt jezelf niet verwijderen' }, { status: 400 })
     }
 
     const user = await prisma.user.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     await createAuditLog({

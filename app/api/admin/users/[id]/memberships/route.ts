@@ -13,7 +13,7 @@ const MembershipSchema = z.object({
 // Get user memberships
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -26,8 +26,10 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { id } = await params
+
     const memberships = await prisma.membership.findMany({
-      where: { userId: params.id },
+      where: { userId: id },
       include: {
         entity: {
           select: {
@@ -49,7 +51,7 @@ export async function GET(
 // Add membership
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -62,12 +64,13 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { id } = await params
     const body = await request.json()
     const data = MembershipSchema.parse(body)
 
     const membership = await prisma.membership.create({
       data: {
-        userId: params.id,
+        userId: id,
         entityId: data.entityId,
         canEdit: data.canEdit,
       },
@@ -80,7 +83,7 @@ export async function POST(
       actorId: session.user.id,
       action: 'CREATE',
       target: `Membership:${membership.id}`,
-      meta: { userId: params.id, entityId: data.entityId, canEdit: data.canEdit },
+      meta: { userId: id, entityId: data.entityId, canEdit: data.canEdit },
     })
 
     return NextResponse.json(membership)
@@ -96,7 +99,7 @@ export async function POST(
 // Delete membership
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -108,6 +111,8 @@ export async function DELETE(
     if (session.user.role !== 'HR_ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+
+    const { id } = await params
 
     const { searchParams } = new URL(request.url)
     const membershipId = searchParams.get('membershipId')
@@ -124,7 +129,7 @@ export async function DELETE(
       actorId: session.user.id,
       action: 'DELETE',
       target: `Membership:${membershipId}`,
-      meta: { userId: params.id },
+      meta: { userId: id },
     })
 
     return NextResponse.json({ success: true })

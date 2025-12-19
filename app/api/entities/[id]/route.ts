@@ -14,16 +14,17 @@ const UpdateEntitySchema = z.object({
 // PATCH - Update entity (admin only)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAdmin()
 
     const body = await request.json()
     const data = UpdateEntitySchema.parse(body)
 
     const entity = await prisma.entity.update({
-      where: { id: params.id },
+      where: { id: id },
       data,
     })
 
@@ -47,13 +48,14 @@ export async function PATCH(
 // DELETE - Delete entity (admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAdmin()
 
     const entity = await prisma.entity.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       select: { id: true, name: true },
     })
 
@@ -62,13 +64,13 @@ export async function DELETE(
     }
 
     await prisma.entity.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     await createAuditLog({
       actorId: user.id,
       action: 'DELETE',
-      target: `Entity:${params.id}`,
+      target: `Entity:${id}`,
       meta: { name: entity.name },
     })
 

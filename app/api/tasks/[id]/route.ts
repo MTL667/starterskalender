@@ -6,9 +6,10 @@ import { prisma } from '@/lib/prisma'
 // GET /api/tasks/[id] - Haal specifieke taak op
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -18,7 +19,7 @@ export async function GET(
     const isAdmin = user.role === 'HR_ADMIN'
 
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         starter: {
           select: {
@@ -96,9 +97,10 @@ export async function GET(
 // PATCH /api/tasks/[id] - Update taak
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -108,7 +110,7 @@ export async function PATCH(
     const isAdmin = user.role === 'HR_ADMIN'
 
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!task) {
@@ -155,7 +157,7 @@ export async function PATCH(
     }
 
     const updatedTask = await prisma.task.update({
-      where: { id: params.id },
+      where: { id: id },
       data: updateData,
       include: {
         starter: {
@@ -208,9 +210,10 @@ export async function PATCH(
 // DELETE /api/tasks/[id] - Verwijder taak
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -220,7 +223,7 @@ export async function DELETE(
     const isAdmin = user.role === 'HR_ADMIN'
 
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     if (!task) {
@@ -236,7 +239,7 @@ export async function DELETE(
     }
 
     await prisma.task.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     // Audit log
@@ -244,9 +247,9 @@ export async function DELETE(
       data: {
         actorId: user.id,
         action: 'TASK_DELETED',
-        target: `Task:${params.id}`,
+        target: `Task:${id}`,
         meta: {
-          taskId: params.id,
+          taskId: id,
           title: task.title,
         },
       },

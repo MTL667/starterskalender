@@ -12,16 +12,17 @@ const UpdateSignatureTemplateSchema = z.object({
 // GET - Get single signature template
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAdmin()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const template = await prisma.signatureTemplate.findUnique({
-      where: { id: params.id },
+      where: { id: id },
       include: {
         entity: {
           select: {
@@ -47,9 +48,10 @@ export async function GET(
 // PATCH - Update signature template
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAdmin()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -59,7 +61,7 @@ export async function PATCH(
     const data = UpdateSignatureTemplateSchema.parse(body)
 
     const template = await prisma.signatureTemplate.update({
-      where: { id: params.id },
+      where: { id: id },
       data,
       include: {
         entity: {
@@ -85,16 +87,17 @@ export async function PATCH(
 // DELETE - Delete signature template
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await requireAdmin()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     await prisma.signatureTemplate.delete({
-      where: { id: params.id },
+      where: { id: id },
     })
 
     return NextResponse.json({ success: true })

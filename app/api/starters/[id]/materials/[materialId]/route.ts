@@ -12,9 +12,10 @@ const UpdateStarterMaterialSchema = z.object({
 // PATCH - Update material status (mark as provided)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; materialId: string } }
+  { params }: { params: Promise<{ id: string; materialId: string }> }
 ) {
   try {
+    const { id, materialId } = await params
     const user = await getCurrentUser()
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -26,8 +27,8 @@ export async function PATCH(
     const starterMaterial = await prisma.starterMaterial.update({
       where: {
         starterId_materialId: {
-          starterId: params.id,
-          materialId: params.materialId,
+          starterId: id,
+          materialId,
         },
       },
       data: {

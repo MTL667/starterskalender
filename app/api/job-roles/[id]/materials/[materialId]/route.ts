@@ -12,9 +12,10 @@ const UpdateMaterialSchema = z.object({
 // PATCH - Update material assignment
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; materialId: string } }
+  { params }: { params: Promise<{ id: string; materialId: string }> }
 ) {
   try {
+    const { id, materialId } = await params
     const user = await requireAdmin()
 
     const body = await request.json()
@@ -23,8 +24,8 @@ export async function PATCH(
     const jobRoleMaterial = await prisma.jobRoleMaterial.update({
       where: {
         jobRoleId_materialId: {
-          jobRoleId: params.id,
-          materialId: params.materialId,
+          jobRoleId: id,
+          materialId,
         },
       },
       data,
@@ -60,16 +61,17 @@ export async function PATCH(
 // DELETE - Remove material from job role
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; materialId: string } }
+  { params }: { params: Promise<{ id: string; materialId: string }> }
 ) {
   try {
+    const { id, materialId } = await params
     const user = await requireAdmin()
 
     const jobRoleMaterial = await prisma.jobRoleMaterial.findUnique({
       where: {
         jobRoleId_materialId: {
-          jobRoleId: params.id,
-          materialId: params.materialId,
+          jobRoleId: id,
+          materialId,
         },
       },
       include: {
@@ -85,8 +87,8 @@ export async function DELETE(
     await prisma.jobRoleMaterial.delete({
       where: {
         jobRoleId_materialId: {
-          jobRoleId: params.id,
-          materialId: params.materialId,
+          jobRoleId: id,
+          materialId,
         },
       },
     })
