@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,14 +20,27 @@ interface DropdownOption {
   isActive: boolean
 }
 
-const GROUPS = ['Regio', 'Via', 'Functie', 'Domein']
+const GROUPS = ['Regio', 'Via', 'Functie', 'Domein'] as const
+const GROUP_KEYS: Record<string, 'groupRegion' | 'groupVia' | 'groupRole' | 'groupDomain'> = {
+  Regio: 'groupRegion',
+  Via: 'groupVia',
+  Functie: 'groupRole',
+  Domein: 'groupDomain',
+}
 
 export default function DropdownsAdminPage() {
+  const t = useTranslations('adminDropdowns')
+  const tc = useTranslations('common')
   const [options, setOptions] = useState<DropdownOption[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedGroup, setSelectedGroup] = useState(GROUPS[0])
-  const [formData, setFormData] = useState({
+  const [selectedGroup, setSelectedGroup] = useState<(typeof GROUPS)[number]>(GROUPS[0])
+  const [formData, setFormData] = useState<{
+    group: (typeof GROUPS)[number]
+    label: string
+    value: string
+    order: number
+  }>({
     group: GROUPS[0],
     label: '',
     value: '',
@@ -49,7 +63,7 @@ export default function DropdownsAdminPage() {
     }
   }
 
-  const handleNew = (group: string) => {
+  const handleNew = (group: (typeof GROUPS)[number]) => {
     setFormData({
       group,
       label: '',
@@ -75,7 +89,7 @@ export default function DropdownsAdminPage() {
       fetchOptions()
     } catch (error) {
       console.error('Error saving option:', error)
-      alert('Fout bij opslaan')
+      alert(tc('errorSaving'))
     }
   }
 
@@ -90,24 +104,24 @@ export default function DropdownsAdminPage() {
       <Link href="/admin">
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Terug naar Admin
+          {tc('backToAdmin')}
         </Button>
       </Link>
 
       <Card>
         <CardHeader>
-          <CardTitle>Dropdown Opties</CardTitle>
-          <CardDescription>Beheer dropdown waarden voor formulieren</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('subtitle')}</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Laden...</div>
+            <div className="text-center py-8 text-muted-foreground">{tc('loading')}</div>
           ) : (
-            <Tabs defaultValue={GROUPS[0]} value={selectedGroup} onValueChange={setSelectedGroup}>
+            <Tabs defaultValue={GROUPS[0]} value={selectedGroup} onValueChange={(v) => setSelectedGroup(v as (typeof GROUPS)[number])}>
               <TabsList className="grid w-full grid-cols-4">
                 {GROUPS.map(group => (
                   <TabsTrigger key={group} value={group}>
-                    {group}
+                    {t(GROUP_KEYS[group])}
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -117,13 +131,13 @@ export default function DropdownsAdminPage() {
                   <div className="flex justify-end">
                     <Button onClick={() => handleNew(group)}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Toevoegen
+                      {tc('add')}
                     </Button>
                   </div>
 
                   {getOptionsForGroup(group).length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
-                      Nog geen opties in deze groep
+                      {t('noOptions')}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -135,7 +149,7 @@ export default function DropdownsAdminPage() {
                           <div>
                             <div className="font-medium">{option.label}</div>
                             <div className="text-sm text-muted-foreground">
-                              Waarde: {option.value}
+                              {t('value')}: {option.value}
                             </div>
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -155,16 +169,16 @@ export default function DropdownsAdminPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nieuwe Dropdown Optie</DialogTitle>
+            <DialogTitle>{t('newOption')}</DialogTitle>
             <DialogDescription>
-              Voeg een nieuwe optie toe aan {formData.group}
+              {t('addOptionTo')} {t(GROUP_KEYS[formData.group])}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="label">Label *</Label>
+                <Label htmlFor="label">{t('label')}</Label>
                 <Input
                   id="label"
                   value={formData.label}
@@ -174,7 +188,7 @@ export default function DropdownsAdminPage() {
               </div>
 
               <div>
-                <Label htmlFor="value">Waarde *</Label>
+                <Label htmlFor="value">{t('value')} *</Label>
                 <Input
                   id="value"
                   value={formData.value}
@@ -184,7 +198,7 @@ export default function DropdownsAdminPage() {
               </div>
 
               <div>
-                <Label htmlFor="order">Volgorde</Label>
+                <Label htmlFor="order">{t('order')}</Label>
                 <Input
                   id="order"
                   type="number"
@@ -196,9 +210,9 @@ export default function DropdownsAdminPage() {
 
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Annuleren
+                {tc('cancel')}
               </Button>
-              <Button type="submit">Toevoegen</Button>
+              <Button type="submit">{tc('add')}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

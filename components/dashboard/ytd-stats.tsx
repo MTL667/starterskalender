@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
@@ -16,6 +17,8 @@ interface YTDData {
 }
 
 export function YTDStats({ year }: { year: number }) {
+  const t = useTranslations('ytdStats')
+  const commonT = useTranslations('common')
   const [data, setData] = useState<YTDData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -36,12 +39,12 @@ export function YTDStats({ year }: { year: number }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>YTD Tellers</CardTitle>
-          <CardDescription>Starters tot en met vandaag in {year}</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('subtitle', { year })}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            Laden...
+            {commonT('loading')}
           </div>
         </CardContent>
       </Card>
@@ -55,15 +58,15 @@ export function YTDStats({ year }: { year: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>YTD Tellers</CardTitle>
-        <CardDescription>Starters tot en met vandaag in {year}</CardDescription>
+        <CardTitle>{t('title')}</CardTitle>
+        <CardDescription>{t('subtitle', { year })}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
           {/* Totaal */}
           <div className="border-l-4 border-primary pl-4">
             <div className="text-sm font-medium text-muted-foreground mb-1">
-              Totaal
+              {t('total')}
             </div>
             <div className="text-4xl font-bold">{data.totalYTD}</div>
           </div>
@@ -71,7 +74,7 @@ export function YTDStats({ year }: { year: number }) {
           {/* Per entiteit */}
           {data.entities.length > 0 && (
             <div>
-              <div className="text-sm font-medium mb-3">Per Entiteit</div>
+              <div className="text-sm font-medium mb-3">{t('perEntity')}</div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {data.entities.map(entity => (
                   <div
@@ -91,7 +94,7 @@ export function YTDStats({ year }: { year: number }) {
                     </div>
                     <div className="text-2xl font-bold">{entity.count}</div>
                     <div className="text-sm text-muted-foreground">
-                      starter{entity.count !== 1 ? 's' : ''}
+                      {entity.count === 1 ? t('starter') : t('startersPlural')}
                     </div>
                   </div>
                 ))}
@@ -101,7 +104,7 @@ export function YTDStats({ year }: { year: number }) {
 
           {data.entities.length === 0 && (
             <div className="text-center py-4 text-muted-foreground">
-              Nog geen starters dit jaar
+              {t('noStartersThisYear')}
             </div>
           )}
         </div>

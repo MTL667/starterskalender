@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,6 +27,9 @@ interface SignatureTemplate {
 }
 
 export default function SignatureTemplatesPage() {
+  const t = useTranslations('adminSignatures')
+  const tc = useTranslations('common')
+  const tAdmin = useTranslations('admin')
   const [entities, setEntities] = useState<Entity[]>([])
   const [templates, setTemplates] = useState<SignatureTemplate[]>([])
   const [selectedEntityId, setSelectedEntityId] = useState<string>('')
@@ -105,7 +109,7 @@ export default function SignatureTemplatesPage() {
 
   const handleSave = async () => {
     if (!selectedEntityId || !templateName || !htmlTemplate) {
-      alert('Vul alle verplichte velden in')
+      alert(t('fillAllFields'))
       return
     }
 
@@ -137,15 +141,15 @@ export default function SignatureTemplatesPage() {
       }
 
       if (res.ok) {
-        alert('Template opgeslagen!')
+        alert(t('templateSaved'))
         fetchTemplates()
       } else {
         const error = await res.json()
-        alert(`Fout: ${error.error}`)
+        alert(`${tc('error')}: ${error.error}`)
       }
     } catch (error) {
       console.error('Error saving template:', error)
-      alert('Fout bij opslaan')
+      alert(tc('errorSaving'))
     } finally {
       setLoading(false)
     }
@@ -154,7 +158,7 @@ export default function SignatureTemplatesPage() {
   const handleDelete = async () => {
     if (!existingTemplateId) return
     
-    if (!confirm('Weet je zeker dat je deze template wilt verwijderen?')) return
+    if (!confirm(t('confirmDeleteTemplate'))) return
 
     setLoading(true)
 
@@ -164,17 +168,17 @@ export default function SignatureTemplatesPage() {
       })
 
       if (res.ok) {
-        alert('Template verwijderd!')
+        alert(t('templateDeleted'))
         setExistingTemplateId(null)
         setTemplateName('')
         setHtmlTemplate('')
         fetchTemplates()
       } else {
-        alert('Fout bij verwijderen')
+        alert(tc('errorDeleting'))
       }
     } catch (error) {
       console.error('Error deleting template:', error)
-      alert('Fout bij verwijderen')
+      alert(tc('errorDeleting'))
     } finally {
       setLoading(false)
     }
@@ -185,22 +189,22 @@ export default function SignatureTemplatesPage() {
   return (
     <div className="container mx-auto py-8 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Email Signature Templates</h1>
+        <h1 className="text-3xl font-bold mb-2">{tAdmin('signatureTemplates')}</h1>
         <p className="text-muted-foreground">
-          Beheer email signature templates per entiteit
+          {tAdmin('signatureTemplatesDescription')}
         </p>
       </div>
 
       {!selectedEntityId ? (
         <Card className="p-12 text-center">
           <FileSignature className="h-16 w-16 mx-auto mb-4 opacity-50 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">Selecteer een Entiteit</h3>
+          <h3 className="text-lg font-semibold mb-2">{t('selectEntity')}</h3>
           <p className="text-muted-foreground mb-6">
-            Kies een entiteit om de signature template te bewerken
+            {t('selectEntityDescription')}
           </p>
           <Select value={selectedEntityId} onValueChange={handleEntityChange}>
             <SelectTrigger className="max-w-md mx-auto">
-              <SelectValue placeholder="Selecteer entiteit" />
+              <SelectValue placeholder={t('selectEntityPlaceholder')} />
             </SelectTrigger>
             <SelectContent>
               {entities.map(entity => (
@@ -208,7 +212,7 @@ export default function SignatureTemplatesPage() {
                   {entity.name}
                   {templates.find(t => t.entityId === entity.id) && (
                     <Badge variant="outline" className="ml-2 text-xs">
-                      ✓ Template
+                      {t('hasTemplate')}
                     </Badge>
                   )}
                 </SelectItem>
@@ -227,22 +231,22 @@ export default function SignatureTemplatesPage() {
                   {selectedEntity?.name}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {existingTemplateId ? 'Bestaande template bewerken' : 'Nieuwe template aanmaken'}
+                  {existingTemplateId ? t('editExisting') : t('createNew')}
                 </p>
               </div>
               <Button variant="outline" onClick={() => setSelectedEntityId('')}>
-                Wijzig Entiteit
+                {t('changeEntity')}
               </Button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Template Naam *</Label>
+                <Label htmlFor="name">{t('templateName')}</Label>
                 <Input
                   id="name"
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
-                  placeholder="Bijv: ACEG Standard Signature"
+                  placeholder={t('templateNamePlaceholder')}
                   className="mt-2"
                 />
               </div>
@@ -250,7 +254,7 @@ export default function SignatureTemplatesPage() {
               <div className="flex gap-2">
                 <Button onClick={handleSave} disabled={loading} className="flex-1">
                   <Save className="h-4 w-4 mr-2" />
-                  {existingTemplateId ? 'Update' : 'Opslaan'}
+                  {existingTemplateId ? tc('save') : tc('save')}
                 </Button>
                 {existingTemplateId && (
                   <Button 
@@ -259,7 +263,7 @@ export default function SignatureTemplatesPage() {
                     variant="destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Verwijderen
+                    {tc('delete')}
                   </Button>
                 )}
               </div>
@@ -269,9 +273,9 @@ export default function SignatureTemplatesPage() {
           {/* Visual Builder */}
           <Card className="p-6">
             <div className="mb-4">
-              <h3 className="font-semibold mb-1">Visual Builder</h3>
+              <h3 className="font-semibold mb-1">{t('visualBuilder')}</h3>
               <p className="text-sm text-muted-foreground">
-                Configureer je signature met de visual builder. De HTML wordt automatisch gegenereerd.
+                {t('visualBuilderDescription')}
               </p>
             </div>
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
@@ -279,10 +283,10 @@ export default function SignatureTemplatesPage() {
                 <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                    Dynamische Placeholders
+                    {t('dynamicPlaceholders')}
                   </p>
                   <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Velden met "dynamisch" worden automatisch ingevuld met starter gegevens: Naam, Functie, Email, Mobiel
+                    {t('dynamicPlaceholdersDescription')}
                   </p>
                 </div>
               </div>
@@ -295,11 +299,11 @@ export default function SignatureTemplatesPage() {
 
           {/* Template List */}
           <Card className="p-6">
-            <h3 className="font-semibold mb-4">Bestaande Templates ({templates.length})</h3>
+            <h3 className="font-semibold mb-4">{t('existingTemplates')} ({templates.length})</h3>
             <div className="space-y-2">
               {templates.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Nog geen templates aangemaakt
+                  {t('noTemplates')}
                 </p>
               ) : (
                 templates.map(template => (

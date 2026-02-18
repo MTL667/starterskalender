@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
@@ -18,6 +19,8 @@ interface Starter {
 }
 
 export function MonthlyCharts({ year }: { year: number }) {
+  const t = useTranslations('monthlyCharts')
+  const commonT = useTranslations('common')
   const [data, setData] = useState<MonthlyData[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -47,10 +50,7 @@ export function MonthlyCharts({ year }: { year: number }) {
         })
 
         // Converteer naar chart data
-        const monthNames = [
-          'Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun',
-          'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'
-        ]
+        const monthNames = t.raw('months') as string[]
 
         const chartData: MonthlyData[] = Array.from(monthlyMap.entries()).map(([month, counts]) => ({
           month: monthNames[month],
@@ -71,12 +71,12 @@ export function MonthlyCharts({ year }: { year: number }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Maandelijkse Statistieken</CardTitle>
-          <CardDescription>Starters per maand in {year}</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('subtitleYear', { year })}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12 text-muted-foreground">
-            Laden...
+            {commonT('loading')}
           </div>
         </CardContent>
       </Card>
@@ -89,9 +89,9 @@ export function MonthlyCharts({ year }: { year: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Maandelijkse Statistieken</CardTitle>
+        <CardTitle>{t('title')}</CardTitle>
         <CardDescription>
-          Starters per maand in {year} - Totaal: {totalStarters} actief, {totalCancelled} geannuleerd
+          {t('subtitleTotal', { year, total: totalStarters, cancelled: totalCancelled })}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -124,13 +124,13 @@ export function MonthlyCharts({ year }: { year: number }) {
               />
               <Bar 
                 dataKey="starters" 
-                name="Actieve Starters"
+                name={t('activeStarters')}
                 fill="hsl(var(--primary))" 
                 radius={[8, 8, 0, 0]}
               />
               <Bar 
                 dataKey="cancelled" 
-                name="Geannuleerd"
+                name={t('cancelledLabel')}
                 fill="hsl(var(--destructive))" 
                 radius={[8, 8, 0, 0]}
               />

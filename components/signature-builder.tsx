@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -87,20 +88,6 @@ const componentIcons: Record<SignatureComponent['type'], any> = {
   social: Facebook,
 }
 
-const componentLabels: Record<SignatureComponent['type'], string> = {
-  logo: 'Logo',
-  name: 'Naam (dynamisch)',
-  jobTitle: 'Functie (dynamisch)',
-  company: 'Bedrijfsnaam',
-  email: 'Email (dynamisch)',
-  phone: 'Telefoon vast',
-  mobile: 'Mobiel (dynamisch)',
-  website: 'Website',
-  address: 'Adres',
-  fax: 'Fax',
-  social: 'Social Media',
-}
-
 const socialIcons = {
   facebook: Facebook,
   linkedin: Linkedin,
@@ -110,11 +97,45 @@ const socialIcons = {
 }
 
 export function SignatureBuilder({ initialConfig, onChange }: SignatureBuilderProps) {
+  const t = useTranslations('signatures')
+  const componentLabels: Record<SignatureComponent['type'], string> = {
+    logo: t('componentLogo'),
+    name: t('componentName'),
+    jobTitle: t('componentJobTitle'),
+    company: t('componentCompany'),
+    email: t('componentEmail'),
+    phone: t('componentPhone'),
+    mobile: t('componentMobile'),
+    website: t('componentWebsite'),
+    address: t('componentAddress'),
+    fax: t('componentFax'),
+    social: t('componentSocial'),
+  }
   const [config, setConfig] = useState<BuilderConfig>({
     ...defaultConfig,
     ...initialConfig,
   })
   const [previewMode, setPreviewMode] = useState<'visual' | 'code'>('visual')
+
+  useEffect(() => {
+    setConfig(prev => {
+      const defaults: Record<string, string> = {
+        company: t('defaultCompany'),
+        phone: t('defaultPhone'),
+        website: t('defaultWebsite'),
+        address: t('defaultAddress'),
+      }
+      let changed = false
+      const components = prev.components.map(c => {
+        if (c.type === 'company' && c.value === 'Bedrijfsnaam' && defaults.company !== c.value) { changed = true; return { ...c, value: defaults.company } }
+        if (c.type === 'phone' && c.value === '+32(0)12 34 56 78' && defaults.phone !== c.value) { changed = true; return { ...c, value: defaults.phone } }
+        if (c.type === 'website' && c.value === 'www.bedrijf.be' && defaults.website !== c.value) { changed = true; return { ...c, value: defaults.website } }
+        if (c.type === 'address' && c.value === 'Straat 1, 1000 Brussel' && defaults.address !== c.value) { changed = true; return { ...c, value: defaults.address } }
+        return c
+      })
+      return changed ? { ...prev, components } : prev
+    })
+  }, [t])
 
   useEffect(() => {
     const html = generateHTML(config)
@@ -362,24 +383,24 @@ export function SignatureBuilder({ initialConfig, onChange }: SignatureBuilderPr
         <Card className="p-6">
           <Tabs defaultValue="layout">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="layout">Layout</TabsTrigger>
-              <TabsTrigger value="components">Componenten</TabsTrigger>
-              <TabsTrigger value="style">Stijl</TabsTrigger>
-              <TabsTrigger value="social">Social</TabsTrigger>
+              <TabsTrigger value="layout">{t('tabLayout')}</TabsTrigger>
+              <TabsTrigger value="components">{t('tabComponents')}</TabsTrigger>
+              <TabsTrigger value="style">{t('tabStyle')}</TabsTrigger>
+              <TabsTrigger value="social">{t('tabSocial')}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="layout" className="space-y-4 mt-4">
               <div>
-                <Label>Logo URL</Label>
+                <Label>{t('logoUrl')}</Label>
                 <Input
                   value={config.logoUrl}
                   onChange={(e) => setConfig(prev => ({ ...prev, logoUrl: e.target.value }))}
-                  placeholder="https://..."
+                  placeholder={t('placeholderUrl')}
                   className="mt-2"
                 />
               </div>
               <div>
-                <Label>Logo Breedte (px)</Label>
+                <Label>{t('logoWidth')}</Label>
                 <Input
                   type="number"
                   value={config.logoWidth}
@@ -388,14 +409,14 @@ export function SignatureBuilder({ initialConfig, onChange }: SignatureBuilderPr
                 />
               </div>
               <div>
-                <Label>Layout</Label>
+                <Label>{t('layout')}</Label>
                 <Select value={config.layout} onValueChange={(value: any) => setConfig(prev => ({ ...prev, layout: value }))}>
                   <SelectTrigger className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="side">Logo Links</SelectItem>
-                    <SelectItem value="top">Logo Boven</SelectItem>
+                    <SelectItem value="side">{t('logoLeft')}</SelectItem>
+                    <SelectItem value="top">{t('logoTop')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -418,13 +439,13 @@ export function SignatureBuilder({ initialConfig, onChange }: SignatureBuilderPr
                           <Input
                             value={comp.value || ''}
                             onChange={(e) => updateComponent(comp.id, { value: e.target.value })}
-                            placeholder="Waarde..."
+                            placeholder={t('placeholderValue')}
                             className="h-8 text-sm"
                           />
                         )}
                         {comp.enabled && comp.placeholder && (
                           <div className="text-xs text-muted-foreground">
-                            Dynamisch: <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{comp.placeholder}</code>
+                            {t('dynamicHint')} <code className="bg-slate-100 dark:bg-slate-800 px-1 rounded">{comp.placeholder}</code>
                           </div>
                         )}
                       </div>
@@ -454,7 +475,7 @@ export function SignatureBuilder({ initialConfig, onChange }: SignatureBuilderPr
 
             <TabsContent value="style" className="space-y-4 mt-4">
               <div>
-                <Label>Accent Kleur</Label>
+                <Label>{t('accentColor')}</Label>
                 <div className="flex gap-2 mt-2">
                   <Input
                     type="color"
@@ -470,7 +491,7 @@ export function SignatureBuilder({ initialConfig, onChange }: SignatureBuilderPr
                 </div>
               </div>
               <div>
-                <Label>Font Familie</Label>
+                <Label>{t('fontFamily')}</Label>
                 <Select value={config.fontFamily} onValueChange={(value) => setConfig(prev => ({ ...prev, fontFamily: value }))}>
                   <SelectTrigger className="mt-2">
                     <SelectValue />

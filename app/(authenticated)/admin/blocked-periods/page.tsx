@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations, useLocale } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -11,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Badge } from '@/components/ui/badge'
 import { Plus, Trash2, Calendar, X } from 'lucide-react'
 import { format } from 'date-fns'
-import { nl } from 'date-fns/locale'
+import { getDateLocale } from '@/lib/date-locale'
 
 interface Entity {
   id: string
@@ -44,6 +45,9 @@ interface BlockedPeriod {
 }
 
 export default function BlockedPeriodsPage() {
+  const t = useTranslations('adminBlockedPeriods')
+  const tc = useTranslations('common')
+  const dateLocale = getDateLocale(useLocale())
   const [entities, setEntities] = useState<Entity[]>([])
   const [allJobRoles, setAllJobRoles] = useState<JobRole[]>([])
   const [blockedPeriods, setBlockedPeriods] = useState<BlockedPeriod[]>([])
@@ -120,12 +124,12 @@ export default function BlockedPeriodsPage() {
       loadData()
     } catch (error) {
       console.error('Error saving:', error)
-      alert(error instanceof Error ? error.message : 'Fout bij opslaan')
+      alert(error instanceof Error ? error.message : tc('errorSaving'))
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Weet je zeker dat je deze blokkade wilt verwijderen?')) return
+    if (!confirm(t('confirmDeleteBlockade'))) return
 
     try {
       const res = await fetch(`/api/blocked-periods/${id}`, { method: 'DELETE' })
@@ -133,7 +137,7 @@ export default function BlockedPeriodsPage() {
       loadData()
     } catch (error) {
       console.error('Error deleting:', error)
-      alert('Fout bij verwijderen')
+      alert(tc('errorDeleting'))
     }
   }
 
@@ -145,9 +149,9 @@ export default function BlockedPeriodsPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Periode Blokkades</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Blokkeer periodes waarin bepaalde functies niet geregistreerd kunnen worden
+          {t('subtitle')}
         </p>
       </div>
 
@@ -155,20 +159,20 @@ export default function BlockedPeriodsPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Geblokkeerde Periodes</CardTitle>
-              <CardDescription>Beheer blokkades voor entiteiten en functies</CardDescription>
+              <CardTitle>{t('blockedPeriodsTitle')}</CardTitle>
+              <CardDescription>{t('blockedPeriodsSubtitle')}</CardDescription>
             </div>
             <Button onClick={handleNew}>
               <Plus className="h-4 w-4 mr-2" />
-              Nieuwe Blokkade
+              {t('newBlockade')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Laden...</div>
+            <div className="text-center py-8 text-muted-foreground">{tc('loading')}</div>
           ) : blockedPeriods.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">Geen blokkades gevonden</div>
+            <div className="text-center py-8 text-muted-foreground">{t('noBlockades')}</div>
           ) : (
             <div className="space-y-3">
               {blockedPeriods.map(period => (
@@ -185,20 +189,20 @@ export default function BlockedPeriodsPage() {
                         {period.jobRole ? (
                           <Badge variant="outline">{period.jobRole.title}</Badge>
                         ) : (
-                          <Badge variant="secondary">Alle functies</Badge>
+                          <Badge variant="secondary">{t('allRoles')}</Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
                         <Calendar className="h-4 w-4" />
                         <span>
-                          {format(new Date(period.startDate), 'dd MMM yyyy', { locale: nl })}
+                          {format(new Date(period.startDate), 'dd MMM yyyy', { locale: dateLocale })}
                           {' → '}
-                          {format(new Date(period.endDate), 'dd MMM yyyy', { locale: nl })}
+                          {format(new Date(period.endDate), 'dd MMM yyyy', { locale: dateLocale })}
                         </span>
                       </div>
                       {period.reason && (
                         <p className="text-sm text-muted-foreground mt-2">
-                          <span className="font-medium">Reden:</span> {period.reason}
+                          <span className="font-medium">{t('reasonLabel')}</span> {period.reason}
                         </p>
                       )}
                     </div>
@@ -221,20 +225,20 @@ export default function BlockedPeriodsPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nieuwe Blokkade</DialogTitle>
+            <DialogTitle>{t('newBlockadeTitle')}</DialogTitle>
             <DialogDescription>
-              Blokkeer een periode voor een entiteit en optioneel een specifieke functie
+              {t('blockadeDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="entityId">Entiteit *</Label>
+              <Label htmlFor="entityId">{t('entity')} *</Label>
               <Select
                 value={formData.entityId}
                 onValueChange={(value) => setFormData({ ...formData, entityId: value, jobRoleId: undefined })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecteer entiteit" />
+                  <SelectValue placeholder={t('selectEntity')} />
                 </SelectTrigger>
                 <SelectContent>
                   {entities.map(entity => (
@@ -247,7 +251,7 @@ export default function BlockedPeriodsPage() {
             </div>
 
             <div>
-              <Label htmlFor="jobRoleId">Functie (optioneel)</Label>
+              <Label htmlFor="jobRoleId">{t('roleOptional')}</Label>
               <div className="flex gap-2">
                 <Select
                   value={formData.jobRoleId || undefined}
@@ -285,7 +289,7 @@ export default function BlockedPeriodsPage() {
             </div>
 
             <div>
-              <Label htmlFor="startDate">Startdatum *</Label>
+              <Label htmlFor="startDate">{t('startDate')}</Label>
               <Input
                 id="startDate"
                 type="date"
@@ -295,7 +299,7 @@ export default function BlockedPeriodsPage() {
             </div>
 
             <div>
-              <Label htmlFor="endDate">Einddatum *</Label>
+              <Label htmlFor="endDate">{t('endDate')}</Label>
               <Input
                 id="endDate"
                 type="date"
@@ -305,13 +309,13 @@ export default function BlockedPeriodsPage() {
             </div>
 
             <div>
-              <Label htmlFor="reason">Reden (optioneel)</Label>
+              <Label htmlFor="reason">{t('reasonOptional')}</Label>
               <Textarea
                 id="reason"
                 value={formData.reason}
                 onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                 rows={3}
-                placeholder="Bijv: Wervingsstop, Reorganisatie, etc."
+                placeholder={t('reasonPlaceholder')}
               />
             </div>
           </div>

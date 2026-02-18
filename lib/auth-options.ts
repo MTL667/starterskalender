@@ -1,5 +1,6 @@
 import { NextAuthOptions } from 'next-auth'
 import AzureADProvider from 'next-auth/providers/azure-ad'
+import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from './prisma'
 
 // Tenant Allowlist - lijst van toegestane Azure AD tenant IDs
@@ -52,9 +53,56 @@ export const authOptions: NextAuthOptions = {
   debug: process.env.NODE_ENV === 'development',
   // Note: Set NEXTAUTH_TRUST_HOST=true in environment variables for proxy support
   providers: [
+    // Development-only credentials provider for testing
+    ...(process.env.NODE_ENV === 'development' ? [
+      CredentialsProvider({
+        id: 'dev-credentials',
+        name: 'Development Login',
+        credentials: {
+          email: { label: 'Email', type: 'email', placeholder: 'admin@test.local' },
+        },
+        async authorize(credentials) {
+          if (!credentials?.email) return null
+          
+          const email = credentials.email.toLowerCase()
+          
+          // Find or create dev user
+          let user = await prisma.user.findUnique({
+            where: { email },
+          })
+          
+          if (!user) {
+            // Create admin user for development
+            user = await prisma.user.create({
+              data: {
+                email,
+                name: email.split('@')[0],
+                role: 'HR_ADMIN', // Give full access in dev
+                identityProvider: 'MANUAL',
+                status: 'ACTIVE',
+                lastLoginAt: new Date(),
+              },
+            })
+            console.log(`✅ Created dev admin user: ${email}`)
+          } else {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { lastLoginAt: new Date() },
+            })
+          }
+          
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          }
+        },
+      }),
+    ] : []),
+    // Azure AD Provider for production
     AzureADProvider({
-      clientId: process.env.AZURE_AD_CLIENT_ID!,
-      clientSecret: process.env.AZURE_AD_CLIENT_SECRET!,
+      clientId: process.env.AZURE_AD_CLIENT_ID || 'not-configured',
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET || 'not-configured',
       tenantId: 'common', // Multi-tenant: accepteer alle Azure AD tenants
       authorization: {
         params: {
@@ -147,6 +195,12 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile }) {
       try {
+        // Skip Azure AD checks for development credentials provider
+        if (account?.provider === 'dev-credentials') {
+          console.log('✅ Development credentials login - skipping Azure AD checks')
+          return true // User was already created/updated in the authorize function
+        }
+
         // Debug: Log what we receive from Azure AD
         console.log('🔍 SignIn Debug:', {
           accountKeys: account ? Object.keys(account) : 'no account',
@@ -277,6 +331,7 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           token.id = dbUser.id
           token.role = dbUser.role
+          token.locale = dbUser.locale
           token.tenantId = dbUser.tenantId ?? undefined
           token.oid = dbUser.oid ?? undefined
           token.memberships = dbUser.memberships.map(m => ({
@@ -302,6 +357,7 @@ export const authOptions: NextAuthOptions = {
 
         if (dbUser) {
           token.role = dbUser.role
+          token.locale = dbUser.locale
           token.memberships = dbUser.memberships.map(m => ({
             entityId: m.entityId,
             entityName: m.entity.name,

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { useTranslations } from 'next-intl'
 
 interface Entity {
   id: string
@@ -25,6 +26,9 @@ interface MonthlyEntityData {
 }
 
 export function EntityMonthlyCharts({ year }: { year: number }) {
+  const t = useTranslations('entityMonthlyCharts')
+  const commonT = useTranslations('common')
+  const monthlyChartsT = useTranslations('monthlyCharts')
   const [entities, setEntities] = useState<Entity[]>([])
   const [starters, setStarters] = useState<Starter[]>([])
   const [selectedEntity, setSelectedEntity] = useState<string>('all')
@@ -50,22 +54,19 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Maandelijkse Statistieken per Entiteit</CardTitle>
-          <CardDescription>Starters per entiteit per maand in {year}</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('subtitle', { year })}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-12 text-muted-foreground">
-            Laden...
+            {commonT('loading')}
           </div>
         </CardContent>
       </Card>
     )
   }
 
-  const monthNames = [
-    'Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'
-  ]
+  const monthNames = monthlyChartsT.raw('months') as string[]
 
   // Bereken data
   let chartData: MonthlyEntityData[] = []
@@ -152,12 +153,12 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
     barsToRender = [
       {
         dataKey: 'active',
-        name: 'Actief',
+        name: t('active'),
         color: selectedEntityObj?.colorHex || 'hsl(var(--primary))',
       },
       {
         dataKey: 'cancelled',
-        name: 'Geannuleerd',
+        name: t('cancelled'),
         color: 'hsl(var(--destructive))',
       },
     ]
@@ -175,7 +176,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
   ).length
 
   const selectedEntityName = selectedEntity === 'all' 
-    ? 'Alle entiteiten'
+    ? t('allEntities')
     : entities.find(e => e.id === selectedEntity)?.name || ''
 
   return (
@@ -183,9 +184,13 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle>Maandelijkse Statistieken per Entiteit</CardTitle>
+            <CardTitle>{t('title')}</CardTitle>
             <CardDescription>
-              {selectedEntityName} - Totaal: {total} actief{cancelled > 0 ? `, ${cancelled} geannuleerd` : ''}
+              {t('subtitleSelected', { 
+                entityName: selectedEntityName, 
+                total, 
+                cancelledPart: cancelled > 0 ? `, ${cancelled} ${t('cancelled')}` : '' 
+              })}
             </CardDescription>
           </div>
           <Select value={selectedEntity} onValueChange={setSelectedEntity}>
@@ -193,7 +198,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">🔄 Alle entiteiten</SelectItem>
+              <SelectItem value="all">{t('selectAll')}</SelectItem>
               {entities.map(entity => (
                 <SelectItem key={entity.id} value={entity.id}>
                   <span className="flex items-center gap-2">

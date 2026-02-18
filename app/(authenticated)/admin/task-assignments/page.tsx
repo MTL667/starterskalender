@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -15,21 +16,25 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Info, Save, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-const taskTypeLabels: Record<string, string> = {
-  IT_SETUP: '🖥️ IT Setup',
-  HR_ADMIN: '📋 HR Administratie',
-  FACILITIES: '🏢 Facilities',
-  MANAGER_ACTION: '👥 Manager Actie',
-  CUSTOM: '⚙️ Custom',
-}
-
-const notifyChannelLabels: Record<string, string> = {
-  IN_APP: 'Alleen in-app',
-  EMAIL: 'Alleen email',
-  BOTH: 'In-app + Email',
-}
+const TASK_TYPES = ['IT_SETUP', 'HR_ADMIN', 'FACILITIES', 'MANAGER_ACTION', 'CUSTOM'] as const
+const NOTIFY_CHANNELS = ['IN_APP', 'EMAIL', 'BOTH'] as const
 
 export default function TaskAssignmentsPage() {
+  const t = useTranslations('adminTaskAssignments')
+  const tc = useTranslations('common')
+  const tt = useTranslations('tasks')
+  const taskTypeLabels: Record<string, string> = {
+    IT_SETUP: tt('itSetup'),
+    HR_ADMIN: tt('hrAdmin'),
+    FACILITIES: tt('facilities'),
+    MANAGER_ACTION: tt('managerAction'),
+    CUSTOM: tt('custom'),
+  }
+  const notifyChannelLabels: Record<string, string> = {
+    IN_APP: t('inAppOnly'),
+    EMAIL: t('emailOnly'),
+    BOTH: t('inAppAndEmail'),
+  }
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [assignments, setAssignments] = useState<any[]>([])
@@ -77,7 +82,7 @@ export default function TaskAssignmentsPage() {
 
   const handleSave = async () => {
     if (!selectedUser) {
-      setMessage({ type: 'error', text: 'Selecteer een verantwoordelijke' })
+      setMessage({ type: 'error', text: t('selectResponsible') })
       return
     }
 
@@ -104,7 +109,7 @@ export default function TaskAssignmentsPage() {
       console.log('📥 Response:', data)
 
       if (res.ok) {
-        setMessage({ type: 'success', text: 'Verantwoordelijke opgeslagen!' })
+        setMessage({ type: 'success', text: t('responsibleSaved') })
         fetchData()
         // Reset form
         setSelectedEntity('global')
@@ -115,19 +120,19 @@ export default function TaskAssignmentsPage() {
         console.error('❌ Save failed:', data)
         setMessage({ 
           type: 'error', 
-          text: `Fout bij opslaan: ${data.details || data.error || 'Onbekende fout'}` 
+          text: `${tc('errorSaving')}: ${data.details || data.error || tc('unknown')}` 
         })
       }
     } catch (error) {
       console.error('❌ Exception during save:', error)
-      setMessage({ type: 'error', text: `Fout bij opslaan: ${(error as Error).message}` })
+      setMessage({ type: 'error', text: `${tc('errorSaving')}: ${(error as Error).message}` })
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Weet je zeker dat je deze assignment wilt verwijderen?')) {
+    if (!confirm(t('confirmDeleteAssignment'))) {
       return
     }
 
@@ -137,11 +142,11 @@ export default function TaskAssignmentsPage() {
       })
 
       if (res.ok) {
-        setMessage({ type: 'success', text: 'Verantwoordelijke verwijderd' })
+        setMessage({ type: 'success', text: t('responsibleDeleted') })
         fetchData()
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Fout bij verwijderen' })
+      setMessage({ type: 'error', text: tc('errorDeleting') })
     }
   }
 
@@ -156,19 +161,16 @@ export default function TaskAssignmentsPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Taak Verantwoordelijken</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Configureer wie verantwoordelijk is voor welke taken
+          {t('subtitle')}
         </p>
       </div>
 
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          <strong>Hoe werkt het?</strong> Wanneer een nieuwe starter wordt aangemaakt,
-          worden automatisch taken toegewezen aan de verantwoordelijken die je hier
-          configureert. Je kunt per entiteit specifieke verantwoordelijken instellen,
-          of een globale default voor alle entiteiten.
+          <strong>{t('howItWorks')}</strong> {t('howItWorksDescription')}
         </AlertDescription>
       </Alert>
 
@@ -181,21 +183,21 @@ export default function TaskAssignmentsPage() {
       {/* New Assignment Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Nieuwe Verantwoordelijke Toewijzen</CardTitle>
+          <CardTitle>{t('newAssignment')}</CardTitle>
           <CardDescription>
-            Voeg een nieuwe taak verantwoordelijke toe voor een specifieke entiteit of globaal
+            {t('newAssignmentDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <Label>Entiteit</Label>
+              <Label>{t('entityLabel')}</Label>
               <Select value={selectedEntity} onValueChange={setSelectedEntity}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="global">🌍 Globaal (alle entiteiten)</SelectItem>
+                  <SelectItem value="global">🌍 {t('globalAllEntities')}</SelectItem>
                   {entities.map((entity) => (
                     <SelectItem key={entity.id} value={entity.id}>
                       {entity.name}
@@ -206,7 +208,7 @@ export default function TaskAssignmentsPage() {
             </div>
 
             <div>
-              <Label>Taak Type</Label>
+              <Label>{t('taskTypeLabel')}</Label>
               <Select value={selectedTaskType} onValueChange={setSelectedTaskType}>
                 <SelectTrigger>
                   <SelectValue />
@@ -222,15 +224,15 @@ export default function TaskAssignmentsPage() {
             </div>
 
             <div>
-              <Label>Verantwoordelijke</Label>
+              <Label>{t('responsible')}</Label>
               <Select value={selectedUser} onValueChange={setSelectedUser}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecteer gebruiker..." />
+                  <SelectValue placeholder={t('selectUser')} />
                 </SelectTrigger>
                 <SelectContent>
                   {users.length === 0 ? (
                     <div className="p-2 text-sm text-muted-foreground">
-                      Geen gebruikers gevonden
+                      {t('noUsersFound')}
                     </div>
                   ) : (
                     users.map((user: any) => (
@@ -249,7 +251,7 @@ export default function TaskAssignmentsPage() {
             </div>
 
             <div>
-              <Label>Notificatie Kanaal</Label>
+              <Label>{t('notificationChannel')}</Label>
               <Select value={selectedChannel} onValueChange={setSelectedChannel}>
                 <SelectTrigger>
                   <SelectValue />
@@ -271,7 +273,7 @@ export default function TaskAssignmentsPage() {
             className="mt-4"
           >
             <Save className="h-4 w-4 mr-2" />
-            {saving ? 'Bezig...' : 'Opslaan'}
+            {saving ? tc('saving') : tc('save')}
           </Button>
         </CardContent>
       </Card>
@@ -281,16 +283,16 @@ export default function TaskAssignmentsPage() {
         {/* Global Assignments */}
         <Card>
           <CardHeader>
-            <CardTitle>🌍 Globale Verantwoordelijken</CardTitle>
+            <CardTitle>🌍 {t('globalResponsibles')}</CardTitle>
             <CardDescription>
-              Deze verantwoordelijken gelden voor alle entiteiten (tenzij overschreven)
+              {t('globalResponsiblesDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-muted-foreground">Laden...</p>
+              <p className="text-muted-foreground">{tc('loading')}</p>
             ) : groupedAssignments.global.length === 0 ? (
-              <p className="text-muted-foreground">Geen globale verantwoordelijken ingesteld</p>
+              <p className="text-muted-foreground">{t('noGlobalResponsibles')}</p>
             ) : (
               <div className="space-y-2">
                 {groupedAssignments.global.map((assignment) => (
@@ -342,7 +344,7 @@ export default function TaskAssignmentsPage() {
                   </Badge>
                 </CardTitle>
                 <CardDescription>
-                  Entiteit-specifieke verantwoordelijken (overschrijven globale instellingen)
+                  {t('entitySpecificDescription')}
                 </CardDescription>
               </CardHeader>
               <CardContent>

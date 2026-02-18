@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Upload, Trash2, Image as ImageIcon } from 'lucide-react'
 
 export default function BrandingPage() {
+  const t = useTranslations('adminBranding')
+  const tc = useTranslations('common')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -38,7 +41,7 @@ export default function BrandingPage() {
       setError(null)
     } catch (error) {
       console.error('Error loading logo:', error)
-      setError(error instanceof Error ? error.message : 'Fout bij laden van logo')
+      setError(error instanceof Error ? error.message : t('errorLoadingLogo'))
     } finally {
       setLoading(false)
     }
@@ -67,10 +70,10 @@ export default function BrandingPage() {
       console.log('Upload response:', data)
       setLogoUrl(data.logoUrl)
       setError(null)
-      alert('Logo succesvol geüpload!')
+      alert(t('logoUploaded'))
     } catch (error) {
       console.error('Error uploading logo:', error)
-      const errorMsg = error instanceof Error ? error.message : 'Fout bij uploaden'
+      const errorMsg = error instanceof Error ? error.message : t('errorUploading')
       setError(errorMsg)
       alert(errorMsg)
     } finally {
@@ -81,7 +84,7 @@ export default function BrandingPage() {
   }
 
   async function handleRemoveLogo() {
-    if (!confirm('Weet je zeker dat je het logo wilt verwijderen?')) return
+    if (!confirm(t('confirmDeleteLogo'))) return
 
     try {
       const response = await fetch('/api/admin/system/logo', {
@@ -93,17 +96,17 @@ export default function BrandingPage() {
       }
 
       setLogoUrl(null)
-      alert('Logo verwijderd!')
+      alert(t('logoDeleted'))
     } catch (error) {
       console.error('Error removing logo:', error)
-      alert('Fout bij verwijderen')
+      alert(tc('errorDeleting'))
     }
   }
 
   if (loading) {
     return (
       <div className="p-6">
-        <p className="text-muted-foreground">Laden...</p>
+        <p className="text-muted-foreground">{tc('loading')}</p>
       </div>
     )
   }
@@ -111,9 +114,9 @@ export default function BrandingPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Branding</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="text-muted-foreground mt-2">
-          Pas het logo en de uitstraling van de applicatie aan
+          {t('subtitle')}
         </p>
       </div>
 
@@ -124,18 +127,18 @@ export default function BrandingPage() {
             <div className="flex items-start gap-3">
               <div className="text-destructive">⚠️</div>
               <div className="flex-1">
-                <h3 className="font-semibold text-destructive mb-1">Database Error</h3>
+                <h3 className="font-semibold text-destructive mb-1">{t('databaseError')}</h3>
                 <p className="text-sm text-muted-foreground mb-3">
                   {error}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  <strong>Oplossing:</strong> Run het volgende commando in de Easypanel terminal:
+                  <strong>{t('solution')}:</strong> {t('solutionHint')}
                 </p>
                 <pre className="mt-2 p-3 bg-black/10 rounded text-sm font-mono">
                   npx prisma db push
                 </pre>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Dit maakt de SystemSettings tabel aan in de database.
+                  {t('dbTableHint')}
                 </p>
               </div>
             </div>
@@ -145,29 +148,29 @@ export default function BrandingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Logo</CardTitle>
+          <CardTitle>{t('logo')}</CardTitle>
           <CardDescription>
-            Upload een logo om de &quot;Starterskalender&quot; tekst te vervangen.
+            {t('uploadDescription')}
             <br />
-            Aanbevolen: PNG, SVG, of JPG met transparante achtergrond (max 2MB)
+            {t('uploadRecommended')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Preview */}
           <div>
-            <Label>Huidige Logo</Label>
+            <Label>{t('currentLogo')}</Label>
             <div className="mt-2 p-6 border-2 border-dashed rounded-lg bg-muted/30 flex items-center justify-center min-h-[120px]">
               {logoUrl ? (
                 <img 
                   src={logoUrl} 
-                  alt="Logo" 
+                  alt={t('logo')} 
                   className="max-h-16 max-w-full object-contain"
                 />
               ) : (
                 <div className="text-center text-muted-foreground">
                   <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Geen logo ingesteld</p>
-                  <p className="text-sm">De tekst &quot;Starterskalender&quot; wordt getoond</p>
+                  <p>{t('noLogoSet')}</p>
+                  <p className="text-sm">{t('textShown')}</p>
                 </div>
               )}
             </div>
@@ -175,7 +178,7 @@ export default function BrandingPage() {
 
           {/* Upload */}
           <div className="space-y-2">
-            <Label htmlFor="logo-upload">Nieuw Logo Uploaden</Label>
+            <Label htmlFor="logo-upload">{t('uploadNewLogo')}</Label>
             <div className="flex gap-2">
               <Input
                 id="logo-upload"
@@ -190,11 +193,11 @@ export default function BrandingPage() {
                 disabled={uploading}
               >
                 <Upload className="h-4 w-4 mr-2" />
-                {uploading ? 'Uploaden...' : 'Selecteer'}
+                {uploading ? t('uploading') : t('select')}
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Toegestane formaten: PNG, JPG, SVG, WebP • Max 2MB
+              {t('allowedFormats')}
             </p>
           </div>
 
@@ -206,10 +209,10 @@ export default function BrandingPage() {
                 onClick={handleRemoveLogo}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
-                Logo Verwijderen
+                {t('deleteLogo')}
               </Button>
               <p className="text-sm text-muted-foreground mt-2">
-                Het logo wordt verwijderd en de tekst &quot;Starterskalender&quot; wordt weer getoond.
+                {t('deleteLogoHint')}
               </p>
             </div>
           )}
@@ -219,13 +222,13 @@ export default function BrandingPage() {
       {/* Info */}
       <Card>
         <CardHeader>
-          <CardTitle>Styling Tips</CardTitle>
+          <CardTitle>{t('stylingTips')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>✅ Gebruik een logo met transparante achtergrond voor beste resultaat</p>
-          <p>✅ Aanbevolen hoogte: 40-50 pixels (breedte wordt automatisch geschaald)</p>
-          <p>✅ SVG formaat geeft de scherpste weergave op alle schermen</p>
-          <p>⚠️ Let op: het logo wordt zichtbaar voor alle gebruikers</p>
+          <p>✅ {t('stylingTip1')}</p>
+          <p>✅ {t('stylingTip2')}</p>
+          <p>✅ {t('stylingTip3')}</p>
+          <p>⚠️ {t('stylingTip4')}</p>
         </CardContent>
       </Card>
     </div>

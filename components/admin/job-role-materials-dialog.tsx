@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -34,6 +35,8 @@ interface JobRoleMaterialsDialogProps {
 }
 
 export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMaterialsDialogProps) {
+  const t = useTranslations('jobRoleMaterials')
+  const tCommon = useTranslations('common')
   const [materials, setMaterials] = useState<Material[]>([])
   const [assignedMaterials, setAssignedMaterials] = useState<JobRoleMaterial[]>([])
   const [loading, setLoading] = useState(false)
@@ -86,11 +89,11 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
         setAdding(false)
       } else {
         const error = await res.json()
-        alert(error.error || 'Fout bij toevoegen')
+        alert(error.error || t('errorAdding'))
       }
     } catch (error) {
       console.error('Error adding material:', error)
-      alert('Er is een fout opgetreden')
+      alert(tCommon('error'))
     } finally {
       setLoading(false)
     }
@@ -154,7 +157,7 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
                             </Badge>
                           )}
                           {jrm.isRequired && (
-                            <Badge className="text-xs">Verplicht</Badge>
+                            <Badge className="text-xs">{t('requiredBadge')}</Badge>
                           )}
                         </div>
                         {jrm.notes && (
@@ -186,14 +189,14 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
               disabled={loading}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Materiaal Toevoegen
+              {t('addMaterial')}
             </Button>
           )}
 
           {adding && (
             <div className="border rounded-lg p-4 space-y-4">
               <div>
-                <Label htmlFor="material">Materiaal *</Label>
+                <Label htmlFor="material">{t('materialRequired')}</Label>
                 <Select
                   value={newMaterial.materialId}
                   onValueChange={(value) =>
@@ -201,7 +204,7 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecteer materiaal" />
+                    <SelectValue placeholder={t('selectMaterial')} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableMaterials.map((material) => (
@@ -223,19 +226,19 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
                   }
                 />
                 <Label htmlFor="isRequired" className="cursor-pointer">
-                  Verplicht voor deze functie
+                  {t('requiredForRole')}
                 </Label>
               </div>
 
               <div>
-                <Label htmlFor="notes">Notities (optioneel)</Label>
+                <Label htmlFor="notes">{t('notesOptional')}</Label>
                 <Textarea
                   id="notes"
                   value={newMaterial.notes}
                   onChange={(e) =>
                     setNewMaterial({ ...newMaterial, notes: e.target.value })
                   }
-                  placeholder="Bijv: Alleen voor senior niveau"
+                  placeholder={t('notesPlaceholder')}
                   rows={2}
                 />
               </div>
@@ -245,7 +248,7 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
                   onClick={handleAdd}
                   disabled={loading || !newMaterial.materialId}
                 >
-                  Toevoegen
+                  {tCommon('add')}
                 </Button>
                 <Button
                   variant="outline"
@@ -255,7 +258,7 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
                   }}
                   disabled={loading}
                 >
-                  Annuleren
+                  {tCommon('cancel')}
                 </Button>
               </div>
             </div>
@@ -263,7 +266,7 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
 
           {availableMaterials.length === 0 && !adding && (
             <p className="text-sm text-muted-foreground text-center py-4">
-              Alle beschikbare materialen zijn toegewezen
+              {t('allAssigned')}
             </p>
           )}
         </div>

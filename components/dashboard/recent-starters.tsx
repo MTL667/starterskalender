@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { nl } from 'date-fns/locale'
+import { useLocale } from 'next-intl'
+import { getDateLocale } from '@/lib/date-locale'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { useSession } from 'next-auth/react'
 
@@ -30,6 +32,10 @@ interface Entity {
 }
 
 export function RecentStarters({ year }: { year: number }) {
+  const t = useTranslations('recentStarters')
+  const commonT = useTranslations('common')
+  const starterCardT = useTranslations('starterCard')
+  const dateLocale = getDateLocale(useLocale())
   const { data: session } = useSession()
   const [starters, setStarters] = useState<Starter[]>([])
   const [entities, setEntities] = useState<Entity[]>([])
@@ -219,18 +225,18 @@ export function RecentStarters({ year }: { year: number }) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="font-medium">{starter.name}</div>
                       {starter.language && (
-                        <span className="text-sm" title={starter.language === 'NL' ? 'Nederlands' : 'Frans'}>
+                        <span className="text-sm" title={starter.language === 'NL' ? starterCardT('languageNL') : starterCardT('languageFR')}>
                           {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}
                         </span>
                       )}
                       {startingToday && (
                         <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700">
-                          ✨ Start vandaag
+                          {t('startToday')}
                         </Badge>
                       )}
                       {within7Days && !startingToday && (
                         <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-200 dark:border-amber-700">
-                          🔔 Start binnenkort
+                          {t('startSoon')}
                         </Badge>
                       )}
                     </div>
@@ -258,7 +264,7 @@ export function RecentStarters({ year }: { year: number }) {
                           ? 'font-semibold text-amber-700 dark:text-amber-400' 
                           : 'text-muted-foreground'
                     }`}>
-                      {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: nl })}
+                      {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
                     </div>
                   </div>
                 </div>

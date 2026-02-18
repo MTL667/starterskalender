@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,8 @@ const getPriorityColor = (priority: string) => {
 }
 
 export function MyTasks() {
+  const t = useTranslations('myTasks')
+  const commonT = useTranslations('common')
   const { data: session } = useSession()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
@@ -86,27 +89,27 @@ export function MyTasks() {
       </CardHeader>
       <CardContent>
         {loading ? (
-          <p className="text-muted-foreground text-center py-6">Laden...</p>
+          <p className="text-muted-foreground text-center py-6">{commonT('loading')}</p>
         ) : tasks.length === 0 ? (
           <div className="text-center py-6">
             <CheckSquare className="h-12 w-12 mx-auto mb-3 text-green-500 opacity-50" />
-            <p className="text-muted-foreground">Geen openstaande taken! 🎉</p>
+            <p className="text-muted-foreground">{t('noTasks')}</p>
           </div>
         ) : (
           <>
             <div className="flex gap-2 mb-4">
               {urgentCount > 0 && (
                 <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                  {urgentCount} Urgent
+                  {t('urgent', { n: urgentCount })}
                 </Badge>
               )}
               {highCount > 0 && (
                 <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                  {highCount} Hoog
+                  {t('high', { n: highCount })}
                 </Badge>
               )}
               <Badge variant="outline">
-                {tasks.length} Totaal
+                {t('total', { n: tasks.length })}
               </Badge>
             </div>
 
@@ -138,7 +141,7 @@ export function MyTasks() {
                         )}
                         {task.dueDate && (
                           <p className="text-xs text-muted-foreground mt-1 ml-6">
-                            Deadline: {new Date(task.dueDate).toLocaleDateString('nl-BE')}
+                            {t('deadline')} {new Date(task.dueDate).toLocaleDateString('nl-BE')}
                           </p>
                         )}
                       </div>
@@ -153,7 +156,7 @@ export function MyTasks() {
 
             <Link href="/taken" className="block mt-4">
               <Button variant="outline" className="w-full">
-                Alle taken bekijken
+                {t('viewAllTasks')}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </Link>

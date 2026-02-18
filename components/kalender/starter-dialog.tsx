@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import {
   Dialog,
@@ -68,6 +69,8 @@ interface StarterDialogProps {
 }
 
 export function StarterDialog({ open, onClose, starter, entities, canEdit }: StarterDialogProps) {
+  const t = useTranslations('starterDialog')
+  const tc = useTranslations('common')
   const { data: session } = useSession()
   const isEdit = !!starter
   const [loading, setLoading] = useState(false)
@@ -280,7 +283,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       onClose(true)
     } catch (error) {
       console.error('Error saving extra info:', error)
-      alert('Fout bij opslaan. Probeer opnieuw.')
+      alert(t('errorSaving'))
     } finally {
       setLoading(false)
     }
@@ -308,7 +311,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       onClose(true)
     } catch (error) {
       console.error('Error saving contact info:', error)
-      alert('Fout bij opslaan. Probeer opnieuw.')
+      alert(t('errorSaving'))
     } finally {
       setLoading(false)
     }
@@ -334,10 +337,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         const validation = await validationRes.json()
         if (validation.blocked) {
           alert(
-            `Deze periode is geblokkeerd!\n\n` +
-            `Functie: ${validation.jobRole}\n` +
-            `Periode: ${format(new Date(validation.period.startDate), 'dd MMM yyyy')} - ${format(new Date(validation.period.endDate), 'dd MMM yyyy')}\n` +
-            `Reden: ${validation.reason || 'Geen reden opgegeven'}`
+            t('blockedPeriodAlert', {
+              jobRole: validation.jobRole,
+              start: format(new Date(validation.period.startDate), 'dd MMM yyyy'),
+              end: format(new Date(validation.period.endDate), 'dd MMM yyyy'),
+              reason: validation.reason || t('noReasonGiven')
+            })
           )
           setLoading(false)
           return
@@ -397,14 +402,14 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       onClose(true)
     } catch (error) {
       console.error('Error saving starter:', error)
-      alert('Fout bij opslaan. Probeer opnieuw.')
+      alert(t('errorSaving'))
     } finally {
       setLoading(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!starter || !confirm('Weet je zeker dat je deze starter wilt verwijderen?')) {
+    if (!starter || !confirm(t('confirmDeleteStarter'))) {
       return
     }
 
@@ -422,7 +427,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       onClose(true)
     } catch (error) {
       console.error('Error deleting starter:', error)
-      alert('Fout bij verwijderen. Probeer opnieuw.')
+      alert(t('errorDeleting'))
     } finally {
       setLoading(false)
     }
@@ -448,7 +453,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       setCancelDialogOpen(false)
       setCancelReason('')
       onClose(true)
-      alert('Starter geannuleerd en notificaties verzonden')
+      alert(t('cancelSuccess'))
     } catch (error) {
       console.error('Error cancelling starter:', error)
       alert(error instanceof Error ? error.message : 'Fout bij annuleren')
@@ -476,7 +481,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       }
     } catch (error) {
       console.error('Error toggling material:', error)
-      alert('Fout bij bijwerken materiaal')
+      alert(t('errorMaterial'))
     }
   }
 
@@ -495,7 +500,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       }, 2000)
     } catch (error) {
       console.error('Error copying to clipboard:', error)
-      alert('Kon niet kopiëren naar clipboard')
+      alert(t('errorCopy'))
     }
   }
 
@@ -514,22 +519,22 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {isEdit ? 'Starter Bewerken' : 'Nieuwe Starter'}
+              {isEdit ? t('titleEdit') : t('titleNew')}
               {starter?.isCancelled && (
                 <span className="ml-3 text-sm font-normal text-red-600 dark:text-red-400">
-                  (Geannuleerd)
+                  {t('cancelled')}
                 </span>
               )}
             </DialogTitle>
           <DialogDescription>
-            {isEdit ? 'Pas de gegevens van de starter aan.' : 'Voeg een nieuwe starter toe aan de kalender.'}
+            {isEdit ? t('descriptionEdit') : t('descriptionNew')}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="name">Naam *</Label>
+              <Label htmlFor="name">{t('labelName')}</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -540,7 +545,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             </div>
 
             <div>
-              <Label htmlFor="language">Taal *</Label>
+              <Label htmlFor="language">{t('labelLanguage')}</Label>
               <Select
                 value={formData.language}
                 onValueChange={(value) => setFormData({ ...formData, language: value })}
@@ -550,21 +555,21 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="NL">🇳🇱 Nederlands (NL)</SelectItem>
-                  <SelectItem value="FR">🇫🇷 Frans (FR)</SelectItem>
+                  <SelectItem value="NL">{t('optionNL')}</SelectItem>
+                  <SelectItem value="FR">{t('optionFR')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="entityId">Entiteit</Label>
+              <Label htmlFor="entityId">{t('labelEntity')}</Label>
               <Select
                 value={formData.entityId || undefined}
                 onValueChange={(value) => setFormData({ ...formData, entityId: value, roleTitle: '' })}
                 disabled={!canEdit}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecteer entiteit (optioneel)" />
+                  <SelectValue placeholder={t('placeholderEntity')} />
                 </SelectTrigger>
                 <SelectContent>
                   {entities.map(entity => (
@@ -577,7 +582,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             </div>
 
             <div>
-              <Label htmlFor="roleTitle">Functie</Label>
+              <Label htmlFor="roleTitle">{t('labelRole')}</Label>
               {formData.entityId && jobRoles.length > 0 ? (
                 <Select
                   value={formData.roleTitle || undefined}
@@ -585,7 +590,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   disabled={!canEdit}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecteer functie (optioneel)" />
+                    <SelectValue placeholder={t('placeholderRole')} />
                   </SelectTrigger>
                   <SelectContent>
                     {jobRoles.map(role => (
@@ -600,20 +605,20 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   id="roleTitle"
                   value={formData.roleTitle}
                   onChange={(e) => setFormData({ ...formData, roleTitle: e.target.value })}
-                  placeholder={formData.entityId ? 'Geen functies beschikbaar' : 'Selecteer eerst een entiteit'}
+                  placeholder={formData.entityId ? t('placeholderNoRoles') : t('placeholderSelectEntityFirst')}
                   disabled={!formData.entityId || !canEdit}
                 />
               )}
               <p className="text-xs text-muted-foreground mt-1">
                 {formData.entityId 
-                  ? (jobRoles.length > 0 ? 'Kies een functie uit de lijst' : 'Geen functies beschikbaar voor deze entiteit')
-                  : 'Selecteer eerst een entiteit om functies te zien'}
+                  ? (jobRoles.length > 0 ? t('hintChooseRole') : t('hintNoRoles'))
+                  : t('hintEntityFirst')}
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="region">Regio</Label>
+                <Label htmlFor="region">{t('labelRegion')}</Label>
                 <Input
                   id="region"
                   value={formData.region}
@@ -623,7 +628,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
 
               <div>
-                <Label htmlFor="via">Via</Label>
+                <Label htmlFor="via">{t('labelVia')}</Label>
                 <Input
                   id="via"
                   value={formData.via}
@@ -635,7 +640,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="contractSignedOn">Contract getekend op *</Label>
+                <Label htmlFor="contractSignedOn">{t('labelContractSigned')}</Label>
                 <Input
                   id="contractSignedOn"
                   type="date"
@@ -644,12 +649,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   disabled={!canEdit}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Sterk aanbevolen - Datum waarop het contract is ondertekend
+                  {t('hintContract')}
                 </p>
               </div>
 
               <div>
-                <Label htmlFor="startDate">Startdatum *</Label>
+                <Label htmlFor="startDate">{t('labelStartDate')}</Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -663,9 +668,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
             <div>
               <Label htmlFor="notes">
-                Extra Info
+                {t('labelExtraInfo')}
                 {!canEdit && canEditExtraInfo && (
-                  <span className="text-xs text-muted-foreground ml-2">(Je kunt dit veld bewerken)</span>
+                  <span className="text-xs text-muted-foreground ml-2">{t('hintCanEditField')}</span>
                 )}
               </Label>
               <Textarea
@@ -674,7 +679,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={4}
                 disabled={!canEditExtraInfo}
-                placeholder={canEditExtraInfo ? "Voeg extra informatie toe..." : "Geen extra informatie"}
+                placeholder={canEditExtraInfo ? t('placeholderNotes') : t('placeholderNoNotes')}
               />
             </div>
 
@@ -689,10 +694,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                      Email Signature Genereren
+                      {t('signatureTitle')}
                     </h3>
                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                      Alle contactgegevens zijn ingevuld! Genereer een professionele email signature voor deze starter.
+                      {t('signatureDescription')}
                     </p>
                     <Button
                       type="button"
@@ -701,7 +706,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       size="sm"
                     >
                       <FileSignature className="h-4 w-4 mr-2" />
-                      Genereer Signature
+                      {t('generateSignature')}
                     </Button>
                   </div>
                 </div>
@@ -712,10 +717,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="phoneNumber">
-                  Telefoonnummer
+                  {t('labelPhone')}
                   {!canEditContactInfo && isEdit && (
                     <span className="text-xs text-muted-foreground ml-2">
-                      (Alleen IT verantwoordelijke)
+                      {t('hintITOnly')}
                     </span>
                   )}
                 </Label>
@@ -736,7 +741,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       size="icon"
                       onClick={() => handleCopy('phone')}
                       className="shrink-0"
-                      title="Kopieer telefoonnummer"
+                      title={t('copyPhone')}
                     >
                       {copiedField === 'phone' ? (
                         <Check className="h-4 w-4 text-green-500" />
@@ -749,18 +754,18 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 <p className="text-xs text-muted-foreground mt-1">
                   {formData.phoneNumber 
                     ? copiedField === 'phone' 
-                      ? '✓ Gekopieerd naar clipboard!' 
-                      : 'Klik op het icoon om te kopiëren'
-                    : 'Optioneel - Kan later worden toegevoegd'}
+                      ? t('copied') 
+                      : t('clickToCopy')
+                    : t('hintPhoneOptional')}
                 </p>
               </div>
 
               <div>
                 <Label htmlFor="desiredEmail">
-                  Gewenst E-mailadres
+                  {t('labelDesiredEmail')}
                   {!canEditContactInfo && isEdit && (
                     <span className="text-xs text-muted-foreground ml-2">
-                      (Alleen IT verantwoordelijke)
+                      {t('hintITOnly')}
                     </span>
                   )}
                 </Label>
@@ -781,7 +786,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       size="icon"
                       onClick={() => handleCopy('email')}
                       className="shrink-0"
-                      title="Kopieer emailadres"
+                      title={t('copyEmail')}
                     >
                       {copiedField === 'email' ? (
                         <Check className="h-4 w-4 text-green-500" />
@@ -794,9 +799,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 <p className="text-xs text-muted-foreground mt-1">
                   {formData.desiredEmail 
                     ? copiedField === 'email' 
-                      ? '✓ Gekopieerd naar clipboard!' 
-                      : 'Klik op het icoon om te kopiëren'
-                    : 'Voorgesteld zakelijk mailadres'}
+                      ? t('copied') 
+                      : t('clickToCopy')
+                    : t('hintEmailSuggested')}
                 </p>
               </div>
             </div>
@@ -820,7 +825,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   disabled={!canEdit}
                 />
                 <Label htmlFor="hasExperience" className="font-medium cursor-pointer">
-                  Heeft relevante werkervaring
+                  {t('labelHasExperience')}
                 </Label>
               </div>
 
@@ -849,23 +854,23 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   </div>
 
                   <div>
-                    <Label htmlFor="experienceRole">Functie</Label>
+                    <Label htmlFor="experienceRole">{t('labelExperienceRole')}</Label>
                     <Input
                       id="experienceRole"
                       value={formData.experienceRole}
                       onChange={(e) => setFormData({ ...formData, experienceRole: e.target.value })}
-                      placeholder="Bijv: Senior Developer, HR Manager, ..."
+                      placeholder={t('placeholderExperienceRole')}
                       disabled={!canEdit}
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="experienceEntity">Bedrijf/Entiteit</Label>
+                    <Label htmlFor="experienceEntity">{t('labelExperienceEntity')}</Label>
                     <Input
                       id="experienceEntity"
                       value={formData.experienceEntity}
                       onChange={(e) => setFormData({ ...formData, experienceEntity: e.target.value })}
-                      placeholder="Bijv: Acme Corp, Consultancy XYZ, ..."
+                      placeholder={t('placeholderExperienceEntity')}
                       disabled={!canEdit}
                     />
                   </div>
@@ -877,7 +882,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             {isEdit && starterMaterials.length > 0 && (
               <div className="border-t pt-4">
                 <Label className="text-base font-semibold mb-3 block">
-                  Benodigde Materialen
+                  {t('materialsTitle')}
                 </Label>
                 <div className="space-y-2">
                   {starterMaterials.map((sm: any) => (
@@ -913,7 +918,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                           )}
                           {sm.isProvided && sm.providedAt && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              ✓ Verstrekt op{' '}
+                              {t('materialsProvided')}{' '}
                               {new Date(sm.providedAt).toLocaleDateString('nl-BE', {
                                 dateStyle: 'short',
                               })}
@@ -926,7 +931,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 </div>
                 {canEdit && (
                   <p className="text-xs text-muted-foreground mt-3">
-                    Vink af welke materialen al zijn verstrekt aan de starter
+                    {t('materialsCheckbox')}
                   </p>
                 )}
               </div>
@@ -936,7 +941,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             {isEdit && tasks.length > 0 && (
               <div className="border-t pt-4">
                 <Label className="text-base font-semibold mb-3 block">
-                  Gekoppelde Taken ({tasks.length})
+                  {t('tasksTitle', { count: tasks.length })}
                 </Label>
                 <div className="space-y-2">
                   {tasks.slice(0, 5).map((task: any) => (
@@ -961,12 +966,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                         </div>
                         {task.assignedTo && (
                           <p className="text-xs text-muted-foreground mt-1 ml-6">
-                            Toegewezen aan: {task.assignedTo.name || task.assignedTo.email}
+                            {t('taskAssignedTo')} {task.assignedTo.name || task.assignedTo.email}
                           </p>
                         )}
                         {task.dueDate && task.status !== 'COMPLETED' && (
                           <p className="text-xs text-muted-foreground mt-1 ml-6">
-                            Deadline: {new Date(task.dueDate).toLocaleDateString('nl-BE')}
+                            {t('taskDeadline')} {new Date(task.dueDate).toLocaleDateString('nl-BE')}
                           </p>
                         )}
                       </div>
@@ -974,15 +979,15 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                         variant={task.status === 'COMPLETED' ? 'outline' : 'default'}
                         className="text-xs"
                       >
-                        {task.status === 'COMPLETED' ? 'Voltooid' :
-                         task.status === 'IN_PROGRESS' ? 'Bezig' :
-                         task.status === 'BLOCKED' ? 'Geblokkeerd' : 'In wachtrij'}
+                        {task.status === 'COMPLETED' ? t('taskCompleted') :
+                         task.status === 'IN_PROGRESS' ? t('taskInProgress') :
+                         task.status === 'BLOCKED' ? t('taskBlocked') : t('taskQueued')}
                       </Badge>
                     </div>
                   ))}
                   {tasks.length > 5 && (
                     <p className="text-xs text-muted-foreground text-center pt-2">
-                      ... en {tasks.length - 5} meer taken
+                      {t('moreTasks', { count: tasks.length - 5 })}
                     </p>
                   )}
                 </div>
@@ -991,7 +996,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   className="text-xs text-primary hover:underline mt-3 block"
                   target="_blank"
                 >
-                  Bekijk alle taken →
+                  {t('viewAllTasks')}
                 </a>
               </div>
             )}
@@ -1009,7 +1014,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     disabled={loading}
                   >
                     <XCircle className="h-4 w-4 mr-2" />
-                    Annuleren
+                    {t('cancelStarter')}
                   </Button>
                 )}
                 {canEdit && isEdit && (
@@ -1020,7 +1025,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     disabled={loading}
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    Verwijderen
+                    {tc('delete')}
                   </Button>
                 )}
               </div>
@@ -1031,11 +1036,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   onClick={() => onClose()}
                   disabled={loading}
                 >
-                  Sluiten
+                  {tc('close')}
                 </Button>
                 {canEdit && !starter?.isCancelled && (
                   <Button type="submit" disabled={loading}>
-                    {loading ? 'Bezig...' : isEdit ? 'Opslaan' : 'Toevoegen'}
+                    {loading ? tc('saving') : isEdit ? tc('save') : tc('add')}
                   </Button>
                 )}
                 {!canEdit && canEditExtraInfo && isEdit && !starter?.isCancelled && (
@@ -1044,7 +1049,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     onClick={handleSaveExtraInfo} 
                     disabled={loading}
                   >
-                    {loading ? 'Bezig...' : 'Extra Info Opslaan'}
+                    {loading ? tc('saving') : t('saveExtraInfo')}
                   </Button>
                 )}
                 {!canEdit && canEditContactInfo && isEdit && !starter?.isCancelled && (
@@ -1083,28 +1088,28 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Starter Annuleren</DialogTitle>
+          <DialogTitle>{t('cancelDialogTitle')}</DialogTitle>
           <DialogDescription>
-            Weet je zeker dat je deze starter wilt annuleren? Er wordt een notificatie verzonden naar alle betrokkenen.
+            {t('cancelDialogDescription')}
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <Label htmlFor="cancelReason">Reden (optioneel)</Label>
+          <Label htmlFor="cancelReason">{t('cancelReason')}</Label>
           <Textarea
             id="cancelReason"
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
-            placeholder="Bijv: Starter heeft afgezien van de functie"
+            placeholder={t('cancelReasonPlaceholder')}
             rows={3}
             className="mt-2"
           />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setCancelDialogOpen(false)} disabled={loading}>
-            Terug
+            {tc('back')}
           </Button>
           <Button variant="destructive" onClick={handleCancel} disabled={loading}>
-            {loading ? 'Bezig...' : 'Bevestig Annulering'}
+            {loading ? tc('saving') : t('confirmCancel')}
           </Button>
         </DialogFooter>
       </DialogContent>

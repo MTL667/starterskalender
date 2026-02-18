@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -25,9 +26,26 @@ interface Material {
   }
 }
 
-const CATEGORIES = ['Hardware', 'Software', 'Toegang', 'Documentatie', 'Overig']
+const CATEGORY_KEYS = ['hardware', 'software', 'access', 'documentation', 'other'] as const
+
+const CATEGORY_TRANSLATION_KEYS: Record<string, 'categoryHardware' | 'categorySoftware' | 'categoryAccess' | 'categoryDocumentation' | 'categoryOther'> = {
+  Hardware: 'categoryHardware', hardware: 'categoryHardware',
+  Software: 'categorySoftware', software: 'categorySoftware',
+  Toegang: 'categoryAccess', Access: 'categoryAccess', access: 'categoryAccess',
+  Documentatie: 'categoryDocumentation', Documentation: 'categoryDocumentation', documentation: 'categoryDocumentation',
+  Overig: 'categoryOther', Other: 'categoryOther', other: 'categoryOther',
+}
+const CATEGORY_TO_VALUE: Record<string, string> = {
+  Hardware: 'hardware', hardware: 'hardware',
+  Software: 'software', software: 'software',
+  Toegang: 'access', Access: 'access', access: 'access',
+  Documentatie: 'documentation', Documentation: 'documentation', documentation: 'documentation',
+  Overig: 'other', Other: 'other', other: 'other',
+}
 
 export default function MaterialsAdminPage() {
+  const t = useTranslations('adminMaterials')
+  const tc = useTranslations('common')
   const [materials, setMaterials] = useState<Material[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -78,11 +96,11 @@ export default function MaterialsAdminPage() {
         resetForm()
       } else {
         const error = await res.json()
-        alert(error.error || 'Er is een fout opgetreden')
+        alert(error.error || tc('error'))
       }
     } catch (error) {
       console.error('Error saving material:', error)
-      alert('Er is een fout opgetreden')
+      alert(tc('error'))
     } finally {
       setLoading(false)
     }
@@ -93,7 +111,7 @@ export default function MaterialsAdminPage() {
     setFormData({
       name: material.name,
       description: material.description || '',
-      category: material.category || '',
+      category: (material.category && CATEGORY_TO_VALUE[material.category]) ? CATEGORY_TO_VALUE[material.category] : (material.category || ''),
       isActive: material.isActive,
       order: material.order,
     })
@@ -101,7 +119,7 @@ export default function MaterialsAdminPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Weet je zeker dat je dit materiaal wilt verwijderen?')) return
+    if (!confirm(t('confirmDeleteMaterial'))) return
 
     setLoading(true)
     try {
@@ -113,11 +131,11 @@ export default function MaterialsAdminPage() {
         await fetchMaterials()
       } else {
         const error = await res.json()
-        alert(error.error || 'Kan materiaal niet verwijderen')
+        alert(error.error || t('cannotDeleteMaterial'))
       }
     } catch (error) {
       console.error('Error deleting material:', error)
-      alert('Er is een fout opgetreden')
+      alert(tc('error'))
     } finally {
       setLoading(false)
     }
@@ -140,12 +158,12 @@ export default function MaterialsAdminPage() {
         <Link href="/admin">
           <Button variant="ghost" className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Terug naar Admin
+            {tc('backToAdmin')}
           </Button>
         </Link>
-        <h1 className="text-3xl font-bold mb-2">Materialenbeheer</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Beheer materialen die toegewezen kunnen worden aan functies en starters
+          {t('subtitle')}
         </p>
       </div>
 
@@ -153,9 +171,9 @@ export default function MaterialsAdminPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Materialen</CardTitle>
+              <CardTitle>{t('materialsTitle')}</CardTitle>
               <CardDescription>
-                Hardware, software, toegangspassen en andere benodigde materialen
+                {t('materialsSubtitle')}
               </CardDescription>
             </div>
             <Button
@@ -165,16 +183,16 @@ export default function MaterialsAdminPage() {
               }}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Nieuw Materiaal
+              {t('newMaterial')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {loading && materials.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">Laden...</div>
+            <div className="text-center py-8 text-muted-foreground">{tc('loading')}</div>
           ) : materials.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nog geen materialen. Klik op "Nieuw Materiaal" om te beginnen.
+              {t('noMaterials')}
             </div>
           ) : (
             <div className="space-y-4">
@@ -192,7 +210,7 @@ export default function MaterialsAdminPage() {
                           <Badge variant="outline">{material.category}</Badge>
                         )}
                         {!material.isActive && (
-                          <Badge variant="secondary">Inactief</Badge>
+                          <Badge variant="secondary">{tc('inactive')}</Badge>
                         )}
                       </div>
                       {material.description && (
@@ -201,8 +219,8 @@ export default function MaterialsAdminPage() {
                         </p>
                       )}
                       <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                        <span>{material._count.jobRoles} functies</span>
-                        <span>{material._count.starterMaterials} starters</span>
+                        <span>{material._count.jobRoles} {t('roles')}</span>
+                        <span>{material._count.starterMaterials} {t('startersLabel')}</span>
                       </div>
                     </div>
                   </div>
@@ -212,7 +230,7 @@ export default function MaterialsAdminPage() {
                       size="sm"
                       onClick={() => handleEdit(material)}
                     >
-                      Bewerken
+                      {tc('edit')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -221,8 +239,8 @@ export default function MaterialsAdminPage() {
                       disabled={material._count.jobRoles > 0 || material._count.starterMaterials > 0}
                       title={
                         material._count.jobRoles > 0 || material._count.starterMaterials > 0
-                          ? 'Kan niet verwijderen: in gebruik'
-                          : 'Verwijderen'
+                          ? t('cannotDelete')
+                          : tc('delete')
                       }
                     >
                       <Trash2 className="h-4 w-4" />
@@ -239,53 +257,53 @@ export default function MaterialsAdminPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editMaterial ? 'Materiaal Bewerken' : 'Nieuw Materiaal'}
+              {editMaterial ? t('editMaterial') : t('newMaterialTitle')}
             </DialogTitle>
             <DialogDescription>
-              Vul de gegevens van het materiaal in
+              {t('fillDetails')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit}>
             <div className="space-y-4 py-4">
               <div>
-                <Label htmlFor="name">Naam *</Label>
+                <Label htmlFor="name">{tc('name')} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Bijv: Laptop, Telefoon, Badge"
+                  placeholder={t('namePlaceholder')}
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="category">Categorie</Label>
+                <Label htmlFor="category">{t('category')}</Label>
                 <select
                   id="category"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   className="w-full px-3 py-2 border rounded-md"
                 >
-                  <option value="">Geen categorie</option>
-                  {CATEGORIES.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  <option value="">{t('noCategory')}</option>
+                  {CATEGORY_KEYS.map(cat => (
+                    <option key={cat} value={cat}>{t(`category${cat.charAt(0).toUpperCase() + cat.slice(1)}` as 'categoryHardware' | 'categorySoftware' | 'categoryAccess' | 'categoryDocumentation' | 'categoryOther')}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <Label htmlFor="description">Beschrijving</Label>
+                <Label htmlFor="description">{tc('description')}</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Optionele beschrijving..."
+                  placeholder={t('descriptionPlaceholder')}
                   rows={3}
                 />
               </div>
 
               <div>
-                <Label htmlFor="order">Sorteervolgorde</Label>
+                <Label htmlFor="order">{tc('sortOrder')}</Label>
                 <Input
                   id="order"
                   type="number"
@@ -295,7 +313,7 @@ export default function MaterialsAdminPage() {
               </div>
 
               <div className="flex items-center justify-between">
-                <Label htmlFor="isActive">Actief</Label>
+                <Label htmlFor="isActive">{tc('active')}</Label>
                 <Switch
                   id="isActive"
                   checked={formData.isActive}
@@ -309,10 +327,10 @@ export default function MaterialsAdminPage() {
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
               >
-                Annuleren
+                {tc('cancel')}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Bezig...' : editMaterial ? 'Opslaan' : 'Toevoegen'}
+                {loading ? tc('saving') : editMaterial ? tc('save') : tc('add')}
               </Button>
             </DialogFooter>
           </form>

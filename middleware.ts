@@ -17,8 +17,20 @@ export default withAuth(
       return NextResponse.redirect(new URL('/auth/welcome', req.url))
     }
 
-    // Allow all other authenticated users
-    return NextResponse.next()
+    const response = NextResponse.next()
+
+    // Sync locale cookie from user's DB preference on first visit
+    const localeCookie = req.cookies.get('NEXT_LOCALE')?.value
+    const userLocale = token?.locale as string | undefined
+    if (!localeCookie && userLocale) {
+      response.cookies.set('NEXT_LOCALE', userLocale, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: 'lax',
+      })
+    }
+
+    return response
   },
   {
     callbacks: {

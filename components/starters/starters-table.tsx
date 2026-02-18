@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,7 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
-import { nl } from 'date-fns/locale'
+import { useLocale } from 'next-intl'
+import { getDateLocale } from '@/lib/date-locale'
 import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
@@ -47,6 +49,9 @@ interface Entity {
 }
 
 export function StartersTable({ initialYear, canEdit }: { initialYear: number; canEdit: boolean }) {
+  const t = useTranslations('starters')
+  const tc = useTranslations('common')
+  const dateLocale = getDateLocale(useLocale())
   const [year, setYear] = useState(initialYear)
   const [starters, setStarters] = useState<Starter[]>([])
   const [entities, setEntities] = useState<Entity[]>([])
@@ -213,7 +218,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     
     // Data voorbereiden
     const tableData = filteredStarters.map(s => {
-      let experienceText = 'Nee'
+      let experienceText = tc('no')
       if (s.hasExperience) {
         const parts: string[] = []
         if (s.experienceEntity || s.experienceRole) {
@@ -222,7 +227,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         if (s.experienceSince) {
           parts.push(getExperienceText(s.experienceSince))
         }
-        experienceText = parts.length > 0 ? parts.join(' | ') : 'Ja'
+        experienceText = parts.length > 0 ? parts.join(' | ') : tc('yes')
       }
       
       return [
@@ -239,7 +244,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
     // Tabel maken
     autoTable(doc, {
-      head: [['Naam', 'Taal', 'Functie', 'Regio', 'Ervaring', 'Startdatum', 'Week', 'Entiteit']],
+      head: [[t('columnName'), t('columnLanguage'), t('columnRole'), t('columnRegion'), t('columnExperience'), t('columnStartDate'), t('columnWeek'), t('columnEntity')]],
       body: tableData,
       startY: 35,
       styles: { fontSize: 8 },
@@ -262,7 +267,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
   const exportXLS = () => {
     const xlsData = filteredStarters.map(s => {
-      let experienceText = 'Nee'
+      let experienceText = tc('no')
       if (s.hasExperience) {
         const parts: string[] = []
         if (s.experienceEntity || s.experienceRole) {
@@ -271,18 +276,18 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         if (s.experienceSince) {
           parts.push(getExperienceText(s.experienceSince))
         }
-        experienceText = parts.length > 0 ? parts.join(' | ') : 'Ja'
+        experienceText = parts.length > 0 ? parts.join(' | ') : tc('yes')
       }
       
       return {
-        'Naam': s.name,
-        'Taal': s.language || 'NL',
-        'Functie': s.roleTitle || '',
-        'Regio': s.region || '',
-        'Ervaring': experienceText,
-        'Startdatum': new Date(s.startDate).toLocaleDateString('nl-BE'),
-        'Week': s.weekNumber || '',
-        'Entiteit': s.entity?.name || '',
+        [t('columnName')]: s.name,
+        [t('columnLanguage')]: s.language || 'NL',
+        [t('columnRole')]: s.roleTitle || '',
+        [t('columnRegion')]: s.region || '',
+        [t('columnExperience')]: experienceText,
+        [t('columnStartDate')]: new Date(s.startDate).toLocaleDateString('nl-BE'),
+        [t('columnWeek')]: s.weekNumber || '',
+        [t('columnEntity')]: s.entity?.name || '',
       }
     })
 
@@ -303,7 +308,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
     // Create workbook
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Starters')
+    XLSX.utils.book_append_sheet(wb, ws, t('sheetName'))
 
     // Download
     XLSX.writeFile(wb, `starters-${year}.xlsx`)
@@ -313,7 +318,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     <Card>
       <CardHeader>
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <CardTitle>Starters {year}</CardTitle>
+          <CardTitle>{t('cardTitle', { year })}</CardTitle>
           <div className="flex gap-2 flex-wrap">
             <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
               <SelectTrigger className="w-[120px]">
@@ -330,10 +335,10 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
             
             <Select value={selectedEntity} onValueChange={setSelectedEntity}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Alle entiteiten" />
+                <SelectValue placeholder={t('allEntities')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alle entiteiten</SelectItem>
+                <SelectItem value="all">{t('allEntities')}</SelectItem>
                 {entities.map(entity => (
                   <SelectItem key={entity.id} value={entity.id}>
                     {entity.name}
@@ -351,7 +356,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
             {canEdit && (
               <Button onClick={() => { setSelectedStarter(null); setDialogOpen(true); }}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nieuwe Starter
+                {t('newStarter')}
               </Button>
             )}
           </div>
@@ -361,7 +366,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Zoek op naam, functie of regio..."
+              placeholder={t('searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -372,9 +377,9 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
       <CardContent>
         {loading ? (
-          <div className="text-center py-8 text-muted-foreground">Laden...</div>
+          <div className="text-center py-8 text-muted-foreground">{tc('loading')}</div>
         ) : filteredStarters.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">Geen starters gevonden</div>
+          <div className="text-center py-8 text-muted-foreground">{t('noStarters')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -384,34 +389,34 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
                     onClick={() => handleSort('name')}
                   >
-                    Naam {getSortIcon('name')}
+                    {t('columnName')} {getSortIcon('name')}
                   </th>
-                  <th className="pb-3 font-medium">Taal</th>
+                  <th className="pb-3 font-medium">{t('columnLanguage')}</th>
                   <th 
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
                     onClick={() => handleSort('roleTitle')}
                   >
-                    Functie {getSortIcon('roleTitle')}
+                    {t('columnRole')} {getSortIcon('roleTitle')}
                   </th>
                   <th 
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
                     onClick={() => handleSort('region')}
                   >
-                    Regio {getSortIcon('region')}
+                    {t('columnRegion')} {getSortIcon('region')}
                   </th>
-                  <th className="pb-3 font-medium">Ervaring</th>
+                  <th className="pb-3 font-medium">{t('columnExperience')}</th>
                   <th 
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
                     onClick={() => handleSort('startDate')}
                   >
-                    Startdatum {getSortIcon('startDate')}
+                    {t('columnStartDate')} {getSortIcon('startDate')}
                   </th>
-                  <th className="pb-3 font-medium">Week</th>
+                  <th className="pb-3 font-medium">{t('columnWeek')}</th>
                   <th 
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
                     onClick={() => handleSort('entity')}
                   >
-                    Entiteit {getSortIcon('entity')}
+                    {t('columnEntity')} {getSortIcon('entity')}
                   </th>
                 </tr>
               </thead>
@@ -424,7 +429,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                   >
                     <td className="py-3 font-medium">{starter.name}</td>
                     <td className="py-3 text-sm">
-                      <span title={starter.language === 'NL' ? 'Nederlands' : 'Frans'}>
+                      <span title={starter.language === 'NL' ? t('languageNL') : t('languageFR')}>
                         {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'} {starter.language || 'NL'}
                       </span>
                     </td>
@@ -448,7 +453,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                               </span>
                             )}
                             {!starter.experienceEntity && !starter.experienceRole && !starter.experienceSince && (
-                              <span className="text-xs">Ja</span>
+                              <span className="text-xs">{tc('yes')}</span>
                             )}
                           </div>
                         </div>
@@ -457,7 +462,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                       )}
                     </td>
                     <td className="py-3 text-sm">
-                      {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: nl })}
+                      {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
                     </td>
                     <td className="py-3 text-sm">{starter.weekNumber}</td>
                     <td className="py-3">
@@ -482,7 +487,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         )}
 
         <div className="mt-4 text-sm text-muted-foreground text-center">
-          {filteredStarters.length} starter{filteredStarters.length !== 1 ? 's' : ''} gevonden
+          {t('resultCount', { count: filteredStarters.length })}
         </div>
       </CardContent>
 

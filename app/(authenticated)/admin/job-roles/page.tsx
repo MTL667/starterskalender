@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,6 +34,8 @@ interface JobRole {
 }
 
 export default function JobRolesPage() {
+  const t = useTranslations('adminJobRoles')
+  const tc = useTranslations('common')
   const [entities, setEntities] = useState<Entity[]>([])
   const [jobRoles, setJobRoles] = useState<JobRole[]>([])
   const [selectedEntity, setSelectedEntity] = useState<string>('all')
@@ -110,12 +113,12 @@ export default function JobRolesPage() {
       loadData()
     } catch (error) {
       console.error('Error saving:', error)
-      alert('Fout bij opslaan')
+      alert(tc('errorSaving'))
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Weet je zeker dat je deze functie wilt verwijderen?')) return
+    if (!confirm(t('confirmDeleteRole'))) return
 
     try {
       const res = await fetch(`/api/job-roles/${id}`, { method: 'DELETE' })
@@ -123,7 +126,7 @@ export default function JobRolesPage() {
       loadData()
     } catch (error) {
       console.error('Error deleting:', error)
-      alert('Fout bij verwijderen')
+      alert(tc('errorDeleting'))
     }
   }
 
@@ -143,9 +146,9 @@ export default function JobRolesPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Functie Beheer</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Beheer functies per entiteit
+          {t('subtitle')}
         </p>
       </div>
 
@@ -153,8 +156,8 @@ export default function JobRolesPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Functies</CardTitle>
-              <CardDescription>Functies gekoppeld aan entiteiten</CardDescription>
+              <CardTitle>{t('rolesTitle')}</CardTitle>
+              <CardDescription>{t('rolesSubtitle')}</CardDescription>
             </div>
             <div className="flex gap-2">
               <Select value={selectedEntity} onValueChange={setSelectedEntity}>
@@ -162,7 +165,7 @@ export default function JobRolesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Alle entiteiten</SelectItem>
+                  <SelectItem value="all">{t('allEntities')}</SelectItem>
                   {entities.map(entity => (
                     <SelectItem key={entity.id} value={entity.id}>
                       {entity.name}
@@ -172,16 +175,16 @@ export default function JobRolesPage() {
               </Select>
               <Button onClick={handleNew}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nieuwe Functie
+                {t('newRole')}
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Laden...</div>
+            <div className="text-center py-8 text-muted-foreground">{tc('loading')}</div>
           ) : Object.keys(rolesByEntity).length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">Geen functies gevonden</div>
+            <div className="text-center py-8 text-muted-foreground">{t('noRoles')}</div>
           ) : (
             <div className="space-y-6">
               {Object.entries(rolesByEntity).map(([entityId, roles]) => {
@@ -195,7 +198,7 @@ export default function JobRolesPage() {
                         {entity.name}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {roles.length} functie{roles.length !== 1 ? 's' : ''}
+                        {roles.length} {t('roleCount')}
                       </span>
                     </div>
                     <div className="space-y-2">
@@ -208,7 +211,7 @@ export default function JobRolesPage() {
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{role.title}</span>
                               {!role.isActive && (
-                                <Badge variant="secondary">Inactief</Badge>
+                                <Badge variant="secondary">{tc('inactive')}</Badge>
                               )}
                             </div>
                             {role.description && (
@@ -227,7 +230,7 @@ export default function JobRolesPage() {
                               }}
                             >
                               <Package className="h-4 w-4 mr-2" />
-                              Materialen
+                              {t('materials')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -260,21 +263,21 @@ export default function JobRolesPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingRole ? 'Functie Bewerken' : 'Nieuwe Functie'}
+              {editingRole ? t('editRole') : t('newRoleTitle')}
             </DialogTitle>
             <DialogDescription>
-              Voeg een functie toe of bewerk een bestaande functie
+              {t('addOrEditRole')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="entityId">Entiteit *</Label>
+              <Label htmlFor="entityId">{t('entityRequired')}</Label>
               <Select
                 value={formData.entityId}
                 onValueChange={(value) => setFormData({ ...formData, entityId: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecteer entiteit" />
+                  <SelectValue placeholder={t('selectEntity')} />
                 </SelectTrigger>
                 <SelectContent>
                   {entities.map(entity => (

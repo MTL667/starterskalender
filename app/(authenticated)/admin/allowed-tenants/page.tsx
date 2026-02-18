@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +25,8 @@ interface AllowedTenant {
 }
 
 export default function AllowedTenantsPage() {
+  const t = useTranslations('adminTenants')
+  const tc = useTranslations('common')
   const [tenants, setTenants] = useState<AllowedTenant[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -83,7 +86,7 @@ export default function AllowedTenantsPage() {
       loadTenants()
     } catch (error) {
       console.error('Error saving:', error)
-      setError(error instanceof Error ? error.message : 'Fout bij opslaan')
+      setError(error instanceof Error ? error.message : tc('errorSaving'))
     }
   }
 
@@ -99,12 +102,12 @@ export default function AllowedTenantsPage() {
       loadTenants()
     } catch (error) {
       console.error('Error updating:', error)
-      alert('Fout bij updaten')
+      alert(tc('errorUpdating'))
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Weet je zeker dat je deze tenant wilt verwijderen uit de allowlist?')) return
+    if (!confirm(t('confirmDeleteTenant'))) return
 
     try {
       const res = await fetch(`/api/admin/allowed-tenants/${id}`, {
@@ -115,26 +118,26 @@ export default function AllowedTenantsPage() {
       loadTenants()
     } catch (error) {
       console.error('Error deleting:', error)
-      alert('Fout bij verwijderen')
+      alert(tc('errorDeleting'))
     }
   }
 
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Azure AD Tenant Allowlist</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Beheer welke Azure AD tenants (organisaties) toegang hebben tot de applicatie
+          {t('subtitle')}
         </p>
       </div>
 
       <Alert className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
         <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
         <AlertDescription className="text-blue-900 dark:text-blue-100">
-          <strong>Hoe werkt het?</strong><br />
-          Alleen gebruikers van tenants in deze lijst kunnen inloggen. Nieuwe gebruikers krijgen automatisch role=NONE en moeten door een admin worden goedgekeurd.
+          <strong>{t('howItWorks')}</strong><br />
+          {t('allowlistInfo')}
           <br /><br />
-          <strong>Tenant ID vinden:</strong> Azure Portal → Azure Active Directory → Overview → Tenant ID
+          <strong>{t('findTenantId')}</strong>
         </AlertDescription>
       </Alert>
 
@@ -142,29 +145,29 @@ export default function AllowedTenantsPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Toegestane Tenants ({tenants.length})</CardTitle>
+              <CardTitle>{t('allowedTenants')} ({tenants.length})</CardTitle>
               <CardDescription>
-                Beheer de allowlist van Azure AD organisaties
+                {t('manageAllowlist')}
               </CardDescription>
             </div>
             <Button onClick={handleNew}>
               <Plus className="h-4 w-4 mr-2" />
-              Nieuwe Tenant
+              {t('newTenant')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Laden...</p>
+            <p className="text-center text-muted-foreground py-8">{tc('loading')}</p>
           ) : tenants.length === 0 ? (
             <div className="text-center py-8">
               <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground mb-4">
-                Nog geen tenants in de allowlist
+                {t('noTenants')}
               </p>
               <Button onClick={handleNew} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
-                Voeg eerste tenant toe
+                {t('addFirstTenant')}
               </Button>
             </div>
           ) : (
@@ -182,31 +185,31 @@ export default function AllowedTenantsPage() {
                       {tenant.isActive ? (
                         <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                           <CheckCircle className="h-3 w-3 mr-1" />
-                          Actief
+                          {tc('active')}
                         </Badge>
                       ) : (
                         <Badge variant="secondary">
                           <XCircle className="h-3 w-3 mr-1" />
-                          Inactief
+                          {tc('inactive')}
                         </Badge>
                       )}
                     </div>
 
                     <div className="text-sm text-muted-foreground space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">Tenant ID:</span>
+                        <span className="font-medium">{t('tenantIdLabel')}</span>
                         <code className="bg-muted px-2 py-0.5 rounded text-xs">
                           {tenant.tenantId}
                         </code>
                       </div>
                       {tenant.domain && (
                         <div>
-                          <span className="font-medium">Domain:</span> {tenant.domain}
+                          <span className="font-medium">{t('domainLabel')}</span> {tenant.domain}
                         </div>
                       )}
                       {tenant.notes && (
                         <div className="mt-2 pt-2 border-t">
-                          <span className="font-medium">Notities:</span>
+                          <span className="font-medium">{t('notesLabel')}</span>
                           <p className="mt-1 whitespace-pre-wrap">{tenant.notes}</p>
                         </div>
                       )}
@@ -219,7 +222,7 @@ export default function AllowedTenantsPage() {
                       size="sm"
                       onClick={() => handleToggleActive(tenant.id, tenant.isActive)}
                     >
-                      {tenant.isActive ? 'Deactiveren' : 'Activeren'}
+                      {tenant.isActive ? t('deactivate') : t('activate')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -240,9 +243,9 @@ export default function AllowedTenantsPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Nieuwe Tenant Toevoegen</DialogTitle>
+            <DialogTitle>{t('addTenantTitle')}</DialogTitle>
             <DialogDescription>
-              Voeg een Azure AD tenant toe aan de allowlist
+              {t('addTenantDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -254,7 +257,7 @@ export default function AllowedTenantsPage() {
             )}
 
             <div>
-              <Label htmlFor="tenantId">Tenant ID *</Label>
+              <Label htmlFor="tenantId">{t('tenantId')}</Label>
               <Input
                 id="tenantId"
                 value={formData.tenantId}
@@ -263,12 +266,12 @@ export default function AllowedTenantsPage() {
                 className="font-mono text-sm"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Azure Portal → Azure AD → Overview → Tenant ID
+                {t('tenantIdHint')}
               </p>
             </div>
 
             <div>
-              <Label htmlFor="tenantName">Organisatie Naam *</Label>
+              <Label htmlFor="tenantName">{t('organizationName')}</Label>
               <Input
                 id="tenantName"
                 value={formData.tenantName}
@@ -278,7 +281,7 @@ export default function AllowedTenantsPage() {
             </div>
 
             <div>
-              <Label htmlFor="domain">Primary Domain (optioneel)</Label>
+              <Label htmlFor="domain">{t('primaryDomain')}</Label>
               <Input
                 id="domain"
                 value={formData.domain}
@@ -288,25 +291,25 @@ export default function AllowedTenantsPage() {
             </div>
 
             <div>
-              <Label htmlFor="notes">Notities (optioneel)</Label>
+              <Label htmlFor="notes">{t('notesOptional')}</Label>
               <Textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
-                placeholder="Interne notities over deze organisatie..."
+                placeholder={t('notesPlaceholder')}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Annuleren
+              {tc('cancel')}
             </Button>
             <Button
               onClick={handleSave}
               disabled={!formData.tenantId || !formData.tenantName}
             >
-              Toevoegen
+              {tc('add')}
             </Button>
           </DialogFooter>
         </DialogContent>

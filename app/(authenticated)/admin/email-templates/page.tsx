@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -25,14 +26,16 @@ interface EmailTemplate {
   updatedAt: string
 }
 
-const TEMPLATE_TYPES = [
-  { value: 'WEEKLY_REMINDER', label: '🔔 Wekelijkse Reminder', color: 'bg-amber-100 text-amber-800' },
-  { value: 'MONTHLY_SUMMARY', label: '📊 Maandelijks Overzicht', color: 'bg-blue-100 text-blue-800' },
-  { value: 'QUARTERLY_SUMMARY', label: '📈 Kwartaal Overzicht', color: 'bg-green-100 text-green-800' },
-  { value: 'YEARLY_SUMMARY', label: '🎉 Jaarlijks Overzicht', color: 'bg-purple-100 text-purple-800' },
-]
+const TEMPLATE_TYPE_KEYS = {
+  WEEKLY_REMINDER: 'typeWeeklyReminder',
+  MONTHLY_SUMMARY: 'typeMonthlySummary',
+  QUARTERLY_SUMMARY: 'typeQuarterlySummary',
+  YEARLY_SUMMARY: 'typeYearlySummary',
+} as const
 
 export default function EmailTemplatesPage() {
+  const t = useTranslations('adminEmailTemplates')
+  const tc = useTranslations('common')
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -108,10 +111,10 @@ export default function EmailTemplatesPage() {
         isActive: true,
       })
       fetchTemplates()
-      alert('Template succesvol opgeslagen!')
+      alert(t('templateSaved'))
     } catch (error) {
       console.error('Error saving template:', error)
-      alert(error instanceof Error ? error.message : 'Fout bij opslaan template')
+      alert(error instanceof Error ? error.message : t('errorSavingTemplate'))
     } finally {
       setLoading(false)
     }
@@ -123,12 +126,20 @@ export default function EmailTemplatesPage() {
     setPreviewOpen(true)
   }
 
+  const TEMPLATE_COLORS: Record<string, string> = {
+    WEEKLY_REMINDER: 'bg-amber-100 text-amber-800',
+    MONTHLY_SUMMARY: 'bg-blue-100 text-blue-800',
+    QUARTERLY_SUMMARY: 'bg-green-100 text-green-800',
+    YEARLY_SUMMARY: 'bg-purple-100 text-purple-800',
+  }
+
   const getTypeLabel = (type: string) => {
-    return TEMPLATE_TYPES.find(t => t.value === type)?.label || type
+    const key = TEMPLATE_TYPE_KEYS[type as keyof typeof TEMPLATE_TYPE_KEYS]
+    return key ? t(key) : type
   }
 
   const getTypeColor = (type: string) => {
-    return TEMPLATE_TYPES.find(t => t.value === type)?.color || 'bg-gray-100 text-gray-800'
+    return TEMPLATE_COLORS[type] || 'bg-gray-100 text-gray-800'
   }
 
   const getVariablesForType = (type: string) => {
@@ -140,7 +151,7 @@ export default function EmailTemplatesPage() {
       <Link href="/admin">
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Terug naar Admin
+          {tc('backToAdmin')}
         </Button>
       </Link>
 
@@ -150,26 +161,26 @@ export default function EmailTemplatesPage() {
             <div className="flex items-center gap-3">
               <Mail className="h-6 w-6 text-primary" />
               <div>
-                <CardTitle>Email Templates</CardTitle>
+                <CardTitle>{t('title')}</CardTitle>
                 <CardDescription>
-                  Beheer email templates voor notificaties
+                  {t('subtitle')}
                 </CardDescription>
               </div>
             </div>
             <Button onClick={() => { setSelectedTemplate(null); setDialogOpen(true); }}>
               <Mail className="h-4 w-4 mr-2" />
-              Nieuw Template
+              {t('newTemplate')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
-              Laden...
+              {tc('loading')}
             </div>
           ) : templates.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nog geen templates aangemaakt
+              {t('noTemplates')}
             </div>
           ) : (
             <div className="space-y-4">
@@ -185,7 +196,7 @@ export default function EmailTemplatesPage() {
                       </Badge>
                       {!template.isActive && (
                         <Badge variant="outline" className="text-muted-foreground">
-                          Uitgeschakeld
+                          {t('disabled')}
                         </Badge>
                       )}
                     </div>
@@ -196,7 +207,7 @@ export default function EmailTemplatesPage() {
                       </div>
                     )}
                     <div className="text-xs text-muted-foreground mt-2">
-                      Laatst bijgewerkt: {new Date(template.updatedAt).toLocaleString('nl-BE')}
+                      {t('lastUpdated')}: {new Date(template.updatedAt).toLocaleString('nl-BE')}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -206,7 +217,7 @@ export default function EmailTemplatesPage() {
                       onClick={() => handlePreview(template)}
                     >
                       <Eye className="h-4 w-4 mr-2" />
-                      Preview
+                      {t('preview')}
                     </Button>
                     <Button
                       variant="outline"
@@ -214,7 +225,7 @@ export default function EmailTemplatesPage() {
                       onClick={() => handleEdit(template)}
                     >
                       <Edit className="h-4 w-4 mr-2" />
-                      Bewerken
+                      {tc('edit')}
                     </Button>
                   </div>
                 </div>
@@ -229,16 +240,16 @@ export default function EmailTemplatesPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {selectedTemplate ? 'Template Bewerken' : 'Nieuw Template'}
+              {selectedTemplate ? t('editTemplate') : t('newTemplateTitle')}
             </DialogTitle>
             <DialogDescription>
-              Gebruik variabelen zoals {"{{userName}}"} in je template
+              {t('useVariablesHint')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="type">Type *</Label>
+              <Label htmlFor="type">{t('type')}</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value) => setFormData({ ...formData, type: value as EmailTemplate['type'] })}
@@ -248,9 +259,9 @@ export default function EmailTemplatesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TEMPLATE_TYPES.map(type => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                  {Object.entries(TEMPLATE_TYPE_KEYS).map(([value, key]) => (
+                    <SelectItem key={value} value={value}>
+                      {t(key)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -258,35 +269,35 @@ export default function EmailTemplatesPage() {
             </div>
 
             <div>
-              <Label htmlFor="subject">Onderwerp *</Label>
+              <Label htmlFor="subject">{t('subject')}</Label>
               <Input
                 id="subject"
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                placeholder="Bijv: 🔔 Reminder: {{starterName}} start volgende week"
+                placeholder={t('subjectPlaceholder')}
               />
             </div>
 
             <div>
-              <Label htmlFor="body">Email Body (HTML) *</Label>
+              <Label htmlFor="body">{t('body')}</Label>
               <Textarea
                 id="body"
                 value={formData.body}
                 onChange={(e) => setFormData({ ...formData, body: e.target.value })}
                 rows={15}
                 className="font-mono text-sm"
-                placeholder="HTML inhoud met variabelen..."
+                placeholder={t('bodyPlaceholder')}
               />
             </div>
 
             <div>
-              <Label htmlFor="description">Beschrijving</Label>
+              <Label htmlFor="description">{t('description')}</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={2}
-                placeholder="Optionele beschrijving van dit template"
+                placeholder={t('descriptionPlaceholder')}
               />
             </div>
 
@@ -296,14 +307,14 @@ export default function EmailTemplatesPage() {
                 checked={formData.isActive}
                 onCheckedChange={(value) => setFormData({ ...formData, isActive: value })}
               />
-              <Label htmlFor="isActive">Actief</Label>
+              <Label htmlFor="isActive">{tc('active')}</Label>
             </div>
 
             {/* Available Variables */}
             <div className="bg-muted p-4 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Code className="h-4 w-4" />
-                <span className="font-medium">Beschikbare variabelen voor {getTypeLabel(formData.type)}:</span>
+                <span className="font-medium">{t('availableVariables')} {getTypeLabel(formData.type)}:</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                 {getVariablesForType(formData.type).map(v => (
@@ -318,10 +329,10 @@ export default function EmailTemplatesPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
-              Annuleren
+              {tc('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={loading || !formData.subject || !formData.body}>
-              {loading ? 'Bezig...' : 'Opslaan'}
+              {loading ? tc('saving') : tc('save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -331,9 +342,9 @@ export default function EmailTemplatesPage() {
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Email Preview</DialogTitle>
+            <DialogTitle>{t('emailPreview')}</DialogTitle>
             <DialogDescription>
-              Preview van {selectedTemplate && getTypeLabel(selectedTemplate.type)}
+              {t('previewOf')} {selectedTemplate && getTypeLabel(selectedTemplate.type)}
             </DialogDescription>
           </DialogHeader>
 
@@ -341,7 +352,7 @@ export default function EmailTemplatesPage() {
             {selectedTemplate && (
               <>
                 <div className="mb-4 p-3 bg-muted rounded">
-                  <div className="text-sm text-muted-foreground">Onderwerp:</div>
+                  <div className="text-sm text-muted-foreground">{t('subjectPreview')}:</div>
                   <div className="font-medium">{selectedTemplate.subject}</div>
                 </div>
                 <div 
@@ -354,7 +365,7 @@ export default function EmailTemplatesPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setPreviewOpen(false)}>
-              Sluiten
+              {tc('close')}
             </Button>
           </DialogFooter>
         </DialogContent>

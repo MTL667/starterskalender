@@ -78,6 +78,8 @@ model User {
   identityProvider        IdentityProvider         @default(MANUAL)
   status                  UserStatus               @default(INVITED)
   
+  locale                  String                   @default("nl") // UI language: "nl" or "fr"
+  
   // Azure AD / Entra ID fields
   tenantId                String?                  // Azure AD tenant ID (tid claim)
   oid                     String?                  // Azure AD object ID (oid claim)

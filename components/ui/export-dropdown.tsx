@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -16,26 +17,27 @@ interface ExportDropdownProps {
 }
 
 export function ExportDropdown({ onExportCSV, onExportPDF, onExportXLS }: ExportDropdownProps) {
+  const t = useTranslations('export')
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline">
           <Download className="h-4 w-4 mr-2" />
-          Export
+          {t('button')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={onExportCSV}>
           <File className="h-4 w-4 mr-2" />
-          CSV
+          {t('csv')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onExportPDF}>
           <FileText className="h-4 w-4 mr-2" />
-          PDF
+          {t('pdf')}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onExportXLS}>
           <FileSpreadsheet className="h-4 w-4 mr-2" />
-          Excel (XLS)
+          {t('excel')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

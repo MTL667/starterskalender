@@ -1,8 +1,10 @@
 import { getCurrentUser } from '@/lib/auth-utils'
+import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 import { StartersTable } from '@/components/starters/starters-table'
 
 export default async function StartersPage() {
+  const t = await getTranslations('starters')
   const user = await getCurrentUser()
   
   if (!user) {
@@ -18,9 +20,9 @@ export default async function StartersPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Starters</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Overzicht van alle starters
+          {t('subtitle')}
         </p>
       </div>
 

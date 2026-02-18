@@ -7,14 +7,17 @@ import { Button } from '@/components/ui/button'
 import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/layout/notification-bell'
+import { LanguageSwitcher } from '@/components/layout/language-switcher'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoLoading, setLogoLoading] = useState(true)
+  const t = useTranslations('navbar')
 
   const isActive = (path: string) => pathname === path
 
@@ -50,7 +53,7 @@ export function Navbar() {
         <div className="flex items-center space-x-6">
           <Link href="/dashboard" className="flex items-center">
             {logoLoading ? (
-              <span className="font-bold text-xl">Starterskalender</span>
+              <span className="font-bold text-xl">{t('appTitle')}</span>
             ) : logoUrl ? (
               <img 
                 src={logoUrl} 
@@ -58,7 +61,7 @@ export function Navbar() {
                 className="h-10 object-contain"
               />
             ) : (
-              <span className="font-bold text-xl">Starterskalender</span>
+              <span className="font-bold text-xl">{t('appTitle')}</span>
             )}
           </Link>
 
@@ -69,7 +72,7 @@ export function Navbar() {
                 size="sm"
               >
                 <LayoutDashboard className="h-4 w-4 mr-2" />
-                Dashboard
+                {t('dashboard')}
               </Button>
             </Link>
 
@@ -79,7 +82,7 @@ export function Navbar() {
                 size="sm"
               >
                 <Calendar className="h-4 w-4 mr-2" />
-                Kalender
+                {t('calendar')}
               </Button>
             </Link>
 
@@ -89,7 +92,7 @@ export function Navbar() {
                 size="sm"
               >
                 <Users className="h-4 w-4 mr-2" />
-                Starters
+                {t('starters')}
               </Button>
             </Link>
 
@@ -99,7 +102,7 @@ export function Navbar() {
                 size="sm"
               >
                 <CheckSquare className="h-4 w-4 mr-2" />
-                Taken
+                {t('tasks')}
               </Button>
             </Link>
 
@@ -110,7 +113,7 @@ export function Navbar() {
                   size="sm"
                 >
                   <Settings className="h-4 w-4 mr-2" />
-                  Admin
+                  {t('admin')}
                 </Button>
               </Link>
             )}
@@ -128,9 +131,10 @@ export function Navbar() {
               size="sm"
             >
               <User className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Profiel</span>
+              <span className="hidden sm:inline">{t('profile')}</span>
             </Button>
           </Link>
+          <LanguageSwitcher />
           <ThemeToggle />
           <Button
             variant="ghost"
@@ -138,7 +142,7 @@ export function Navbar() {
             onClick={() => signOut({ callbackUrl: '/auth/signin' })}
           >
             <LogOut className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Uitloggen</span>
+            <span className="hidden sm:inline">{t('logout')}</span>
           </Button>
         </div>
       </div>

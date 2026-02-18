@@ -8,6 +8,7 @@ import { MonthlyCharts } from '@/components/dashboard/monthly-charts'
 import { EntityMonthlyCharts } from '@/components/dashboard/entity-monthly-charts'
 import Link from 'next/link'
 import { Calendar, Users, Settings } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 export default async function DashboardPage() {
   const user = await getCurrentUser()
@@ -16,14 +17,15 @@ export default async function DashboardPage() {
     redirect('/auth/signin')
   }
 
+  const t = await getTranslations('dashboard')
   const currentYear = new Date().getFullYear()
 
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Welkom, {user.name || user.email}
+          {t('welcome', { name: user.name || user.email })}
         </p>
       </div>
 
@@ -33,11 +35,11 @@ export default async function DashboardPage() {
           <Card className="cursor-pointer hover:border-primary transition-colors">
             <CardHeader className="flex flex-row items-center space-y-0 pb-2">
               <Calendar className="h-5 w-5 mr-2 text-primary" />
-              <CardTitle className="text-lg">Kalender</CardTitle>
+              <CardTitle className="text-lg">{t('calendarTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Bekijk de starterskalender
+                {t('calendarDescription')}
               </CardDescription>
             </CardContent>
           </Card>
@@ -47,11 +49,11 @@ export default async function DashboardPage() {
           <Card className="cursor-pointer hover:border-primary transition-colors">
             <CardHeader className="flex flex-row items-center space-y-0 pb-2">
               <Users className="h-5 w-5 mr-2 text-primary" />
-              <CardTitle className="text-lg">Starters</CardTitle>
+              <CardTitle className="text-lg">{t('startersTitle')}</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Beheer alle starters
+                {t('startersDescription')}
               </CardDescription>
             </CardContent>
           </Card>
@@ -62,11 +64,11 @@ export default async function DashboardPage() {
             <Card className="cursor-pointer hover:border-primary transition-colors">
               <CardHeader className="flex flex-row items-center space-y-0 pb-2">
                 <Settings className="h-5 w-5 mr-2 text-primary" />
-                <CardTitle className="text-lg">Admin</CardTitle>
+                <CardTitle className="text-lg">{t('adminTitle')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <CardDescription>
-                  Beheer instellingen
+                  {t('adminDescription')}
                 </CardDescription>
               </CardContent>
             </Card>

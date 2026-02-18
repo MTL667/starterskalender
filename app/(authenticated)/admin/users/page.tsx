@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,7 +43,13 @@ const ROLES = [
   { value: 'NONE', label: 'None (Guest - No Access)' },
 ]
 
+function getRoleLabel(role: string): string {
+  return ROLES.find(r => r.value === role)?.label || role
+}
+
 export default function UsersAdminPage() {
+  const t = useTranslations('adminUsers')
+  const tc = useTranslations('common')
   const [users, setUsers] = useState<User[]>([])
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
@@ -107,10 +114,10 @@ export default function UsersAdminPage() {
       setDialogOpen(false)
       setFormData({ name: '', email: '', password: '', role: 'ENTITY_VIEWER' })
       fetchUsers()
-      alert('Gebruiker succesvol aangemaakt!')
+      alert(t('userCreated'))
     } catch (error) {
       console.error('Error creating user:', error)
-      alert(error instanceof Error ? error.message : 'Fout bij aanmaken gebruiker')
+      alert(error instanceof Error ? error.message : t('errorCreating'))
     } finally {
       setLoading(false)
     }
@@ -127,15 +134,15 @@ export default function UsersAdminPage() {
       if (!res.ok) throw new Error('Failed to update role')
 
       fetchUsers()
-      alert('Rol succesvol bijgewerkt!')
+      alert(t('roleUpdated'))
     } catch (error) {
       console.error('Error updating role:', error)
-      alert('Fout bij updaten rol')
+      alert(t('errorUpdatingRole'))
     }
   }
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Weet je zeker dat je deze gebruiker wilt verwijderen?')) return
+    if (!confirm(t('confirmDeleteUser'))) return
 
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
@@ -145,10 +152,10 @@ export default function UsersAdminPage() {
       if (!res.ok) throw new Error('Failed to delete user')
 
       fetchUsers()
-      alert('Gebruiker verwijderd')
+      alert(t('userDeleted'))
     } catch (error) {
       console.error('Error deleting user:', error)
-      alert('Fout bij verwijderen gebruiker')
+      alert(t('errorDeletingUser'))
     }
   }
 
@@ -197,14 +204,14 @@ export default function UsersAdminPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Gebruikers & Rechten</CardTitle>
+              <CardTitle>{t('title')}</CardTitle>
               <CardDescription>
-                Beheer gebruikers en hun rollen
+                {t('subtitle')}
               </CardDescription>
             </div>
             <Button onClick={() => setDialogOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
-              Nieuwe Gebruiker
+              {t('newUser')}
             </Button>
           </div>
         </CardHeader>
@@ -227,11 +234,11 @@ export default function UsersAdminPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <div>
-                        <p className="font-medium">{user.name || 'Geen naam'}</p>
+                        <p className="font-medium">{user.name || t('noName')}</p>
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                         {user.lastLoginAt && (
                           <p className="text-xs text-muted-foreground">
-                            Laatste login: {new Date(user.lastLoginAt).toLocaleString('nl-BE', {
+                            {t('lastLogin')}: {new Date(user.lastLoginAt).toLocaleString('nl-BE', {
                               dateStyle: 'short',
                               timeStyle: 'short',
                             })}
@@ -239,12 +246,12 @@ export default function UsersAdminPage() {
                         )}
                       </div>
                       <Badge className={getRoleBadgeColor(user.role)}>
-                        {ROLES.find(r => r.value === user.role)?.label || user.role}
+                        {getRoleLabel(user.role)}
                       </Badge>
                     </div>
                     {user.memberships.length > 0 && (
                       <div className="mt-2 text-sm text-muted-foreground">
-                        Entiteiten: {user.memberships.map(m => m.entity.name).join(', ')}
+                        {t('entities')}: {user.memberships.map(m => m.entity.name).join(', ')}
                       </div>
                     )}
                   </div>
@@ -273,7 +280,7 @@ export default function UsersAdminPage() {
                       }}
                     >
                       <Building2 className="h-4 w-4 mr-2" />
-                      Entiteiten
+                      {t('entities')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -293,15 +300,15 @@ export default function UsersAdminPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nieuwe Gebruiker</DialogTitle>
+            <DialogTitle>{t('newUserTitle')}</DialogTitle>
             <DialogDescription>
-              Maak een nieuw gebruikersaccount aan
+              {t('newUserDescription')}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateUser}>
             <div className="space-y-4 py-4">
               <div>
-                <Label htmlFor="name">Naam</Label>
+                <Label htmlFor="name">{tc('name')}</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -310,7 +317,7 @@ export default function UsersAdminPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="email">E-mailadres</Label>
+                <Label htmlFor="email">{t('emailAddress')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -320,18 +327,18 @@ export default function UsersAdminPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="password">Wachtwoord</Label>
+                <Label htmlFor="password">{t('password')}</Label>
                 <Input
                   id="password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Minimaal 6 tekens"
+                  placeholder={t('passwordPlaceholder')}
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="role">Rol</Label>
+                <Label htmlFor="role">{t('role')}</Label>
                 <Select
                   value={formData.role}
                   onValueChange={(value) => setFormData({ ...formData, role: value })}
@@ -351,10 +358,10 @@ export default function UsersAdminPage() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Annuleren
+                {tc('cancel')}
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? 'Bezig...' : 'Aanmaken'}
+                {loading ? tc('saving') : t('create')}
               </Button>
             </DialogFooter>
           </form>

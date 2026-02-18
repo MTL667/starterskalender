@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +10,8 @@ import { useRouter } from 'next/navigation'
 import { CheckCircle2 } from 'lucide-react'
 
 export default function OnboardingPage() {
+  const t = useTranslations('onboarding')
+  const tc = useTranslations('common')
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
@@ -30,7 +33,6 @@ export default function OnboardingPage() {
     setLoading(true)
 
     try {
-      // Maak entiteiten aan
       for (const entity of entities) {
         if (!entity.name) continue
 
@@ -76,9 +78,9 @@ export default function OnboardingPage() {
                   1
                 </div>
                 <div>
-                  <h3 className="font-semibold">Entiteiten aanmaken</h3>
+                  <h3 className="font-semibold">{t('createEntities')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Voeg je organisatie-eenheden toe met kleuren en e-mailnotificaties
+                    {t('createEntitiesDescription')}
                   </p>
                 </div>
               </div>
@@ -88,9 +90,9 @@ export default function OnboardingPage() {
                   2
                 </div>
                 <div>
-                  <h3 className="font-semibold">Starters toevoegen</h3>
+                  <h3 className="font-semibold">{t('addStarters')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Begin met het plannen van nieuwe medewerkers
+                    {t('addStartersDescription')}
                   </p>
                 </div>
               </div>
@@ -100,9 +102,9 @@ export default function OnboardingPage() {
                   3
                 </div>
                 <div>
-                  <h3 className="font-semibold">Gebruikers uitnodigen</h3>
+                  <h3 className="font-semibold">{t('inviteUsers')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Nodig collega's uit en beheer hun toegangsrechten
+                    {t('inviteUsersDescription')}
                   </p>
                 </div>
               </div>
@@ -110,7 +112,7 @@ export default function OnboardingPage() {
 
             <div className="pt-6 border-t">
               <Button onClick={() => setStep(2)} className="w-full">
-                Start Setup
+                {t('startSetup')}
               </Button>
             </div>
           </CardContent>
@@ -124,28 +126,28 @@ export default function OnboardingPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-2xl">
           <CardHeader>
-            <CardTitle>Entiteiten Aanmaken</CardTitle>
+            <CardTitle>{t('createEntitiesTitle')}</CardTitle>
             <CardDescription>
-              Voeg je organisatie-eenheden toe. Je kunt later meer toevoegen.
+              {t('createEntitiesStep')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {entities.map((entity, index) => (
               <div key={index} className="border rounded-lg p-4 space-y-4">
-                <h4 className="font-semibold">Entiteit {index + 1}</h4>
+                <h4 className="font-semibold">{t('entityNumber')} {index + 1}</h4>
                 
                 <div>
-                  <Label htmlFor={`name-${index}`}>Naam *</Label>
+                  <Label htmlFor={`name-${index}`}>{t('nameRequired')}</Label>
                   <Input
                     id={`name-${index}`}
                     value={entity.name}
                     onChange={(e) => handleEntityChange(index, 'name', e.target.value)}
-                    placeholder="Bv. HR, IT, Sales"
+                    placeholder={t('namePlaceholder')}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor={`color-${index}`}>Kleur</Label>
+                  <Label htmlFor={`color-${index}`}>{t('color')}</Label>
                   <div className="flex gap-2">
                     <Input
                       id={`color-${index}`}
@@ -163,15 +165,15 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor={`emails-${index}`}>E-mailadressen voor reminders</Label>
+                  <Label htmlFor={`emails-${index}`}>{t('emailsForReminders')}</Label>
                   <Input
                     id={`emails-${index}`}
                     value={entity.notifyEmails}
                     onChange={(e) => handleEntityChange(index, 'notifyEmails', e.target.value)}
-                    placeholder="email1@example.com, email2@example.com"
+                    placeholder={t('emailsPlaceholder')}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Ontvang automatisch een e-mail 7 dagen voor de startdatum
+                    {t('emailReminderHint')}
                   </p>
                 </div>
               </div>
@@ -183,7 +185,7 @@ export default function OnboardingPage() {
               onClick={handleAddEntity}
               className="w-full"
             >
-              + Nog een entiteit toevoegen
+              {t('addAnotherEntity')}
             </Button>
 
             <div className="flex gap-2 pt-4">
@@ -192,14 +194,14 @@ export default function OnboardingPage() {
                 onClick={() => setStep(1)}
                 disabled={loading}
               >
-                Terug
+                {t('back')}
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={loading || !entities.some(e => e.name)}
                 className="flex-1"
               >
-                {loading ? 'Bezig...' : 'Entiteiten Aanmaken'}
+                {loading ? t('loading') : t('createEntitiesButton')}
               </Button>
             </div>
           </CardContent>
@@ -216,9 +218,9 @@ export default function OnboardingPage() {
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-12 w-12 text-green-600" />
               <div>
-                <CardTitle>Setup Voltooid!</CardTitle>
+                <CardTitle>{t('setupComplete')}</CardTitle>
                 <CardDescription>
-                  Je Starterskalender is klaar voor gebruik
+                  {t('readyToUse')}
                 </CardDescription>
               </div>
             </div>
@@ -226,46 +228,45 @@ export default function OnboardingPage() {
           <CardContent className="space-y-6">
             <div className="space-y-4">
               <div className="bg-muted p-4 rounded-lg">
-                <h3 className="font-semibold mb-2">Volgende stappen:</h3>
+                <h3 className="font-semibold mb-2">{t('nextSteps')}</h3>
                 <ul className="space-y-2 text-sm">
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
-                    <span>Ga naar de kalender en voeg je eerste starters toe</span>
+                    <span>{t('nextStep1')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
-                    <span>Pas indien nodig je entiteiten aan in de admin sectie</span>
+                    <span>{t('nextStep2')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
-                    <span>Nodig collega's uit om samen te werken</span>
+                    <span>{t('nextStep3')}</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary">✓</span>
-                    <span>Configureer dropdown opties (regio, via, etc.)</span>
+                    <span>{t('nextStep4')}</span>
                   </li>
                 </ul>
               </div>
 
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                <h4 className="font-semibold text-blue-900 mb-1">💡 Tip</h4>
+                <h4 className="font-semibold text-blue-900 mb-1">💡 {t('tip')}</h4>
                 <p className="text-sm text-blue-800">
-                  E-mail reminders worden automatisch verstuurd 7 dagen voor de startdatum.
-                  Zorg dat je SendGrid correct hebt geconfigureerd in de environment variabelen.
+                  {t('tipEmailReminders')}
                 </p>
               </div>
             </div>
 
             <div className="flex gap-2">
               <Button onClick={() => router.push('/dashboard')} className="flex-1">
-                Naar Dashboard
+                {t('toDashboard')}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => router.push('/kalender')}
                 className="flex-1"
               >
-                Naar Kalender
+                {t('toCalendar')}
               </Button>
             </div>
           </CardContent>

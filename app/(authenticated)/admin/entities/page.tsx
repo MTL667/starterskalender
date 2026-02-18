@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,6 +20,8 @@ interface Entity {
 }
 
 export default function EntitiesAdminPage() {
+  const t = useTranslations('adminEntities')
+  const tc = useTranslations('common')
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -95,7 +98,7 @@ export default function EntitiesAdminPage() {
       fetchEntities()
     } catch (error) {
       console.error('Error saving entity:', error)
-      alert('Fout bij opslaan')
+      alert(tc('errorSaving'))
     }
   }
 
@@ -104,7 +107,7 @@ export default function EntitiesAdminPage() {
       <Link href="/admin">
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Terug naar Admin
+          {tc('backToAdmin')}
         </Button>
       </Link>
 
@@ -112,20 +115,20 @@ export default function EntitiesAdminPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Entiteiten</CardTitle>
-              <CardDescription>Beheer entiteiten en e-mailnotificaties</CardDescription>
+              <CardTitle>{t('title')}</CardTitle>
+              <CardDescription>{t('subtitle')}</CardDescription>
             </div>
             <Button onClick={handleNew}>
               <Plus className="h-4 w-4 mr-2" />
-              Nieuwe Entiteit
+              {t('newEntity')}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">Laden...</div>
+            <div className="text-center py-8 text-muted-foreground">{tc('loading')}</div>
           ) : entities.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">Geen entiteiten</div>
+            <div className="text-center py-8 text-muted-foreground">{t('noEntities')}</div>
           ) : (
             <div className="space-y-4">
               {entities.map(entity => (
@@ -141,7 +144,7 @@ export default function EntitiesAdminPage() {
                     <div>
                       <div className="font-semibold">{entity.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        {entity.notifyEmails.length} e-mailadres(sen)
+                        {entity.notifyEmails.length} {t('emailCount')}
                       </div>
                       {entity.notifyEmails.length > 0 && (
                         <div className="text-xs text-muted-foreground mt-1">
@@ -152,7 +155,7 @@ export default function EntitiesAdminPage() {
                   </div>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(entity)}>
                     <Pencil className="h-4 w-4 mr-2" />
-                    Bewerken
+                    {tc('edit')}
                   </Button>
                 </div>
               ))}
@@ -165,17 +168,17 @@ export default function EntitiesAdminPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {selectedEntity ? 'Entiteit Bewerken' : 'Nieuwe Entiteit'}
+              {selectedEntity ? t('editEntity') : t('newEntityTitle')}
             </DialogTitle>
             <DialogDescription>
-              Configureer de entiteit en e-mailnotificaties
+              {t('configureEntity')}
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Naam *</Label>
+                <Label htmlFor="name">{tc('name')} *</Label>
                 <Input
                   id="name"
                   value={formData.name}
@@ -185,7 +188,7 @@ export default function EntitiesAdminPage() {
               </div>
 
               <div>
-                <Label htmlFor="colorHex">Kleur *</Label>
+                <Label htmlFor="colorHex">{t('colorRequired')}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="colorHex"
@@ -204,7 +207,7 @@ export default function EntitiesAdminPage() {
               </div>
 
               <div>
-                <Label htmlFor="notifyEmails">E-mailadressen voor reminders</Label>
+                <Label htmlFor="notifyEmails">{t('emailsForReminders')}</Label>
                 <Input
                   id="notifyEmails"
                   value={formData.notifyEmails}
@@ -212,17 +215,17 @@ export default function EntitiesAdminPage() {
                   placeholder="email1@example.com, email2@example.com"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Meerdere adressen gescheiden door komma
+                  {t('multipleEmails')}
                 </p>
               </div>
             </div>
 
             <DialogFooter className="mt-6">
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                Annuleren
+                {tc('cancel')}
               </Button>
               <Button type="submit">
-                {selectedEntity ? 'Opslaan' : 'Toevoegen'}
+                {selectedEntity ? tc('save') : tc('add')}
               </Button>
             </DialogFooter>
           </form>

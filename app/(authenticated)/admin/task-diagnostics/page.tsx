@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -27,6 +28,8 @@ interface DiagnosticResult {
 }
 
 export default function TaskDiagnosticsPage() {
+  const t = useTranslations('adminTaskDiagnostics')
+  const tc = useTranslations('common')
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,7 +61,7 @@ export default function TaskDiagnosticsPage() {
       <div className="container mx-auto py-8">
         <div className="flex items-center justify-center">
           <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-3 text-lg">Diagnostics laden...</span>
+          <span className="ml-3 text-lg">{t('loadingDiagnostics')}</span>
         </div>
       </div>
     )
@@ -69,12 +72,12 @@ export default function TaskDiagnosticsPage() {
       <div className="container mx-auto py-8">
         <Alert variant="destructive">
           <XCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{tc('error')}</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
         <Button onClick={fetchDiagnostics} className="mt-4">
           <RefreshCw className="h-4 w-4 mr-2" />
-          Opnieuw proberen
+          {tc('retry')}
         </Button>
       </div>
     )
@@ -88,14 +91,14 @@ export default function TaskDiagnosticsPage() {
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">🔍 Task System Diagnostics</h1>
+          <h1 className="text-3xl font-bold">🔍 {t('title')}</h1>
           <p className="text-muted-foreground mt-1">
-            Controleer de status van het taakbeheersysteem
+            {t('subtitle')}
           </p>
         </div>
         <Button onClick={fetchDiagnostics} variant="outline">
           <RefreshCw className="h-4 w-4 mr-2" />
-          Vernieuwen
+          {tc('refresh')}
         </Button>
       </div>
 
@@ -103,7 +106,7 @@ export default function TaskDiagnosticsPage() {
       {diagnostics.issues.length > 0 && (
         <Alert variant="destructive">
           <XCircle className="h-4 w-4" />
-          <AlertTitle>Problemen Gevonden</AlertTitle>
+          <AlertTitle>{t('problemsFound')}</AlertTitle>
           <AlertDescription>
             <ul className="list-disc list-inside space-y-1 mt-2">
               {diagnostics.issues.map((issue, idx) => (
@@ -118,7 +121,7 @@ export default function TaskDiagnosticsPage() {
       {diagnostics.recommendations.length > 0 && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Aanbevelingen</AlertTitle>
+          <AlertTitle>{t('recommendations')}</AlertTitle>
           <AlertDescription>
             <ol className="list-decimal list-inside space-y-2 mt-2">
               {diagnostics.recommendations.map((rec, idx) => (
@@ -132,9 +135,9 @@ export default function TaskDiagnosticsPage() {
       {diagnostics.issues.length === 0 && (
         <Alert>
           <CheckCircle2 className="h-4 w-4" />
-          <AlertTitle>Systeem Status: OK</AlertTitle>
+          <AlertTitle>{t('systemOk')}</AlertTitle>
           <AlertDescription>
-            Alle componenten zijn correct geconfigureerd! ✅
+            {t('allComponentsOk')}
           </AlertDescription>
         </Alert>
       )}
@@ -148,10 +151,10 @@ export default function TaskDiagnosticsPage() {
             ) : (
               <XCircle className="h-5 w-5 text-red-500" />
             )}
-            Task Templates
+            {t('templates')}
           </CardTitle>
           <CardDescription>
-            {diagnostics.taskTemplates.count} actieve template(s) gevonden
+            {diagnostics.taskTemplates.count} {t('activeTemplates')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -165,8 +168,8 @@ export default function TaskDiagnosticsPage() {
                   <div>
                     <div className="font-medium">{template.title}</div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      Type: {template.type} | Priority: {template.priority} | 
-                      Deadline: {template.daysUntilDue} dagen
+                      {tc('type')}: {template.type} | {t('priorityLabel')}: {template.priority} | 
+                      {t('deadlineDays', { days: template.daysUntilDue })}
                     </div>
                   </div>
                   <span className={`px-2 py-1 text-xs rounded ${
@@ -174,7 +177,7 @@ export default function TaskDiagnosticsPage() {
                       ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {template.isActive ? 'Actief' : 'Inactief'}
+                    {template.isActive ? tc('active') : tc('inactive')}
                   </span>
                 </div>
               ))}
@@ -182,7 +185,7 @@ export default function TaskDiagnosticsPage() {
           ) : (
             <Alert variant="destructive">
               <AlertDescription>
-                Geen task templates gevonden! Run: <code className="bg-black/10 px-1 py-0.5 rounded">npm run db:seed-tasks</code>
+                {t('noTaskTemplates')} Run: <code className="bg-black/10 px-1 py-0.5 rounded">npm run db:seed-tasks</code>
               </AlertDescription>
             </Alert>
           )}
@@ -198,10 +201,10 @@ export default function TaskDiagnosticsPage() {
             ) : (
               <XCircle className="h-5 w-5 text-red-500" />
             )}
-            Task Assignments
+            {t('assignments')}
           </CardTitle>
           <CardDescription>
-            {diagnostics.taskAssignments.count} verantwoordelijke(n) geconfigureerd
+            {diagnostics.taskAssignments.count} {t('responsiblesConfigured')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -216,10 +219,10 @@ export default function TaskDiagnosticsPage() {
                     <div className="font-medium">
                       {assignment.taskType}
                       {assignment.entity && ` - ${assignment.entity.name}`}
-                      {!assignment.entity && ' - Globaal'}
+                      {!assignment.entity && ` - ${t('globalLabel')}`}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      Verantwoordelijke: {assignment.assignedTo?.name || assignment.assignedTo?.email || 'Onbekend'}
+                      {t('responsibleLabel')} {assignment.assignedTo?.name || assignment.assignedTo?.email || tc('unknown')}
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground">
@@ -231,7 +234,7 @@ export default function TaskDiagnosticsPage() {
           ) : (
             <Alert variant="destructive">
               <AlertDescription>
-                Geen task assignments gevonden! Ga naar <code>/admin/task-assignments</code> om verantwoordelijken toe te wijzen.
+                {t('noTaskAssignments')} {t('noTaskAssignmentsHint')}
               </AlertDescription>
             </Alert>
           )}
@@ -241,9 +244,9 @@ export default function TaskDiagnosticsPage() {
       {/* Recent Tasks */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Aangemaakte Taken</CardTitle>
+          <CardTitle>{t('recentTasks')}</CardTitle>
           <CardDescription>
-            {diagnostics.tasks.count} totaal, {diagnostics.tasks.recentTasks.length} meest recente getoond
+            {t('totalRecent', { total: diagnostics.tasks.count, count: diagnostics.tasks.recentTasks.length })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -257,14 +260,14 @@ export default function TaskDiagnosticsPage() {
                   <div className="flex-1">
                     <div className="font-medium">{task.title}</div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {task.starter && `Voor: ${task.starter.name} | `}
-                      Type: {task.type} | 
-                      Status: {task.status} |
-                      Aangemaakt: {new Date(task.createdAt).toLocaleDateString('nl-BE')}
+                      {task.starter && `${t('for')} ${task.starter.name} | `}
+                      {tc('type')}: {task.type} | 
+                      {tc('status')}: {task.status} |
+                      {t('createdAt')} {new Date(task.createdAt).toLocaleDateString('nl-BE')}
                     </div>
                     {task.assignedTo && (
                       <div className="text-xs text-muted-foreground mt-1">
-                        Toegewezen aan: {task.assignedTo.name || task.assignedTo.email}
+                        {t('assignedToLabel')} {task.assignedTo.name || task.assignedTo.email}
                       </div>
                     )}
                   </div>
@@ -281,7 +284,7 @@ export default function TaskDiagnosticsPage() {
           ) : (
             <Alert>
               <AlertDescription>
-                Nog geen taken aangemaakt. Voeg een nieuwe starter toe om het systeem te testen!
+                {t('noTasksYet')}
               </AlertDescription>
             </Alert>
           )}
@@ -291,25 +294,25 @@ export default function TaskDiagnosticsPage() {
       {/* Statistics */}
       <Card>
         <CardHeader>
-          <CardTitle>Systeem Statistieken</CardTitle>
+          <CardTitle>{t('systemStats')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <div className="text-2xl font-bold">{diagnostics.taskTemplates.count}</div>
-              <div className="text-sm text-muted-foreground">Templates</div>
+              <div className="text-sm text-muted-foreground">{t('templates')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold">{diagnostics.taskAssignments.count}</div>
-              <div className="text-sm text-muted-foreground">Assignments</div>
+              <div className="text-sm text-muted-foreground">{t('assignments')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold">{diagnostics.tasks.count}</div>
-              <div className="text-sm text-muted-foreground">Taken</div>
+              <div className="text-sm text-muted-foreground">{t('tasksLabel')}</div>
             </div>
             <div>
               <div className="text-2xl font-bold">{diagnostics.users.count}</div>
-              <div className="text-sm text-muted-foreground">Gebruikers</div>
+              <div className="text-sm text-muted-foreground">{t('usersLabel')}</div>
             </div>
           </div>
         </CardContent>

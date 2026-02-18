@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Bell, Check, CheckCheck, X } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { Bell, Check, CheckCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -26,6 +27,8 @@ interface Notification {
 }
 
 export function NotificationBell() {
+  const t = useTranslations('notifications')
+  const tCommon = useTranslations('common')
   const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
@@ -113,11 +116,11 @@ export function NotificationBell() {
     const now = new Date()
     const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
 
-    if (seconds < 60) return 'Zojuist'
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m geleden`
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}u geleden`
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d geleden`
-    return date.toLocaleDateString('nl-BE')
+    if (seconds < 60) return t('justNow')
+    if (seconds < 3600) return t('minutesAgo', { n: Math.floor(seconds / 60) })
+    if (seconds < 86400) return t('hoursAgo', { n: Math.floor(seconds / 3600) })
+    if (seconds < 604800) return t('daysAgo', { n: Math.floor(seconds / 86400) })
+    return date.toLocaleDateString()
   }
 
   return (
@@ -134,7 +137,7 @@ export function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[400px] max-h-[600px] overflow-y-auto">
         <div className="flex items-center justify-between p-3 border-b">
-          <h3 className="font-semibold">Notificaties</h3>
+          <h3 className="font-semibold">{t('title')}</h3>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -143,19 +146,19 @@ export function NotificationBell() {
               className="h-8 text-xs"
             >
               <CheckCheck className="h-4 w-4 mr-1" />
-              Alles gelezen
+              {t('markAllRead')}
             </Button>
           )}
         </div>
 
         {loading ? (
           <div className="p-8 text-center text-muted-foreground">
-            Laden...
+            {tCommon('loading')}
           </div>
         ) : notifications.length === 0 ? (
           <div className="p-8 text-center text-muted-foreground">
             <Bell className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p>Geen notificaties</p>
+            <p>{t('noNotifications')}</p>
           </div>
         ) : (
           <div className="max-h-[500px] overflow-y-auto">
@@ -218,7 +221,7 @@ export function NotificationBell() {
                   setOpen(false)
                 }}
               >
-                Alle taken bekijken
+                {t('viewAllTasks')}
               </Button>
             </div>
           </>

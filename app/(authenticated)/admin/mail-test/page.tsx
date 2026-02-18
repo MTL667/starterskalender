@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,6 +16,8 @@ interface MailConfig {
 }
 
 export default function MailTestPage() {
+  const t = useTranslations('adminMailTest')
+  const tc = useTranslations('common')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
@@ -54,13 +57,13 @@ export default function MailTestPage() {
       const data = await res.json()
 
       if (res.ok) {
-        setResult({ success: true, message: 'Test e-mail succesvol verzonden!' })
+        setResult({ success: true, message: t('testSuccess') })
         setEmail('')
       } else {
-        setResult({ success: false, message: data.error || data.details || 'Er is een fout opgetreden' })
+        setResult({ success: false, message: data.error || data.details || tc('error') })
       }
     } catch (error) {
-      setResult({ success: false, message: 'Netwerkfout. Probeer opnieuw.' })
+      setResult({ success: false, message: t('networkError') })
     } finally {
       setLoading(false)
     }
@@ -71,7 +74,7 @@ export default function MailTestPage() {
       <Link href="/admin">
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Terug naar Admin
+          {tc('backToAdmin')}
         </Button>
       </Link>
 
@@ -82,9 +85,9 @@ export default function MailTestPage() {
               <Mail className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <CardTitle>E-mail Test</CardTitle>
+              <CardTitle>{t('title')}</CardTitle>
               <CardDescription>
-                Verstuur een test e-mail om de SendGrid configuratie te valideren
+                {t('subtitle')}
               </CardDescription>
             </div>
           </div>
@@ -92,7 +95,7 @@ export default function MailTestPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="email">Test e-mailadres</Label>
+              <Label htmlFor="email">{t('testEmail')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -102,12 +105,12 @@ export default function MailTestPage() {
                 required
               />
               <p className="text-sm text-muted-foreground mt-1">
-                De test e-mail wordt naar dit adres verzonden
+                {t('testEmailHint')}
               </p>
             </div>
 
             <Button type="submit" disabled={loading}>
-              {loading ? 'Verzenden...' : 'Verstuur Test E-mail'}
+              {loading ? t('sending') : t('sendTestEmail')}
             </Button>
           </form>
 
@@ -122,10 +125,10 @@ export default function MailTestPage() {
           )}
 
           <div className="mt-6 pt-6 border-t">
-            <h3 className="font-semibold mb-3">SendGrid Configuratie</h3>
+            <h3 className="font-semibold mb-3">{t('sendgridConfig')}</h3>
             
             {configLoading ? (
-              <p className="text-sm text-muted-foreground">Laden...</p>
+              <p className="text-sm text-muted-foreground">{tc('loading')}</p>
             ) : config ? (
               <div className="space-y-3">
                 {/* API Key Status */}
@@ -136,7 +139,7 @@ export default function MailTestPage() {
                     <XCircle className="h-4 w-4 text-red-600" />
                   )}
                   <span className="text-sm">
-                    <strong>API Key:</strong> {config.apiKeyConfigured ? 'Geconfigureerd ✓' : 'Niet geconfigureerd'}
+                    <strong>{t('apiKeyStatus')}</strong> {config.apiKeyConfigured ? t('configured') : t('notConfigured')}
                   </span>
                 </div>
 
@@ -148,7 +151,7 @@ export default function MailTestPage() {
                     <XCircle className="h-4 w-4 text-red-600" />
                   )}
                   <span className="text-sm">
-                    <strong>Van:</strong> {config.fromEmail || 'Niet geconfigureerd'}
+                    <strong>{t('from')}</strong> {config.fromEmail || t('notConfigured')}
                   </span>
                 </div>
 
@@ -160,16 +163,16 @@ export default function MailTestPage() {
                     <div className="h-4 w-4" />
                   )}
                   <span className="text-sm text-muted-foreground">
-                    <strong>Reply-to:</strong> {config.replyTo || 'Niet geconfigureerd (optioneel)'}
+                    <strong>{t('replyTo')}</strong> {config.replyTo || t('notConfiguredOptional')}
                   </span>
                 </div>
 
                 {/* Missing Config Warning */}
                 {(!config.apiKeyConfigured || !config.fromEmail) && (
                   <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-amber-800 font-medium">⚠️ Configuratie Onvolledig</p>
+                    <p className="text-sm text-amber-800 font-medium">⚠️ {t('configIncomplete')}</p>
                     <p className="text-xs text-amber-700 mt-1">
-                      Voeg de volgende environment variabelen toe in Easypanel:
+                      {t('easypanelHint')}
                     </p>
                     <ul className="text-xs text-amber-700 mt-2 space-y-1 list-disc list-inside">
                       {!config.apiKeyConfigured && <li>SENDGRID_API_KEY</li>}
@@ -181,9 +184,9 @@ export default function MailTestPage() {
                 {/* SendGrid Verification Reminder */}
                 {config.fromEmail && (
                   <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800 font-medium">ℹ️ Sender Verification</p>
+                    <p className="text-sm text-blue-800 font-medium">ℹ️ {t('senderVerification')}</p>
                     <p className="text-xs text-blue-700 mt-1">
-                      Zorg ervoor dat <code className="bg-blue-100 px-1 py-0.5 rounded">{config.fromEmail}</code> geverifieerd is in SendGrid.
+                      {t('senderVerificationHint', { email: config.fromEmail })}
                     </p>
                     <a 
                       href="https://app.sendgrid.com/settings/sender_auth" 
@@ -191,13 +194,13 @@ export default function MailTestPage() {
                       rel="noopener noreferrer"
                       className="text-xs text-blue-600 hover:text-blue-800 underline mt-1 inline-block"
                     >
-                      → Verifieer in SendGrid Dashboard
+                      {t('verifySendgrid')}
                     </a>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-sm text-red-600">Fout bij laden van configuratie</p>
+              <p className="text-sm text-red-600">{t('errorLoadingConfig')}</p>
             )}
           </div>
         </CardContent>

@@ -1,20 +1,12 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AlertCircle, CheckCircle2, Clock, Send, Loader2, Info } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-
-interface CronJob {
-  id: string
-  name: string
-  description: string
-  schedule: string
-  endpoint: string
-  icon: string
-}
 
 interface JobResult {
   success: boolean
@@ -43,62 +35,18 @@ interface RecipientPreview {
   entities: string[]
 }
 
-// Helper functie voor "time ago" formatting
-function formatTimeAgo(date: Date): string {
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
+const cronJobConfigs = [
+  { id: 'weekly', nameKey: 'weeklyReminder' as const, descKey: 'weeklySchedule' as const, scheduleKey: 'dailyAt' as const, endpoint: '/api/cron/send-weekly-reminders', icon: '📅' },
+  { id: 'monthly', nameKey: 'monthlySummary' as const, descKey: 'monthlySchedule' as const, scheduleKey: 'firstOfMonth' as const, endpoint: '/api/cron/send-monthly-summary', icon: '📊' },
+  { id: 'quarterly', nameKey: 'quarterlySummary' as const, descKey: 'quarterlySchedule' as const, scheduleKey: 'firstOfQuarter' as const, endpoint: '/api/cron/send-quarterly-summary', icon: '📈' },
+  { id: 'yearly', nameKey: 'yearlySummary' as const, descKey: 'yearlySchedule' as const, scheduleKey: 'firstOfYear' as const, endpoint: '/api/cron/send-yearly-summary', icon: '🎉' },
+] as const
 
-  if (diffMins < 1) return 'nu'
-  if (diffMins < 60) return `${diffMins}m geleden`
-  if (diffHours < 24) return `${diffHours}u geleden`
-  if (diffDays < 7) return `${diffDays}d geleden`
-  
-  return date.toLocaleDateString('nl-BE', { 
-    day: 'numeric', 
-    month: 'short',
-    year: diffDays > 365 ? 'numeric' : undefined
-  })
-}
-
-const cronJobs: CronJob[] = [
-  {
-    id: 'weekly',
-    name: 'Wekelijkse Reminder',
-    description: 'Verstuurt reminders voor starters die over 7 dagen beginnen',
-    schedule: 'Dagelijks om 08:00',
-    endpoint: '/api/cron/send-weekly-reminders',
-    icon: '📅',
-  },
-  {
-    id: 'monthly',
-    name: 'Maandoverzicht',
-    description: 'Overzicht van alle starters van afgelopen maand',
-    schedule: '1e van elke maand om 09:00',
-    endpoint: '/api/cron/send-monthly-summary',
-    icon: '📊',
-  },
-  {
-    id: 'quarterly',
-    name: 'Kwartaaloverzicht',
-    description: 'Overzicht van vorig kwartaal (jan/apr/jul/okt)',
-    schedule: '1e van kwartaal om 10:00',
-    endpoint: '/api/cron/send-quarterly-summary',
-    icon: '📈',
-  },
-  {
-    id: 'yearly',
-    name: 'Jaaroverzicht',
-    description: 'Volledig overzicht van vorig jaar',
-    schedule: '1 januari om 11:00',
-    endpoint: '/api/cron/send-yearly-summary',
-    icon: '🎉',
-  },
-]
+type CronJobConfig = (typeof cronJobConfigs)[number]
 
 export default function CronJobsPage() {
+  const t = useTranslations('adminCronJobs')
+  const tc = useTranslations('common')
   const [loading, setLoading] = useState<string | null>(null)
   const [results, setResults] = useState<Record<string, JobResult>>({})
   const [diagnostics, setDiagnostics] = useState<any>(null)
@@ -138,7 +86,7 @@ export default function CronJobsPage() {
       })
   }, [])
 
-  const previewRecipients = async (job: CronJob) => {
+  const previewRecipients = async (job: CronJobConfig) => {
     setPreviewLoading(job.id)
 
     try {
@@ -196,9 +144,9 @@ export default function CronJobsPage() {
     })
   }
 
-  const triggerJob = async (job: CronJob) => {
+  const triggerJob = async (job: CronJobConfig) => {
     setLoading(job.id)
-    setResults(prev => ({ ...prev, [job.id]: { success: false, message: 'Bezig met verzenden...' } }))
+    setResults(prev => ({ ...prev, [job.id]: { success: false, message: t('sendingInProgress') } }))
 
     try {
       // Haal geselecteerde recipients op (indien preview gedaan is)
@@ -221,7 +169,7 @@ export default function CronJobsPage() {
           ...prev,
           [job.id]: {
             success: true,
-            message: data.message || 'Emails succesvol verstuurd!',
+            message: data.message || t('emailsSentSuccess'),
             emailsSent: data.emailsSent,
             usersNotified: data.usersNotified,
           },
@@ -234,7 +182,7 @@ export default function CronJobsPage() {
           .catch(err => console.error('Error refreshing logs:', err))
       } else {
         // Enhanced error display
-        const errorMessage = data.error || 'Onbekende fout'
+        const errorMessage = data.error || t('unknownError')
         const errorDetails = data.details || data.message || ''
         const debugInfo = data.debugInfo ? JSON.stringify(data.debugInfo, null, 2) : ''
         
@@ -254,8 +202,8 @@ export default function CronJobsPage() {
         ...prev,
         [job.id]: {
           success: false,
-          message: 'Fout bij verzenden',
-          error: error instanceof Error ? error.message : 'Onbekende fout',
+          message: t('errorSending'),
+          error: error instanceof Error ? error.message : t('unknownError'),
         },
       }))
     } finally {
@@ -274,12 +222,29 @@ export default function CronJobsPage() {
     return type ? emailLogs[type] || [] : []
   }
 
+  const formatTimeAgo = (date: Date) => {
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    if (diffMins < 1) return t('timeNow')
+    if (diffMins < 60) return t('timeMinutesAgo', { n: diffMins })
+    if (diffHours < 24) return t('timeHoursAgo', { n: diffHours })
+    if (diffDays < 7) return t('timeDaysAgo', { n: diffDays })
+    return date.toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+      year: diffDays > 365 ? 'numeric' : undefined,
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Cron Jobs</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="text-muted-foreground mt-2">
-          Handmatig email notificaties versturen of testen
+          {t('subtitle')}
         </p>
       </div>
 
@@ -287,7 +252,7 @@ export default function CronJobsPage() {
       {!diagnosticsLoading && diagnostics && diagnostics.recommendations && (
         <Alert variant={diagnostics.recommendations[0].startsWith('✅') ? 'default' : 'destructive'}>
           <Info className="h-4 w-4" />
-          <AlertTitle>Configuratie Status</AlertTitle>
+          <AlertTitle>{t('configStatus')}</AlertTitle>
           <AlertDescription>
             <ul className="list-disc list-inside space-y-1 mt-2">
               {diagnostics.recommendations.map((rec: string, idx: number) => (
@@ -296,11 +261,11 @@ export default function CronJobsPage() {
             </ul>
             {!diagnostics.environment.cronSecret.configured && (
               <div className="mt-3 pt-3 border-t">
-                <p className="text-sm font-medium mb-1">Hoe te fixen:</p>
+                <p className="text-sm font-medium mb-1">{t('howToFix')}</p>
                 <ol className="list-decimal list-inside space-y-1 text-sm">
-                  <li>Generate CRON_SECRET: <code className="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded">node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code></li>
-                  <li>Voeg toe aan Easypanel environment variables</li>
-                  <li>Rebuild de app</li>
+                  <li>{t('generateCronSecret')} <code className="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded">node -e &quot;console.log(require(&apos;crypto&apos;).randomBytes(32).toString(&apos;hex&apos;))&quot;</code></li>
+                  <li>{t('addToEasypanel')}</li>
+                  <li>{t('rebuildApp')}</li>
                 </ol>
               </div>
             )}
@@ -310,15 +275,14 @@ export default function CronJobsPage() {
 
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Let op</AlertTitle>
+        <AlertTitle>{t('warning')}</AlertTitle>
         <AlertDescription>
-          Deze functie stuurt <strong>echte emails</strong> naar gebruikers met actieve notificatie voorkeuren.
-          Gebruik dit alleen voor testing of wanneer je bewust emails wilt versturen buiten de normale schedule.
+          {t('realEmailsWarning')}
         </AlertDescription>
       </Alert>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {cronJobs.map(job => {
+        {cronJobConfigs.map(job => {
           const result = results[job.id]
           const isLoading = loading === job.id
 
@@ -329,10 +293,10 @@ export default function CronJobsPage() {
                   <div className="flex-1">
                     <CardTitle className="flex items-center gap-2">
                       <span>{job.icon}</span>
-                      {job.name}
+                      {t(job.nameKey)}
                     </CardTitle>
                     <CardDescription className="mt-2">
-                      {job.description}
+                      {t(job.descKey)}
                     </CardDescription>
                   </div>
                 </div>
@@ -340,7 +304,7 @@ export default function CronJobsPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
-                  <span>{job.schedule}</span>
+                  <span>{t(job.scheduleKey)}</span>
                 </div>
 
                 {/* Preview Recipients Button */}
@@ -353,11 +317,11 @@ export default function CronJobsPage() {
                   {previewLoading === job.id ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Ontvangers ophalen...
+                      {t('fetchingRecipients')}
                     </>
                   ) : (
                     <>
-                      👥 Toon Ontvangers
+                      👥 {t('showRecipients')}
                       {recipientPreviews[job.id]?.length > 0 && (
                         <Badge variant="secondary" className="ml-2">
                           {recipientPreviews[job.id].length}
@@ -372,7 +336,7 @@ export default function CronJobsPage() {
                   <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium">
-                        Selecteer Ontvangers ({selectedRecipients[job.id]?.size || 0} geselecteerd)
+                        {t('selectRecipientsCount', { count: selectedRecipients[job.id]?.size || 0 })}
                       </h4>
                       <div className="flex gap-2">
                         <Button
@@ -381,7 +345,7 @@ export default function CronJobsPage() {
                           onClick={() => selectAllRecipients(job.id, true)}
                           className="h-7 text-xs"
                         >
-                          Alles
+                          {tc('all')}
                         </Button>
                         <Button
                           size="sm"
@@ -389,7 +353,7 @@ export default function CronJobsPage() {
                           onClick={() => selectAllRecipients(job.id, false)}
                           className="h-7 text-xs"
                         >
-                          Geen
+                          {tc('none')}
                         </Button>
                       </div>
                     </div>
@@ -417,7 +381,7 @@ export default function CronJobsPage() {
                                 {recipient.email !== recipient.name && (
                                   <span className="block truncate">{recipient.email}</span>
                                 )}
-                                {recipient.startersCount} starter{recipient.startersCount !== 1 ? 's' : ''}
+                                {recipient.startersCount === 1 ? t('starterCount', { count: recipient.startersCount }) : t('starterCountPlural', { count: recipient.startersCount })}
                                 {recipient.entities.length > 0 && (
                                   <span> • {recipient.entities.join(', ')}</span>
                                 )}
@@ -439,14 +403,14 @@ export default function CronJobsPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Bezig met verzenden...
+                      {t('sendingInProgress')}
                     </>
                   ) : (
                     <>
                       <Send className="mr-2 h-4 w-4" />
                       {showRecipients[job.id] && (selectedRecipients[job.id]?.size || 0) > 0
-                        ? `Verzenden naar ${selectedRecipients[job.id]?.size} ontvanger${(selectedRecipients[job.id]?.size || 0) !== 1 ? 's' : ''}`
-                        : 'Nu Verzenden'}
+                        ? `${t('sendTo')} ${selectedRecipients[job.id]?.size} ${t('recipients')}`
+                        : t('sendNow')}
                     </>
                   )}
                 </Button>
@@ -455,7 +419,7 @@ export default function CronJobsPage() {
                 {!logsLoading && getJobEmailLogs(job.id).length > 0 && (
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-medium mb-3 text-muted-foreground">
-                      📧 Laatste Verzendingen
+                      📧 {t('recentSends')}
                     </h4>
                     <div className="space-y-2">
                       {getJobEmailLogs(job.id).slice(0, 3).map((log) => {
@@ -482,7 +446,7 @@ export default function CronJobsPage() {
                                 </div>
                                 {log.startersCount !== null && (
                                   <p className="text-muted-foreground ml-5 mt-0.5">
-                                    {log.startersCount} starter{log.startersCount !== 1 ? 's' : ''}
+                                    {log.startersCount === 1 ? t('starterCount', { count: log.startersCount }) : t('starterCountPlural', { count: log.startersCount })}
                                     {log.entities.length > 0 && (
                                       <span> • {log.entities.join(', ')}</span>
                                     )}
@@ -591,45 +555,42 @@ export default function CronJobsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>ℹ️ Informatie</CardTitle>
+          <CardTitle>ℹ️ {t('infoTitle')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
           <div>
-            <h4 className="font-medium text-foreground mb-2">Wanneer worden emails verstuurd?</h4>
+            <h4 className="font-medium text-foreground mb-2">{t('whenEmails')}</h4>
             <ul className="list-disc list-inside space-y-1">
-              <li><strong>Wekelijkse Reminder:</strong> Alleen voor starters die <strong>exact 7 dagen</strong> in de toekomst beginnen</li>
-              <li><strong>Maandoverzicht:</strong> Alle starters van de <strong>afgelopen maand</strong></li>
-              <li><strong>Kwartaaloverzicht:</strong> Alle starters van het <strong>vorige kwartaal</strong></li>
-              <li><strong>Jaaroverzicht:</strong> Alle starters van het <strong>vorige jaar</strong></li>
+              <li><strong>{t('weeklyReminder')}:</strong> {t('whenWeekly')}</li>
+              <li><strong>{t('monthlySummary')}:</strong> {t('whenMonthly')}</li>
+              <li><strong>{t('quarterlySummary')}:</strong> {t('whenQuarterly')}</li>
+              <li><strong>{t('yearlySummary')}:</strong> {t('whenYearly')}</li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-medium text-foreground mb-2">Wie ontvangt de emails?</h4>
-            <p>
-              Alleen gebruikers die:
-            </p>
+            <h4 className="font-medium text-foreground mb-2">{t('whoReceives')}</h4>
+            <p>{t('whoReceivesIntro')}</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
-              <li>Notificatie voorkeuren hebben ingeschakeld voor deze frequentie</li>
-              <li>Toegang hebben tot minimaal één entiteit met relevante starters</li>
-              <li>Een geverifieerd email adres hebben</li>
+              <li>{t('whoReceives1')}</li>
+              <li>{t('whoReceives2')}</li>
+              <li>{t('whoReceives3')}</li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-medium text-foreground mb-2">Testing Tips</h4>
+            <h4 className="font-medium text-foreground mb-2">{t('testingTips')}</h4>
             <ul className="list-disc list-inside space-y-1">
-              <li>Test eerst met je eigen account (zorg dat je notificaties aan hebt staan)</li>
-              <li>Check de audit log na verzending voor details</li>
-              <li>Wekelijkse reminder werkt alleen als er starters zijn over exact 7 dagen</li>
-              <li>Voor testing: voeg een starter toe met startdatum = vandaag + 7 dagen</li>
+              <li>{t('testingTip1')}</li>
+              <li>{t('testingTip2')}</li>
+              <li>{t('testingTip3')}</li>
+              <li>{t('testingTip4')}</li>
             </ul>
           </div>
 
           <div className="pt-4 border-t">
             <p className="text-xs">
-              <strong>Automatische Schedule:</strong> Deze jobs draaien automatisch op de ingestelde tijden.
-              Dit paneel is bedoeld voor handmatige triggers en testing.
+              {t('autoScheduleDesc')}
             </p>
           </div>
         </CardContent>

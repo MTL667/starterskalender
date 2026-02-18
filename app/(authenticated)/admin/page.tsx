@@ -1,5 +1,6 @@
 import { requireAdmin } from '@/lib/auth-utils'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope, FileSignature } from 'lucide-react'
@@ -11,46 +12,48 @@ export default async function AdminPage() {
     redirect('/dashboard')
   }
 
+  const t = await getTranslations('admin')
+
   const organisationSections = [
     {
-      title: 'Entiteiten',
-      description: 'Beheer entiteiten, kleuren en e-mailnotificaties',
+      title: t('entities'),
+      description: t('entitiesDescription'),
       icon: Building2,
       href: '/admin/entities',
     },
     {
-      title: 'Functies',
-      description: 'Beheer functies per entiteit',
+      title: t('roles'),
+      description: t('rolesDescription'),
       icon: Briefcase,
       href: '/admin/job-roles',
     },
     {
-      title: 'Gebruikers',
-      description: 'Beheer gebruikers, rollen en toegangsrechten',
+      title: t('users'),
+      description: t('usersDescription'),
       icon: Users,
       href: '/admin/users',
     },
     {
-      title: 'Materialen',
-      description: 'Beheer benodigde materialen voor functies',
+      title: t('materials'),
+      description: t('materialsDescription'),
       icon: Package,
       href: '/admin/materials',
     },
     {
-      title: 'Taak Verantwoordelijken',
-      description: 'Configureer wie verantwoordelijk is voor welke taken',
+      title: t('taskAssignments'),
+      description: t('taskAssignmentsDescription'),
       icon: CheckSquare,
       href: '/admin/task-assignments',
     },
     {
-      title: 'Email Signatures',
-      description: 'Beheer email signature templates per entiteit',
+      title: t('signatureTemplates'),
+      description: t('signatureTemplatesDescription'),
       icon: FileSignature,
       href: '/admin/signature-templates',
     },
     {
-      title: 'Periode Blokkades',
-      description: 'Blokkeer periodes voor entiteiten en functies',
+      title: t('blockedPeriods'),
+      description: t('blockedPeriodsDescription'),
       icon: Ban,
       href: '/admin/blocked-periods',
     },
@@ -58,50 +61,50 @@ export default async function AdminPage() {
 
   const systemSections = [
     {
-      title: 'Audit Log',
-      description: 'Bekijk de audit trail van alle acties',
+      title: t('auditLog'),
+      description: t('auditLogDescription'),
       icon: FileText,
       href: '/admin/audit-log',
     },
     {
-      title: 'Azure AD Tenants',
-      description: 'Beheer welke organisaties toegang hebben',
+      title: t('tenants'),
+      description: t('tenantsDescription'),
       icon: Shield,
       href: '/admin/allowed-tenants',
     },
     {
-      title: 'Branding',
-      description: 'Pas het logo en de uitstraling aan',
+      title: t('branding'),
+      description: t('brandingDescription'),
       icon: Palette,
       href: '/admin/branding',
     },
     {
-      title: 'Cron Jobs',
-      description: 'Handmatig email notificaties versturen',
+      title: t('cronJobs'),
+      description: t('cronJobsDescription'),
       icon: Clock,
       href: '/admin/cron-jobs',
     },
     {
-      title: 'Task Diagnostics',
-      description: 'Controleer de status van het taakbeheersysteem',
+      title: t('taskDiagnostics'),
+      description: t('taskDiagnosticsDescription'),
       icon: Stethoscope,
       href: '/admin/task-diagnostics',
     },
     {
-      title: 'Dropdowns',
-      description: 'Beheer dropdown opties voor regio, via, etc.',
+      title: t('dropdowns'),
+      description: t('dropdownsDescription'),
       icon: Settings,
       href: '/admin/dropdowns',
     },
     {
-      title: 'E-mail Test',
-      description: 'Verstuur een test e-mail via SendGrid',
+      title: t('emailTest'),
+      description: t('emailTestDescription'),
       icon: Mail,
       href: '/admin/mail-test',
     },
     {
-      title: 'E-mailtemplates',
-      description: 'Beheer email templates voor notificaties',
+      title: t('emailTemplates'),
+      description: t('emailTemplatesDescription'),
       icon: MailOpen,
       href: '/admin/email-templates',
     },
@@ -110,9 +113,9 @@ export default async function AdminPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Admin</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">
-          Beheer de applicatie instellingen en data
+          {t('subtitle')}
         </p>
       </div>
 
@@ -120,7 +123,7 @@ export default async function AdminPage() {
       <div className="mb-10">
         <div className="flex items-center gap-2 mb-4">
           <Building2 className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-semibold">Organisatie</h2>
+          <h2 className="text-2xl font-semibold">{t('organization')}</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {organisationSections.map((section) => {
@@ -148,7 +151,7 @@ export default async function AdminPage() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Settings className="h-6 w-6 text-primary" />
-          <h2 className="text-2xl font-semibold">Systeembeheer</h2>
+          <h2 className="text-2xl font-semibold">{t('systemManagement')}</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {systemSections.map((section) => {

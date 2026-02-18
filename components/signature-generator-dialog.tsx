@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,7 @@ interface SignatureGeneratorDialogProps {
 }
 
 export function SignatureGeneratorDialog({ open, onClose, starterData, entityId }: SignatureGeneratorDialogProps) {
+  const t = useTranslations('signatures')
   const [copied, setCopied] = useState(false)
   const [template, setTemplate] = useState<string>('')
   const [loading, setLoading] = useState(true)
@@ -72,7 +74,7 @@ export function SignatureGeneratorDialog({ open, onClose, starterData, entityId 
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
       console.error('Error copying signature:', error)
-      alert('Kon signature niet kopiëren')
+      alert(t('errorCopy'))
     }
   }
 
@@ -80,9 +82,9 @@ export function SignatureGeneratorDialog({ open, onClose, starterData, entityId 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Email Signature Generator</DialogTitle>
+          <DialogTitle>{t('dialogTitle')}</DialogTitle>
           <DialogDescription>
-            Gegenereerde signature voor {starterData.name}
+            {t('dialogDescription', { name: starterData.name })}
           </DialogDescription>
         </DialogHeader>
 
@@ -134,7 +136,7 @@ export function SignatureGeneratorDialog({ open, onClose, starterData, entityId 
             {/* HTML Code */}
             <div>
               <p className="text-sm font-semibold text-muted-foreground mb-2">
-                HTML CODE (voor Outlook):
+                {t('htmlCodeLabel')}
               </p>
               <div className="bg-slate-50 dark:bg-slate-900 border rounded-lg p-4 max-h-[300px] overflow-y-auto">
                 <pre className="text-xs font-mono whitespace-pre-wrap break-all">
@@ -146,14 +148,14 @@ export function SignatureGeneratorDialog({ open, onClose, starterData, entityId 
             {/* Instructies */}
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <p className="text-sm font-semibold mb-2 text-blue-900 dark:text-blue-100">
-                📋 Instructies voor Outlook:
+                {t('instructionsTitle')}
               </p>
               <ol className="text-sm space-y-1 text-blue-800 dark:text-blue-200 list-decimal list-inside">
-                <li>Klik op "Kopieer HTML" hierboven</li>
-                <li>Open Outlook → Bestand → Opties → E-mail → Handtekeningen</li>
-                <li>Maak nieuwe handtekening of bewerk bestaande</li>
-                <li>Klik in het tekstvak en druk Ctrl+V (plakken)</li>
-                <li>Klik OK om op te slaan</li>
+                <li>{t('instruction1')}</li>
+                <li>{t('instruction2')}</li>
+                <li>{t('instruction3')}</li>
+                <li>{t('instruction4')}</li>
+                <li>{t('instruction5')}</li>
               </ol>
             </div>
           </div>

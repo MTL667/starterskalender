@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -80,27 +81,27 @@ interface Task {
   completionNotes?: string
 }
 
-const taskTypeLabels: Record<string, string> = {
-  IT_SETUP: 'IT Setup',
-  HR_ADMIN: 'HR Administratie',
-  FACILITIES: 'Facilities',
-  MANAGER_ACTION: 'Manager Actie',
-  CUSTOM: 'Custom',
+const taskTypeKeys: Record<string, string> = {
+  IT_SETUP: 'itSetup',
+  HR_ADMIN: 'hrAdmin',
+  FACILITIES: 'facilities',
+  MANAGER_ACTION: 'managerAction',
+  CUSTOM: 'custom',
 }
 
-const priorityLabels: Record<string, string> = {
-  LOW: 'Laag',
-  MEDIUM: 'Normaal',
-  HIGH: 'Hoog',
-  URGENT: 'Urgent',
+const priorityKeys: Record<string, string> = {
+  LOW: 'priorityLow',
+  MEDIUM: 'priorityNormal',
+  HIGH: 'priorityHigh',
+  URGENT: 'priorityUrgent',
 }
 
-const statusLabels: Record<string, string> = {
-  PENDING: 'In wachtrij',
-  IN_PROGRESS: 'Bezig',
-  BLOCKED: 'Geblokkeerd',
-  COMPLETED: 'Voltooid',
-  CANCELLED: 'Geannuleerd',
+const statusKeys: Record<string, string> = {
+  PENDING: 'queued',
+  IN_PROGRESS: 'inProgress',
+  BLOCKED: 'blocked',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled',
 }
 
 const getPriorityColor = (priority: string) => {
@@ -134,6 +135,8 @@ const getStatusIcon = (status: string) => {
 }
 
 export default function TakenPage() {
+  const t = useTranslations('tasks')
+  const tc = useTranslations('common')
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -248,9 +251,9 @@ export default function TakenPage() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Taken</h1>
+          <h1 className="text-3xl font-bold">{t('title')}</h1>
           <p className="text-muted-foreground">
-            Beheer taken voor nieuwe starters
+            {t('subtitle')}
           </p>
         </div>
       </div>
@@ -260,15 +263,15 @@ export default function TakenPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filters
+            {t('filters')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label>Zoeken</Label>
+              <Label>{tc('search')}</Label>
               <Input
-                placeholder="Zoek taken..."
+                placeholder={t('searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -336,7 +339,7 @@ export default function TakenPage() {
             <Card className="border-red-200 dark:border-red-900">
               <CardHeader>
                 <CardTitle className="text-red-600 dark:text-red-400">
-                  🚨 Urgente Taken ({groupedTasks.urgent.length})
+                  🚨 {t('urgentTasks')} ({groupedTasks.urgent.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -344,6 +347,7 @@ export default function TakenPage() {
                   <TaskCard
                     key={task.id}
                     task={task}
+                    t={t}
                     onClick={() => {
                       setSelectedTask(task)
                       setDialogOpen(true)
@@ -359,7 +363,7 @@ export default function TakenPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  📋 In Wachtrij ({groupedTasks.pending.length})
+                  📋 {t('queuedCount')} ({groupedTasks.pending.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -367,6 +371,7 @@ export default function TakenPage() {
                   <TaskCard
                     key={task.id}
                     task={task}
+                    t={t}
                     onClick={() => {
                       setSelectedTask(task)
                       setDialogOpen(true)
@@ -379,7 +384,7 @@ export default function TakenPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  🔄 Bezig ({groupedTasks.inProgress.length})
+                  🔄 {t('inProgressCount')} ({groupedTasks.inProgress.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -387,6 +392,7 @@ export default function TakenPage() {
                   <TaskCard
                     key={task.id}
                     task={task}
+                    t={t}
                     onClick={() => {
                       setSelectedTask(task)
                       setDialogOpen(true)
@@ -399,7 +405,7 @@ export default function TakenPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  ✅ Voltooid ({groupedTasks.completed.length})
+                  ✅ {t('completedCount')} ({groupedTasks.completed.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -407,6 +413,7 @@ export default function TakenPage() {
                   <TaskCard
                     key={task.id}
                     task={task}
+                    t={t}
                     onClick={() => {
                       setSelectedTask(task)
                       setDialogOpen(true)
@@ -421,7 +428,7 @@ export default function TakenPage() {
             <Card className="border-orange-200 dark:border-orange-900">
               <CardHeader>
                 <CardTitle className="text-orange-600 dark:text-orange-400">
-                  ⚠️ Geblokkeerd ({groupedTasks.blocked.length})
+                  ⚠️ {t('blockedCount')} ({groupedTasks.blocked.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -429,6 +436,7 @@ export default function TakenPage() {
                   <TaskCard
                     key={task.id}
                     task={task}
+                    t={t}
                     onClick={() => {
                       setSelectedTask(task)
                       setDialogOpen(true)
@@ -452,23 +460,23 @@ export default function TakenPage() {
                   {selectedTask.title}
                 </DialogTitle>
                 <DialogDescription>
-                  {taskTypeLabels[selectedTask.type]}
+                  {t(taskTypeKeys[selectedTask.type] || 'custom')}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-4">
                 <div className="flex gap-2">
                   <Badge className={getPriorityColor(selectedTask.priority)}>
-                    {priorityLabels[selectedTask.priority]}
+                    {t(priorityKeys[selectedTask.priority] || 'priorityNormal')}
                   </Badge>
                   <Badge variant="outline">
-                    {statusLabels[selectedTask.status]}
+                    {t(statusKeys[selectedTask.status] || 'queued')}
                   </Badge>
                 </div>
 
                 {selectedTask.description && (
                   <div>
-                    <Label>Beschrijving</Label>
+                    <Label>{tc('description')}</Label>
                     <p className="text-sm text-muted-foreground mt-1">
                       {selectedTask.description}
                     </p>
@@ -477,11 +485,11 @@ export default function TakenPage() {
 
                 {selectedTask.starter && (
                   <div>
-                    <Label>Starter</Label>
+                    <Label>{t('starter')}</Label>
                     <div className="mt-1 p-3 bg-muted rounded-md">
                       <p className="font-medium">{selectedTask.starter.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Start:{' '}
+                        {t('start')}:{' '}
                         {new Date(
                           selectedTask.starter.startDate
                         ).toLocaleDateString('nl-BE')}
@@ -503,7 +511,7 @@ export default function TakenPage() {
 
                 {selectedTask.assignedTo && (
                   <div>
-                    <Label>Toegewezen aan</Label>
+                    <Label>{t('assignedTo')}</Label>
                     <p className="text-sm mt-1">
                       {selectedTask.assignedTo.name || selectedTask.assignedTo.email}
                     </p>
@@ -512,7 +520,7 @@ export default function TakenPage() {
 
                 {selectedTask.dueDate && (
                   <div>
-                    <Label>Deadline</Label>
+                    <Label>{t('deadline')}</Label>
                     <p className="text-sm mt-1">
                       {new Date(selectedTask.dueDate).toLocaleDateString('nl-BE')}
                     </p>
@@ -521,12 +529,12 @@ export default function TakenPage() {
 
                 {selectedTask.completedBy && (
                   <div>
-                    <Label>Voltooid door</Label>
+                    <Label>{t('completedBy')}</Label>
                     <p className="text-sm mt-1">
                       {selectedTask.completedBy.name || selectedTask.completedBy.email}
                       {selectedTask.completedAt && (
                         <span className="text-muted-foreground ml-2">
-                          op{' '}
+                          {t('on')}{' '}
                           {new Date(selectedTask.completedAt).toLocaleDateString(
                             'nl-BE'
                           )}
@@ -538,7 +546,7 @@ export default function TakenPage() {
 
                 {selectedTask.completionNotes && (
                   <div>
-                    <Label>Notities bij voltooiing</Label>
+                    <Label>{t('completionNotes')}</Label>
                     <p className="text-sm text-muted-foreground mt-1">
                       {selectedTask.completionNotes}
                     </p>
@@ -547,7 +555,7 @@ export default function TakenPage() {
 
                 {selectedTask.blockedReason && (
                   <div>
-                    <Label>Reden blokkering</Label>
+                    <Label>{t('blockReason')}</Label>
                     <p className="text-sm text-muted-foreground mt-1">
                       {selectedTask.blockedReason}
                     </p>
@@ -563,11 +571,11 @@ export default function TakenPage() {
                       className="bg-green-600 hover:bg-green-700"
                     >
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      Markeer als Voltooid
+                      {t('markCompleted')}
                     </Button>
                   )}
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  Sluiten
+                  {tc('close')}
                 </Button>
               </DialogFooter>
             </>
@@ -578,7 +586,7 @@ export default function TakenPage() {
   )
 }
 
-function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
+function TaskCard({ task, t, onClick }: { task: Task; t: ReturnType<typeof useTranslations<'tasks'>>; onClick: () => void }) {
   return (
     <div
       onClick={onClick}
@@ -601,12 +609,12 @@ function TaskCard({ task, onClick }: { task: Task; onClick: () => void }) {
           )}
           {task.dueDate && task.status !== 'COMPLETED' && (
             <p className="text-xs text-muted-foreground mt-1">
-              Deadline: {new Date(task.dueDate).toLocaleDateString('nl-BE')}
+              {t('deadline')}: {new Date(task.dueDate).toLocaleDateString('nl-BE')}
             </p>
           )}
         </div>
         <Badge className={cn('text-xs', getPriorityColor(task.priority))}>
-          {priorityLabels[task.priority]}
+          {t(priorityKeys[task.priority] || 'priorityNormal')}
         </Badge>
       </div>
     </div>

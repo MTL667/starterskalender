@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -23,6 +24,8 @@ interface NotificationPreference {
 }
 
 export default function ProfielPage() {
+  const t = useTranslations('profile')
+  const tc = useTranslations('common')
   const { data: session } = useSession()
   const [preferences, setPreferences] = useState<NotificationPreference[]>([])
   const [loading, setLoading] = useState(true)
@@ -82,7 +85,7 @@ export default function ProfielPage() {
       )
     } catch (error) {
       console.error('Error updating preference:', error)
-      alert('Fout bij opslaan voorkeur')
+      alert(t('errorSavingPreference'))
     } finally {
       setUpdating(null)
     }
@@ -99,7 +102,7 @@ export default function ProfielPage() {
   return (
     <div className="container mx-auto py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Profiel</h1>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">
           {session?.user?.name || session?.user?.email}
         </p>
@@ -110,9 +113,9 @@ export default function ProfielPage() {
           <div className="flex items-center gap-3">
             <Mail className="h-5 w-5 text-primary" />
             <div>
-              <CardTitle>Email Notificaties</CardTitle>
+              <CardTitle>{t('emailNotifications')}</CardTitle>
               <CardDescription>
-                Beheer je email notificatie voorkeuren per entiteit
+                {t('emailNotificationsDescription')}
               </CardDescription>
             </div>
           </div>
@@ -120,11 +123,11 @@ export default function ProfielPage() {
         <CardContent>
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
-              Laden...
+              {tc('loading')}
             </div>
           ) : preferences.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Je hebt geen toegang tot entiteiten.
+              {t('noEntityAccess')}
             </div>
           ) : (
             <div className="space-y-6">
@@ -144,12 +147,12 @@ export default function ProfielPage() {
                       {allEnabled(pref) ? (
                         <div className="flex items-center gap-2 text-green-600 text-sm">
                           <Bell className="h-4 w-4" />
-                          <span>Alle notificaties aan</span>
+                          <span>{t('allNotificationsOn')}</span>
                         </div>
                       ) : allDisabled(pref) ? (
                         <div className="flex items-center gap-2 text-muted-foreground text-sm">
                           <BellOff className="h-4 w-4" />
-                          <span>Alle notificaties uit</span>
+                          <span>{t('allNotificationsOff')}</span>
                         </div>
                       ) : null}
                     </div>
@@ -160,10 +163,10 @@ export default function ProfielPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor={`${pref.entityId}-weekly`}>
-                          🔔 Wekelijkse Reminder
+                          {'🔔 ' + t('weeklyReminder')}
                         </Label>
                         <p className="text-sm text-muted-foreground">
-                          1 week voor de startdatum van een nieuwe starter
+                          {t('weeklyReminderDescription')}
                         </p>
                       </div>
                       <Switch
@@ -179,10 +182,10 @@ export default function ProfielPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor={`${pref.entityId}-monthly`}>
-                          📊 Maandelijks Overzicht
+                          {'📊 ' + t('monthlySummary')}
                         </Label>
                         <p className="text-sm text-muted-foreground">
-                          Overzicht van alle starters van de afgelopen maand
+                          {t('monthlySummaryDescription')}
                         </p>
                       </div>
                       <Switch
@@ -198,10 +201,10 @@ export default function ProfielPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor={`${pref.entityId}-quarterly`}>
-                          📈 Kwartaal Overzicht
+                          {'📈 ' + t('quarterlySummary')}
                         </Label>
                         <p className="text-sm text-muted-foreground">
-                          Overzicht van alle starters van het afgelopen kwartaal
+                          {t('quarterlySummaryDescription')}
                         </p>
                       </div>
                       <Switch
@@ -217,10 +220,10 @@ export default function ProfielPage() {
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label htmlFor={`${pref.entityId}-yearly`}>
-                          🎉 Jaarlijks Overzicht
+                          {'🎉 ' + t('yearlySummary')}
                         </Label>
                         <p className="text-sm text-muted-foreground">
-                          Volledig overzicht van alle starters van het afgelopen jaar
+                          {t('yearlySummaryDescription')}
                         </p>
                       </div>
                       <Switch
@@ -241,11 +244,11 @@ export default function ProfielPage() {
       </Card>
 
       <div className="text-sm text-muted-foreground bg-muted p-4 rounded-lg">
-        <p className="font-medium mb-2">ℹ️ Over notificaties:</p>
+        <p className="font-medium mb-2">{'ℹ️ ' + t('aboutNotifications')}</p>
         <ul className="space-y-1 ml-4 list-disc">
-          <li>Je ontvangt alleen emails voor entiteiten waar je toegang tot hebt</li>
-          <li>Als er geen starters zijn in een periode, wordt er geen email verstuurd</li>
-          <li>Wijzigingen worden direct opgeslagen</li>
+          <li>{t('notificationsInfo1')}</li>
+          <li>{t('notificationsInfo2')}</li>
+          <li>{t('notificationsInfo3')}</li>
         </ul>
       </div>
     </div>

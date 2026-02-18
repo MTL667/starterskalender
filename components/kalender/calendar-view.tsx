@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -12,7 +13,8 @@ import { getWeeksInYear } from '@/lib/week-utils'
 import { Badge } from '@/components/ui/badge'
 import { ExportDropdown } from '@/components/ui/export-dropdown'
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, getWeek, getMonth, getYear, addWeeks, addMonths, addYears, format } from 'date-fns'
-import { nl } from 'date-fns/locale'
+import { useLocale } from 'next-intl'
+import { getDateLocale } from '@/lib/date-locale'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -45,6 +47,8 @@ interface Entity {
 }
 
 export function CalendarView({ initialYear, canEdit }: { initialYear: number; canEdit: boolean }) {
+  const t = useTranslations('calendar')
+  const dateLocale = getDateLocale(useLocale())
   const today = new Date()
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [currentDate, setCurrentDate] = useState(today) // Voor week/maand navigatie
@@ -238,13 +242,13 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       
       if (mondayYear === sundayYear) {
         // Zelfde jaar: "5 januari - 11 januari 2026"
-        return `${format(monday, 'd MMMM', { locale: nl })} - ${format(sunday, 'd MMMM yyyy', { locale: nl })}`
+        return `${format(monday, 'd MMMM', { locale: dateLocale })} - ${format(sunday, 'd MMMM yyyy', { locale: dateLocale })}`
       } else {
         // Verschillende jaren: "30 december 2025 - 5 januari 2026"
-        return `${format(monday, 'd MMMM yyyy', { locale: nl })} - ${format(sunday, 'd MMMM yyyy', { locale: nl })}`
+        return `${format(monday, 'd MMMM yyyy', { locale: dateLocale })} - ${format(sunday, 'd MMMM yyyy', { locale: dateLocale })}`
       }
     } else if (viewMode === 'month') {
-      return format(currentDate, 'MMMM yyyy', { locale: nl })
+      return format(currentDate, 'MMMM yyyy', { locale: dateLocale })
     } else {
       return year.toString()
     }
@@ -252,12 +256,12 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
 
   const exportCSV = async () => {
     const csvData = filteredStarters.map(s => ({
-      Naam: s.name,
-      Functie: s.roleTitle || '',
-      Regio: s.region || '',
-      Startdatum: new Date(s.startDate).toLocaleDateString('nl-BE'),
-      Week: s.weekNumber || '',
-      Entiteit: s.entity?.name || '',
+      [t('exportName')]: s.name,
+      [t('exportRole')]: s.roleTitle || '',
+      [t('exportRegion')]: s.region || '',
+      [t('exportStartDate')]: new Date(s.startDate).toLocaleDateString('nl-BE'),
+      [t('exportWeek')]: s.weekNumber || '',
+      [t('exportEntity')]: s.entity?.name || '',
     }))
 
     const headers = Object.keys(csvData[0] || {})
@@ -351,9 +355,9 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Maand</SelectItem>
-                  <SelectItem value="year">Jaar</SelectItem>
+                  <SelectItem value="week">{t('viewWeek')}</SelectItem>
+                  <SelectItem value="month">{t('viewMonth')}</SelectItem>
+                  <SelectItem value="year">{t('viewYear')}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -378,7 +382,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
               </div>
 
               <Button variant="outline" onClick={handleToday}>
-                Vandaag
+                {t('today')}
               </Button>
             </div>
           </div>
@@ -389,7 +393,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Zoek op naam, functie of regio..."
+                placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
@@ -398,10 +402,10 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
 
             <Select value={selectedEntity} onValueChange={setSelectedEntity}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Alle entiteiten" />
+                <SelectValue placeholder={t('allEntities')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alle entiteiten</SelectItem>
+                <SelectItem value="all">{t('allEntities')}</SelectItem>
                 {entities.map(entity => (
                   <SelectItem key={entity.id} value={entity.id}>
                     {entity.name}
@@ -413,7 +417,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
             {canEdit && (
               <Button onClick={handleNewStarter}>
                 <Plus className="h-4 w-4 mr-2" />
-                Nieuw
+                {t('new')}
               </Button>
             )}
             <ExportDropdown
@@ -445,7 +449,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       {/* Kalender grid */}
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">
-          Laden...
+          {t('loading')}
         </div>
       ) : viewMode === 'year' ? (
         // Jaar view: toon alle weken
@@ -456,12 +460,12 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
             return (
               <Card key={weekNum} className="p-4">
                 <div className="font-semibold mb-3 text-sm text-muted-foreground">
-                  Week {weekNum}
+                  {t('weekLabel', { number: weekNum })}
                 </div>
                 <div className="space-y-3">
                   {weekStarters.length === 0 ? (
                     <div className="text-sm text-muted-foreground text-center py-4">
-                      Geen starters
+                      {t('noStarters')}
                     </div>
                   ) : (
                     weekStarters.map(starter => (
@@ -483,7 +487,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
           {filteredStarters.length === 0 ? (
             <Card className="p-8">
               <div className="text-center text-muted-foreground">
-                Geen starters in deze {viewMode === 'week' ? 'week' : 'maand'}
+                {t('noStartersPeriod', { period: viewMode === 'week' ? t('periodWeek') : t('periodMonth') })}
               </div>
             </Card>
           ) : (
@@ -507,9 +511,9 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                 return (
                   <Card key={dateKey} className="p-4">
                     <div className="font-semibold mb-3 text-base">
-                      {format(date, 'EEEE d MMMM yyyy', { locale: nl })}
+                      {format(date, 'EEEE d MMMM yyyy', { locale: dateLocale })}
                       <span className="text-sm text-muted-foreground ml-2">
-                        (Week {getWeek(date, { weekStartsOn: 1, firstWeekContainsDate: 4 })})
+                        ({t('weekLabel', { number: getWeek(date, { weekStartsOn: 1, firstWeekContainsDate: 4 }) })}
                       </span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -531,11 +535,10 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
 
       {/* Totaal */}
       <div className="text-center text-sm text-muted-foreground">
-        {filteredStarters.length} starter{filteredStarters.length !== 1 ? 's' : ''} {
-          viewMode === 'week' ? 'deze week' :
-          viewMode === 'month' ? 'deze maand' :
-          `in ${year}`
-        }
+        {t('resultCount', {
+          count: filteredStarters.length,
+          period: viewMode === 'week' ? t('periodThisWeek') : viewMode === 'month' ? t('periodThisMonth') : t('periodInYear', { year })
+        })}
       </div>
 
       {/* Starter Dialog */}
