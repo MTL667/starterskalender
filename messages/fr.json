@@ -835,10 +835,8 @@
   },
   "monthlyCharts": {
     "title": "Statistiques mensuelles",
-    "subtitleYear": "Collaborateurs par mois en {year}",
-    "subtitleTotal": "Collaborateurs par mois en {year} - Total : {total} actifs, {cancelled} annulés",
-    "activeStarters": "Collaborateurs actifs",
-    "cancelledLabel": "Annulés",
+    "subtitleYear": "Mouvements par mois en {year}",
+    "subtitleTotal": "Mouvements par mois en {year} - Entrées : {onboarding}, Départs : {offboarding}",
     "months": ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"],
     "filterAll": "Tout",
     "filterOnboarding": "Entrées",
@@ -848,12 +846,12 @@
   },
   "entityMonthlyCharts": {
     "title": "Statistiques mensuelles par entité",
-    "subtitle": "Collaborateurs par entité par mois en {year}",
-    "subtitleSelected": "{entityName} - Total : {total} actifs{cancelledPart}",
+    "subtitle": "Mouvements par entité par mois en {year}",
+    "subtitleSelected": "{entityName} - Entrées : {onboarding}, Départs : {offboarding}",
     "allEntities": "Toutes les entités",
     "selectAll": "🔄 Toutes les entités",
-    "active": "Actifs",
-    "cancelled": "Annulés"
+    "onboarding": "Entrées",
+    "offboarding": "Départs"
   },
   "signatures": {
     "dialogTitle": "Générateur de signature email",

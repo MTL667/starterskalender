@@ -8,8 +8,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 interface MonthlyData {
   month: string
-  starters: number
-  cancelled: number
+  onboarding: number
+  offboarding: number
 }
 
 type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING'
@@ -46,38 +46,36 @@ export function MonthlyCharts({ year }: { year: number }) {
   useEffect(() => {
     if (allStarters.length === 0 && !loading) return
     const starters = allStarters.filter(s => {
+      if (s.isCancelled) return false
       if (typeFilter === 'ALL') return true
       return (s.type || 'ONBOARDING') === typeFilter
     })
-        // Groepeer per maand
-        const monthlyMap = new Map<number, { total: number; cancelled: number }>()
-        
-        // Initialiseer alle maanden
-        for (let i = 0; i < 12; i++) {
-          monthlyMap.set(i, { total: 0, cancelled: 0 })
-        }
 
-        // Tel starters per maand
-        starters.forEach((starter: Starter) => {
-          const date = new Date(starter.startDate)
-          const month = date.getMonth() // 0-11
-          const current = monthlyMap.get(month)!
-          
-          if (starter.isCancelled) {
-            current.cancelled++
-          } else {
-            current.total++
-          }
-        })
+    const monthlyMap = new Map<number, { onboarding: number; offboarding: number }>()
+    
+    for (let i = 0; i < 12; i++) {
+      monthlyMap.set(i, { onboarding: 0, offboarding: 0 })
+    }
 
-        // Converteer naar chart data
-        const monthNames = t.raw('months') as string[]
+    starters.forEach((starter: Starter) => {
+      const date = new Date(starter.startDate)
+      const month = date.getMonth()
+      const current = monthlyMap.get(month)!
+      
+      if ((starter.type || 'ONBOARDING') === 'OFFBOARDING') {
+        current.offboarding++
+      } else {
+        current.onboarding++
+      }
+    })
 
-        const chartData: MonthlyData[] = Array.from(monthlyMap.entries()).map(([month, counts]) => ({
-          month: monthNames[month],
-          starters: counts.total,
-          cancelled: counts.cancelled,
-        }))
+    const monthNames = t.raw('months') as string[]
+
+    const chartData: MonthlyData[] = Array.from(monthlyMap.entries()).map(([month, counts]) => ({
+      month: monthNames[month],
+      onboarding: counts.onboarding,
+      offboarding: counts.offboarding,
+    }))
 
     setData(chartData)
   }, [allStarters, typeFilter, loading])
@@ -98,8 +96,8 @@ export function MonthlyCharts({ year }: { year: number }) {
     )
   }
 
-  const totalStarters = data.reduce((sum, month) => sum + month.starters, 0)
-  const totalCancelled = data.reduce((sum, month) => sum + month.cancelled, 0)
+  const totalOnboarding = data.reduce((sum, month) => sum + month.onboarding, 0)
+  const totalOffboarding = data.reduce((sum, month) => sum + month.offboarding, 0)
 
   return (
     <Card>
@@ -108,7 +106,7 @@ export function MonthlyCharts({ year }: { year: number }) {
           <div>
             <CardTitle>{t('title')}</CardTitle>
             <CardDescription>
-              {t('subtitleTotal', { year, total: totalStarters, cancelled: totalCancelled })}
+              {t('subtitleTotal', { year, onboarding: totalOnboarding, offboarding: totalOffboarding })}
             </CardDescription>
           </div>
           <Select value={typeFilter} onValueChange={(v: StarterFilter) => setTypeFilter(v)}>
@@ -152,15 +150,15 @@ export function MonthlyCharts({ year }: { year: number }) {
                 }}
               />
               <Bar 
-                dataKey="starters" 
-                name={t('activeStarters')}
-                fill="hsl(var(--primary))" 
+                dataKey="onboarding" 
+                name={t('onboardingLabel')}
+                fill="hsl(142 71% 45%)" 
                 radius={[8, 8, 0, 0]}
               />
               <Bar 
-                dataKey="cancelled" 
-                name={t('cancelledLabel')}
-                fill="hsl(var(--destructive))" 
+                dataKey="offboarding" 
+                name={t('offboardingLabel')}
+                fill="hsl(25 95% 53%)" 
                 radius={[8, 8, 0, 0]}
               />
             </BarChart>

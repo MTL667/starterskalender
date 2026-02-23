@@ -836,10 +836,8 @@
   },
   "monthlyCharts": {
     "title": "Maandelijkse Statistieken",
-    "subtitleYear": "Starters per maand in {year}",
-    "subtitleTotal": "Starters per maand in {year} - Totaal: {total} actief, {cancelled} geannuleerd",
-    "activeStarters": "Actieve Starters",
-    "cancelledLabel": "Geannuleerd",
+    "subtitleYear": "Bewegingen per maand in {year}",
+    "subtitleTotal": "Bewegingen per maand in {year} - Instroom: {onboarding}, Uitstroom: {offboarding}",
     "months": ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"],
     "filterAll": "Alles",
     "filterOnboarding": "Instroom",
@@ -849,12 +847,12 @@
   },
   "entityMonthlyCharts": {
     "title": "Maandelijkse Statistieken per Entiteit",
-    "subtitle": "Starters per entiteit per maand in {year}",
-    "subtitleSelected": "{entityName} - Totaal: {total} actief{cancelledPart}",
+    "subtitle": "Bewegingen per entiteit per maand in {year}",
+    "subtitleSelected": "{entityName} - Instroom: {onboarding}, Uitstroom: {offboarding}",
     "allEntities": "Alle entiteiten",
     "selectAll": "🔄 Alle entiteiten",
-    "active": "Actief",
-    "cancelled": "Geannuleerd"
+    "onboarding": "Instroom",
+    "offboarding": "Uitstroom"
   },
   "signatures": {
     "dialogTitle": "Email Signature Generator",

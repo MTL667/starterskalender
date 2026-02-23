@@ -123,61 +123,52 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
     }))
 
   } else {
-    // Individuele entiteit - toon actief vs geannuleerd
-    const monthlyMap = new Map<number, { active: number; cancelled: number }>()
+    const monthlyMap = new Map<number, { onboarding: number; offboarding: number }>()
     
-    // Initialiseer alle maanden
     for (let i = 0; i < 12; i++) {
-      monthlyMap.set(i, { active: 0, cancelled: 0 })
+      monthlyMap.set(i, { onboarding: 0, offboarding: 0 })
     }
 
-    const entityStarters = filteredByType.filter(s => s.entityId === selectedEntity)
+    const entityStarters = filteredByType.filter(s => s.entityId === selectedEntity && !s.isCancelled)
 
-    // Tel per maand
     entityStarters.forEach(starter => {
       const date = new Date(starter.startDate)
       const month = date.getMonth()
       const monthData = monthlyMap.get(month)!
       
-      if (starter.isCancelled) {
-        monthData.cancelled++
+      if ((starter.type || 'ONBOARDING') === 'OFFBOARDING') {
+        monthData.offboarding++
       } else {
-        monthData.active++
+        monthData.onboarding++
       }
     })
 
-    // Converteer naar chart data
     chartData = Array.from(monthlyMap.entries()).map(([month, counts]) => ({
       month: monthNames[month],
-      active: counts.active,
-      cancelled: counts.cancelled,
+      onboarding: counts.onboarding,
+      offboarding: counts.offboarding,
     }))
 
-    // Definieer bars voor deze entiteit
-    const selectedEntityObj = entities.find(e => e.id === selectedEntity)
     barsToRender = [
       {
-        dataKey: 'active',
-        name: t('active'),
-        color: selectedEntityObj?.colorHex || 'hsl(var(--primary))',
+        dataKey: 'onboarding',
+        name: t('onboarding'),
+        color: 'hsl(142 71% 45%)',
       },
       {
-        dataKey: 'cancelled',
-        name: t('cancelled'),
-        color: 'hsl(var(--destructive))',
+        dataKey: 'offboarding',
+        name: t('offboarding'),
+        color: 'hsl(25 95% 53%)',
       },
     ]
   }
 
-  const total = filteredByType.filter(s => 
+  const entityFiltered = filteredByType.filter(s => 
     !s.isCancelled && 
     (selectedEntity === 'all' ? true : s.entityId === selectedEntity)
-  ).length
-
-  const cancelled = filteredByType.filter(s => 
-    s.isCancelled && 
-    (selectedEntity === 'all' ? true : s.entityId === selectedEntity)
-  ).length
+  )
+  const onboardingCount = entityFiltered.filter(s => (s.type || 'ONBOARDING') === 'ONBOARDING').length
+  const offboardingCount = entityFiltered.filter(s => (s.type || 'ONBOARDING') === 'OFFBOARDING').length
 
   const selectedEntityName = selectedEntity === 'all' 
     ? t('allEntities')
@@ -192,8 +183,8 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
             <CardDescription>
               {t('subtitleSelected', { 
                 entityName: selectedEntityName, 
-                total, 
-                cancelledPart: cancelled > 0 ? `, ${cancelled} ${t('cancelled')}` : '' 
+                onboarding: onboardingCount,
+                offboarding: offboardingCount,
               })}
             </CardDescription>
           </div>
