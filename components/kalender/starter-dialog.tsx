@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
@@ -61,6 +61,21 @@ interface JobRole {
   isActive: boolean
 }
 
+interface Employee {
+  id: string
+  name: string
+  language: string
+  roleTitle: string | null
+  region: string | null
+  phoneNumber: string | null
+  desiredEmail: string | null
+  entity: {
+    id: string
+    name: string
+    colorHex: string
+  } | null
+}
+
 interface StarterDialogProps {
   open: boolean
   onClose: (refreshData?: boolean) => void
@@ -84,6 +99,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [copiedField, setCopiedField] = useState<'phone' | 'email' | null>(null)
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false)
   const [hasSignatureTemplate, setHasSignatureTemplate] = useState(false)
+  const employeeListRef = useRef<HTMLDivElement>(null)
+  const [employees, setEmployees] = useState<Employee[]>([])
+  const [employeeSearch, setEmployeeSearch] = useState('')
+  const [showEmployeeList, setShowEmployeeList] = useState(false)
+  const [manualEntry, setManualEntry] = useState(false)
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING',
     name: '',
@@ -142,6 +163,32 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     // IT_SETUP verantwoordelijke can edit
     return isITResponsible
   })()
+
+  // Close employee list on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (employeeListRef.current && !employeeListRef.current.contains(e.target as Node)) {
+        setShowEmployeeList(false)
+      }
+    }
+    if (showEmployeeList) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showEmployeeList])
+
+  // Fetch employees for offboarding selection
+  useEffect(() => {
+    if (formData.type === 'OFFBOARDING' && !isEdit && !manualEntry) {
+      fetch(`/api/starters/employees${employeeSearch ? `?search=${encodeURIComponent(employeeSearch)}` : ''}`)
+        .then(res => res.json())
+        .then(data => setEmployees(Array.isArray(data) ? data : []))
+        .catch(err => {
+          console.error('Error loading employees:', err)
+          setEmployees([])
+        })
+    }
+  }, [formData.type, employeeSearch, isEdit, manualEntry])
 
   // Laad job roles voor de gekozen entiteit
   useEffect(() => {
@@ -265,8 +312,28 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         phoneNumber: '',
         desiredEmail: '',
       })
+      setManualEntry(false)
+      setSelectedEmployee(null)
+      setEmployeeSearch('')
+      setShowEmployeeList(false)
     }
   }, [starter, open])
+
+  const handleEmployeeSelect = (employee: Employee) => {
+    setSelectedEmployee(employee)
+    setShowEmployeeList(false)
+    setEmployeeSearch('')
+    setFormData(prev => ({
+      ...prev,
+      name: employee.name,
+      language: employee.language || 'NL',
+      entityId: employee.entity?.id || '',
+      roleTitle: employee.roleTitle || '',
+      region: employee.region || '',
+      phoneNumber: employee.phoneNumber || '',
+      desiredEmail: employee.desiredEmail || '',
+    }))
+  }
 
   const handleSaveExtraInfo = async () => {
     if (!isEdit || !starter) return
@@ -323,6 +390,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!formData.name.trim()) {
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -563,13 +635,126 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
             <div>
               <Label htmlFor="name">{t('labelName')}</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-                disabled={!canEdit}
-              />
+              {formData.type === 'OFFBOARDING' && !isEdit && !manualEntry ? (
+                <div className="space-y-2">
+                  {selectedEmployee ? (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                      <UserCheck className="h-4 w-4 text-green-600 shrink-0" />
+                      <span className="font-medium flex-1">{selectedEmployee.name}</span>
+                      {selectedEmployee.entity && (
+                        <Badge
+                          style={{ backgroundColor: selectedEmployee.entity.colorHex, color: 'white' }}
+                          className="text-xs"
+                        >
+                          {selectedEmployee.entity.name}
+                        </Badge>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedEmployee(null)
+                          setFormData(prev => ({ ...prev, name: '', language: 'NL', entityId: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
+                        }}
+                        className="h-6 px-2 text-xs"
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="relative" ref={employeeListRef}>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="employeeSearch"
+                          value={employeeSearch}
+                          onChange={(e) => {
+                            setEmployeeSearch(e.target.value)
+                            setShowEmployeeList(true)
+                          }}
+                          onFocus={() => setShowEmployeeList(true)}
+                          placeholder={t('searchEmployee')}
+                          className="pl-9"
+                          autoComplete="off"
+                        />
+                      </div>
+                      {showEmployeeList && (
+                        <div className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto bg-white dark:bg-gray-950 border rounded-lg shadow-lg">
+                          {employees.length > 0 ? (
+                            employees.map(emp => (
+                              <button
+                                key={emp.id}
+                                type="button"
+                                className="w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center gap-2"
+                                onClick={() => handleEmployeeSelect(emp)}
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{emp.name}</div>
+                                  {emp.roleTitle && (
+                                    <div className="text-xs text-muted-foreground truncate">{emp.roleTitle}</div>
+                                  )}
+                                </div>
+                                {emp.entity && (
+                                  <Badge
+                                    style={{ backgroundColor: emp.entity.colorHex, color: 'white' }}
+                                    className="text-xs shrink-0"
+                                  >
+                                    {emp.entity.name}
+                                  </Badge>
+                                )}
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+                              {t('noEmployeesFound')}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-muted-foreground"
+                    onClick={() => {
+                      setManualEntry(true)
+                      setSelectedEmployee(null)
+                      setShowEmployeeList(false)
+                    }}
+                  >
+                    <PenLine className="h-3 w-3 mr-1" />
+                    {t('enterManually')}
+                  </Button>
+                </div>
+              ) : (
+                <div>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    disabled={!canEdit}
+                  />
+                  {formData.type === 'OFFBOARDING' && !isEdit && manualEntry && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground mt-1"
+                      onClick={() => {
+                        setManualEntry(false)
+                        setFormData(prev => ({ ...prev, name: '', language: 'NL', entityId: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
+                      }}
+                    >
+                      <Search className="h-3 w-3 mr-1" />
+                      {t('selectFromList')}
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div>
