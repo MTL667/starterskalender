@@ -807,10 +807,10 @@
     "noStartersThisYear": "Aucun collaborateur cette année"
   },
   "recentStarters": {
-    "title": "Prochains collaborateurs",
-    "subtitleYear": "Les prochains collaborateurs en {year}",
-    "subtitle": "Les prochains collaborateurs",
-    "noUpcoming": "Aucun collaborateur à venir",
+    "title": "Événements à venir",
+    "subtitleYear": "Les prochains événements en {year}",
+    "subtitle": "Les prochains événements",
+    "noUpcoming": "Aucun événement à venir",
     "startToday": "✨ Commence aujourd'hui",
     "startSoon": "🔔 Commence bientôt",
     "departsToday": "Départ aujourd'hui",

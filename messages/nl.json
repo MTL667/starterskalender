@@ -808,10 +808,10 @@
     "noStartersThisYear": "Nog geen starters dit jaar"
   },
   "recentStarters": {
-    "title": "Aankomende Starters",
-    "subtitleYear": "De eerstvolgende starters in {year}",
-    "subtitle": "De eerstvolgende starters",
-    "noUpcoming": "Geen aankomende starters",
+    "title": "Aankomende Events",
+    "subtitleYear": "De eerstvolgende events in {year}",
+    "subtitle": "De eerstvolgende events",
+    "noUpcoming": "Geen aankomende events",
     "startToday": "✨ Start vandaag",
     "startSoon": "🔔 Start binnenkort",
     "departsToday": "Vertrek vandaag",

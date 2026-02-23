@@ -173,12 +173,12 @@ export function RecentStarters({ year }: { year: number }) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Aankomende Starters</CardTitle>
-          <CardDescription>De eerstvolgende starters in {year}</CardDescription>
+          <CardTitle>{t('title')}</CardTitle>
+          <CardDescription>{t('subtitleYear', { year })}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            Laden...
+            {commonT('loading')}
           </div>
         </CardContent>
       </Card>
@@ -188,13 +188,13 @@ export function RecentStarters({ year }: { year: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Aankomende Starters</CardTitle>
-        <CardDescription>De eerstvolgende starters</CardDescription>
+        <CardTitle>{t('title')}</CardTitle>
+        <CardDescription>{t('subtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
         {starters.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            Geen aankomende starters
+            {t('noUpcoming')}
           </div>
         ) : (
           <div className="space-y-4">
