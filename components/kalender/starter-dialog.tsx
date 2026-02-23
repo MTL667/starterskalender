@@ -25,6 +25,7 @@ import { SignatureGeneratorDialog } from '@/components/signature-generator-dialo
 
 interface Starter {
   id: string
+  type?: 'ONBOARDING' | 'OFFBOARDING'
   name: string
   language?: string
   roleTitle?: string | null
@@ -84,6 +85,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [signatureDialogOpen, setSignatureDialogOpen] = useState(false)
   const [hasSignatureTemplate, setHasSignatureTemplate] = useState(false)
   const [formData, setFormData] = useState({
+    type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING',
     name: '',
     language: 'NL',
     entityId: '',
@@ -227,6 +229,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   useEffect(() => {
     if (starter) {
       setFormData({
+        type: starter.type || 'ONBOARDING',
         name: starter.name,
         language: starter.language || 'NL',
         entityId: starter.entity?.id || '',
@@ -245,6 +248,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       })
     } else {
       setFormData({
+        type: 'ONBOARDING',
         name: '',
         language: 'NL',
         entityId: '',
@@ -350,6 +354,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       }
 
       const data = {
+        type: formData.type,
         name: formData.name,
         language: formData.language,
         entityId: formData.entityId || null,
@@ -357,16 +362,16 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         region: formData.region || null,
         via: formData.via || null,
         notes: formData.notes || null,
-        contractSignedOn: formData.contractSignedOn 
+        contractSignedOn: formData.type === 'ONBOARDING' && formData.contractSignedOn 
           ? new Date(formData.contractSignedOn).toISOString() 
           : null,
         startDate: new Date(formData.startDate).toISOString(),
-        hasExperience: formData.hasExperience,
-        experienceSince: formData.hasExperience && formData.experienceSince 
+        hasExperience: formData.type === 'ONBOARDING' ? formData.hasExperience : false,
+        experienceSince: formData.type === 'ONBOARDING' && formData.hasExperience && formData.experienceSince 
           ? new Date(formData.experienceSince).toISOString() 
           : null,
-        experienceRole: formData.hasExperience ? (formData.experienceRole || null) : null,
-        experienceEntity: formData.hasExperience ? (formData.experienceEntity || null) : null,
+        experienceRole: formData.type === 'ONBOARDING' && formData.hasExperience ? (formData.experienceRole || null) : null,
+        experienceEntity: formData.type === 'ONBOARDING' && formData.hasExperience ? (formData.experienceEntity || null) : null,
         phoneNumber: formData.phoneNumber || null,
         desiredEmail: formData.desiredEmail || null,
       }
@@ -519,7 +524,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {isEdit ? t('titleEdit') : t('titleNew')}
+              {isEdit 
+                ? (formData.type === 'OFFBOARDING' ? t('titleEditOffboarding') : t('titleEditOnboarding'))
+                : (formData.type === 'OFFBOARDING' ? t('titleNewOffboarding') : t('titleNewOnboarding'))
+              }
               {starter?.isCancelled && (
                 <span className="ml-3 text-sm font-normal text-red-600 dark:text-red-400">
                   {t('cancelled')}
@@ -527,12 +535,32 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               )}
             </DialogTitle>
           <DialogDescription>
-            {isEdit ? t('descriptionEdit') : t('descriptionNew')}
+            {isEdit 
+              ? (formData.type === 'OFFBOARDING' ? t('descriptionEditOffboarding') : t('descriptionEdit'))
+              : (formData.type === 'OFFBOARDING' ? t('descriptionNewOffboarding') : t('descriptionNew'))
+            }
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
+            <div>
+              <Label htmlFor="type">{t('labelType')}</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value: 'ONBOARDING' | 'OFFBOARDING') => setFormData({ ...formData, type: value })}
+                disabled={isEdit}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ONBOARDING">{t('typeOnboarding')}</SelectItem>
+                  <SelectItem value="OFFBOARDING">{t('typeOffboarding')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="name">{t('labelName')}</Label>
               <Input
@@ -638,23 +666,27 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="contractSignedOn">{t('labelContractSigned')}</Label>
-                <Input
-                  id="contractSignedOn"
-                  type="date"
-                  value={formData.contractSignedOn}
-                  onChange={(e) => setFormData({ ...formData, contractSignedOn: e.target.value })}
-                  disabled={!canEdit}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('hintContract')}
-                </p>
-              </div>
+            <div className={`grid gap-4 ${formData.type === 'ONBOARDING' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {formData.type === 'ONBOARDING' && (
+                <div>
+                  <Label htmlFor="contractSignedOn">{t('labelContractSigned')}</Label>
+                  <Input
+                    id="contractSignedOn"
+                    type="date"
+                    value={formData.contractSignedOn}
+                    onChange={(e) => setFormData({ ...formData, contractSignedOn: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('hintContract')}
+                  </p>
+                </div>
+              )}
 
               <div>
-                <Label htmlFor="startDate">{t('labelStartDate')}</Label>
+                <Label htmlFor="startDate">
+                  {formData.type === 'OFFBOARDING' ? t('labelDepartureDate') : t('labelStartDate')}
+                </Label>
                 <Input
                   id="startDate"
                   type="date"
@@ -806,7 +838,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
             </div>
 
-            {/* Ervaring sectie */}
+            {/* Ervaring sectie (alleen voor onboarding) */}
+            {formData.type === 'ONBOARDING' && (
             <div className="border-t pt-4">
               <div className="flex items-center space-x-2 mb-4">
                 <Checkbox
@@ -877,6 +910,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 </div>
               )}
             </div>
+            )}
 
             {/* Materialen sectie (alleen bij edit) */}
             {isEdit && starterMaterials.length > 0 && (

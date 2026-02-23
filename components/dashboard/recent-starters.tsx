@@ -9,9 +9,11 @@ import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { useSession } from 'next-auth/react'
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
 
 interface Starter {
   id: string
+  type?: 'ONBOARDING' | 'OFFBOARDING'
   name: string
   language?: string
   roleTitle?: string | null
@@ -221,8 +223,13 @@ export function RecentStarters({ year }: { year: number }) {
                     }
                   }}
                 >
-                  <div className="flex-1">
+                    <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
+                      {starter.type === 'OFFBOARDING' ? (
+                        <ArrowDownRight className="h-4 w-4 text-orange-500 shrink-0" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 text-green-500 shrink-0" />
+                      )}
                       <div className="font-medium">{starter.name}</div>
                       {starter.language && (
                         <span className="text-sm" title={starter.language === 'NL' ? starterCardT('languageNL') : starterCardT('languageFR')}>
@@ -230,13 +237,15 @@ export function RecentStarters({ year }: { year: number }) {
                         </span>
                       )}
                       {startingToday && (
-                        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700">
-                          {t('startToday')}
+                        <Badge variant="outline" className={starter.type === 'OFFBOARDING' 
+                          ? "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-700"
+                          : "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700"}>
+                          {starter.type === 'OFFBOARDING' ? t('departsToday') : t('startToday')}
                         </Badge>
                       )}
                       {within7Days && !startingToday && (
                         <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-200 dark:border-amber-700">
-                          {t('startSoon')}
+                          {starter.type === 'OFFBOARDING' ? t('departsSoon') : t('startSoon')}
                         </Badge>
                       )}
                     </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 interface MonthlyData {
@@ -11,8 +12,11 @@ interface MonthlyData {
   cancelled: number
 }
 
+type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING'
+
 interface Starter {
   id: string
+  type?: 'ONBOARDING' | 'OFFBOARDING'
   contractSignedOn?: string | null
   startDate: string
   isCancelled?: boolean
@@ -22,12 +26,29 @@ export function MonthlyCharts({ year }: { year: number }) {
   const t = useTranslations('monthlyCharts')
   const commonT = useTranslations('common')
   const [data, setData] = useState<MonthlyData[]>([])
+  const [allStarters, setAllStarters] = useState<Starter[]>([])
+  const [typeFilter, setTypeFilter] = useState<StarterFilter>('ALL')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetch(`/api/starters?year=${year}`)
       .then(res => res.json())
       .then((starters: Starter[]) => {
+        setAllStarters(starters)
+        setLoading(false)
+      })
+      .catch(error => {
+        console.error('Error fetching monthly data:', error)
+        setLoading(false)
+      })
+  }, [year])
+
+  useEffect(() => {
+    if (allStarters.length === 0 && !loading) return
+    const starters = allStarters.filter(s => {
+      if (typeFilter === 'ALL') return true
+      return (s.type || 'ONBOARDING') === typeFilter
+    })
         // Groepeer per maand
         const monthlyMap = new Map<number, { total: number; cancelled: number }>()
         
@@ -58,14 +79,8 @@ export function MonthlyCharts({ year }: { year: number }) {
           cancelled: counts.cancelled,
         }))
 
-        setData(chartData)
-        setLoading(false)
-      })
-      .catch(error => {
-        console.error('Error fetching monthly data:', error)
-        setLoading(false)
-      })
-  }, [year])
+    setData(chartData)
+  }, [allStarters, typeFilter, loading])
 
   if (loading) {
     return (
@@ -89,10 +104,24 @@ export function MonthlyCharts({ year }: { year: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('title')}</CardTitle>
-        <CardDescription>
-          {t('subtitleTotal', { year, total: totalStarters, cancelled: totalCancelled })}
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <CardTitle>{t('title')}</CardTitle>
+            <CardDescription>
+              {t('subtitleTotal', { year, total: totalStarters, cancelled: totalCancelled })}
+            </CardDescription>
+          </div>
+          <Select value={typeFilter} onValueChange={(v: StarterFilter) => setTypeFilter(v)}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">{t('filterAll')}</SelectItem>
+              <SelectItem value="ONBOARDING">{t('filterOnboarding')}</SelectItem>
+              <SelectItem value="OFFBOARDING">{t('filterOffboarding')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="h-[400px] w-full">

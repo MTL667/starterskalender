@@ -15,32 +15,40 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const yearParam = searchParams.get('year')
     const year = yearParam ? parseInt(yearParam) : new Date().getFullYear()
+    const type = searchParams.get('type')
 
     const today = getTodayInTimezone()
 
-    // Haal zichtbare entiteiten op
     const visibleEntities = await getVisibleEntities(user)
 
-    // YTD query: starters waar startDate <= today EN year = gekozen jaar
-    const where: any = {
+    const baseWhere: any = {
       year,
       startDate: { lte: today },
     }
 
-    // Filter op zichtbare entiteiten als niet admin/global viewer
     if (!isHRAdmin(user) && !isGlobalViewer(user)) {
-      where.entityId = { in: visibleEntities.map(e => e.id) }
+      baseWhere.entityId = { in: visibleEntities.map(e => e.id) }
     }
 
-    // Totaal YTD
-    const totalYTD = await prisma.starter.count({ where })
+    if (type && (type === 'ONBOARDING' || type === 'OFFBOARDING')) {
+      baseWhere.type = type
+    }
 
-    // YTD per entiteit
+    const totalYTD = await prisma.starter.count({ where: baseWhere })
+
+    // Also get separate counts for onboarding and offboarding
+    const onboardingCount = await prisma.starter.count({
+      where: { ...baseWhere, type: 'ONBOARDING' },
+    })
+    const offboardingCount = await prisma.starter.count({
+      where: { ...baseWhere, type: 'OFFBOARDING' },
+    })
+
     const entityStats = await Promise.all(
       visibleEntities.map(async (entity) => {
         const count = await prisma.starter.count({
           where: {
-            ...where,
+            ...baseWhere,
             entityId: entity.id,
           },
         })
@@ -57,6 +65,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       year,
       totalYTD,
+      onboardingCount,
+      offboardingCount,
       entities: entityStats.filter(e => e.count > 0),
     })
   } catch (error) {

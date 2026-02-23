@@ -69,6 +69,11 @@ enum NotificationChannelType {
   BOTH               // Beide
 }
 
+enum StarterType {
+  ONBOARDING         // Nieuwe medewerker (instroom)
+  OFFBOARDING        // Vertrekkende medewerker (uitstroom)
+}
+
 model User {
   id                      String                   @id @default(cuid())
   email                   String                   @unique
@@ -139,7 +144,8 @@ model Membership {
 }
 
 model Starter {
-  id                String    @id @default(cuid())
+  id                String      @id @default(cuid())
+  type              StarterType @default(ONBOARDING) // Onboarding of offboarding
   entityId          String?
   entity            Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
   name              String
@@ -151,7 +157,7 @@ model Starter {
   phoneNumber       String?   // Telefoonnummer (optioneel, kan later toegevoegd)
   desiredEmail      String?   // Gewenst mailadres
   contractSignedOn  DateTime? @default(now()) // Datum waarop contract getekend is (tijdelijk nullable voor migratie)
-  startDate         DateTime  // Startdatum
+  startDate         DateTime  // Startdatum (onboarding) of vertrekdatum (offboarding)
   weekNumber        Int?      // Weeknummer (afgeleid, Monday-first)
   year              Int       // Jaar
   isCancelled       Boolean   @default(false) // Of de starter is geannuleerd
@@ -159,7 +165,7 @@ model Starter {
   cancelledBy       String?   // User ID die annuleerde
   cancelReason      String?   @db.Text // Reden van annulering
   
-  // Ervaring velden
+  // Ervaring velden (relevant voor onboarding)
   hasExperience    Boolean   @default(false) // Heeft de starter relevante werkervaring?
   experienceSince  DateTime? // Startdatum van ervaring (om duur te berekenen)
   experienceRole   String?   // Functie waarin ervaring opgedaan
@@ -171,6 +177,7 @@ model Starter {
   starterMaterials StarterMaterial[] // Materiaal toegewezen aan deze starter
   tasks            Task[]            // Taken gekoppeld aan deze starter
 
+  @@index([type])
   @@index([year, startDate])
   @@index([entityId, year])
   @@index([weekNumber, year])
@@ -376,6 +383,7 @@ model TaskTemplate {
   // Optionele filters - wanneer moet deze template worden toegepast?
   forEntityIds      String[]                 // Lege array = alle entiteiten
   forJobRoleTitles  String[]                 // Lege array = alle functies
+  forStarterType    StarterType?             // null = beide types, anders alleen voor dit type
   
   createdAt         DateTime                 @default(now())
   updatedAt         DateTime                 @updatedAt
@@ -383,6 +391,7 @@ model TaskTemplate {
 
   @@index([type, isActive])
   @@index([autoAssign, isActive])
+  @@index([forStarterType])
 }
 
 // Taken

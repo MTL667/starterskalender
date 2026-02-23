@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge'
 interface YTDData {
   year: number
   totalYTD: number
+  onboardingCount: number
+  offboardingCount: number
   entities: Array<{
     entityId: string
     entityName: string
@@ -63,12 +65,26 @@ export function YTDStats({ year }: { year: number }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Totaal */}
-          <div className="border-l-4 border-primary pl-4">
-            <div className="text-sm font-medium text-muted-foreground mb-1">
-              {t('total')}
+          {/* Totaal met onboarding/offboarding breakdown */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="border-l-4 border-primary pl-4">
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                {t('total')}
+              </div>
+              <div className="text-4xl font-bold">{data.totalYTD}</div>
             </div>
-            <div className="text-4xl font-bold">{data.totalYTD}</div>
+            <div className="border-l-4 border-green-500 pl-4">
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                {t('totalOnboarding')}
+              </div>
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">{data.onboardingCount}</div>
+            </div>
+            <div className="border-l-4 border-orange-500 pl-4">
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                {t('totalOffboarding')}
+              </div>
+              <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{data.offboardingCount}</div>
+            </div>
           </div>
 
           {/* Per entiteit */}

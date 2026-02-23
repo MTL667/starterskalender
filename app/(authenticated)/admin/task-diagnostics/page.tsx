@@ -168,8 +168,11 @@ export default function TaskDiagnosticsPage() {
                   <div>
                     <div className="font-medium">{template.title}</div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {tc('type')}: {template.type} | {t('priorityLabel')}: {template.priority} | 
+                      {tc('type')}: {template.type} | {t('priorityLabel')}: {template.priority} |
                       {t('deadlineDays', { days: template.daysUntilDue })}
+                      {template.forStarterType && (
+                        <> | {template.forStarterType === 'ONBOARDING' ? tc('onboarding') : tc('offboarding')}</>
+                      )}
                     </div>
                   </div>
                   <span className={`px-2 py-1 text-xs rounded ${

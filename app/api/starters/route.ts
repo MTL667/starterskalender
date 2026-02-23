@@ -9,6 +9,7 @@ import { normalizeString } from '@/lib/utils'
 import { createAutomaticTasks } from '@/lib/task-automation'
 
 const StarterSchema = z.object({
+  type: z.enum(['ONBOARDING', 'OFFBOARDING']).default('ONBOARDING'),
   name: z.string().min(1),
   language: z.enum(['NL', 'FR']).default('NL'),
   entityId: z.string().nullable().optional(),
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
     const year = searchParams.get('year')
     const entityId = searchParams.get('entityId')
     const search = searchParams.get('search')
+    const type = searchParams.get('type')
 
     let where: any = {}
 
@@ -47,6 +49,10 @@ export async function GET(request: NextRequest) {
 
     if (entityId) {
       where.entityId = entityId
+    }
+
+    if (type && (type === 'ONBOARDING' || type === 'OFFBOARDING')) {
+      where.type = type
     }
 
     if (search) {
@@ -103,13 +109,14 @@ export async function POST(request: NextRequest) {
 
     const starter = await prisma.starter.create({
       data: {
+        type: data.type,
         name: normalizeString(data.name)!,
         language: data.language,
         entityId: data.entityId,
         region: normalizeString(data.region),
         roleTitle: normalizeString(data.roleTitle),
         via: normalizeString(data.via),
-        notes: data.notes, // Behoud originele notes
+        notes: data.notes,
         contractSignedOn: data.contractSignedOn ? new Date(data.contractSignedOn) : null,
         startDate,
         weekNumber,

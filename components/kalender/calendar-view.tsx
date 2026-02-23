@@ -21,8 +21,12 @@ import autoTable from 'jspdf-autotable'
 
 type ViewMode = 'week' | 'month' | 'year'
 
+type StarterType = 'ONBOARDING' | 'OFFBOARDING'
+type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING'
+
 interface Starter {
   id: string
+  type?: StarterType
   name: string
   language?: string
   roleTitle?: string | null
@@ -58,6 +62,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntity, setSelectedEntity] = useState<string>('all')
+  const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
 
@@ -140,6 +145,12 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
 
   // Filter starters
   const filteredStarters = starters.filter(starter => {
+    // Filter op type (onboarding/offboarding)
+    if (starterTypeFilter !== 'ALL') {
+      const type = starter.type || 'ONBOARDING'
+      if (type !== starterTypeFilter) return false
+    }
+
     // Filter op datum range (voor week en maand view)
     if (viewMode !== 'year') {
       const starterDate = new Date(starter.startDate)
@@ -399,6 +410,17 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                 className="pl-9"
               />
             </div>
+
+            <Select value={starterTypeFilter} onValueChange={(v: StarterFilter) => setStarterTypeFilter(v)}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t('filterAll')}</SelectItem>
+                <SelectItem value="ONBOARDING">{t('filterArrivals')}</SelectItem>
+                <SelectItem value="OFFBOARDING">{t('filterDepartures')}</SelectItem>
+              </SelectContent>
+            </Select>
 
             <Select value={selectedEntity} onValueChange={setSelectedEntity}>
               <SelectTrigger className="w-[200px]">

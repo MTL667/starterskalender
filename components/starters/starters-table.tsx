@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { ExportDropdown } from '@/components/ui/export-dropdown'
@@ -21,9 +21,11 @@ import autoTable from 'jspdf-autotable'
 
 type SortColumn = 'name' | 'roleTitle' | 'region' | 'startDate' | 'entity'
 type SortDirection = 'asc' | 'desc'
+type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING'
 
 interface Starter {
   id: string
+  type?: 'ONBOARDING' | 'OFFBOARDING'
   name: string
   language?: string
   roleTitle?: string | null
@@ -58,6 +60,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntity, setSelectedEntity] = useState<string>('all')
+  const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
   const [sortColumn, setSortColumn] = useState<SortColumn>('startDate')
@@ -102,6 +105,11 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
   const filteredStarters = starters
     .filter(starter => {
+      if (starterTypeFilter !== 'ALL') {
+        const type = starter.type || 'ONBOARDING'
+        if (type !== starterTypeFilter) return false
+      }
+
       if (selectedEntity !== 'all' && starter.entity?.id !== selectedEntity) {
         return false
       }
@@ -333,6 +341,17 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
               </SelectContent>
             </Select>
             
+            <Select value={starterTypeFilter} onValueChange={(v: StarterFilter) => setStarterTypeFilter(v)}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t('filterAll')}</SelectItem>
+                <SelectItem value="ONBOARDING">{t('filterArrivals')}</SelectItem>
+                <SelectItem value="OFFBOARDING">{t('filterDepartures')}</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={selectedEntity} onValueChange={setSelectedEntity}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder={t('allEntities')} />
@@ -385,6 +404,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
             <table className="w-full">
               <thead className="border-b">
                 <tr className="text-left text-sm text-muted-foreground">
+                  <th className="pb-3 font-medium w-[60px]">{t('columnType')}</th>
                   <th 
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
                     onClick={() => handleSort('name')}
@@ -409,7 +429,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
                     onClick={() => handleSort('startDate')}
                   >
-                    {t('columnStartDate')} {getSortIcon('startDate')}
+                    {t('columnDate')} {getSortIcon('startDate')}
                   </th>
                   <th className="pb-3 font-medium">{t('columnWeek')}</th>
                   <th 
@@ -427,6 +447,15 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                     onClick={() => handleRowClick(starter)}
                     className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
                   >
+                    <td className="py-3 text-sm">
+                      <span title={starter.type === 'OFFBOARDING' ? tc('offboarding') : tc('onboarding')}>
+                        {starter.type === 'OFFBOARDING' ? (
+                          <ArrowDownRight className="h-4 w-4 text-orange-500" />
+                        ) : (
+                          <ArrowUpRight className="h-4 w-4 text-green-500" />
+                        )}
+                      </span>
+                    </td>
                     <td className="py-3 font-medium">{starter.name}</td>
                     <td className="py-3 text-sm">
                       <span title={starter.language === 'NL' ? t('languageNL') : t('languageFR')}>

@@ -37,11 +37,15 @@ export async function createAutomaticTasks(starter: any) {
     const createdTasks: any[] = []
 
     for (const template of templates) {
-      // Check of template van toepassing is op deze starter
       let shouldApply = true
 
+      // Filter on starter type (onboarding/offboarding)
+      if (template.forStarterType && template.forStarterType !== starter.type) {
+        shouldApply = false
+      }
+
       // Filter op entiteit
-      if (template.forEntityIds.length > 0 && starter.entityId) {
+      if (shouldApply && template.forEntityIds.length > 0 && starter.entityId) {
         shouldApply = template.forEntityIds.includes(starter.entityId)
       }
 

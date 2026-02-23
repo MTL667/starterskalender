@@ -34,7 +34,11 @@
     "refresh": "Actualiser",
     "information": "Information",
     "required": "Obligatoire",
-    "optional": "Optionnel"
+    "optional": "Optionnel",
+    "onboarding": "Onboarding",
+    "offboarding": "Offboarding",
+    "arrivals": "Entrées",
+    "departures": "Départs"
   },
   "metadata": {
     "title": "Starterskalender",
@@ -79,9 +83,20 @@
     "periodThisWeek": "cette semaine",
     "periodThisMonth": "ce mois-ci",
     "periodInYear": "en {year}",
-    "pdfTitle": "Calendrier des nouveaux collaborateurs",
+    "pdfTitle": "Calendrier des collaborateurs",
     "pdfYear": "Année :",
-    "sheetName": "Nouveaux"
+    "sheetName": "Collaborateurs",
+    "filterAll": "Tout",
+    "filterArrivals": "Entrées",
+    "filterDepartures": "Départs",
+    "exportName": "Nom",
+    "exportRole": "Fonction",
+    "exportRegion": "Région",
+    "exportStartDate": "Date",
+    "exportWeek": "Semaine",
+    "exportEntity": "Entité",
+    "exportType": "Type",
+    "loading": "Chargement..."
   },
   "starters": {
     "title": "Nouveaux collaborateurs",
@@ -101,17 +116,31 @@
     "columnEntity": "Entité",
     "languageNL": "Néerlandais",
     "languageFR": "Français",
-    "resultCount": "{count} nouveau(x) collaborateur(s) trouvé(s)",
-    "pdfTitle": "Aperçu des nouveaux collaborateurs",
+    "resultCount": "{count} collaborateur(s) trouvé(s)",
+    "pdfTitle": "Aperçu des collaborateurs",
     "pdfYear": "Année :",
-    "sheetName": "Nouveaux collaborateurs"
+    "sheetName": "Collaborateurs",
+    "filterAll": "Tout",
+    "filterArrivals": "Entrées",
+    "filterDepartures": "Départs",
+    "columnType": "Type",
+    "columnDate": "Date"
   },
   "starterDialog": {
+    "titleEditOnboarding": "Modifier l'onboarding",
+    "titleEditOffboarding": "Modifier l'offboarding",
+    "titleNewOnboarding": "Nouvel onboarding",
+    "titleNewOffboarding": "Nouvel offboarding",
     "titleEdit": "Modifier le collaborateur",
     "titleNew": "Nouveau collaborateur",
     "cancelled": "(Annulé)",
     "descriptionEdit": "Modifier les données du collaborateur.",
     "descriptionNew": "Ajouter un nouveau collaborateur au calendrier.",
+    "descriptionEditOffboarding": "Modifier les données du collaborateur sortant.",
+    "descriptionNewOffboarding": "Enregistrer un collaborateur sortant.",
+    "labelType": "Type *",
+    "typeOnboarding": "Onboarding (entrée)",
+    "typeOffboarding": "Offboarding (départ)",
     "labelName": "Nom *",
     "labelLanguage": "Langue *",
     "optionNL": "🇳🇱 Néerlandais (NL)",
@@ -130,6 +159,7 @@
     "labelContractSigned": "Contrat signé le *",
     "hintContract": "Fortement recommandé - Date de signature du contrat",
     "labelStartDate": "Date de début *",
+    "labelDepartureDate": "Date de départ *",
     "labelExtraInfo": "Info supplémentaire",
     "hintCanEditField": "(Vous pouvez modifier ce champ)",
     "placeholderNotes": "Ajouter des informations supplémentaires...",
@@ -193,7 +223,10 @@
     "labelRegion": "Région :",
     "labelVia": "Via :",
     "labelStart": "Début :",
-    "labelExtraInfo": "Info supplémentaire :"
+    "labelDeparture": "Départ :",
+    "labelExtraInfo": "Info supplémentaire :",
+    "badgeOnboarding": "Entrée",
+    "badgeOffboarding": "Départ"
   },
   "tasks": {
     "title": "Tâches",
@@ -764,12 +797,14 @@
   },
   "ytdStats": {
     "title": "Compteurs YTD",
-    "subtitle": "Nouveaux collaborateurs jusqu'à aujourd'hui en {year}",
+    "subtitle": "Collaborateurs jusqu'à aujourd'hui en {year}",
     "total": "Total",
+    "totalOnboarding": "Entrées",
+    "totalOffboarding": "Départs",
     "perEntity": "Par entité",
     "starter": "collaborateur",
     "startersPlural": "collaborateurs",
-    "noStartersThisYear": "Aucun nouveau collaborateur cette année"
+    "noStartersThisYear": "Aucun collaborateur cette année"
   },
   "recentStarters": {
     "title": "Prochains collaborateurs",
@@ -777,7 +812,9 @@
     "subtitle": "Les prochains collaborateurs",
     "noUpcoming": "Aucun collaborateur à venir",
     "startToday": "✨ Commence aujourd'hui",
-    "startSoon": "🔔 Commence bientôt"
+    "startSoon": "🔔 Commence bientôt",
+    "departsToday": "Départ aujourd'hui",
+    "departsSoon": "Départ bientôt"
   },
   "myTasks": {
     "title": "Mes tâches en cours",
@@ -795,7 +832,12 @@
     "subtitleTotal": "Collaborateurs par mois en {year} - Total : {total} actifs, {cancelled} annulés",
     "activeStarters": "Collaborateurs actifs",
     "cancelledLabel": "Annulés",
-    "months": ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"]
+    "months": ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"],
+    "filterAll": "Tout",
+    "filterOnboarding": "Entrées",
+    "filterOffboarding": "Départs",
+    "onboardingLabel": "Entrées",
+    "offboardingLabel": "Départs"
   },
   "entityMonthlyCharts": {
     "title": "Statistiques mensuelles par entité",

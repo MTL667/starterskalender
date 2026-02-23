@@ -44,6 +44,50 @@ async function main() {
       forEntityIds: [],
       forJobRoleTitles: [],
     },
+
+    // === OFFBOARDING TEMPLATES ===
+
+    // IT SETUP - Accounts deactiveren (offboarding)
+    {
+      type: 'IT_SETUP',
+      title: 'Accounts deactiveren voor {{starterName}}',
+      description: 'Deactiveer alle accounts en toegangen voor {{starterName}} ({{roleTitle}} bij {{entityName}}).\n\nStappen:\n1. Deactiveer het email account in Azure AD / Microsoft 365\n2. Verwijder toegang tot gedeelde mailboxen\n3. Blokkeer VPN en remote access\n4. Deactiveer toegangsbadge\n5. Verwijder uit distributielijsten en Teams kanalen\n6. Stel Out-of-Office bericht in (indien gewenst)\n7. Maak backup van relevante data\n8. Documenteer alle gedeactiveerde accounts',
+      priority: 'HIGH',
+      daysUntilDue: 0,
+      isActive: true,
+      autoAssign: true,
+      forEntityIds: [],
+      forJobRoleTitles: [],
+      forStarterType: 'OFFBOARDING',
+    },
+
+    // IT SETUP - Materialen innemen (offboarding)
+    {
+      type: 'IT_SETUP',
+      title: 'Materialen innemen van {{starterName}}',
+      description: 'Neem alle bedrijfsmaterialen in van {{starterName}} ({{roleTitle}} bij {{entityName}}).\n\nChecklist:\n□ Laptop / Desktop computer\n□ Monitor(en)\n□ Toetsenbord en muis\n□ Headset\n□ Docking station\n□ Mobiele telefoon\n□ Toegangsbadge\n□ Sleutels\n□ Bedrijfswagen (indien van toepassing)\n□ Overige materialen\n\nStappen:\n1. Plan een moment voor het inleveren\n2. Controleer alle ingeleverde materialen\n3. Wis persoonlijke data van apparaten\n4. Registreer ingeleverde materialen in het systeem\n5. Meld ontbrekende materialen',
+      priority: 'HIGH',
+      daysUntilDue: 0,
+      isActive: true,
+      autoAssign: true,
+      forEntityIds: [],
+      forJobRoleTitles: [],
+      forStarterType: 'OFFBOARDING',
+    },
+
+    // HR_ADMIN - Administratieve afhandeling (offboarding)
+    {
+      type: 'HR_ADMIN',
+      title: 'Administratieve afhandeling vertrek {{starterName}}',
+      description: 'Handel de administratie af voor het vertrek van {{starterName}} ({{roleTitle}} bij {{entityName}}).\n\nStappen:\n1. Controleer opzegtermijn en laatste werkdag\n2. Bereken openstaande vakantiedagen\n3. Bereid eindafrekening voor\n4. Stel getuigschrift op\n5. Informeer payroll over vertrek\n6. Update personeelsdossier\n7. Plan exitgesprek in',
+      priority: 'HIGH',
+      daysUntilDue: -7,
+      isActive: true,
+      autoAssign: true,
+      forEntityIds: [],
+      forJobRoleTitles: [],
+      forStarterType: 'OFFBOARDING',
+    },
   ]
 
   let created = 0

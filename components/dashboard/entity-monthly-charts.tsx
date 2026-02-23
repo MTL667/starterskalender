@@ -12,8 +12,11 @@ interface Entity {
   colorHex: string
 }
 
+type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING'
+
 interface Starter {
   id: string
+  type?: 'ONBOARDING' | 'OFFBOARDING'
   contractSignedOn?: string | null
   startDate: string
   isCancelled?: boolean
@@ -32,6 +35,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
   const [entities, setEntities] = useState<Entity[]>([])
   const [starters, setStarters] = useState<Starter[]>([])
   const [selectedEntity, setSelectedEntity] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<StarterFilter>('ALL')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -72,17 +76,19 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
   let chartData: MonthlyEntityData[] = []
   let barsToRender: Array<{ dataKey: string; name: string; color: string }> = []
 
+  const filteredByType = starters.filter(s => {
+    if (typeFilter === 'ALL') return true
+    return (s.type || 'ONBOARDING') === typeFilter
+  })
+
   if (selectedEntity === 'all') {
-    // Alle entiteiten samen - elke entiteit is een aparte bar
     const monthlyMap = new Map<number, { [entityId: string]: number }>()
     
-    // Initialiseer alle maanden
     for (let i = 0; i < 12; i++) {
       monthlyMap.set(i, {})
     }
 
-    // Filter alleen niet-geannuleerde starters
-    const activeStarters = starters.filter(s => !s.isCancelled)
+    const activeStarters = filteredByType.filter(s => !s.isCancelled)
 
     // Tel starters per maand per entiteit
     activeStarters.forEach(starter => {
@@ -125,8 +131,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
       monthlyMap.set(i, { active: 0, cancelled: 0 })
     }
 
-    // Filter starters voor deze entiteit
-    const entityStarters = starters.filter(s => s.entityId === selectedEntity)
+    const entityStarters = filteredByType.filter(s => s.entityId === selectedEntity)
 
     // Tel per maand
     entityStarters.forEach(starter => {
@@ -164,13 +169,12 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
     ]
   }
 
-  // Bereken totalen
-  const total = starters.filter(s => 
+  const total = filteredByType.filter(s => 
     !s.isCancelled && 
     (selectedEntity === 'all' ? true : s.entityId === selectedEntity)
   ).length
 
-  const cancelled = starters.filter(s => 
+  const cancelled = filteredByType.filter(s => 
     s.isCancelled && 
     (selectedEntity === 'all' ? true : s.entityId === selectedEntity)
   ).length
@@ -193,6 +197,17 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
               })}
             </CardDescription>
           </div>
+          <div className="flex gap-2">
+            <Select value={typeFilter} onValueChange={(v: StarterFilter) => setTypeFilter(v)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{monthlyChartsT('filterAll')}</SelectItem>
+                <SelectItem value="ONBOARDING">{monthlyChartsT('filterOnboarding')}</SelectItem>
+                <SelectItem value="OFFBOARDING">{monthlyChartsT('filterOffboarding')}</SelectItem>
+              </SelectContent>
+            </Select>
           <Select value={selectedEntity} onValueChange={setSelectedEntity}>
             <SelectTrigger className="w-[250px]">
               <SelectValue />
@@ -212,6 +227,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
               ))}
             </SelectContent>
           </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
