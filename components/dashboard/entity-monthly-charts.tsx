@@ -12,11 +12,11 @@ interface Entity {
   colorHex: string
 }
 
-type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING'
+type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 
 interface Starter {
   id: string
-  type?: 'ONBOARDING' | 'OFFBOARDING'
+  type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
   contractSignedOn?: string | null
   startDate: string
   isCancelled?: boolean
@@ -123,10 +123,10 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
     }))
 
   } else {
-    const monthlyMap = new Map<number, { onboarding: number; offboarding: number }>()
+    const monthlyMap = new Map<number, { onboarding: number; offboarding: number; migration: number }>()
     
     for (let i = 0; i < 12; i++) {
-      monthlyMap.set(i, { onboarding: 0, offboarding: 0 })
+      monthlyMap.set(i, { onboarding: 0, offboarding: 0, migration: 0 })
     }
 
     const entityStarters = filteredByType.filter(s => s.entityId === selectedEntity && !s.isCancelled)
@@ -135,8 +135,11 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
       const date = new Date(starter.startDate)
       const month = date.getMonth()
       const monthData = monthlyMap.get(month)!
+      const starterType = starter.type || 'ONBOARDING'
       
-      if ((starter.type || 'ONBOARDING') === 'OFFBOARDING') {
+      if (starterType === 'MIGRATION') {
+        monthData.migration++
+      } else if (starterType === 'OFFBOARDING') {
         monthData.offboarding++
       } else {
         monthData.onboarding++
@@ -147,6 +150,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
       month: monthNames[month],
       onboarding: counts.onboarding,
       offboarding: counts.offboarding,
+      migration: counts.migration,
     }))
 
     barsToRender = [
@@ -160,6 +164,11 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
         name: t('offboarding'),
         color: 'hsl(25 95% 53%)',
       },
+      {
+        dataKey: 'migration',
+        name: t('migration'),
+        color: 'hsl(217 91% 60%)',
+      },
     ]
   }
 
@@ -169,6 +178,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
   )
   const onboardingCount = entityFiltered.filter(s => (s.type || 'ONBOARDING') === 'ONBOARDING').length
   const offboardingCount = entityFiltered.filter(s => (s.type || 'ONBOARDING') === 'OFFBOARDING').length
+  const migrationCount = entityFiltered.filter(s => (s.type || 'ONBOARDING') === 'MIGRATION').length
 
   const selectedEntityName = selectedEntity === 'all' 
     ? t('allEntities')
@@ -185,6 +195,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
                 entityName: selectedEntityName, 
                 onboarding: onboardingCount,
                 offboarding: offboardingCount,
+                migration: migrationCount,
               })}
             </CardDescription>
           </div>
@@ -197,6 +208,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
                 <SelectItem value="ALL">{monthlyChartsT('filterAll')}</SelectItem>
                 <SelectItem value="ONBOARDING">{monthlyChartsT('filterOnboarding')}</SelectItem>
                 <SelectItem value="OFFBOARDING">{monthlyChartsT('filterOffboarding')}</SelectItem>
+                <SelectItem value="MIGRATION">{monthlyChartsT('filterMigration')}</SelectItem>
               </SelectContent>
             </Select>
           <Select value={selectedEntity} onValueChange={setSelectedEntity}>

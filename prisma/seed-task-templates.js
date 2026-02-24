@@ -91,6 +91,35 @@ async function main() {
       forJobRoleTitles: [],
       forStarterType: 'OFFBOARDING',
     },
+    // === MIGRATION TEMPLATES ===
+
+    // IT SETUP - Accounts aanpassen (migratie)
+    {
+      type: 'IT_SETUP',
+      title: 'Accounts aanpassen voor migratie {{starterName}}',
+      description: 'Pas accounts en toegangsrechten aan voor de migratie van {{starterName}} naar {{entityName}}.\n\nStappen:\n1. Wijzig groepslidmaatschappen in Azure AD\n2. Pas distributiegroepen en Teams kanalen aan\n3. Update toegangsrechten voor nieuwe entiteit\n4. Verwijder rechten van oude entiteit\n5. Pas gedeelde mailboxen aan indien nodig\n6. Update telefoonsysteem / doorschakeling\n7. Test alle toegangen',
+      priority: 'HIGH',
+      daysUntilDue: -3,
+      isActive: true,
+      autoAssign: true,
+      forEntityIds: [],
+      forJobRoleTitles: [],
+      forStarterType: 'MIGRATION',
+    },
+
+    // HR_ADMIN - Administratieve verwerking migratie
+    {
+      type: 'HR_ADMIN',
+      title: 'Administratieve verwerking migratie {{starterName}}',
+      description: 'Verwerk de interne mutatie van {{starterName}} naar {{entityName}} ({{roleTitle}}).\n\nStappen:\n1. Pas arbeidsovereenkomst / addendum aan\n2. Update personeelsdossier\n3. Informeer payroll over wijziging entiteit/functie\n4. Plan introductiegesprek bij nieuwe entiteit\n5. Informeer beide entiteiten over de migratie\n6. Update organigram',
+      priority: 'HIGH',
+      daysUntilDue: -7,
+      isActive: true,
+      autoAssign: true,
+      forEntityIds: [],
+      forJobRoleTitles: [],
+      forStarterType: 'MIGRATION',
+    },
   ]
 
   let created = 0

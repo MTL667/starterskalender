@@ -10,6 +10,7 @@ interface YTDData {
   totalYTD: number
   onboardingCount: number
   offboardingCount: number
+  migrationCount: number
   entities: Array<{
     entityId: string
     entityName: string
@@ -66,7 +67,7 @@ export function YTDStats({ year }: { year: number }) {
       <CardContent>
         <div className="space-y-6">
           {/* Totaal met onboarding/offboarding breakdown */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="border-l-4 border-primary pl-4">
               <div className="text-sm font-medium text-muted-foreground mb-1">
                 {t('total')}
@@ -84,6 +85,12 @@ export function YTDStats({ year }: { year: number }) {
                 {t('totalOffboarding')}
               </div>
               <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">{data.offboardingCount}</div>
+            </div>
+            <div className="border-l-4 border-blue-500 pl-4">
+              <div className="text-sm font-medium text-muted-foreground mb-1">
+                {t('totalMigration')}
+              </div>
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{data.migrationCount}</div>
             </div>
           </div>
 

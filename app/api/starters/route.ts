@@ -8,11 +8,15 @@ import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
 import { createAutomaticTasks } from '@/lib/task-automation'
 
+const VALID_TYPES = ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'] as const
+
 const StarterSchema = z.object({
-  type: z.enum(['ONBOARDING', 'OFFBOARDING']).default('ONBOARDING'),
+  type: z.enum(VALID_TYPES).default('ONBOARDING'),
   name: z.string().min(1),
   language: z.enum(['NL', 'FR']).default('NL'),
   entityId: z.string().nullable().optional(),
+  fromEntityId: z.string().nullable().optional(),
+  fromRoleTitle: z.string().nullable().optional(),
   region: z.string().nullable().optional(),
   roleTitle: z.string().nullable().optional(),
   via: z.string().nullable().optional(),
@@ -51,7 +55,7 @@ export async function GET(request: NextRequest) {
       where.entityId = entityId
     }
 
-    if (type && (type === 'ONBOARDING' || type === 'OFFBOARDING')) {
+    if (type && VALID_TYPES.includes(type as any)) {
       where.type = type
     }
 
@@ -70,6 +74,13 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         entity: {
+          select: {
+            id: true,
+            name: true,
+            colorHex: true,
+          },
+        },
+        fromEntity: {
           select: {
             id: true,
             name: true,
@@ -113,6 +124,8 @@ export async function POST(request: NextRequest) {
         name: normalizeString(data.name)!,
         language: data.language,
         entityId: data.entityId,
+        fromEntityId: data.type === 'MIGRATION' ? data.fromEntityId : null,
+        fromRoleTitle: data.type === 'MIGRATION' ? normalizeString(data.fromRoleTitle) : null,
         region: normalizeString(data.region),
         roleTitle: normalizeString(data.roleTitle),
         via: normalizeString(data.via),
@@ -131,6 +144,7 @@ export async function POST(request: NextRequest) {
       },
       include: {
         entity: true,
+        fromEntity: true,
       },
     })
 

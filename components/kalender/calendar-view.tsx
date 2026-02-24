@@ -21,8 +21,8 @@ import autoTable from 'jspdf-autotable'
 
 type ViewMode = 'week' | 'month' | 'year'
 
-type StarterType = 'ONBOARDING' | 'OFFBOARDING'
-type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING'
+type StarterType = 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
+type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 
 interface Starter {
   id: string
@@ -419,6 +419,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                 <SelectItem value="ALL">{t('filterAll')}</SelectItem>
                 <SelectItem value="ONBOARDING">{t('filterArrivals')}</SelectItem>
                 <SelectItem value="OFFBOARDING">{t('filterDepartures')}</SelectItem>
+                <SelectItem value="MIGRATION">{t('filterMigrations')}</SelectItem>
               </SelectContent>
             </Select>
 

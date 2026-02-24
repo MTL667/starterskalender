@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ArrowLeftRight } from 'lucide-react'
 
 interface Starter {
   id: string
-  type?: 'ONBOARDING' | 'OFFBOARDING'
+  type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
   name: string
   language?: string
   roleTitle?: string | null
@@ -29,6 +29,7 @@ interface Starter {
 export function StarterCard({ starter, onClick }: { starter: Starter; onClick: () => void }) {
   const t = useTranslations('starterCard')
   const dateLocale = getDateLocale(useLocale())
+  const isMigration = starter.type === 'MIGRATION'
   const isOffboarding = starter.type === 'OFFBOARDING'
 
   return (
@@ -36,12 +37,13 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
       onClick={onClick}
       className={`border rounded-lg p-3 cursor-pointer hover:border-primary transition-colors bg-card ${
         starter.isCancelled ? 'opacity-60' : ''
-      } ${isOffboarding ? 'border-l-4 border-l-orange-400 dark:border-l-orange-600' : ''}`}
+      } ${isMigration ? 'border-l-4 border-l-blue-400 dark:border-l-blue-600' : isOffboarding ? 'border-l-4 border-l-orange-400 dark:border-l-orange-600' : ''}`}
     >
-      {/* Header: Naam + Type + Taal + Entiteit */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          {isOffboarding ? (
+          {isMigration ? (
+            <ArrowLeftRight className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+          ) : isOffboarding ? (
             <ArrowDownRight className="h-3.5 w-3.5 text-orange-500 shrink-0" />
           ) : (
             <ArrowUpRight className="h-3.5 w-3.5 text-green-500 shrink-0" />
@@ -100,7 +102,7 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
 
       {/* Datum */}
       <div className="text-xs text-muted-foreground mb-2">
-        <span className="font-medium">{isOffboarding ? t('labelDeparture') : t('labelStart')}</span> {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
+        <span className="font-medium">{isMigration ? t('labelMigration') : isOffboarding ? t('labelDeparture') : t('labelStart')}</span> {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
       </div>
 
       {/* Extra info (notes) */}

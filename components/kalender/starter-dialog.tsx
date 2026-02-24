@@ -25,7 +25,7 @@ import { SignatureGeneratorDialog } from '@/components/signature-generator-dialo
 
 interface Starter {
   id: string
-  type?: 'ONBOARDING' | 'OFFBOARDING'
+  type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
   name: string
   language?: string
   roleTitle?: string | null
@@ -43,8 +43,15 @@ interface Starter {
   experienceEntity?: string | null
   phoneNumber?: string | null
   desiredEmail?: string | null
+  fromEntityId?: string | null
+  fromRoleTitle?: string | null
   entity?: {
     id: string
+  } | null
+  fromEntity?: {
+    id: string
+    name: string
+    colorHex: string
   } | null
 }
 
@@ -106,10 +113,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [manualEntry, setManualEntry] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [formData, setFormData] = useState({
-    type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING',
+    type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     name: '',
     language: 'NL',
     entityId: '',
+    fromEntityId: '',
+    fromRoleTitle: '',
     roleTitle: '',
     region: '',
     via: '',
@@ -179,7 +188,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
   // Fetch employees for offboarding selection
   useEffect(() => {
-    if (formData.type === 'OFFBOARDING' && !isEdit && !manualEntry) {
+    if ((formData.type === 'OFFBOARDING' || formData.type === 'MIGRATION') && !isEdit && !manualEntry) {
       fetch(`/api/starters/employees${employeeSearch ? `?search=${encodeURIComponent(employeeSearch)}` : ''}`)
         .then(res => res.json())
         .then(data => setEmployees(Array.isArray(data) ? data : []))
@@ -280,6 +289,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         name: starter.name,
         language: starter.language || 'NL',
         entityId: starter.entity?.id || '',
+        fromEntityId: starter.fromEntity?.id || starter.fromEntityId || '',
+        fromRoleTitle: starter.fromRoleTitle || '',
         roleTitle: starter.roleTitle || '',
         region: starter.region || '',
         via: starter.via || '',
@@ -299,6 +310,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         name: '',
         language: 'NL',
         entityId: '',
+        fromEntityId: '',
+        fromRoleTitle: '',
         roleTitle: '',
         region: '',
         via: '',
@@ -323,16 +336,31 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     setSelectedEmployee(employee)
     setShowEmployeeList(false)
     setEmployeeSearch('')
-    setFormData(prev => ({
-      ...prev,
-      name: employee.name,
-      language: employee.language || 'NL',
-      entityId: employee.entity?.id || '',
-      roleTitle: employee.roleTitle || '',
-      region: employee.region || '',
-      phoneNumber: employee.phoneNumber || '',
-      desiredEmail: employee.desiredEmail || '',
-    }))
+    if (formData.type === 'MIGRATION') {
+      setFormData(prev => ({
+        ...prev,
+        name: employee.name,
+        language: employee.language || 'NL',
+        fromEntityId: employee.entity?.id || '',
+        fromRoleTitle: employee.roleTitle || '',
+        region: employee.region || '',
+        phoneNumber: employee.phoneNumber || '',
+        desiredEmail: employee.desiredEmail || '',
+        entityId: '',
+        roleTitle: '',
+      }))
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        name: employee.name,
+        language: employee.language || 'NL',
+        entityId: employee.entity?.id || '',
+        roleTitle: employee.roleTitle || '',
+        region: employee.region || '',
+        phoneNumber: employee.phoneNumber || '',
+        desiredEmail: employee.desiredEmail || '',
+      }))
+    }
   }
 
   const handleSaveExtraInfo = async () => {
@@ -430,6 +458,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         name: formData.name,
         language: formData.language,
         entityId: formData.entityId || null,
+        fromEntityId: formData.type === 'MIGRATION' ? (formData.fromEntityId || null) : null,
+        fromRoleTitle: formData.type === 'MIGRATION' ? (formData.fromRoleTitle || null) : null,
         roleTitle: formData.roleTitle || null,
         region: formData.region || null,
         via: formData.via || null,
@@ -597,8 +627,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
           <DialogHeader>
             <DialogTitle>
               {isEdit 
-                ? (formData.type === 'OFFBOARDING' ? t('titleEditOffboarding') : t('titleEditOnboarding'))
-                : (formData.type === 'OFFBOARDING' ? t('titleNewOffboarding') : t('titleNewOnboarding'))
+                ? (formData.type === 'MIGRATION' ? t('titleEditMigration') : formData.type === 'OFFBOARDING' ? t('titleEditOffboarding') : t('titleEditOnboarding'))
+                : (formData.type === 'MIGRATION' ? t('titleNewMigration') : formData.type === 'OFFBOARDING' ? t('titleNewOffboarding') : t('titleNewOnboarding'))
               }
               {starter?.isCancelled && (
                 <span className="ml-3 text-sm font-normal text-red-600 dark:text-red-400">
@@ -608,8 +638,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             </DialogTitle>
           <DialogDescription>
             {isEdit 
-              ? (formData.type === 'OFFBOARDING' ? t('descriptionEditOffboarding') : t('descriptionEdit'))
-              : (formData.type === 'OFFBOARDING' ? t('descriptionNewOffboarding') : t('descriptionNew'))
+              ? (formData.type === 'MIGRATION' ? t('descriptionEditMigration') : formData.type === 'OFFBOARDING' ? t('descriptionEditOffboarding') : t('descriptionEdit'))
+              : (formData.type === 'MIGRATION' ? t('descriptionNewMigration') : formData.type === 'OFFBOARDING' ? t('descriptionNewOffboarding') : t('descriptionNew'))
             }
           </DialogDescription>
         </DialogHeader>
@@ -620,7 +650,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               <Label htmlFor="type">{t('labelType')}</Label>
               <Select
                 value={formData.type}
-                onValueChange={(value: 'ONBOARDING' | 'OFFBOARDING') => setFormData({ ...formData, type: value })}
+                onValueChange={(value: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION') => {
+                  setFormData({ ...formData, type: value, fromEntityId: '', fromRoleTitle: '' })
+                  setSelectedEmployee(null)
+                  setManualEntry(false)
+                  setEmployeeSearch('')
+                }}
                 disabled={isEdit}
               >
                 <SelectTrigger>
@@ -629,13 +664,14 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 <SelectContent>
                   <SelectItem value="ONBOARDING">{t('typeOnboarding')}</SelectItem>
                   <SelectItem value="OFFBOARDING">{t('typeOffboarding')}</SelectItem>
+                  <SelectItem value="MIGRATION">{t('typeMigration')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
               <Label htmlFor="name">{t('labelName')}</Label>
-              {formData.type === 'OFFBOARDING' && !isEdit && !manualEntry ? (
+              {(formData.type === 'OFFBOARDING' || formData.type === 'MIGRATION') && !isEdit && !manualEntry ? (
                 <div className="space-y-2">
                   {selectedEmployee ? (
                     <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -655,7 +691,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                         size="sm"
                         onClick={() => {
                           setSelectedEmployee(null)
-                          setFormData(prev => ({ ...prev, name: '', language: 'NL', entityId: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
+                          setFormData(prev => ({ ...prev, name: '', language: 'NL', entityId: '', fromEntityId: '', fromRoleTitle: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
                         }}
                         className="h-6 px-2 text-xs"
                       >
@@ -723,6 +759,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       setManualEntry(true)
                       setSelectedEmployee(null)
                       setShowEmployeeList(false)
+                      setFormData(prev => ({ ...prev, fromEntityId: '', fromRoleTitle: '' }))
                     }}
                   >
                     <PenLine className="h-3 w-3 mr-1" />
@@ -738,7 +775,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     required
                     disabled={!canEdit}
                   />
-                  {formData.type === 'OFFBOARDING' && !isEdit && manualEntry && (
+                  {(formData.type === 'OFFBOARDING' || formData.type === 'MIGRATION') && !isEdit && manualEntry && (
                     <Button
                       type="button"
                       variant="ghost"
@@ -746,7 +783,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       className="text-xs text-muted-foreground mt-1"
                       onClick={() => {
                         setManualEntry(false)
-                        setFormData(prev => ({ ...prev, name: '', language: 'NL', entityId: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
+                        setFormData(prev => ({ ...prev, name: '', language: 'NL', entityId: '', fromEntityId: '', fromRoleTitle: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
                       }}
                     >
                       <Search className="h-3 w-3 mr-1" />
@@ -774,8 +811,20 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </Select>
             </div>
 
+            {formData.type === 'MIGRATION' && (formData.fromEntityId || formData.fromRoleTitle) && (
+              <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 space-y-1">
+                <Label className="text-xs font-semibold text-orange-700 dark:text-orange-300">{t('labelFromEntity')}</Label>
+                <div className="text-sm">
+                  {entities.find(e => e.id === formData.fromEntityId)?.name || '—'}
+                  {formData.fromRoleTitle && <span className="text-muted-foreground"> — {formData.fromRoleTitle}</span>}
+                </div>
+              </div>
+            )}
+
             <div>
-              <Label htmlFor="entityId">{t('labelEntity')}</Label>
+              <Label htmlFor="entityId">
+                {formData.type === 'MIGRATION' ? t('labelToEntity') : t('labelEntity')}
+              </Label>
               <Select
                 value={formData.entityId || undefined}
                 onValueChange={(value) => setFormData({ ...formData, entityId: value, roleTitle: '' })}
@@ -795,7 +844,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             </div>
 
             <div>
-              <Label htmlFor="roleTitle">{t('labelRole')}</Label>
+              <Label htmlFor="roleTitle">{formData.type === 'MIGRATION' ? t('labelToRole') : t('labelRole')}</Label>
               {formData.entityId && jobRoles.length > 0 ? (
                 <Select
                   value={formData.roleTitle || undefined}
@@ -870,7 +919,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
               <div>
                 <Label htmlFor="startDate">
-                  {formData.type === 'OFFBOARDING' ? t('labelDepartureDate') : t('labelStartDate')}
+                  {formData.type === 'MIGRATION' ? t('labelMigrationDate') : formData.type === 'OFFBOARDING' ? t('labelDepartureDate') : t('labelStartDate')}
                 </Label>
                 <Input
                   id="startDate"

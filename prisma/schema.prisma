@@ -72,6 +72,7 @@ enum NotificationChannelType {
 enum StarterType {
   ONBOARDING         // Nieuwe medewerker (instroom)
   OFFBOARDING        // Vertrekkende medewerker (uitstroom)
+  MIGRATION          // Interne mutatie tussen entiteiten
 }
 
 model User {
@@ -117,7 +118,8 @@ model Entity {
   isActive                Boolean                  @default(true)
   notifyEmails            String[]                 // Array van e-mailadressen voor reminders (legacy)
   memberships             Membership[]
-  starters                Starter[]
+  starters                Starter[]  @relation("StarterEntity")
+  migrationsFrom          Starter[]  @relation("StarterFromEntity")
   jobRoles                JobRole[]
   blockedPeriods          BlockedPeriod[]
   notificationPreferences NotificationPreference[]
@@ -145,13 +147,16 @@ model Membership {
 
 model Starter {
   id                String      @id @default(cuid())
-  type              StarterType @default(ONBOARDING) // Onboarding of offboarding
+  type              StarterType @default(ONBOARDING)
   entityId          String?
-  entity            Entity?   @relation(fields: [entityId], references: [id], onDelete: SetNull)
+  entity            Entity?   @relation("StarterEntity", fields: [entityId], references: [id], onDelete: SetNull)
+  fromEntityId      String?                          // Bron-entiteit (bij migratie)
+  fromEntity        Entity?   @relation("StarterFromEntity", fields: [fromEntityId], references: [id], onDelete: SetNull)
+  fromRoleTitle     String?                          // Bron-functie (bij migratie)
   name              String
-  language          String    @default("NL") // Taal: NL of FR
-  region            String?   // Regio (dropdown)
-  roleTitle         String?   // Functie
+  language          String    @default("NL")
+  region            String?
+  roleTitle         String?
   via               String?   // Via (dropdown)
   notes             String?   @db.Text // Extra info
   phoneNumber       String?   // Telefoonnummer (optioneel, kan later toegevoegd)
@@ -180,6 +185,7 @@ model Starter {
   @@index([type])
   @@index([year, startDate])
   @@index([entityId, year])
+  @@index([fromEntityId])
   @@index([weekNumber, year])
   @@index([isCancelled])
 }

@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, ArrowUpRight, ArrowDownRight, ArrowLeftRight } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { ExportDropdown } from '@/components/ui/export-dropdown'
@@ -21,11 +21,11 @@ import autoTable from 'jspdf-autotable'
 
 type SortColumn = 'name' | 'roleTitle' | 'region' | 'startDate' | 'entity'
 type SortDirection = 'asc' | 'desc'
-type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING'
+type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 
 interface Starter {
   id: string
-  type?: 'ONBOARDING' | 'OFFBOARDING'
+  type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
   name: string
   language?: string
   roleTitle?: string | null
@@ -349,6 +349,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                 <SelectItem value="ALL">{t('filterAll')}</SelectItem>
                 <SelectItem value="ONBOARDING">{t('filterArrivals')}</SelectItem>
                 <SelectItem value="OFFBOARDING">{t('filterDepartures')}</SelectItem>
+                <SelectItem value="MIGRATION">{t('filterMigrations')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -448,8 +449,10 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                     className="border-b cursor-pointer hover:bg-muted/50 transition-colors"
                   >
                     <td className="py-3 text-sm">
-                      <span title={starter.type === 'OFFBOARDING' ? tc('offboarding') : tc('onboarding')}>
-                        {starter.type === 'OFFBOARDING' ? (
+                      <span title={starter.type === 'MIGRATION' ? tc('migration') : starter.type === 'OFFBOARDING' ? tc('offboarding') : tc('onboarding')}>
+                        {starter.type === 'MIGRATION' ? (
+                          <ArrowLeftRight className="h-4 w-4 text-blue-500" />
+                        ) : starter.type === 'OFFBOARDING' ? (
                           <ArrowDownRight className="h-4 w-4 text-orange-500" />
                         ) : (
                           <ArrowUpRight className="h-4 w-4 text-green-500" />

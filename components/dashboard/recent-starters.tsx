@@ -9,11 +9,11 @@ import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { useSession } from 'next-auth/react'
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { ArrowUpRight, ArrowDownRight, ArrowLeftRight } from 'lucide-react'
 
 interface Starter {
   id: string
-  type?: 'ONBOARDING' | 'OFFBOARDING'
+  type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
   name: string
   language?: string
   roleTitle?: string | null
@@ -225,7 +225,9 @@ export function RecentStarters({ year }: { year: number }) {
                 >
                     <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {starter.type === 'OFFBOARDING' ? (
+                      {starter.type === 'MIGRATION' ? (
+                        <ArrowLeftRight className="h-4 w-4 text-blue-500 shrink-0" />
+                      ) : starter.type === 'OFFBOARDING' ? (
                         <ArrowDownRight className="h-4 w-4 text-orange-500 shrink-0" />
                       ) : (
                         <ArrowUpRight className="h-4 w-4 text-green-500 shrink-0" />
@@ -237,15 +239,19 @@ export function RecentStarters({ year }: { year: number }) {
                         </span>
                       )}
                       {startingToday && (
-                        <Badge variant="outline" className={starter.type === 'OFFBOARDING' 
-                          ? "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-700"
-                          : "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700"}>
-                          {starter.type === 'OFFBOARDING' ? t('departsToday') : t('startToday')}
+                        <Badge variant="outline" className={
+                          starter.type === 'MIGRATION'
+                            ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-700"
+                            : starter.type === 'OFFBOARDING' 
+                              ? "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-700"
+                              : "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700"
+                        }>
+                          {starter.type === 'MIGRATION' ? t('migratesToday') : starter.type === 'OFFBOARDING' ? t('departsToday') : t('startToday')}
                         </Badge>
                       )}
                       {within7Days && !startingToday && (
                         <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-200 dark:border-amber-700">
-                          {starter.type === 'OFFBOARDING' ? t('departsSoon') : t('startSoon')}
+                          {starter.type === 'MIGRATION' ? t('migratesSoon') : starter.type === 'OFFBOARDING' ? t('departsSoon') : t('startSoon')}
                         </Badge>
                       )}
                     </div>

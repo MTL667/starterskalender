@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { filterStartersByRBAC } from '@/lib/rbac'
 
-// GET - Fetch distinct employees from completed onboardings (for offboarding selection)
+// GET - Fetch distinct employees (onboarded or migrated, not cancelled) for offboarding/migration selection
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser()
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
 
     let where: any = {
-      type: 'ONBOARDING',
+      type: { in: ['ONBOARDING', 'MIGRATION'] },
       isCancelled: false,
     }
 

@@ -41,6 +41,7 @@ export async function GET(
       where: { id: id },
       include: {
         entity: true,
+        fromEntity: true,
       },
     })
 
@@ -104,6 +105,7 @@ export async function PATCH(
       data: updateData,
       include: {
         entity: true,
+        fromEntity: true,
       },
     })
 

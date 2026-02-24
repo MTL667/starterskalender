@@ -37,8 +37,10 @@
     "optional": "Optioneel",
     "onboarding": "Onboarding",
     "offboarding": "Offboarding",
+    "migration": "Migratie",
     "arrivals": "Instroom",
-    "departures": "Uitstroom"
+    "departures": "Uitstroom",
+    "migrations": "Migraties"
   },
   "metadata": {
     "title": "Starterskalender",
@@ -89,6 +91,7 @@
     "filterAll": "Alles",
     "filterArrivals": "Instroom",
     "filterDepartures": "Uitstroom",
+    "filterMigrations": "Migraties",
     "exportName": "Naam",
     "exportRole": "Functie",
     "exportRegion": "Regio",
@@ -123,6 +126,7 @@
     "filterAll": "Alles",
     "filterArrivals": "Instroom",
     "filterDepartures": "Uitstroom",
+    "filterMigrations": "Migraties",
     "columnType": "Type",
     "columnDate": "Datum"
   },
@@ -141,6 +145,16 @@
     "labelType": "Type *",
     "typeOnboarding": "Onboarding (instroom)",
     "typeOffboarding": "Offboarding (uitstroom)",
+    "typeMigration": "Migratie (interne mutatie)",
+    "titleNewMigration": "Nieuwe Migratie",
+    "titleEditMigration": "Migratie Bewerken",
+    "descriptionNewMigration": "Registreer een interne mutatie tussen entiteiten.",
+    "descriptionEditMigration": "Pas de gegevens van de migratie aan.",
+    "labelMigrationDate": "Migratiedatum *",
+    "labelFromEntity": "Van entiteit",
+    "labelFromRole": "Huidige functie",
+    "labelToEntity": "Naar entiteit *",
+    "labelToRole": "Nieuwe functie",
     "labelName": "Naam *",
     "selectEmployee": "Selecteer bestaande medewerker",
     "searchEmployee": "Zoek medewerker...",
@@ -231,9 +245,11 @@
     "labelVia": "Via:",
     "labelStart": "Start:",
     "labelDeparture": "Vertrek:",
+    "labelMigration": "Migratie:",
     "labelExtraInfo": "Extra info:",
     "badgeOnboarding": "Instroom",
-    "badgeOffboarding": "Uitstroom"
+    "badgeOffboarding": "Uitstroom",
+    "badgeMigration": "Migratie"
   },
   "tasks": {
     "title": "Taken",
@@ -809,6 +825,7 @@
     "total": "Totaal",
     "totalOnboarding": "Instroom",
     "totalOffboarding": "Uitstroom",
+    "totalMigration": "Migraties",
     "perEntity": "Per Entiteit",
     "starter": "persoon",
     "startersPlural": "personen",
@@ -822,7 +839,9 @@
     "startToday": "✨ Start vandaag",
     "startSoon": "🔔 Start binnenkort",
     "departsToday": "Vertrek vandaag",
-    "departsSoon": "Vertrekt binnenkort"
+    "departsSoon": "Vertrekt binnenkort",
+    "migratesToday": "Migratie vandaag",
+    "migratesSoon": "Migreert binnenkort"
   },
   "myTasks": {
     "title": "Mijn Openstaande Taken",
@@ -837,22 +856,25 @@
   "monthlyCharts": {
     "title": "Maandelijkse Statistieken",
     "subtitleYear": "Bewegingen per maand in {year}",
-    "subtitleTotal": "Bewegingen per maand in {year} - Instroom: {onboarding}, Uitstroom: {offboarding}",
+    "subtitleTotal": "Bewegingen per maand in {year} - Instroom: {onboarding}, Uitstroom: {offboarding}, Migraties: {migration}",
     "months": ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"],
     "filterAll": "Alles",
     "filterOnboarding": "Instroom",
     "filterOffboarding": "Uitstroom",
+    "filterMigration": "Migraties",
     "onboardingLabel": "Instroom",
-    "offboardingLabel": "Uitstroom"
+    "offboardingLabel": "Uitstroom",
+    "migrationLabel": "Migraties"
   },
   "entityMonthlyCharts": {
     "title": "Maandelijkse Statistieken per Entiteit",
     "subtitle": "Bewegingen per entiteit per maand in {year}",
-    "subtitleSelected": "{entityName} - Instroom: {onboarding}, Uitstroom: {offboarding}",
+    "subtitleSelected": "{entityName} - Instroom: {onboarding}, Uitstroom: {offboarding}, Migraties: {migration}",
     "allEntities": "Alle entiteiten",
     "selectAll": "🔄 Alle entiteiten",
     "onboarding": "Instroom",
-    "offboarding": "Uitstroom"
+    "offboarding": "Uitstroom",
+    "migration": "Migraties"
   },
   "signatures": {
     "dialogTitle": "Email Signature Generator",

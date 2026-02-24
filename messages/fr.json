@@ -37,8 +37,10 @@
     "optional": "Optionnel",
     "onboarding": "Onboarding",
     "offboarding": "Offboarding",
+    "migration": "Migration",
     "arrivals": "Entrées",
-    "departures": "Départs"
+    "departures": "Départs",
+    "migrations": "Migrations"
   },
   "metadata": {
     "title": "Starterskalender",
@@ -89,6 +91,7 @@
     "filterAll": "Tout",
     "filterArrivals": "Entrées",
     "filterDepartures": "Départs",
+    "filterMigrations": "Migrations",
     "exportName": "Nom",
     "exportRole": "Fonction",
     "exportRegion": "Région",
@@ -123,6 +126,7 @@
     "filterAll": "Tout",
     "filterArrivals": "Entrées",
     "filterDepartures": "Départs",
+    "filterMigrations": "Migrations",
     "columnType": "Type",
     "columnDate": "Date"
   },
@@ -141,6 +145,16 @@
     "labelType": "Type *",
     "typeOnboarding": "Onboarding (entrée)",
     "typeOffboarding": "Offboarding (départ)",
+    "typeMigration": "Migration (mutation interne)",
+    "titleNewMigration": "Nouvelle migration",
+    "titleEditMigration": "Modifier la migration",
+    "descriptionNewMigration": "Enregistrer une mutation interne entre entités.",
+    "descriptionEditMigration": "Modifier les données de la migration.",
+    "labelMigrationDate": "Date de migration *",
+    "labelFromEntity": "De l'entité",
+    "labelFromRole": "Fonction actuelle",
+    "labelToEntity": "Vers l'entité *",
+    "labelToRole": "Nouvelle fonction",
     "labelName": "Nom *",
     "selectEmployee": "Sélectionner un collaborateur existant",
     "searchEmployee": "Rechercher un collaborateur...",
@@ -231,9 +245,11 @@
     "labelVia": "Via :",
     "labelStart": "Début :",
     "labelDeparture": "Départ :",
+    "labelMigration": "Migration :",
     "labelExtraInfo": "Info supplémentaire :",
     "badgeOnboarding": "Entrée",
-    "badgeOffboarding": "Départ"
+    "badgeOffboarding": "Départ",
+    "badgeMigration": "Migration"
   },
   "tasks": {
     "title": "Tâches",
@@ -808,6 +824,7 @@
     "total": "Total",
     "totalOnboarding": "Entrées",
     "totalOffboarding": "Départs",
+    "totalMigration": "Migrations",
     "perEntity": "Par entité",
     "starter": "personne",
     "startersPlural": "personnes",
@@ -821,7 +838,9 @@
     "startToday": "✨ Commence aujourd'hui",
     "startSoon": "🔔 Commence bientôt",
     "departsToday": "Départ aujourd'hui",
-    "departsSoon": "Départ bientôt"
+    "departsSoon": "Départ bientôt",
+    "migratesToday": "Migration aujourd'hui",
+    "migratesSoon": "Migration bientôt"
   },
   "myTasks": {
     "title": "Mes tâches en cours",
@@ -836,22 +855,25 @@
   "monthlyCharts": {
     "title": "Statistiques mensuelles",
     "subtitleYear": "Mouvements par mois en {year}",
-    "subtitleTotal": "Mouvements par mois en {year} - Entrées : {onboarding}, Départs : {offboarding}",
+    "subtitleTotal": "Mouvements par mois en {year} - Entrées : {onboarding}, Départs : {offboarding}, Migrations : {migration}",
     "months": ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"],
     "filterAll": "Tout",
     "filterOnboarding": "Entrées",
     "filterOffboarding": "Départs",
+    "filterMigration": "Migrations",
     "onboardingLabel": "Entrées",
-    "offboardingLabel": "Départs"
+    "offboardingLabel": "Départs",
+    "migrationLabel": "Migrations"
   },
   "entityMonthlyCharts": {
     "title": "Statistiques mensuelles par entité",
     "subtitle": "Mouvements par entité par mois en {year}",
-    "subtitleSelected": "{entityName} - Entrées : {onboarding}, Départs : {offboarding}",
+    "subtitleSelected": "{entityName} - Entrées : {onboarding}, Départs : {offboarding}, Migrations : {migration}",
     "allEntities": "Toutes les entités",
     "selectAll": "🔄 Toutes les entités",
     "onboarding": "Entrées",
-    "offboarding": "Départs"
+    "offboarding": "Départs",
+    "migration": "Migrations"
   },
   "signatures": {
     "dialogTitle": "Générateur de signature email",

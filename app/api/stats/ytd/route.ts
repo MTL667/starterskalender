@@ -30,18 +30,20 @@ export async function GET(request: NextRequest) {
       baseWhere.entityId = { in: visibleEntities.map(e => e.id) }
     }
 
-    if (type && (type === 'ONBOARDING' || type === 'OFFBOARDING')) {
+    if (type && ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'].includes(type)) {
       baseWhere.type = type
     }
 
     const totalYTD = await prisma.starter.count({ where: baseWhere })
 
-    // Also get separate counts for onboarding and offboarding
     const onboardingCount = await prisma.starter.count({
       where: { ...baseWhere, type: 'ONBOARDING' },
     })
     const offboardingCount = await prisma.starter.count({
       where: { ...baseWhere, type: 'OFFBOARDING' },
+    })
+    const migrationCount = await prisma.starter.count({
+      where: { ...baseWhere, type: 'MIGRATION' },
     })
 
     const entityStats = await Promise.all(
@@ -67,6 +69,7 @@ export async function GET(request: NextRequest) {
       totalYTD,
       onboardingCount,
       offboardingCount,
+      migrationCount,
       entities: entityStats.filter(e => e.count > 0),
     })
   } catch (error) {

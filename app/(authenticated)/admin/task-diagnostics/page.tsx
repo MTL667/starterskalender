@@ -171,7 +171,7 @@ export default function TaskDiagnosticsPage() {
                       {tc('type')}: {template.type} | {t('priorityLabel')}: {template.priority} |
                       {t('deadlineDays', { days: template.daysUntilDue })}
                       {template.forStarterType && (
-                        <> | {template.forStarterType === 'ONBOARDING' ? tc('onboarding') : tc('offboarding')}</>
+                        <> | {template.forStarterType === 'ONBOARDING' ? tc('onboarding') : template.forStarterType === 'MIGRATION' ? tc('migration') : tc('offboarding')}</>
                       )}
                     </div>
                   </div>
