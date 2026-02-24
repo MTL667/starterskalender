@@ -9,7 +9,7 @@ import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { useSession } from 'next-auth/react'
-import { ArrowUpRight, ArrowDownRight, ArrowLeftRight } from 'lucide-react'
+import { PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
 
 interface Starter {
   id: string
@@ -228,9 +228,9 @@ export function RecentStarters({ year }: { year: number }) {
                       {starter.type === 'MIGRATION' ? (
                         <ArrowLeftRight className="h-4 w-4 text-blue-500 shrink-0" />
                       ) : starter.type === 'OFFBOARDING' ? (
-                        <ArrowDownRight className="h-4 w-4 text-orange-500 shrink-0" />
+                        <PlaneTakeoff className="h-4 w-4 text-red-500 shrink-0" />
                       ) : (
-                        <ArrowUpRight className="h-4 w-4 text-green-500 shrink-0" />
+                        <PlaneLanding className="h-4 w-4 text-green-500 shrink-0" />
                       )}
                       <div className="font-medium">{starter.name}</div>
                       {starter.language && (
@@ -243,7 +243,7 @@ export function RecentStarters({ year }: { year: number }) {
                           starter.type === 'MIGRATION'
                             ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-700"
                             : starter.type === 'OFFBOARDING' 
-                              ? "bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-700"
+                              ? "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-200 dark:border-red-700"
                               : "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700"
                         }>
                           {starter.type === 'MIGRATION' ? t('migratesToday') : starter.type === 'OFFBOARDING' ? t('departsToday') : t('startToday')}

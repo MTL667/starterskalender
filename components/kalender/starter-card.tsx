@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { ArrowDownRight, ArrowUpRight, ArrowLeftRight } from 'lucide-react'
+import { PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
 
 interface Starter {
   id: string
@@ -37,16 +37,16 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
       onClick={onClick}
       className={`border rounded-lg p-3 cursor-pointer hover:border-primary transition-colors bg-card ${
         starter.isCancelled ? 'opacity-60' : ''
-      } ${isMigration ? 'border-l-4 border-l-blue-400 dark:border-l-blue-600' : isOffboarding ? 'border-l-4 border-l-orange-400 dark:border-l-orange-600' : ''}`}
+      } ${isMigration ? 'border-l-4 border-l-blue-400 dark:border-l-blue-600' : isOffboarding ? 'border-l-4 border-l-red-400 dark:border-l-red-600' : ''}`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {isMigration ? (
             <ArrowLeftRight className="h-3.5 w-3.5 text-blue-500 shrink-0" />
           ) : isOffboarding ? (
-            <ArrowDownRight className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+            <PlaneTakeoff className="h-3.5 w-3.5 text-red-500 shrink-0" />
           ) : (
-            <ArrowUpRight className="h-3.5 w-3.5 text-green-500 shrink-0" />
+            <PlaneLanding className="h-3.5 w-3.5 text-green-500 shrink-0" />
           )}
           <div className={`font-medium text-sm truncate ${starter.isCancelled ? 'line-through text-muted-foreground' : ''}`}>
             {starter.name}

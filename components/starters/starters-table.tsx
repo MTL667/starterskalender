@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, ArrowUpRight, ArrowDownRight, ArrowLeftRight } from 'lucide-react'
+import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { ExportDropdown } from '@/components/ui/export-dropdown'
@@ -453,9 +453,9 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                         {starter.type === 'MIGRATION' ? (
                           <ArrowLeftRight className="h-4 w-4 text-blue-500" />
                         ) : starter.type === 'OFFBOARDING' ? (
-                          <ArrowDownRight className="h-4 w-4 text-orange-500" />
+                          <PlaneTakeoff className="h-4 w-4 text-red-500" />
                         ) : (
-                          <ArrowUpRight className="h-4 w-4 text-green-500" />
+                          <PlaneLanding className="h-4 w-4 text-green-500" />
                         )}
                       </span>
                     </td>
