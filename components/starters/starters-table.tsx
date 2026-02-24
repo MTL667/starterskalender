@@ -220,7 +220,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     
     // Titel
     doc.setFontSize(18)
-    doc.text('Starters Overzicht', 14, 22)
+    doc.text(t('pdfTitle'), 14, 22)
     doc.setFontSize(11)
     doc.text(`Jaar: ${year}`, 14, 30)
     
