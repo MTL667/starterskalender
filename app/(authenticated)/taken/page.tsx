@@ -147,13 +147,14 @@ export default function TakenPage() {
   const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
   const [reassigning, setReassigning] = useState(false)
 
+  const isAdmin = (session?.user as any)?.role === 'HR_ADMIN'
+
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [assignedToMe, setAssignedToMe] = useState(false)
+  const [assignedToMe, setAssignedToMe] = useState(true)
+  const [assignedToMeInitialized, setAssignedToMeInitialized] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-
-  const isAdmin = (session?.user as any)?.role === 'HR_ADMIN'
 
   // Check for taskId in URL (from notification click)
   useEffect(() => {
@@ -187,6 +188,14 @@ export default function TakenPage() {
       console.error('Error fetching specific task:', error)
     }
   }
+
+  // Set default filter based on role: admins see all, others see only their tasks
+  useEffect(() => {
+    if (session?.user && !assignedToMeInitialized) {
+      setAssignedToMe(!isAdmin)
+      setAssignedToMeInitialized(true)
+    }
+  }, [session, isAdmin, assignedToMeInitialized])
 
   useEffect(() => {
     if (isAdmin) {
