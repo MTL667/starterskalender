@@ -289,7 +289,15 @@
     "priorityLow": "Basse",
     "priorityNormal": "Normale",
     "priorityHigh": "Haute",
-    "priorityUrgent": "Urgente"
+    "priorityUrgent": "Urgente",
+    "reassign": "Réattribuer",
+    "reassignTo": "Attribuer à",
+    "reassignSuccess": "Tâche réattribuée",
+    "reassignError": "Erreur lors de la réattribution",
+    "selectUser": "Sélectionner un utilisateur...",
+    "unassigned": "Non attribué",
+    "noUsers": "Aucun utilisateur trouvé",
+    "reassignedBy": "Réattribué par"
   },
   "profile": {
     "title": "Profil",

@@ -329,3 +329,131 @@ async function sendTaskAssignmentEmail(task: any, starter: any) {
   })
 }
 
+/**
+ * Verstuur email notificatie bij hertoewijzing van een taak
+ */
+export async function sendTaskReassignmentEmail(task: any, reassignedByName: string) {
+  if (!task.assignedTo?.email) {
+    return
+  }
+
+  const assigneeName = task.assignedTo.name || task.assignedTo.email
+  const starterName = task.starter?.name || '—'
+  const entityName = task.entity?.name || '—'
+  const dueDate = task.dueDate
+    ? new Date(task.dueDate).toLocaleDateString('nl-BE')
+    : 'Geen deadline'
+
+  const taskTypeLabels: Record<string, string> = {
+    IT_SETUP: 'IT Setup',
+    HR_ADMIN: 'HR Administratie',
+    FACILITIES: 'Facilities',
+    MANAGER_ACTION: 'Manager Actie',
+    CUSTOM: 'Custom',
+  }
+
+  const priorityLabels: Record<string, string> = {
+    LOW: 'Laag',
+    MEDIUM: 'Normaal',
+    HIGH: 'Hoog',
+    URGENT: 'Urgent',
+  }
+
+  const subject = `Taak toegewezen: ${task.title}`
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .task-card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .label { font-weight: bold; color: #666; }
+    .value { color: #333; margin-left: 10px; }
+    .priority-${task.priority?.toLowerCase() || 'medium'} {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      ${task.priority === 'URGENT' ? 'background: #fee; color: #c00;' : ''}
+      ${task.priority === 'HIGH' ? 'background: #fff3cd; color: #856404;' : ''}
+      ${task.priority === 'MEDIUM' ? 'background: #d1ecf1; color: #0c5460;' : ''}
+      ${task.priority === 'LOW' ? 'background: #f0f0f0; color: #666;' : ''}
+    }
+    .button {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 12px 30px;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .footer { text-align: center; margin-top: 30px; color: #888; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔄 Taak Toegewezen</h1>
+    </div>
+    <div class="content">
+      <p>Hallo ${assigneeName},</p>
+      <p>Een taak is aan jou toegewezen door <strong>${reassignedByName}</strong>.</p>
+
+      <div class="task-card">
+        <h2 style="margin-top: 0;">${task.title}</h2>
+        ${task.description ? `<p style="color: #666;">${task.description}</p>` : ''}
+
+        <div style="margin-top: 20px;">
+          <div style="margin: 10px 0;">
+            <span class="label">Type:</span>
+            <span class="value">${taskTypeLabels[task.type] || task.type}</span>
+          </div>
+          <div style="margin: 10px 0;">
+            <span class="label">Prioriteit:</span>
+            <span class="priority-${task.priority?.toLowerCase() || 'medium'}">${priorityLabels[task.priority] || task.priority}</span>
+          </div>
+          ${starterName !== '—' ? `
+          <div style="margin: 10px 0;">
+            <span class="label">Medewerker:</span>
+            <span class="value">${starterName}</span>
+          </div>` : ''}
+          ${entityName !== '—' ? `
+          <div style="margin: 10px 0;">
+            <span class="label">Entiteit:</span>
+            <span class="value">${entityName}</span>
+          </div>` : ''}
+          <div style="margin: 10px 0;">
+            <span class="label">Deadline:</span>
+            <span class="value">${dueDate}</span>
+          </div>
+        </div>
+      </div>
+
+      <center>
+        <a href="${process.env.NEXTAUTH_URL}/taken?taskId=${task.id}" class="button">
+          Bekijk Taak
+        </a>
+      </center>
+
+      <div class="footer">
+        <p>Deze email is automatisch gegenereerd door Starterskalender.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `
+
+  await sendEmail({
+    to: task.assignedTo.email,
+    subject,
+    html,
+  })
+}
+

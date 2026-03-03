@@ -144,12 +144,16 @@ export default function TakenPage() {
   const [loading, setLoading] = useState(true)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
+  const [reassigning, setReassigning] = useState(false)
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [assignedToMe, setAssignedToMe] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+
+  const isAdmin = (session?.user as any)?.role === 'HR_ADMIN'
 
   // Check for taskId in URL (from notification click)
   useEffect(() => {
@@ -183,6 +187,15 @@ export default function TakenPage() {
       console.error('Error fetching specific task:', error)
     }
   }
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetch('/api/admin/users')
+        .then(res => res.json())
+        .then(data => setUsers(Array.isArray(data) ? data : []))
+        .catch(err => console.error('Error fetching users:', err))
+    }
+  }, [isAdmin])
 
   useEffect(() => {
     fetchTasks()
@@ -222,6 +235,27 @@ export default function TakenPage() {
       }
     } catch (error) {
       console.error('Error completing task:', error)
+    }
+  }
+
+  const handleReassign = async (taskId: string, newAssigneeId: string) => {
+    setReassigning(true)
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedToId: newAssigneeId || null }),
+      })
+
+      if (res.ok) {
+        const updatedTask = await res.json()
+        setSelectedTask(updatedTask)
+        fetchTasks()
+      }
+    } catch (error) {
+      console.error('Error reassigning task:', error)
+    } finally {
+      setReassigning(false)
     }
   }
 
@@ -509,14 +543,39 @@ export default function TakenPage() {
                   </div>
                 )}
 
-                {selectedTask.assignedTo && (
-                  <div>
-                    <Label>{t('assignedTo')}</Label>
+                <div>
+                  <Label>{t('assignedTo')}</Label>
+                  {isAdmin && selectedTask.status !== 'COMPLETED' ? (
+                    <div className="mt-1">
+                      <Select
+                        value={selectedTask.assignedTo?.id || '__unassigned__'}
+                        onValueChange={(value) => handleReassign(selectedTask.id, value === '__unassigned__' ? '' : value)}
+                        disabled={reassigning}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={t('selectUser')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__unassigned__">
+                            <span className="text-muted-foreground">{t('unassigned')}</span>
+                          </SelectItem>
+                          {users.map(user => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.name || user.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
                     <p className="text-sm mt-1">
-                      {selectedTask.assignedTo.name || selectedTask.assignedTo.email}
+                      {selectedTask.assignedTo
+                        ? (selectedTask.assignedTo.name || selectedTask.assignedTo.email)
+                        : <span className="text-muted-foreground">{t('unassigned')}</span>
+                      }
                     </p>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {selectedTask.dueDate && (
                   <div>
@@ -565,7 +624,7 @@ export default function TakenPage() {
 
               <DialogFooter>
                 {selectedTask.status !== 'COMPLETED' &&
-                  selectedTask.assignedTo?.id === (session?.user as any)?.id && (
+                  (isAdmin || selectedTask.assignedTo?.id === (session?.user as any)?.id) && (
                     <Button
                       onClick={() => handleCompleteTask(selectedTask.id)}
                       className="bg-green-600 hover:bg-green-700"

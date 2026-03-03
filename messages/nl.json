@@ -289,7 +289,15 @@
     "priorityLow": "Laag",
     "priorityNormal": "Normaal",
     "priorityHigh": "Hoog",
-    "priorityUrgent": "Urgent"
+    "priorityUrgent": "Urgent",
+    "reassign": "Hertoewijzen",
+    "reassignTo": "Toewijzen aan",
+    "reassignSuccess": "Taak is hertoegewezen",
+    "reassignError": "Fout bij hertoewijzen",
+    "selectUser": "Selecteer gebruiker...",
+    "unassigned": "Niet toegewezen",
+    "noUsers": "Geen gebruikers gevonden",
+    "reassignedBy": "Hertoegewezen door"
   },
   "profile": {
     "title": "Profiel",

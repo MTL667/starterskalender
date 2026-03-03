@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { sendTaskReassignmentEmail } from '@/lib/task-automation'
 
 // GET /api/tasks/[id] - Haal specifieke taak op
 export async function GET(
@@ -196,6 +197,17 @@ export async function PATCH(
         },
       },
     })
+
+    // Send email to new assignee on reassignment
+    if (updateData.assignedToId && updateData.assignedToId !== task.assignedToId) {
+      try {
+        const reassignerName = user.name || user.email || 'Een beheerder'
+        await sendTaskReassignmentEmail(updatedTask, reassignerName)
+        console.log(`📧 Reassignment email sent for task ${updatedTask.id} to ${updatedTask.assignedTo?.email}`)
+      } catch (emailError) {
+        console.error('Failed to send reassignment email:', emailError)
+      }
+    }
 
     return NextResponse.json(updatedTask)
   } catch (error) {
