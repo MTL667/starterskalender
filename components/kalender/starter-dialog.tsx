@@ -112,6 +112,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [showEmployeeList, setShowEmployeeList] = useState(false)
   const [manualEntry, setManualEntry] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  const [emailTaskToggling, setEmailTaskToggling] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     name: '',
@@ -611,6 +612,44 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
+  // Find the email creation task for this starter
+  const emailTask = tasks.find((task: any) =>
+    task.type === 'IT_SETUP' &&
+    task.title?.toLowerCase().includes('mailadres')
+  )
+  const isEmailTaskAssignee = emailTask?.assignedTo?.id === session?.user?.id
+  const isEmailTaskCompleted = emailTask?.status === 'COMPLETED'
+
+  const handleToggleEmailTask = async () => {
+    if (!emailTask || emailTaskToggling) return
+    setEmailTaskToggling(true)
+    try {
+      if (isEmailTaskCompleted) {
+        const res = await fetch(`/api/tasks/${emailTask.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'PENDING' }),
+        })
+        if (res.ok) {
+          setTasks(prev => prev.map((t: any) => t.id === emailTask.id ? { ...t, status: 'PENDING', completedAt: null } : t))
+        }
+      } else {
+        const res = await fetch(`/api/tasks/${emailTask.id}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ completionNotes: '' }),
+        })
+        if (res.ok) {
+          setTasks(prev => prev.map((t: any) => t.id === emailTask.id ? { ...t, status: 'COMPLETED', completedAt: new Date().toISOString() } : t))
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling email task:', error)
+    } finally {
+      setEmailTaskToggling(false)
+    }
+  }
+
   // Check of alle velden voor signature generatie ingevuld zijn en template bestaat
   const canGenerateSignature = !!(
     hasSignatureTemplate &&
@@ -1069,6 +1108,33 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       : t('clickToCopy')
                     : t('hintEmailSuggested')}
                 </p>
+                {isEdit && emailTask && (
+                  <div className={`flex items-center gap-2 mt-2 p-2 rounded-md border ${
+                    isEmailTaskCompleted 
+                      ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800' 
+                      : 'bg-muted/50'
+                  }`}>
+                    <Checkbox
+                      id="emailTaskComplete"
+                      checked={isEmailTaskCompleted}
+                      onCheckedChange={handleToggleEmailTask}
+                      disabled={!isEmailTaskAssignee || emailTaskToggling}
+                    />
+                    <label
+                      htmlFor="emailTaskComplete"
+                      className={`text-xs cursor-pointer select-none flex-1 ${
+                        isEmailTaskCompleted ? 'text-green-700 dark:text-green-300 line-through' : ''
+                      } ${!isEmailTaskAssignee ? 'cursor-default' : ''}`}
+                    >
+                      {t('emailTaskLabel')}
+                    </label>
+                    {emailTask.assignedTo && (
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {emailTask.assignedTo.name || emailTask.assignedTo.email}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

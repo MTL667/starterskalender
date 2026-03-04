@@ -199,6 +199,7 @@
     "copyEmail": "Copier l'adresse email",
     "placeholderEmail": "prenom.nom@entreprise.be",
     "hintEmailSuggested": "Adresse email professionnelle suggérée",
+    "emailTaskLabel": "Adresse email créée",
     "labelHasExperience": "A une expérience professionnelle pertinente",
     "labelExperienceSince": "Expérience depuis *",
     "labelExperienceRole": "Fonction",
