@@ -221,6 +221,7 @@
     "taskQueued": "En attente",
     "moreTasks": "... et {count} autres tâches",
     "viewAllTasks": "Voir toutes les tâches →",
+    "regenerateTasks": "Régénérer les tâches",
     "cancelStarter": "Annuler",
     "saveExtraInfo": "Enregistrer info supplémentaire",
     "saveContact": "Enregistrer les coordonnées",

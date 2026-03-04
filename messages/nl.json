@@ -221,6 +221,7 @@
     "taskQueued": "In wachtrij",
     "moreTasks": "... en {count} meer taken",
     "viewAllTasks": "Bekijk alle taken →",
+    "regenerateTasks": "Taken opnieuw genereren",
     "cancelStarter": "Annuleren",
     "saveExtraInfo": "Extra Info Opslaan",
     "saveContact": "Contact Gegevens Opslaan",

@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
@@ -114,6 +114,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [emailTaskToggling, setEmailTaskToggling] = useState(false)
   const [phoneTaskToggling, setPhoneTaskToggling] = useState(false)
+  const [regeneratingTasks, setRegeneratingTasks] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     name: '',
@@ -687,6 +688,31 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       console.error('Error toggling email task:', error)
     } finally {
       setEmailTaskToggling(false)
+    }
+  }
+
+  const isAdmin = (session?.user as any)?.role === 'HR_ADMIN' || (session?.user as any)?.role === 'ADMIN'
+
+  const handleRegenerateTasks = async () => {
+    if (!starter || regeneratingTasks) return
+    setRegeneratingTasks(true)
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/regenerate-tasks`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        const result = await res.json()
+        console.log(`Regenerated tasks: deleted ${result.deleted}, created ${result.created}`)
+        const tasksRes = await fetch(`/api/tasks?starterId=${starter.id}`)
+        if (tasksRes.ok) {
+          const newTasks = await tasksRes.json()
+          setTasks(newTasks)
+        }
+      }
+    } catch (error) {
+      console.error('Error regenerating tasks:', error)
+    } finally {
+      setRegeneratingTasks(false)
     }
   }
 
@@ -1344,9 +1370,24 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             {/* Taken sectie (alleen bij edit) */}
             {isEdit && tasks.length > 0 && (
               <div className="border-t pt-4">
-                <Label className="text-base font-semibold mb-3 block">
-                  {t('tasksTitle', { count: tasks.length })}
-                </Label>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base font-semibold">
+                    {t('tasksTitle', { count: tasks.length })}
+                  </Label>
+                  {isAdmin && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={handleRegenerateTasks}
+                      disabled={regeneratingTasks}
+                    >
+                      <RefreshCw className={`h-3 w-3 mr-1.5 ${regeneratingTasks ? 'animate-spin' : ''}`} />
+                      {t('regenerateTasks')}
+                    </Button>
+                  )}
+                </div>
                 <div className="space-y-2">
                   {tasks.slice(0, 5).map((task: any) => (
                     <div
