@@ -21,13 +21,22 @@ function replaceVariables(
  */
 export async function createAutomaticTasks(starter: any) {
   try {
-    // Haal alle actieve task templates op
+    const starterType = starter.type || 'ONBOARDING'
+    console.log(`🔧 createAutomaticTasks called for "${starter.name}" with type: ${starterType}`)
+
+    // Haal templates op die matchen met het starter type
     const templates = await prisma.taskTemplate.findMany({
       where: {
         isActive: true,
         autoAssign: true,
+        OR: [
+          { forStarterType: starterType },
+          { forStarterType: null },
+        ],
       },
     })
+
+    console.log(`📋 Found ${templates.length} matching templates for type ${starterType}:`, templates.map(t => t.title))
 
     if (templates.length === 0) {
       console.log('No active task templates found')
@@ -39,18 +48,13 @@ export async function createAutomaticTasks(starter: any) {
     for (const template of templates) {
       let shouldApply = true
 
-      // Filter on starter type (onboarding/offboarding)
-      if (template.forStarterType && template.forStarterType !== starter.type) {
-        shouldApply = false
-      }
-
       // Filter op entiteit
-      if (shouldApply && template.forEntityIds.length > 0 && starter.entityId) {
+      if (template.forEntityIds.length > 0 && starter.entityId) {
         shouldApply = template.forEntityIds.includes(starter.entityId)
       }
 
       // Filter op functie
-      if (shouldApply && template.forJobRoleTitles.length > 0 && starter.roleTitle) {
+      if (template.forJobRoleTitles.length > 0 && starter.roleTitle) {
         shouldApply = template.forJobRoleTitles.includes(starter.roleTitle)
       }
 

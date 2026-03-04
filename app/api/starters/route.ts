@@ -112,7 +112,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log('📥 POST /api/starters - received type:', body.type)
     const data = StarterSchema.parse(body)
+    console.log('✅ Parsed type:', data.type)
 
     const startDate = new Date(data.startDate)
     const weekNumber = calculateWeekNumber(startDate)
