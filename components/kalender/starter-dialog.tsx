@@ -1103,7 +1103,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       : t('clickToCopy')
                     : t('hintPhoneOptional')}
                 </p>
-                {isEdit && phoneTask && (
+                {isEdit && phoneTask && formData.type === 'ONBOARDING' && (
                   <div className={`flex items-center gap-2 mt-2 p-2 rounded-md border ${
                     isPhoneTaskCompleted
                       ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800'
@@ -1178,7 +1178,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       : t('clickToCopy')
                     : t('hintEmailSuggested')}
                 </p>
-                {isEdit && emailTask && (
+                {isEdit && emailTask && formData.type === 'ONBOARDING' && (
                   <div className={`flex items-center gap-2 mt-2 p-2 rounded-md border ${
                     isEmailTaskCompleted 
                       ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800' 

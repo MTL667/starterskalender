@@ -159,7 +159,8 @@ export async function POST(request: NextRequest) {
 
     // Automatisch taken aanmaken op basis van templates
     try {
-      const tasks = await createAutomaticTasks(starter)
+      console.log(`🚀 Creating tasks for starter "${starter.name}" with type: ${data.type} (starter.type: ${starter.type})`)
+      const tasks = await createAutomaticTasks(starter, data.type)
       console.log(`✅ Created ${tasks.length} automatic tasks for starter ${starter.name}`)
     } catch (taskError) {
       console.error('Failed to create automatic tasks:', taskError)

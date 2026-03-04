@@ -19,10 +19,10 @@ function replaceVariables(
 /**
  * Maak automatisch taken aan bij het aanmaken van een nieuwe starter
  */
-export async function createAutomaticTasks(starter: any) {
+export async function createAutomaticTasks(starter: any, explicitType?: string) {
   try {
-    const starterType = starter.type || 'ONBOARDING'
-    console.log(`🔧 createAutomaticTasks called for "${starter.name}" with type: ${starterType}`)
+    const starterType = explicitType || starter.type || 'ONBOARDING'
+    console.log(`🔧 createAutomaticTasks called for "${starter.name}" with type: ${starterType} (explicit: ${explicitType}, starter.type: ${starter.type})`)
 
     // Haal templates op die matchen met het starter type
     const templates = await prisma.taskTemplate.findMany({
