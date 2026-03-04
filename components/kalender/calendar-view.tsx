@@ -1,7 +1,8 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -53,10 +54,11 @@ interface Entity {
 export function CalendarView({ initialYear, canEdit }: { initialYear: number; canEdit: boolean }) {
   const t = useTranslations('calendar')
   const dateLocale = getDateLocale(useLocale())
+  const searchParams = useSearchParams()
   const today = new Date()
   const [viewMode, setViewMode] = useState<ViewMode>('week')
-  const [currentDate, setCurrentDate] = useState(today) // Voor week/maand navigatie
-  const [year, setYear] = useState(initialYear) // Voor jaar view
+  const [currentDate, setCurrentDate] = useState(today)
+  const [year, setYear] = useState(initialYear)
   const [starters, setStarters] = useState<Starter[]>([])
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,6 +67,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
+  const [deepLinkHandled, setDeepLinkHandled] = useState(false)
 
   const weeksInYear = getWeeksInYear(year)
 
@@ -126,6 +129,35 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
         setLoading(false)
       })
   }, [fetchYear, currentDate, viewMode])
+
+  // Deep-link: open starter dialog when starterId is in URL
+  useEffect(() => {
+    if (deepLinkHandled || loading || starters.length === 0) return
+    const starterId = searchParams.get('starterId')
+    if (!starterId) return
+    
+    const found = starters.find(s => s.id === starterId)
+    if (found) {
+      setSelectedStarter(found)
+      setDialogOpen(true)
+      const starterDate = new Date(found.startDate)
+      setCurrentDate(starterDate)
+    } else {
+      fetch(`/api/starters/${starterId}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) {
+            setSelectedStarter(data)
+            setDialogOpen(true)
+            const starterDate = new Date(data.startDate)
+            setCurrentDate(starterDate)
+            setYear(getYear(starterDate))
+          }
+        })
+        .catch(() => {})
+    }
+    setDeepLinkHandled(true)
+  }, [deepLinkHandled, loading, starters, searchParams])
 
   // Bepaal de datum range voor filtering op basis van view mode
   let dateRangeStart: Date, dateRangeEnd: Date

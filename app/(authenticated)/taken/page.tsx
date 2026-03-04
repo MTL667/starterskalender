@@ -38,6 +38,7 @@ import {
   Plus,
   Filter,
   X,
+  ExternalLink,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -555,6 +556,19 @@ export default function TakenPage() {
                           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedTask.starter.notes}</p>
                         </div>
                       )}
+                      <div className="mt-2 pt-2 border-t border-border/50">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full text-xs"
+                          onClick={() => {
+                            router.push(`/kalender?starterId=${selectedTask.starter!.id}`)
+                          }}
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1.5" />
+                          {t('viewStarter')}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
