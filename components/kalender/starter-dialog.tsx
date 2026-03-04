@@ -113,6 +113,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [manualEntry, setManualEntry] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
   const [emailTaskToggling, setEmailTaskToggling] = useState(false)
+  const [phoneTaskToggling, setPhoneTaskToggling] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     name: '',
@@ -612,6 +613,45 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
+  // Find the phone task for this starter
+  const phoneTask = tasks.find((task: any) =>
+    task.type === 'IT_SETUP' &&
+    task.title?.toLowerCase().includes('telefoonnummer')
+  )
+  const isPhoneTaskAssignee = phoneTask?.assignedTo?.id === session?.user?.id
+  const isPhoneTaskRequested = phoneTask?.status === 'IN_PROGRESS'
+  const isPhoneTaskCompleted = phoneTask?.status === 'COMPLETED'
+
+  const handleTogglePhoneTask = async () => {
+    if (!phoneTask || phoneTaskToggling) return
+    setPhoneTaskToggling(true)
+    try {
+      if (isPhoneTaskRequested) {
+        const res = await fetch(`/api/tasks/${phoneTask.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'PENDING' }),
+        })
+        if (res.ok) {
+          setTasks(prev => prev.map((t: any) => t.id === phoneTask.id ? { ...t, status: 'PENDING' } : t))
+        }
+      } else {
+        const res = await fetch(`/api/tasks/${phoneTask.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'IN_PROGRESS' }),
+        })
+        if (res.ok) {
+          setTasks(prev => prev.map((t: any) => t.id === phoneTask.id ? { ...t, status: 'IN_PROGRESS' } : t))
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling phone task:', error)
+    } finally {
+      setPhoneTaskToggling(false)
+    }
+  }
+
   // Find the email creation task for this starter
   const emailTask = tasks.find((task: any) =>
     task.type === 'IT_SETUP' &&
@@ -1063,6 +1103,36 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       : t('clickToCopy')
                     : t('hintPhoneOptional')}
                 </p>
+                {isEdit && phoneTask && (
+                  <div className={`flex items-center gap-2 mt-2 p-2 rounded-md border ${
+                    isPhoneTaskCompleted
+                      ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800'
+                      : isPhoneTaskRequested 
+                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800' 
+                        : 'bg-muted/50'
+                  }`}>
+                    <Checkbox
+                      id="phoneTaskRequested"
+                      checked={isPhoneTaskRequested || isPhoneTaskCompleted}
+                      onCheckedChange={handleTogglePhoneTask}
+                      disabled={!isPhoneTaskAssignee || phoneTaskToggling || isPhoneTaskCompleted}
+                    />
+                    <label
+                      htmlFor="phoneTaskRequested"
+                      className={`text-xs cursor-pointer select-none flex-1 ${
+                        isPhoneTaskCompleted ? 'text-green-700 dark:text-green-300 line-through' : 
+                        isPhoneTaskRequested ? 'text-blue-700 dark:text-blue-300' : ''
+                      } ${!isPhoneTaskAssignee || isPhoneTaskCompleted ? 'cursor-default' : ''}`}
+                    >
+                      {isPhoneTaskCompleted ? t('phoneTaskCompleted') : t('phoneTaskLabel')}
+                    </label>
+                    {phoneTask.assignedTo && (
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {phoneTask.assignedTo.name || phoneTask.assignedTo.email}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>

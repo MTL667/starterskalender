@@ -199,6 +199,8 @@
     "copyEmail": "Kopieer emailadres",
     "placeholderEmail": "voornaam.achternaam@bedrijf.be",
     "hintEmailSuggested": "Voorgesteld zakelijk mailadres",
+    "phoneTaskLabel": "Telefoonnummer aangevraagd",
+    "phoneTaskCompleted": "Telefoonnummer toegewezen",
     "emailTaskLabel": "Mailadres aangemaakt",
     "labelHasExperience": "Heeft relevante werkervaring",
     "labelExperienceSince": "Ervaring sinds *",
