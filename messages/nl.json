@@ -291,6 +291,7 @@
     "priorityNormal": "Normaal",
     "priorityHigh": "Hoog",
     "priorityUrgent": "Urgent",
+    "starterNotes": "Extra info:",
     "reassign": "Hertoewijzen",
     "reassignTo": "Toewijzen aan",
     "reassignSuccess": "Taak is hertoegewezen",

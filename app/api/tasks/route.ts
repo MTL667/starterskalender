@@ -69,6 +69,7 @@ export async function GET(req: Request) {
             id: true,
             name: true,
             startDate: true,
+            notes: true,
             entity: {
               select: {
                 id: true,

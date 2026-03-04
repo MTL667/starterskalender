@@ -29,6 +29,7 @@ export async function GET(
             startDate: true,
             phoneNumber: true,
             desiredEmail: true,
+            notes: true,
             entity: {
               select: {
                 id: true,
@@ -166,6 +167,7 @@ export async function PATCH(
             id: true,
             name: true,
             startDate: true,
+            notes: true,
           },
         },
         entity: {

@@ -56,6 +56,7 @@ interface Task {
     id: string
     name: string
     startDate: string
+    notes?: string | null
     entity?: {
       id: string
       name: string
@@ -547,6 +548,12 @@ export default function TakenPage() {
                         >
                           {selectedTask.starter.entity.name}
                         </Badge>
+                      )}
+                      {selectedTask.starter.notes && (
+                        <div className="mt-2 pt-2 border-t border-border/50">
+                          <p className="text-xs font-medium text-muted-foreground mb-1">{t('starterNotes')}</p>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedTask.starter.notes}</p>
+                        </div>
                       )}
                     </div>
                   </div>
