@@ -58,7 +58,7 @@ export function Navbar() {
               <img 
                 src={logoUrl} 
                 alt="Logo" 
-                className="h-10 object-contain"
+                className="h-10 object-contain rounded-lg"
               />
             ) : (
               <span className="font-bold text-xl">{t('appTitle')}</span>
