@@ -24,6 +24,36 @@ export async function createAutomaticTasks(starter: any, explicitType?: string) 
     const starterType = explicitType || starter.type || 'ONBOARDING'
     console.log(`🔧 createAutomaticTasks called for "${starter.name}" with type: ${starterType} (explicit: ${explicitType}, starter.type: ${starter.type})`)
 
+    // Auto-fix: update templates with null forStarterType based on known titles
+    const TITLE_TO_TYPE: Record<string, string> = {
+      'Mailadres toewijzen aan {{starterName}}': 'ONBOARDING',
+      'Telefoonnummer toewijzen aan {{starterName}}': 'ONBOARDING',
+      'Betrokken materialen voorzien voor {{starterName}}': 'ONBOARDING',
+      'Accounts deactiveren voor {{starterName}}': 'OFFBOARDING',
+      'Materialen innemen van {{starterName}}': 'OFFBOARDING',
+      'Administratieve afhandeling vertrek {{starterName}}': 'OFFBOARDING',
+      'Accounts aanpassen voor migratie {{starterName}}': 'MIGRATION',
+      'Administratieve verwerking migratie {{starterName}}': 'MIGRATION',
+    }
+
+    const nullTemplates = await prisma.taskTemplate.findMany({
+      where: { forStarterType: null, isActive: true },
+    })
+
+    if (nullTemplates.length > 0) {
+      console.log(`⚠️ Found ${nullTemplates.length} templates with null forStarterType, fixing...`)
+      for (const t of nullTemplates) {
+        const correctType = TITLE_TO_TYPE[t.title]
+        if (correctType) {
+          await prisma.taskTemplate.update({
+            where: { id: t.id },
+            data: { forStarterType: correctType as any },
+          })
+          console.log(`✅ Fixed template "${t.title}" → ${correctType}`)
+        }
+      }
+    }
+
     // Haal templates op die exact matchen met het starter type
     const templates = await prisma.taskTemplate.findMany({
       where: {
@@ -36,7 +66,7 @@ export async function createAutomaticTasks(starter: any, explicitType?: string) 
     console.log(`📋 Found ${templates.length} matching templates for type ${starterType}:`, templates.map(t => t.title))
 
     if (templates.length === 0) {
-      console.log('No active task templates found')
+      console.log('No active task templates found for type', starterType)
       return []
     }
 
