@@ -135,8 +135,18 @@ async function main() {
     })
 
     if (existing) {
-      console.log(`⏭️  Skipped: ${template.title} (already exists)`)
-      skipped++
+      // Update forStarterType if it's null or different
+      if (existing.forStarterType !== template.forStarterType) {
+        await prisma.taskTemplate.update({
+          where: { id: existing.id },
+          data: { forStarterType: template.forStarterType },
+        })
+        console.log(`🔄 Updated: ${template.title} (forStarterType: ${existing.forStarterType} → ${template.forStarterType})`)
+        created++
+      } else {
+        console.log(`⏭️  Skipped: ${template.title} (already exists with correct type)`)
+        skipped++
+      }
     } else {
       await prisma.taskTemplate.create({
         data: template,

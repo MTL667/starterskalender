@@ -24,15 +24,12 @@ export async function createAutomaticTasks(starter: any, explicitType?: string) 
     const starterType = explicitType || starter.type || 'ONBOARDING'
     console.log(`🔧 createAutomaticTasks called for "${starter.name}" with type: ${starterType} (explicit: ${explicitType}, starter.type: ${starter.type})`)
 
-    // Haal templates op die matchen met het starter type
+    // Haal templates op die exact matchen met het starter type
     const templates = await prisma.taskTemplate.findMany({
       where: {
         isActive: true,
         autoAssign: true,
-        OR: [
-          { forStarterType: starterType },
-          { forStarterType: null },
-        ],
+        forStarterType: starterType,
       },
     })
 
