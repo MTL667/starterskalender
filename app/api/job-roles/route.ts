@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const entityId = searchParams.get('entityId')
+    const withMaterialCount = searchParams.get('withMaterialCount') === 'true'
 
     const where: any = {}
     if (entityId) {
@@ -39,6 +40,11 @@ export async function GET(request: NextRequest) {
             colorHex: true,
           },
         },
+        ...(withMaterialCount && {
+          _count: {
+            select: { materials: true },
+          },
+        }),
       },
       orderBy: [
         { entityId: 'asc' },

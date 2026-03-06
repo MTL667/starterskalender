@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
-import { Trash2, Plus, Package } from 'lucide-react'
+import { Trash2, Plus, Package, Copy } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 
 interface Material {
@@ -23,6 +23,13 @@ interface JobRoleMaterial {
   isRequired: boolean
   notes: string | null
   material: Material
+}
+
+interface JobRoleWithMaterials {
+  id: string
+  title: string
+  entity: { name: string }
+  _count: { materials: number }
 }
 
 interface JobRoleMaterialsDialogProps {
@@ -46,10 +53,14 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
     isRequired: true,
     notes: '',
   })
+  const [copying, setCopying] = useState(false)
+  const [otherJobRoles, setOtherJobRoles] = useState<JobRoleWithMaterials[]>([])
+  const [copyFromRoleId, setCopyFromRoleId] = useState('')
 
   useEffect(() => {
     if (open && jobRole) {
       loadData()
+      loadOtherJobRoles()
     }
   }, [open, jobRole])
 
@@ -69,6 +80,55 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
       console.error('Error loading materials:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadOtherJobRoles = async () => {
+    try {
+      const res = await fetch('/api/job-roles?withMaterialCount=true')
+      if (res.ok) {
+        const roles = await res.json()
+        setOtherJobRoles(
+          roles.filter((r: JobRoleWithMaterials) => r.id !== jobRole?.id && r._count.materials > 0)
+        )
+      }
+    } catch (error) {
+      console.error('Error loading other job roles:', error)
+    }
+  }
+
+  const handleCopyFrom = async () => {
+    if (!jobRole || !copyFromRoleId) return
+
+    setCopying(true)
+    try {
+      const res = await fetch(`/api/job-roles/${copyFromRoleId}/materials`)
+      if (!res.ok) return
+
+      const sourceMaterials: JobRoleMaterial[] = await res.json()
+      const existingIds = new Set(assignedMaterials.map(am => am.materialId))
+
+      let added = 0
+      for (const sm of sourceMaterials) {
+        if (existingIds.has(sm.materialId)) continue
+        const addRes = await fetch(`/api/job-roles/${jobRole.id}/materials`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            materialId: sm.materialId,
+            isRequired: sm.isRequired,
+            notes: sm.notes,
+          }),
+        })
+        if (addRes.ok) added++
+      }
+
+      if (added > 0) await loadData()
+      setCopyFromRoleId('')
+    } catch (error) {
+      console.error('Error copying materials:', error)
+    } finally {
+      setCopying(false)
     }
   }
 
@@ -178,6 +238,37 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Copy from another job role */}
+          {otherJobRoles.length > 0 && (
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground mb-1 block">{t('copyFromRole')}</Label>
+                <Select value={copyFromRoleId} onValueChange={setCopyFromRoleId}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder={t('selectRoleToCopy')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {otherJobRoles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.title} ({role.entity.name}) — {role._count.materials} {t('materialsCount')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyFrom}
+                disabled={!copyFromRoleId || copying || loading}
+                className="h-9"
+              >
+                <Copy className={`h-4 w-4 mr-1.5 ${copying ? 'animate-spin' : ''}`} />
+                {t('copyMaterials')}
+              </Button>
             </div>
           )}
 

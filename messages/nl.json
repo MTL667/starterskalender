@@ -970,6 +970,10 @@
     "notesOptional": "Notities (optioneel)",
     "notesPlaceholder": "Bijv: Alleen voor senior niveau",
     "allAssigned": "Alle beschikbare materialen zijn toegewezen",
+    "copyFromRole": "Kopieer van andere functie",
+    "selectRoleToCopy": "Selecteer een functie...",
+    "copyMaterials": "Kopieer",
+    "materialsCount": "materialen",
     "errorAdding": "Fout bij toevoegen",
     "errorRemoving": "Fout bij verwijderen",
     "confirmRemove": "Weet je zeker dat je dit materiaal wilt verwijderen?"

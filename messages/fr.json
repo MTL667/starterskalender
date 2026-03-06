@@ -969,6 +969,10 @@
     "notesOptional": "Notes (optionnel)",
     "notesPlaceholder": "Ex : Uniquement pour le niveau senior",
     "allAssigned": "Tous les matériaux disponibles sont attribués",
+    "copyFromRole": "Copier d'une autre fonction",
+    "selectRoleToCopy": "Sélectionner une fonction...",
+    "copyMaterials": "Copier",
+    "materialsCount": "matériaux",
     "errorAdding": "Erreur lors de l'ajout",
     "errorRemoving": "Erreur lors de la suppression",
     "confirmRemove": "Êtes-vous sûr de vouloir supprimer ce matériau ?"
