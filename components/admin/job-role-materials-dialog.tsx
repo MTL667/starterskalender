@@ -187,7 +187,7 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Benodigde Materialen - {jobRole?.title}</DialogTitle>
           <DialogDescription>
@@ -195,7 +195,7 @@ export function JobRoleMaterialsDialog({ open, onClose, jobRole }: JobRoleMateri
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 pr-1">
           {/* Assigned Materials */}
           {assignedMaterials.length > 0 && (
             <div>
