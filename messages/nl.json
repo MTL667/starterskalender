@@ -379,6 +379,8 @@
     "usersDescription": "Beheer gebruikers, rollen en toegangsrechten",
     "materials": "Materialen",
     "materialsDescription": "Beheer benodigde materialen voor functies",
+    "materialMatrix": "Materialen Matrix",
+    "materialMatrixDescription": "Overzicht welke materialen per functie zijn toegewezen",
     "taskAssignments": "Taak Verantwoordelijken",
     "taskAssignmentsDescription": "Configureer wie verantwoordelijk is voor welke taken",
     "blockedPeriods": "Periode Blokkades",
@@ -977,5 +979,19 @@
     "errorAdding": "Fout bij toevoegen",
     "errorRemoving": "Fout bij verwijderen",
     "confirmRemove": "Weet je zeker dat je dit materiaal wilt verwijderen?"
+  },
+  "materialMatrix": {
+    "title": "Materialen Matrix",
+    "description": "Overzicht van alle materialen per functie",
+    "loading": "Matrix laden...",
+    "exportCSV": "Exporteer CSV",
+    "matrixTitle": "Materialen per Functie",
+    "matrixDescription": "{materials} materialen × {roles} functies",
+    "noData": "Geen materialen of functies gevonden",
+    "material": "Materiaal",
+    "category": "Categorie",
+    "legendRequired": "Verplicht",
+    "legendOptional": "Optioneel",
+    "legendNotAssigned": "Niet toegewezen"
   }
 }

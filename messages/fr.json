@@ -379,6 +379,8 @@
     "usersDescription": "Gérer les utilisateurs, rôles et droits d'accès",
     "materials": "Matériaux",
     "materialsDescription": "Gérer les matériaux nécessaires pour les fonctions",
+    "materialMatrix": "Matrice des Matériaux",
+    "materialMatrixDescription": "Aperçu des matériaux attribués par fonction",
     "taskAssignments": "Responsables des tâches",
     "taskAssignmentsDescription": "Configurer qui est responsable de quelles tâches",
     "blockedPeriods": "Périodes bloquées",
@@ -976,5 +978,19 @@
     "errorAdding": "Erreur lors de l'ajout",
     "errorRemoving": "Erreur lors de la suppression",
     "confirmRemove": "Êtes-vous sûr de vouloir supprimer ce matériau ?"
+  },
+  "materialMatrix": {
+    "title": "Matrice des Matériaux",
+    "description": "Aperçu de tous les matériaux par fonction",
+    "loading": "Chargement de la matrice...",
+    "exportCSV": "Exporter CSV",
+    "matrixTitle": "Matériaux par Fonction",
+    "matrixDescription": "{materials} matériaux × {roles} fonctions",
+    "noData": "Aucun matériau ou fonction trouvé",
+    "material": "Matériau",
+    "category": "Catégorie",
+    "legendRequired": "Obligatoire",
+    "legendOptional": "Optionnel",
+    "legendNotAssigned": "Non attribué"
   }
 }
