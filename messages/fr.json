@@ -430,7 +430,11 @@
     "roleEntityEditor": "Éditeur d'entité",
     "roleEntityViewer": "Lecteur d'entité",
     "roleGlobalViewer": "Lecteur global",
-    "roleNone": "Aucun (Invité - Pas d'accès)"
+    "roleNone": "Aucun (Invité - Pas d'accès)",
+    "searchPlaceholder": "Rechercher par nom, email ou entité...",
+    "allRoles": "Tous les rôles",
+    "noResults": "Aucun utilisateur trouvé",
+    "showingCount": "{count} sur {total} utilisateurs"
   },
   "adminEntities": {
     "title": "Entités",

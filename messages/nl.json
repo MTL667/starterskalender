@@ -430,7 +430,11 @@
     "roleEntityEditor": "Entity Editor",
     "roleEntityViewer": "Entity Viewer",
     "roleGlobalViewer": "Global Viewer",
-    "roleNone": "None (Guest - No Access)"
+    "roleNone": "None (Guest - No Access)",
+    "searchPlaceholder": "Zoek op naam, e-mail of entiteit...",
+    "allRoles": "Alle rollen",
+    "noResults": "Geen gebruikers gevonden",
+    "showingCount": "{count} van {total} gebruikers"
   },
   "adminEntities": {
     "title": "Entiteiten",

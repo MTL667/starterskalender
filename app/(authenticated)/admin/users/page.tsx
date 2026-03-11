@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, UserPlus, Trash2, Building2 } from 'lucide-react'
+import { ArrowLeft, UserPlus, Trash2, Building2, Search, X } from 'lucide-react'
 import Link from 'next/link'
 import { UserMembershipsDialog } from '@/components/admin/user-memberships-dialog'
 
@@ -57,6 +57,8 @@ export default function UsersAdminPage() {
   const [membershipsDialogOpen, setMembershipsDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [editUser, setEditUser] = useState<User | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState<string>('ALL')
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -174,22 +176,28 @@ export default function UsersAdminPage() {
     }
   }
 
-  // Sort users: first by role (in ROLES order), then alphabetically by name
-  const sortedUsers = [...users].sort((a, b) => {
-    // Get role order from ROLES array
-    const roleOrderA = ROLES.findIndex(r => r.value === a.role)
-    const roleOrderB = ROLES.findIndex(r => r.value === b.role)
-    
-    // If roles are different, sort by role order
-    if (roleOrderA !== roleOrderB) {
-      return roleOrderA - roleOrderB
-    }
-    
-    // If roles are the same, sort alphabetically by name
-    const nameA = (a.name || a.email).toLowerCase()
-    const nameB = (b.name || b.email).toLowerCase()
-    return nameA.localeCompare(nameB)
-  })
+  const filteredAndSortedUsers = [...users]
+    .filter((user) => {
+      if (roleFilter !== 'ALL' && user.role !== roleFilter) return false
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase()
+        const matchesName = user.name?.toLowerCase().includes(q)
+        const matchesEmail = user.email.toLowerCase().includes(q)
+        const matchesEntity = user.memberships.some(m =>
+          m.entity.name.toLowerCase().includes(q)
+        )
+        if (!matchesName && !matchesEmail && !matchesEntity) return false
+      }
+      return true
+    })
+    .sort((a, b) => {
+      const roleOrderA = ROLES.findIndex(r => r.value === a.role)
+      const roleOrderB = ROLES.findIndex(r => r.value === b.role)
+      if (roleOrderA !== roleOrderB) return roleOrderA - roleOrderB
+      const nameA = (a.name || a.email).toLowerCase()
+      const nameB = (b.name || b.email).toLowerCase()
+      return nameA.localeCompare(nameB)
+    })
 
   return (
     <div className="container mx-auto py-8 max-w-6xl">
@@ -216,6 +224,39 @@ export default function UsersAdminPage() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t('searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t('allRoles')}</SelectItem>
+                {ROLES.map((role) => (
+                  <SelectItem key={role.value} value={role.value}>
+                    {role.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
               Laden...
@@ -224,9 +265,16 @@ export default function UsersAdminPage() {
             <div className="text-center py-8 text-muted-foreground">
               Nog geen gebruikers
             </div>
+          ) : filteredAndSortedUsers.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {t('noResults')}
+            </div>
           ) : (
             <div className="space-y-4">
-              {sortedUsers.map((user) => (
+              <p className="text-sm text-muted-foreground">
+                {t('showingCount', { count: filteredAndSortedUsers.length, total: users.length })}
+              </p>
+              {filteredAndSortedUsers.map((user) => (
                 <div
                   key={user.id}
                   className="flex items-center justify-between p-4 border rounded-lg"
