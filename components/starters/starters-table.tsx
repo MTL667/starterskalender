@@ -37,6 +37,8 @@ interface Starter {
   experienceSince?: string | null
   experienceRole?: string | null
   experienceEntity?: string | null
+  phoneNumber?: string | null
+  desiredEmail?: string | null
   entity?: {
     id: string
     name: string
@@ -191,6 +193,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       
       return {
         Naam: s.name,
+        Email: s.desiredEmail || '',
+        Telefoon: s.phoneNumber || '',
         Taal: s.language || 'NL',
         Functie: s.roleTitle || '',
         Regio: s.region || '',
@@ -240,6 +244,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       
       return [
         s.name,
+        s.desiredEmail || '',
+        s.phoneNumber || '',
         s.language || 'NL',
         s.roleTitle || '',
         s.region || '',
@@ -250,22 +256,23 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       ]
     })
 
-    // Tabel maken
     autoTable(doc, {
-      head: [[t('columnName'), t('columnLanguage'), t('columnRole'), t('columnRegion'), t('columnExperience'), t('columnStartDate'), t('columnWeek'), t('columnEntity')]],
+      head: [[t('columnName'), t('columnEmail'), t('columnPhone'), t('columnLanguage'), t('columnRole'), t('columnRegion'), t('columnExperience'), t('columnStartDate'), t('columnWeek'), t('columnEntity')]],
       body: tableData,
       startY: 35,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [59, 130, 246] }, // Blauw
+      styles: { fontSize: 7 },
+      headStyles: { fillColor: [59, 130, 246] },
       columnStyles: {
-        0: { cellWidth: 30 }, // Naam
-        1: { cellWidth: 12 }, // Taal
-        2: { cellWidth: 25 }, // Functie
-        3: { cellWidth: 20 }, // Regio
-        4: { cellWidth: 25 }, // Ervaring
-        5: { cellWidth: 22 }, // Startdatum
-        6: { cellWidth: 12 }, // Week
-        7: { cellWidth: 25 }, // Entiteit
+        0: { cellWidth: 25 }, // Naam
+        1: { cellWidth: 30 }, // Email
+        2: { cellWidth: 22 }, // Telefoon
+        3: { cellWidth: 10 }, // Taal
+        4: { cellWidth: 20 }, // Functie
+        5: { cellWidth: 18 }, // Regio
+        6: { cellWidth: 20 }, // Ervaring
+        7: { cellWidth: 20 }, // Startdatum
+        8: { cellWidth: 10 }, // Week
+        9: { cellWidth: 20 }, // Entiteit
       },
     })
 
@@ -289,6 +296,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       
       return {
         [t('columnName')]: s.name,
+        [t('columnEmail')]: s.desiredEmail || '',
+        [t('columnPhone')]: s.phoneNumber || '',
         [t('columnLanguage')]: s.language || 'NL',
         [t('columnRole')]: s.roleTitle || '',
         [t('columnRegion')]: s.region || '',
@@ -299,12 +308,12 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       }
     })
 
-    // Create worksheet
     const ws = XLSX.utils.json_to_sheet(xlsData)
     
-    // Set column widths
     ws['!cols'] = [
       { wch: 25 }, // Naam
+      { wch: 30 }, // Email
+      { wch: 18 }, // Telefoon
       { wch: 8 },  // Taal
       { wch: 20 }, // Functie
       { wch: 15 }, // Regio

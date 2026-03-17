@@ -128,7 +128,9 @@
     "filterDepartures": "Uitstroom",
     "filterMigrations": "Migraties",
     "columnType": "Type",
-    "columnDate": "Datum"
+    "columnDate": "Datum",
+    "columnEmail": "E-mail",
+    "columnPhone": "Telefoon"
   },
   "starterDialog": {
     "titleEditOnboarding": "Onboarding Bewerken",

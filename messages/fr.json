@@ -128,7 +128,9 @@
     "filterDepartures": "Départs",
     "filterMigrations": "Migrations",
     "columnType": "Type",
-    "columnDate": "Date"
+    "columnDate": "Date",
+    "columnEmail": "E-mail",
+    "columnPhone": "Téléphone"
   },
   "starterDialog": {
     "titleEditOnboarding": "Modifier l'onboarding",
