@@ -100,6 +100,7 @@ model User {
   completedTasks          Task[]                   @relation("TaskCompleter") // Taken voltooid door deze user
   taskAssignments         TaskAssignment[]         @relation("TaskAssignmentUser") // Task assignments voor deze user
   notifications           Notification[]           // In-app notificaties voor deze user
+  auditLogs               AuditLog[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   lastLoginAt             DateTime?                // Tijdstip van laatste succesvolle login
@@ -349,10 +350,11 @@ model EmailTemplate {
 
 model AuditLog {
   id        String   @id @default(cuid())
-  actorId   String?  // User ID
-  action    String   // CREATE, UPDATE, DELETE, EMAIL_SENT, etc.
-  target    String?  // Resource type + ID (bv. "Starter:abc123")
-  meta      Json?    // Extra metadata
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  target    String?
+  meta      Json?
   createdAt DateTime @default(now())
 
   @@index([actorId])
