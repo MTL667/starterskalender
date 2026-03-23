@@ -10,8 +10,9 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
+import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, PlaneLanding, PlaneTakeoff, ArrowLeftRight, Building2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { ExportDropdown } from '@/components/ui/export-dropdown'
 import { getExperienceText } from '@/lib/experience-utils'
@@ -56,12 +57,16 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   const t = useTranslations('starters')
   const tc = useTranslations('common')
   const dateLocale = getDateLocale(useLocale())
+  const today = new Date()
+  const [periodMode, setPeriodMode] = useState<'year' | 'custom'>('year')
   const [year, setYear] = useState(initialYear)
+  const [customFrom, setCustomFrom] = useState(() => format(today, 'yyyy-MM-dd'))
+  const [customTo, setCustomTo] = useState(() => format(today, 'yyyy-MM-dd'))
   const [starters, setStarters] = useState<Starter[]>([])
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedEntity, setSelectedEntity] = useState<string>('all')
+  const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
   const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
@@ -70,8 +75,22 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
   useEffect(() => {
     setLoading(true)
+
+    const yearsToFetch = new Set<number>()
+    if (periodMode === 'custom') {
+      const startYear = new Date(customFrom).getFullYear()
+      const endYear = new Date(customTo).getFullYear()
+      for (let y = startYear; y <= endYear; y++) yearsToFetch.add(y)
+    } else {
+      yearsToFetch.add(year)
+    }
+
+    const years = Array.from(yearsToFetch)
+
     Promise.all([
-      fetch(`/api/starters?year=${year}`).then(res => res.json()),
+      Promise.all(years.map(y =>
+        fetch(`/api/starters?year=${y}`).then(res => res.json())
+      )).then(results => results.flat()),
       fetch('/api/entities').then(res => res.json()),
     ])
       .then(([startersData, entitiesData]) => {
@@ -83,7 +102,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         console.error('Error fetching data:', error)
         setLoading(false)
       })
-  }, [year])
+  }, [year, periodMode, customFrom, customTo])
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
@@ -112,7 +131,15 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         if (type !== starterTypeFilter) return false
       }
 
-      if (selectedEntity !== 'all' && starter.entity?.id !== selectedEntity) {
+      if (periodMode === 'custom') {
+        const starterDate = new Date(starter.startDate)
+        const from = new Date(customFrom)
+        const to = new Date(customTo)
+        to.setHours(23, 59, 59, 999)
+        if (starterDate < from || starterDate > to) return false
+      }
+
+      if (selectedEntities.size > 0 && (!starter.entity || !selectedEntities.has(starter.entity.id))) {
         return false
       }
 
@@ -171,9 +198,18 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     setSelectedStarter(null)
     
     if (refreshData) {
-      fetch(`/api/starters?year=${year}`)
-        .then(res => res.json())
-        .then(data => setStarters(data))
+      const yearsToFetch = new Set<number>()
+      if (periodMode === 'custom') {
+        const startYear = new Date(customFrom).getFullYear()
+        const endYear = new Date(customTo).getFullYear()
+        for (let y = startYear; y <= endYear; y++) yearsToFetch.add(y)
+      } else {
+        yearsToFetch.add(year)
+      }
+      Promise.all(Array.from(yearsToFetch).map(y =>
+        fetch(`/api/starters?year=${y}`).then(res => res.json())
+      ))
+        .then(results => setStarters(results.flat()))
     }
   }
 
@@ -335,20 +371,53 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     <Card>
       <CardHeader>
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <CardTitle>{t('cardTitle', { year })}</CardTitle>
-          <div className="flex gap-2 flex-wrap">
-            <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
-              <SelectTrigger className="w-[120px]">
+          <CardTitle>
+            {periodMode === 'custom'
+              ? t('cardTitleCustom')
+              : t('cardTitle', { year })}
+          </CardTitle>
+          <div className="flex gap-2 flex-wrap items-center">
+            <Select value={periodMode} onValueChange={(v: 'year' | 'custom') => setPeriodMode(v)}>
+              <SelectTrigger className="w-[150px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[year - 1, year, year + 1].map(y => (
-                  <SelectItem key={y} value={y.toString()}>
-                    {y}
-                  </SelectItem>
-                ))}
+                <SelectItem value="year">{t('periodYear')}</SelectItem>
+                <SelectItem value="custom">{t('periodCustom')}</SelectItem>
               </SelectContent>
             </Select>
+
+            {periodMode === 'year' ? (
+              <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[year - 1, year, year + 1].map(y => (
+                    <SelectItem key={y} value={y.toString()}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="w-[150px]"
+                />
+                <span className="text-muted-foreground text-sm">—</span>
+                <Input
+                  type="date"
+                  value={customTo}
+                  min={customFrom}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="w-[150px]"
+                />
+              </div>
+            )}
             
             <Select value={starterTypeFilter} onValueChange={(v: StarterFilter) => setStarterTypeFilter(v)}>
               <SelectTrigger className="w-[160px]">
@@ -362,19 +431,61 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
               </SelectContent>
             </Select>
 
-            <Select value={selectedEntity} onValueChange={setSelectedEntity}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder={t('allEntities')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('allEntities')}</SelectItem>
-                {entities.map(entity => (
-                  <SelectItem key={entity.id} value={entity.id}>
-                    {entity.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[200px] justify-start font-normal">
+                  <Building2 className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">
+                    {selectedEntities.size === 0
+                      ? t('allEntities')
+                      : selectedEntities.size === 1
+                        ? entities.find(e => selectedEntities.has(e.id))?.name
+                        : t('entitiesSelected', { count: selectedEntities.size })}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[220px] p-2" align="start">
+                <div className="space-y-1">
+                  <button
+                    className="flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                    onClick={() => setSelectedEntities(new Set())}
+                  >
+                    <Checkbox
+                      checked={selectedEntities.size === 0}
+                      className="pointer-events-none"
+                    />
+                    {t('allEntities')}
+                  </button>
+                  {entities.map(entity => (
+                    <button
+                      key={entity.id}
+                      className="flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                      onClick={() => {
+                        setSelectedEntities(prev => {
+                          const next = new Set(prev)
+                          if (next.has(entity.id)) {
+                            next.delete(entity.id)
+                          } else {
+                            next.add(entity.id)
+                          }
+                          return next
+                        })
+                      }}
+                    >
+                      <Checkbox
+                        checked={selectedEntities.has(entity.id)}
+                        className="pointer-events-none"
+                      />
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: entity.colorHex }}
+                      />
+                      {entity.name}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
             <ExportDropdown
               onExportCSV={exportCSV}
