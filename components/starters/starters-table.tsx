@@ -10,12 +10,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, PlaneLanding, PlaneTakeoff, ArrowLeftRight, Building2 } from 'lucide-react'
+import { Search, Plus, ArrowUpDown, ArrowUp, ArrowDown, PlaneLanding, PlaneTakeoff, ArrowLeftRight, Building2, Clock } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { ExportDropdown } from '@/components/ui/export-dropdown'
 import { getExperienceText } from '@/lib/experience-utils'
+import { useSession } from 'next-auth/react'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -32,8 +33,9 @@ interface Starter {
   roleTitle?: string | null
   region?: string | null
   contractSignedOn?: string | null
-  startDate: string
+  startDate: string | null
   weekNumber: number | null
+  isPendingBoarding?: boolean
   hasExperience?: boolean
   experienceSince?: string | null
   experienceRole?: string | null
@@ -57,6 +59,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   const t = useTranslations('starters')
   const tc = useTranslations('common')
   const dateLocale = getDateLocale(useLocale())
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'HR_ADMIN'
   const today = new Date()
   const [periodMode, setPeriodMode] = useState<'year' | 'custom'>('year')
   const [year, setYear] = useState(initialYear)
@@ -89,8 +93,15 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
     Promise.all([
       Promise.all(years.map(y =>
-        fetch(`/api/starters?year=${y}`).then(res => res.json())
-      )).then(results => results.flat()),
+        fetch(`/api/starters?year=${y}&includePending=true`).then(res => res.json())
+      )).then(results => {
+        const seen = new Set<string>()
+        return results.flat().filter((s: Starter) => {
+          if (seen.has(s.id)) return false
+          seen.add(s.id)
+          return true
+        })
+      }),
       fetch('/api/entities').then(res => res.json()),
     ])
       .then(([startersData, entitiesData]) => {
@@ -124,14 +135,36 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       : <ArrowDown className="h-4 w-4 ml-1 inline" />
   }
 
+  // Pending boarding starters (separate section)
+  const pendingBoardingStarters = starters.filter(starter => {
+    if (!starter.isPendingBoarding) return false
+    if (starterTypeFilter !== 'ALL') {
+      const type = starter.type || 'ONBOARDING'
+      if (type !== starterTypeFilter) return false
+    }
+    if (selectedEntities.size > 0 && (!starter.entity || !selectedEntities.has(starter.entity.id))) return false
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      return (
+        starter.name.toLowerCase().includes(query) ||
+        starter.roleTitle?.toLowerCase().includes(query) ||
+        starter.region?.toLowerCase().includes(query)
+      )
+    }
+    return true
+  })
+
   const filteredStarters = starters
     .filter(starter => {
+      if (starter.isPendingBoarding) return false
+
       if (starterTypeFilter !== 'ALL') {
         const type = starter.type || 'ONBOARDING'
         if (type !== starterTypeFilter) return false
       }
 
       if (periodMode === 'custom') {
+        if (!starter.startDate) return false
         const starterDate = new Date(starter.startDate)
         const from = new Date(customFrom)
         const to = new Date(customTo)
@@ -172,8 +205,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
           bValue = (b.region || '').toLowerCase()
           break
         case 'startDate':
-          aValue = new Date(a.startDate).getTime()
-          bValue = new Date(b.startDate).getTime()
+          aValue = a.startDate ? new Date(a.startDate).getTime() : 0
+          bValue = b.startDate ? new Date(b.startDate).getTime() : 0
           break
         case 'entity':
           aValue = (a.entity?.name || '').toLowerCase()
@@ -207,9 +240,16 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         yearsToFetch.add(year)
       }
       Promise.all(Array.from(yearsToFetch).map(y =>
-        fetch(`/api/starters?year=${y}`).then(res => res.json())
+        fetch(`/api/starters?year=${y}&includePending=true`).then(res => res.json())
       ))
-        .then(results => setStarters(results.flat()))
+        .then(results => {
+          const seen = new Set<string>()
+          setStarters(results.flat().filter((s: Starter) => {
+            if (seen.has(s.id)) return false
+            seen.add(s.id)
+            return true
+          }))
+        })
     }
   }
 
@@ -235,7 +275,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         Functie: s.roleTitle || '',
         Regio: s.region || '',
         Ervaring: experienceText,
-        Startdatum: new Date(s.startDate).toLocaleDateString('nl-BE'),
+        Startdatum: s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
         Week: s.weekNumber || '',
         Entiteit: s.entity?.name || '',
       }
@@ -286,7 +326,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         s.roleTitle || '',
         s.region || '',
         experienceText,
-        new Date(s.startDate).toLocaleDateString('nl-BE'),
+        s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
         s.weekNumber?.toString() || '',
         s.entity?.name || '',
       ]
@@ -338,7 +378,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         [t('columnRole')]: s.roleTitle || '',
         [t('columnRegion')]: s.region || '',
         [t('columnExperience')]: experienceText,
-        [t('columnStartDate')]: new Date(s.startDate).toLocaleDateString('nl-BE'),
+        [t('columnStartDate')]: s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
         [t('columnWeek')]: s.weekNumber || '',
         [t('columnEntity')]: s.entity?.name || '',
       }
@@ -614,7 +654,12 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                       )}
                     </td>
                     <td className="py-3 text-sm">
-                      {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
+                      {starter.startDate
+                        ? format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })
+                        : starter.isPendingBoarding
+                          ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium"><Clock className="h-3 w-3" />{t('pendingBoarding')}</span>
+                          : '-'
+                      }
                     </td>
                     <td className="py-3 text-sm">{starter.weekNumber}</td>
                     <td className="py-3">
@@ -638,8 +683,47 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
           </div>
         )}
 
+        {/* Pending Boarding Section - HR_ADMIN only */}
+        {isAdmin && pendingBoardingStarters.length > 0 && (
+          <div className="mt-6 p-4 rounded-lg border border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-950/20">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="h-4 w-4 text-amber-500" />
+              <span className="font-semibold text-sm">{t('pendingBoardingTitle')}</span>
+              <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-600">
+                {pendingBoardingStarters.length}
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              {pendingBoardingStarters.map(starter => (
+                <div
+                  key={starter.id}
+                  onClick={() => {
+                    setSelectedStarter(starter)
+                    setDialogOpen(true)
+                  }}
+                  className="flex items-center justify-between gap-4 p-2 rounded border border-amber-200 dark:border-amber-700 cursor-pointer hover:border-amber-400 dark:hover:border-amber-500 transition-colors bg-card"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    <span className="text-sm font-medium truncate">{starter.name}</span>
+                    {starter.roleTitle && <span className="text-xs text-muted-foreground">{starter.roleTitle}</span>}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {starter.entity && (
+                      <Badge className="text-xs" style={{ backgroundColor: starter.entity.colorHex, color: 'white' }}>
+                        {starter.entity.name}
+                      </Badge>
+                    )}
+                    <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{t('pendingBoarding')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 text-sm text-muted-foreground text-center">
-          {t('resultCount', { count: filteredStarters.length })}
+          {t('resultCount', { count: filteredStarters.length + pendingBoardingStarters.length })}
         </div>
       </CardContent>
 

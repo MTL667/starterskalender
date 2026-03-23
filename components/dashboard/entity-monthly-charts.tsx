@@ -18,7 +18,7 @@ interface Starter {
   id: string
   type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
   contractSignedOn?: string | null
-  startDate: string
+  startDate: string | null
   isCancelled?: boolean
   entityId?: string | null
 }
@@ -92,7 +92,7 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
 
     // Tel starters per maand per entiteit
     activeStarters.forEach(starter => {
-      if (!starter.entityId) return // Skip starters zonder entiteit
+      if (!starter.entityId || !starter.startDate) return
       
       const date = new Date(starter.startDate)
       const month = date.getMonth()
@@ -131,8 +131,8 @@ export function EntityMonthlyCharts({ year }: { year: number }) {
 
     const entityStarters = filteredByType.filter(s => s.entityId === selectedEntity && !s.isCancelled)
 
-    entityStarters.forEach(starter => {
-      const date = new Date(starter.startDate)
+    entityStarters.filter(s => s.startDate).forEach(starter => {
+      const date = new Date(starter.startDate!)
       const month = date.getMonth()
       const monthData = monthlyMap.get(month)!
       const starterType = starter.type || 'ONBOARDING'

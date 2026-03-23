@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { ChevronLeft, ChevronRight, Plus, Search, Calendar, Building2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Search, Calendar, Building2, Clock } from 'lucide-react'
 import { StarterCard } from './starter-card'
 import { StarterDialog } from './starter-dialog'
 import { getWeeksInYear } from '@/lib/week-utils'
@@ -18,6 +18,7 @@ import { ExportDropdown } from '@/components/ui/export-dropdown'
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, getWeek, getMonth, getYear, addWeeks, addMonths, addYears, format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
+import { useSession } from 'next-auth/react'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -37,8 +38,9 @@ interface Starter {
   via?: string | null
   notes?: string | null
   contractSignedOn?: string | null
-  startDate: string
+  startDate: string | null
   weekNumber: number | null
+  isPendingBoarding?: boolean
   isCancelled?: boolean
   entity?: {
     id: string
@@ -56,6 +58,8 @@ interface Entity {
 export function CalendarView({ initialYear, canEdit }: { initialYear: number; canEdit: boolean }) {
   const t = useTranslations('calendar')
   const dateLocale = getDateLocale(useLocale())
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'HR_ADMIN'
   const searchParams = useSearchParams()
   const today = new Date()
   const [viewMode, setViewMode] = useState<ViewMode>('week')
@@ -113,8 +117,15 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     
     Promise.all([
       Promise.all(years.map(y => 
-        fetch(`/api/starters?year=${y}`).then(res => res.json())
-      )).then(results => results.flat()),
+        fetch(`/api/starters?year=${y}&includePending=true`).then(res => res.json())
+      )).then(results => {
+        const seen = new Set<string>()
+        return results.flat().filter((s: Starter) => {
+          if (seen.has(s.id)) return false
+          seen.add(s.id)
+          return true
+        })
+      }),
       fetch('/api/entities').then(res => res.json()),
     ])
       .then(([startersData, entitiesData]) => {
@@ -138,8 +149,10 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     if (found) {
       setSelectedStarter(found)
       setDialogOpen(true)
-      const starterDate = new Date(found.startDate)
-      setCurrentDate(starterDate)
+      if (found.startDate) {
+        const starterDate = new Date(found.startDate)
+        setCurrentDate(starterDate)
+      }
     } else {
       fetch(`/api/starters/${starterId}`)
         .then(res => res.ok ? res.json() : null)
@@ -147,9 +160,11 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
           if (data) {
             setSelectedStarter(data)
             setDialogOpen(true)
-            const starterDate = new Date(data.startDate)
-            setCurrentDate(starterDate)
-            setYear(getYear(starterDate))
+            if (data.startDate) {
+              const starterDate = new Date(data.startDate)
+              setCurrentDate(starterDate)
+              setYear(getYear(starterDate))
+            }
           }
         })
         .catch(() => {})
@@ -174,27 +189,46 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     dateRangeEnd = endOfYear(new Date(year, 0, 1))
   }
 
-  // Filter starters
+  // Separate pending boarding starters
+  const pendingBoardingStarters = starters.filter(starter => {
+    if (!starter.isPendingBoarding) return false
+    if (selectedEntities.size > 0 && (!starter.entity || !selectedEntities.has(starter.entity.id))) return false
+    if (starterTypeFilter !== 'ALL') {
+      const type = starter.type || 'ONBOARDING'
+      if (type !== starterTypeFilter) return false
+    }
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      return (
+        starter.name.toLowerCase().includes(query) ||
+        starter.roleTitle?.toLowerCase().includes(query) ||
+        starter.region?.toLowerCase().includes(query)
+      )
+    }
+    return true
+  })
+
+  // Filter starters (excluding pending boarding)
   const filteredStarters = starters.filter(starter => {
-    // Filter op type (onboarding/offboarding)
+    if (starter.isPendingBoarding) return false
+
     if (starterTypeFilter !== 'ALL') {
       const type = starter.type || 'ONBOARDING'
       if (type !== starterTypeFilter) return false
     }
 
     if (viewMode !== 'year') {
+      if (!starter.startDate) return false
       const starterDate = new Date(starter.startDate)
       if (starterDate < dateRangeStart || starterDate > dateRangeEnd) {
         return false
       }
     }
 
-    // Filter op entiteit
     if (selectedEntities.size > 0 && (!starter.entity || !selectedEntities.has(starter.entity.id))) {
       return false
     }
 
-    // Filter op zoekterm
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       return (
@@ -233,8 +267,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     setSelectedStarter(null)
     
     if (refreshData) {
-      // Refresh starters
-      fetch(`/api/starters?year=${fetchYear}`)
+      fetch(`/api/starters?year=${fetchYear}&includePending=true`)
         .then(res => res.json())
         .then(data => setStarters(data))
     }
@@ -295,7 +328,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       [t('exportName')]: s.name,
       [t('exportRole')]: s.roleTitle || '',
       [t('exportRegion')]: s.region || '',
-      [t('exportStartDate')]: new Date(s.startDate).toLocaleDateString('nl-BE'),
+      [t('exportStartDate')]: s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
       [t('exportWeek')]: s.weekNumber || '',
       [t('exportEntity')]: s.entity?.name || '',
     }))
@@ -328,7 +361,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       s.name,
       s.roleTitle || '',
       s.region || '',
-      new Date(s.startDate).toLocaleDateString('nl-BE'),
+      s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
       s.weekNumber?.toString() || '',
       s.entity?.name || '',
     ])
@@ -351,7 +384,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       'Naam': s.name,
       'Functie': s.roleTitle || '',
       'Regio': s.region || '',
-      'Startdatum': new Date(s.startDate).toLocaleDateString('nl-BE'),
+      'Startdatum': s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
       'Week': s.weekNumber || '',
       'Entiteit': s.entity?.name || '',
     }))
@@ -598,8 +631,8 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
             // Groepeer per datum
             (() => {
               const startersByDate = new Map<string, Starter[]>()
-              filteredStarters.forEach(starter => {
-                const dateKey = format(new Date(starter.startDate), 'yyyy-MM-dd')
+              filteredStarters.filter(s => s.startDate).forEach(starter => {
+                const dateKey = format(new Date(starter.startDate!), 'yyyy-MM-dd')
                 if (!startersByDate.has(dateKey)) {
                   startersByDate.set(dateKey, [])
                 }
@@ -637,10 +670,57 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
         </div>
       )}
 
+      {/* Pending Boarding Section - HR_ADMIN only */}
+      {isAdmin && pendingBoardingStarters.length > 0 && (
+        <Card className="p-4 border-amber-300 dark:border-amber-600 bg-amber-50/50 dark:bg-amber-950/20">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="h-5 w-5 text-amber-500" />
+            <h3 className="font-semibold text-base">{t('pendingBoardingTitle')}</h3>
+            <Badge variant="outline" className="text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-600">
+              {pendingBoardingStarters.length}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">{t('pendingBoardingDescription')}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {pendingBoardingStarters.map(starter => (
+              <div
+                key={starter.id}
+                onClick={() => handleStarterClick(starter)}
+                className="border border-amber-200 dark:border-amber-700 rounded-lg p-3 cursor-pointer hover:border-amber-400 dark:hover:border-amber-500 transition-colors bg-card"
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                    <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                    <div className="font-medium text-sm truncate">{starter.name}</div>
+                    {starter.language && (
+                      <span className="text-xs shrink-0">{starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}</span>
+                    )}
+                  </div>
+                  {starter.entity && (
+                    <Badge className="text-xs shrink-0" style={{ backgroundColor: starter.entity.colorHex, color: 'white' }}>
+                      {starter.entity.name}
+                    </Badge>
+                  )}
+                </div>
+                {starter.roleTitle && (
+                  <div className="text-xs text-muted-foreground mb-1">
+                    <span className="font-medium">{t('role')}</span> {starter.roleTitle}
+                  </div>
+                )}
+                <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  <Clock className="h-3 w-3" />
+                  {t('pendingBoardingLabel')}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Totaal */}
       <div className="text-center text-sm text-muted-foreground">
         {t('resultCount', {
-          count: filteredStarters.length,
+          count: filteredStarters.length + pendingBoardingStarters.length,
           period: viewMode === 'custom'
             ? t('periodCustomRange')
             : viewMode === 'week' ? t('periodThisWeek') : viewMode === 'month' ? t('periodThisMonth') : t('periodInYear', { year })

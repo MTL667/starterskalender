@@ -18,7 +18,8 @@ interface Starter {
   language?: string
   roleTitle?: string | null
   contractSignedOn?: string | null
-  startDate: string
+  startDate: string | null
+  isPendingBoarding?: boolean
   isCancelled?: boolean
   entity?: {
     id: string
@@ -49,7 +50,8 @@ export function RecentStarters({ year }: { year: number }) {
   const canEdit = session?.user?.role === 'HR_ADMIN' || session?.user?.role === 'ENTITY_EDITOR'
 
   // Check if starter starts today
-  const isToday = (startDate: string): boolean => {
+  const isToday = (startDate: string | null): boolean => {
+    if (!startDate) return false
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const start = new Date(startDate)
@@ -57,8 +59,8 @@ export function RecentStarters({ year }: { year: number }) {
     return start.getTime() === today.getTime()
   }
 
-  // Check if starter is within 7 days from now (but not today)
-  const isWithin7Days = (startDate: string): boolean => {
+  const isWithin7Days = (startDate: string | null): boolean => {
+    if (!startDate) return false
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const start = new Date(startDate)
@@ -77,11 +79,12 @@ export function RecentStarters({ year }: { year: number }) {
     // Filter and sort upcoming starters
     const upcoming = allStarters
       .filter((s: Starter) => {
+        if (!s.startDate || s.isCancelled) return false
         const startDate = new Date(s.startDate)
-        return startDate >= today && !s.isCancelled
+        return startDate >= today
       })
       .sort((a: Starter, b: Starter) => 
-        new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+        new Date(a.startDate!).getTime() - new Date(b.startDate!).getTime()
       )
 
     if (upcoming.length <= minCount) {
@@ -92,12 +95,12 @@ export function RecentStarters({ year }: { year: number }) {
     const initial = upcoming.slice(0, minCount)
     
     // Get the date of the last starter in initial list
-    const lastDate = new Date(initial[initial.length - 1].startDate)
+    const lastDate = new Date(initial[initial.length - 1].startDate!)
     lastDate.setHours(0, 0, 0, 0)
 
-    // Find all starters on that same date (including those after position minCount)
     const result: Starter[] = []
     for (const starter of upcoming) {
+      if (!starter.startDate) continue
       const starterDate = new Date(starter.startDate)
       starterDate.setHours(0, 0, 0, 0)
       
@@ -279,7 +282,7 @@ export function RecentStarters({ year }: { year: number }) {
                           ? 'font-semibold text-amber-700 dark:text-amber-400' 
                           : 'text-muted-foreground'
                     }`}>
-                      {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
+                      {starter.startDate ? format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale }) : '-'}
                     </div>
                   </div>
                 </div>

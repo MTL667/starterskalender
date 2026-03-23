@@ -130,7 +130,7 @@ export async function POST(
             <p><strong>Naam:</strong> ${starter.name}</p>
             <p><strong>Functie:</strong> ${starter.roleTitle || 'N/A'}</p>
             <p><strong>Entiteit:</strong> ${starter.entity?.name || 'N/A'}</p>
-            <p><strong>Startdatum:</strong> ${new Date(starter.startDate).toLocaleDateString('nl-BE')}</p>
+            <p><strong>Startdatum:</strong> ${starter.startDate ? new Date(starter.startDate).toLocaleDateString('nl-BE') : 'Nog niet gekend'}</p>
             ${data.cancelReason ? `<p><strong>Reden:</strong> ${data.cancelReason}</p>` : ''}
             <p><strong>Geannuleerd door:</strong> ${session.user.name || session.user.email}</p>
             <p><strong>Datum annulering:</strong> ${new Date().toLocaleDateString('nl-BE')}</p>

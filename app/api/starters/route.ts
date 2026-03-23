@@ -22,7 +22,8 @@ const StarterSchema = z.object({
   via: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   contractSignedOn: z.string().datetime().nullable().optional(),
-  startDate: z.string().datetime(),
+  startDate: z.string().datetime().nullable().optional(),
+  isPendingBoarding: z.boolean().default(false),
   hasExperience: z.boolean().default(false),
   experienceSince: z.string().datetime().nullable().optional(),
   experienceRole: z.string().nullable().optional(),
@@ -44,11 +45,22 @@ export async function GET(request: NextRequest) {
     const entityId = searchParams.get('entityId')
     const search = searchParams.get('search')
     const type = searchParams.get('type')
+    const includePending = searchParams.get('includePending') === 'true' && user.role === 'HR_ADMIN'
 
     let where: any = {}
+    const andConditions: any[] = []
 
     if (year) {
-      where.year = parseInt(year)
+      if (includePending) {
+        andConditions.push({
+          OR: [
+            { year: parseInt(year) },
+            { isPendingBoarding: true },
+          ],
+        })
+      } else {
+        where.year = parseInt(year)
+      }
     }
 
     if (entityId) {
@@ -60,11 +72,22 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { roleTitle: { contains: search, mode: 'insensitive' } },
-        { region: { contains: search, mode: 'insensitive' } },
-      ]
+      andConditions.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { roleTitle: { contains: search, mode: 'insensitive' } },
+          { region: { contains: search, mode: 'insensitive' } },
+        ],
+      })
+    }
+
+    // Non-HR_ADMIN users never see pending boarding starters
+    if (user.role !== 'HR_ADMIN') {
+      where.isPendingBoarding = false
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions
     }
 
     // Filter op basis van RBAC
@@ -116,9 +139,17 @@ export async function POST(request: NextRequest) {
     const data = StarterSchema.parse(body)
     console.log('✅ Parsed type:', data.type)
 
-    const startDate = new Date(data.startDate)
-    const weekNumber = calculateWeekNumber(startDate)
-    const year = getYearInTimezone(startDate)
+    const isPending = data.isPendingBoarding || !data.startDate
+
+    let startDate: Date | null = null
+    let weekNumber: number | null = null
+    let year: number | null = null
+
+    if (data.startDate && !isPending) {
+      startDate = new Date(data.startDate)
+      weekNumber = calculateWeekNumber(startDate)
+      year = getYearInTimezone(startDate)
+    }
 
     const starter = await prisma.starter.create({
       data: {
@@ -136,6 +167,7 @@ export async function POST(request: NextRequest) {
         startDate,
         weekNumber,
         year,
+        isPendingBoarding: isPending,
         hasExperience: data.hasExperience,
         experienceSince: data.experienceSince ? new Date(data.experienceSince) : null,
         experienceRole: normalizeString(data.experienceRole),
@@ -154,17 +186,38 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       action: 'CREATE',
       target: `Starter:${starter.id}`,
-      meta: { name: starter.name, entityId: starter.entityId },
+      meta: { name: starter.name, entityId: starter.entityId, isPendingBoarding: isPending },
     })
 
-    // Automatisch taken aanmaken op basis van templates
-    try {
-      console.log(`🚀 Creating tasks for starter "${starter.name}" with type: ${data.type} (starter.type: ${starter.type})`)
-      const tasks = await createAutomaticTasks(starter, data.type)
-      console.log(`✅ Created ${tasks.length} automatic tasks for starter ${starter.name}`)
-    } catch (taskError) {
-      console.error('Failed to create automatic tasks:', taskError)
-      // Don't fail the starter creation if task creation fails
+    if (isPending) {
+      // For pending boarding: create a single task to assign the start date
+      try {
+        await prisma.task.create({
+          data: {
+            type: 'HR_ADMIN',
+            title: `Startdatum toewijzen aan ${starter.name}`,
+            description: `De starter "${starter.name}" is aangemaakt zonder startdatum. Wijs een startdatum toe om de onboarding te activeren.`,
+            priority: 'HIGH',
+            starterId: starter.id,
+            entityId: starter.entityId,
+            assignedToId: user.id,
+            assignedAt: new Date(),
+            createdById: user.id,
+          },
+        })
+        console.log(`📋 Created pending boarding task for starter "${starter.name}"`)
+      } catch (taskError) {
+        console.error('Failed to create pending boarding task:', taskError)
+      }
+    } else {
+      // Automatisch taken aanmaken op basis van templates
+      try {
+        console.log(`🚀 Creating tasks for starter "${starter.name}" with type: ${data.type} (starter.type: ${starter.type})`)
+        const tasks = await createAutomaticTasks(starter, data.type)
+        console.log(`✅ Created ${tasks.length} automatic tasks for starter ${starter.name}`)
+      } catch (taskError) {
+        console.error('Failed to create automatic tasks:', taskError)
+      }
     }
 
     return NextResponse.json(starter, { status: 201 })

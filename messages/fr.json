@@ -103,7 +103,11 @@
     "exportWeek": "Semaine",
     "exportEntity": "Entité",
     "exportType": "Type",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "pendingBoardingTitle": "Boarding pas encore connu",
+    "pendingBoardingDescription": "Ces collaborateurs n'ont pas encore de date de début. Cliquez pour compléter les informations.",
+    "pendingBoardingLabel": "Date de début inconnue",
+    "role": "Fonction :"
   },
   "starters": {
     "title": "Mouvements de personnel",
@@ -138,7 +142,9 @@
     "columnType": "Type",
     "columnDate": "Date",
     "columnEmail": "E-mail",
-    "columnPhone": "Téléphone"
+    "columnPhone": "Téléphone",
+    "pendingBoarding": "Date de début inconnue",
+    "pendingBoardingTitle": "Boarding pas encore connu"
   },
   "starterDialog": {
     "titleEditOnboarding": "Modifier l'onboarding",
@@ -248,7 +254,13 @@
     "errorCopy": "Impossible de copier dans le presse-papiers",
     "confirmDeleteStarter": "Êtes-vous sûr de vouloir supprimer ce collaborateur ?",
     "blockedPeriodAlert": "Cette période est bloquée !\n\nFonction : {jobRole}\nPériode : {start} - {end}\nRaison : {reason}",
-    "noReasonGiven": "Aucune raison indiquée"
+    "noReasonGiven": "Aucune raison indiquée",
+    "optionalPending": "optionnel",
+    "pendingBoardingStatus": "Pending Boarding — date de début pas encore connue",
+    "pendingConfirmTitle": "Créer un Pending Boarding",
+    "pendingConfirmDescription": "Aucune date de début n'a été indiquée. Voulez-vous créer un collaborateur avec le statut 'Pending Boarding' ?",
+    "pendingConfirmInfo": "Une tâche sera automatiquement créée pour attribuer la date de début ultérieurement. Dès que la date de début sera complétée, toutes les tâches d'onboarding seront activées.",
+    "pendingConfirmButton": "Créer Pending Boarding"
   },
   "starterCard": {
     "languageNL": "Néerlandais",
@@ -263,7 +275,8 @@
     "labelExtraInfo": "Info supplémentaire :",
     "badgeOnboarding": "Entrée",
     "badgeOffboarding": "Départ",
-    "badgeMigration": "Migration"
+    "badgeMigration": "Migration",
+    "pendingBoarding": "Date de début inconnue"
   },
   "tasks": {
     "title": "Tâches",

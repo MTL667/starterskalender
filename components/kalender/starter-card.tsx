@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
+import { PlaneLanding, PlaneTakeoff, ArrowLeftRight, Clock } from 'lucide-react'
 
 interface Starter {
   id: string
@@ -17,7 +17,8 @@ interface Starter {
   via?: string | null
   notes?: string | null
   contractSignedOn?: string | null
-  startDate: string
+  startDate: string | null
+  isPendingBoarding?: boolean
   isCancelled?: boolean
   entity?: {
     id: string
@@ -101,9 +102,16 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
       )}
 
       {/* Datum */}
-      <div className="text-xs text-muted-foreground mb-2">
-        <span className="font-medium">{isMigration ? t('labelMigration') : isOffboarding ? t('labelDeparture') : t('labelStart')}</span> {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
-      </div>
+      {starter.isPendingBoarding ? (
+        <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium mb-2">
+          <Clock className="h-3 w-3" />
+          {t('pendingBoarding')}
+        </div>
+      ) : starter.startDate ? (
+        <div className="text-xs text-muted-foreground mb-2">
+          <span className="font-medium">{isMigration ? t('labelMigration') : isOffboarding ? t('labelDeparture') : t('labelStart')}</span> {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
+        </div>
+      ) : null}
 
       {/* Extra info (notes) */}
       {starter.notes && (

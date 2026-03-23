@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
@@ -33,7 +33,8 @@ interface Starter {
   via?: string | null
   notes?: string | null
   contractSignedOn?: string | null
-  startDate: string
+  startDate: string | null
+  isPendingBoarding?: boolean
   isCancelled?: boolean
   cancelledAt?: string | null
   cancelReason?: string | null
@@ -115,6 +116,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [emailTaskToggling, setEmailTaskToggling] = useState(false)
   const [phoneTaskToggling, setPhoneTaskToggling] = useState(false)
   const [regeneratingTasks, setRegeneratingTasks] = useState(false)
+  const [pendingConfirmOpen, setPendingConfirmOpen] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     name: '',
@@ -299,7 +301,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         via: starter.via || '',
         notes: starter.notes || '',
         contractSignedOn: starter.contractSignedOn ? format(new Date(starter.contractSignedOn), 'yyyy-MM-dd') : '',
-        startDate: format(new Date(starter.startDate), 'yyyy-MM-dd'),
+        startDate: starter.startDate ? format(new Date(starter.startDate), 'yyyy-MM-dd') : '',
         hasExperience: starter.hasExperience || false,
         experienceSince: starter.experienceSince ? format(new Date(starter.experienceSince), 'yyyy-MM-dd') : '',
         experienceRole: starter.experienceRole || '',
@@ -426,37 +428,52 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       return
     }
 
+    // For new ONBOARDING starters without startDate, show pending boarding confirmation
+    if (!isEdit && formData.type === 'ONBOARDING' && !formData.startDate) {
+      setPendingConfirmOpen(true)
+      return
+    }
+
+    await submitStarter(false)
+  }
+
+  const submitStarter = async (isPendingBoarding: boolean) => {
     setLoading(true)
 
     try {
-      // Valideer blokkades (alleen bij nieuwe starters of als datum gewijzigd)
-      if (!isEdit || formData.startDate !== format(new Date(starter.startDate), 'yyyy-MM-dd')) {
-        const validationRes = await fetch('/api/blocked-periods', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            entityId: formData.entityId,
-            jobRoleTitle: formData.roleTitle,
-            startDate: new Date(formData.startDate).toISOString(),
-          }),
-        })
+      const hasStartDate = !!formData.startDate && !isPendingBoarding
 
-        const validation = await validationRes.json()
-        if (validation.blocked) {
-          alert(
-            t('blockedPeriodAlert', {
-              jobRole: validation.jobRole,
-              start: format(new Date(validation.period.startDate), 'dd MMM yyyy'),
-              end: format(new Date(validation.period.endDate), 'dd MMM yyyy'),
-              reason: validation.reason || t('noReasonGiven')
-            })
-          )
-          setLoading(false)
-          return
+      // Valideer blokkades (alleen als er een startdatum is)
+      if (hasStartDate) {
+        const startDateChanged = !isEdit || (starter?.startDate && formData.startDate !== format(new Date(starter.startDate), 'yyyy-MM-dd'))
+        if (startDateChanged) {
+          const validationRes = await fetch('/api/blocked-periods', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              entityId: formData.entityId,
+              jobRoleTitle: formData.roleTitle,
+              startDate: new Date(formData.startDate).toISOString(),
+            }),
+          })
+
+          const validation = await validationRes.json()
+          if (validation.blocked) {
+            alert(
+              t('blockedPeriodAlert', {
+                jobRole: validation.jobRole,
+                start: format(new Date(validation.period.startDate), 'dd MMM yyyy'),
+                end: format(new Date(validation.period.endDate), 'dd MMM yyyy'),
+                reason: validation.reason || t('noReasonGiven')
+              })
+            )
+            setLoading(false)
+            return
+          }
         }
       }
 
-      const data = {
+      const data: any = {
         type: formData.type,
         name: formData.name,
         language: formData.language,
@@ -470,7 +487,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         contractSignedOn: formData.type === 'ONBOARDING' && formData.contractSignedOn 
           ? new Date(formData.contractSignedOn).toISOString() 
           : null,
-        startDate: new Date(formData.startDate).toISOString(),
+        startDate: hasStartDate ? new Date(formData.startDate).toISOString() : null,
+        isPendingBoarding: isPendingBoarding,
         hasExperience: formData.type === 'ONBOARDING' ? formData.hasExperience : false,
         experienceSince: formData.type === 'ONBOARDING' && formData.hasExperience && formData.experienceSince 
           ? new Date(formData.experienceSince).toISOString() 
@@ -494,8 +512,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         throw new Error('Failed to save starter')
       }
 
-      // Als nieuwe starter, wijs automatisch materials toe van de job role
-      if (!isEdit && formData.roleTitle && formData.entityId) {
+      // Als nieuwe starter (niet pending), wijs automatisch materials toe van de job role
+      if (!isEdit && !isPendingBoarding && formData.roleTitle && formData.entityId) {
         const starterData = await res.json()
         if (starterData.id) {
           try {
@@ -504,7 +522,6 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             })
           } catch (materialError) {
             console.error('Error assigning materials:', materialError)
-            // Niet fataal, gewoon doorgaan
           }
         }
       }
@@ -1025,15 +1042,24 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               <div>
                 <Label htmlFor="startDate">
                   {formData.type === 'MIGRATION' ? t('labelMigrationDate') : formData.type === 'OFFBOARDING' ? t('labelDepartureDate') : t('labelStartDate')}
+                  {formData.type === 'ONBOARDING' && !isEdit && (
+                    <span className="text-xs text-muted-foreground ml-1 font-normal">({t('optionalPending')})</span>
+                  )}
                 </Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  required
+                  required={formData.type !== 'ONBOARDING'}
                   disabled={!canEdit}
                 />
+                {starter?.isPendingBoarding && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-amber-600 dark:text-amber-400">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="text-xs font-medium">{t('pendingBoardingStatus')}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1555,6 +1581,40 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
           </Button>
           <Button variant="destructive" onClick={handleCancel} disabled={loading}>
             {loading ? tc('saving') : t('confirmCancel')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Pending Boarding Confirmation Dialog */}
+    <Dialog open={pendingConfirmOpen} onOpenChange={setPendingConfirmOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-amber-500" />
+            {t('pendingConfirmTitle')}
+          </DialogTitle>
+          <DialogDescription>
+            {t('pendingConfirmDescription')}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="py-2 text-sm text-muted-foreground">
+          <p>{t('pendingConfirmInfo')}</p>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setPendingConfirmOpen(false)} disabled={loading}>
+            {tc('back')}
+          </Button>
+          <Button
+            className="bg-amber-600 hover:bg-amber-700 text-white"
+            onClick={() => {
+              setPendingConfirmOpen(false)
+              submitStarter(true)
+            }}
+            disabled={loading}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            {loading ? tc('saving') : t('pendingConfirmButton')}
           </Button>
         </DialogFooter>
       </DialogContent>

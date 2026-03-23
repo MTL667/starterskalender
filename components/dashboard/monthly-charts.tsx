@@ -19,7 +19,7 @@ interface Starter {
   id: string
   type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
   contractSignedOn?: string | null
-  startDate: string
+  startDate: string | null
   isCancelled?: boolean
 }
 
@@ -59,6 +59,7 @@ export function MonthlyCharts({ year }: { year: number }) {
     }
 
     starters.forEach((starter: Starter) => {
+      if (!starter.startDate) return
       const date = new Date(starter.startDate)
       const month = date.getMonth()
       const current = monthlyMap.get(month)!

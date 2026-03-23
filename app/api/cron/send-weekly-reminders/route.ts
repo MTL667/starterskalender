@@ -158,7 +158,7 @@ export async function GET(req: Request) {
             const starterItems = starters.map(s => {
               const flag = s.language === 'FR' ? '🇫🇷' : '🇳🇱'
               const roleHtml = s.roleTitle ? '<span style="color: #6b7280;">' + s.roleTitle + '</span><br/>' : ''
-              const dateStr = new Date(s.startDate).toLocaleDateString('nl-BE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+              const dateStr = s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Datum onbekend'
               return '<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;"><strong>' + s.name + '</strong> ' + flag + '<br/>' + roleHtml + '<span style="color: #6b7280; font-size: 14px;">Start: ' + dateStr + '</span></li>'
             }).join('')
             return '<div style="margin-bottom: 20px;"><h3 style="color: #1f2937; margin-bottom: 10px;">' + entityName + '</h3><ul style="list-style-type: none; padding: 0;">' + starterItems + '</ul></div>'

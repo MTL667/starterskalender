@@ -10,7 +10,7 @@ export interface EmailStarter {
   name: string
   region?: string | null
   roleTitle?: string | null
-  startDate: Date
+  startDate: Date | null
   entityName: string
   entityColor: string
 }
@@ -39,7 +39,7 @@ export async function sendReminderEmail(input: SendReminderEmailInput): Promise<
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.name}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.region || '-'}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.roleTitle || '-'}</td>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${format(s.startDate, 'dd/MM/yyyy', { locale: nl })}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.startDate ? format(s.startDate, 'dd/MM/yyyy', { locale: nl }) : 'Datum onbekend'}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
         <span style="background: ${s.entityColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
           ${s.entityName}

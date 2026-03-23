@@ -6,6 +6,7 @@ import { canMutateStarter } from '@/lib/rbac'
 import { calculateWeekNumber, getYearInTimezone } from '@/lib/week-utils'
 import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
+import { createAutomaticTasks } from '@/lib/task-automation'
 
 const UpdateStarterSchema = z.object({
   name: z.string().min(1).optional(),
@@ -76,6 +77,12 @@ export async function PATCH(
     const body = await request.json()
     const data = UpdateStarterSchema.parse(body)
 
+    // Check if this is a pending boarding starter being activated
+    const existingStarter = await prisma.starter.findUnique({
+      where: { id },
+      select: { isPendingBoarding: true, type: true },
+    })
+
     const updateData: any = {}
 
     if (data.name !== undefined) updateData.name = normalizeString(data.name)
@@ -93,11 +100,17 @@ export async function PATCH(
     if (data.phoneNumber !== undefined) updateData.phoneNumber = normalizeString(data.phoneNumber)
     if (data.desiredEmail !== undefined) updateData.desiredEmail = normalizeString(data.desiredEmail)
 
+    const isActivatingPending = existingStarter?.isPendingBoarding && data.startDate
+
     if (data.startDate) {
       const startDate = new Date(data.startDate)
       updateData.startDate = startDate
       updateData.weekNumber = calculateWeekNumber(startDate)
       updateData.year = getYearInTimezone(startDate)
+    }
+
+    if (isActivatingPending) {
+      updateData.isPendingBoarding = false
     }
 
     const starter = await prisma.starter.update({
@@ -113,8 +126,38 @@ export async function PATCH(
       actorId: user.id,
       action: 'UPDATE',
       target: `Starter:${starter.id}`,
-      meta: { name: starter.name, changes: Object.keys(updateData) },
+      meta: {
+        name: starter.name,
+        changes: Object.keys(updateData),
+        ...(isActivatingPending ? { activatedFromPending: true } : {}),
+      },
     })
+
+    // When activating a pending boarding starter, create automatic onboarding tasks
+    if (isActivatingPending) {
+      try {
+        // Complete/delete the "assign start date" task
+        await prisma.task.updateMany({
+          where: {
+            starterId: id,
+            title: { contains: 'Startdatum toewijzen' },
+            status: { in: ['PENDING', 'IN_PROGRESS'] },
+          },
+          data: {
+            status: 'COMPLETED',
+            completedAt: new Date(),
+            completedById: user.id,
+          },
+        })
+
+        const starterType = existingStarter.type || 'ONBOARDING'
+        console.log(`🚀 Activating pending starter "${starter.name}" - creating ${starterType} tasks`)
+        const tasks = await createAutomaticTasks(starter, starterType)
+        console.log(`✅ Created ${tasks.length} automatic tasks for activated starter ${starter.name}`)
+      } catch (taskError) {
+        console.error('Failed to create tasks for activated starter:', taskError)
+      }
+    }
 
     return NextResponse.json(starter)
   } catch (error) {

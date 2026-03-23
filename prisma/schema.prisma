@@ -163,9 +163,10 @@ model Starter {
   phoneNumber       String?   // Telefoonnummer (optioneel, kan later toegevoegd)
   desiredEmail      String?   // Gewenst mailadres
   contractSignedOn  DateTime? @default(now()) // Datum waarop contract getekend is (tijdelijk nullable voor migratie)
-  startDate         DateTime  // Startdatum (onboarding) of vertrekdatum (offboarding)
+  startDate         DateTime? // Startdatum (onboarding) of vertrekdatum (offboarding) - null bij pending boarding
   weekNumber        Int?      // Weeknummer (afgeleid, Monday-first)
-  year              Int       // Jaar
+  year              Int?      // Jaar - null bij pending boarding
+  isPendingBoarding Boolean   @default(false) // Startdatum nog niet gekend
   isCancelled       Boolean   @default(false) // Of de starter is geannuleerd
   cancelledAt       DateTime? // Wanneer geannuleerd
   cancelledBy       String?   // User ID die annuleerde
@@ -189,6 +190,7 @@ model Starter {
   @@index([fromEntityId])
   @@index([weekNumber, year])
   @@index([isCancelled])
+  @@index([isPendingBoarding])
 }
 
 model DropdownOption {

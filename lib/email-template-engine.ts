@@ -94,12 +94,12 @@ export function getMonthlySummaryVariables(
     : `
       <ul style="list-style-type: none; padding: 0;">
         ${starters.map(s => {
-          const startDate = typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate
+          const startDate = s.startDate ? (typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate) : null
           return `
             <li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">
               <strong>${s.name}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
               ${s.roleTitle ? `<span style="color: #6b7280;">${s.roleTitle}</span><br/>` : ''}
-              <span style="color: #6b7280; font-size: 14px;">Start: ${format(startDate, 'd MMMM yyyy', { locale: nl })}</span>
+              <span style="color: #6b7280; font-size: 14px;">Start: ${startDate ? format(startDate, 'd MMMM yyyy', { locale: nl }) : 'Datum onbekend'}</span>
             </li>
           `
         }).join('')}
@@ -134,12 +134,12 @@ export function getQuarterlySummaryVariables(
     : `
       <ul style="list-style-type: none; padding: 0;">
         ${starters.map(s => {
-          const startDate = typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate
+          const startDate = s.startDate ? (typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate) : null
           return `
             <li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">
               <strong>${s.name}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
               ${s.roleTitle ? `<span style="color: #6b7280;">${s.roleTitle}</span><br/>` : ''}
-              <span style="color: #6b7280; font-size: 14px;">Start: ${format(startDate, 'd MMMM yyyy', { locale: nl })}</span>
+              <span style="color: #6b7280; font-size: 14px;">Start: ${startDate ? format(startDate, 'd MMMM yyyy', { locale: nl }) : 'Datum onbekend'}</span>
             </li>
           `
         }).join('')}
@@ -172,12 +172,12 @@ export function getYearlySummaryVariables(
     : `
       <ul style="list-style-type: none; padding: 0;">
         ${starters.map(s => {
-          const startDate = typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate
+          const startDate = s.startDate ? (typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate) : null
           return `
             <li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">
               <strong>${s.name}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
               ${s.roleTitle ? `<span style="color: #6b7280;">${s.roleTitle}</span><br/>` : ''}
-              <span style="color: #6b7280; font-size: 14px;">Start: ${format(startDate, 'd MMMM yyyy', { locale: nl })}</span>
+              <span style="color: #6b7280; font-size: 14px;">Start: ${startDate ? format(startDate, 'd MMMM yyyy', { locale: nl }) : 'Datum onbekend'}</span>
             </li>
           `
         }).join('')}

@@ -103,7 +103,11 @@
     "exportWeek": "Week",
     "exportEntity": "Entiteit",
     "exportType": "Type",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "pendingBoardingTitle": "Boarding nog niet bekend",
+    "pendingBoardingDescription": "Deze starters hebben nog geen startdatum. Klik om de info te vervolledigen.",
+    "pendingBoardingLabel": "Startdatum onbekend",
+    "role": "Functie:"
   },
   "starters": {
     "title": "Personeelsbewegingen",
@@ -138,7 +142,9 @@
     "columnType": "Type",
     "columnDate": "Datum",
     "columnEmail": "E-mail",
-    "columnPhone": "Telefoon"
+    "columnPhone": "Telefoon",
+    "pendingBoarding": "Startdatum onbekend",
+    "pendingBoardingTitle": "Boarding nog niet bekend"
   },
   "starterDialog": {
     "titleEditOnboarding": "Onboarding Bewerken",
@@ -248,7 +254,13 @@
     "errorCopy": "Kon niet kopiëren naar clipboard",
     "confirmDeleteStarter": "Weet je zeker dat je deze starter wilt verwijderen?",
     "blockedPeriodAlert": "Deze periode is geblokkeerd!\n\nFunctie: {jobRole}\nPeriode: {start} - {end}\nReden: {reason}",
-    "noReasonGiven": "Geen reden opgegeven"
+    "noReasonGiven": "Geen reden opgegeven",
+    "optionalPending": "optioneel",
+    "pendingBoardingStatus": "Pending Boarding — startdatum nog niet gekend",
+    "pendingConfirmTitle": "Pending Boarding Aanmaken",
+    "pendingConfirmDescription": "Er is geen startdatum ingevuld. Wil je een starter met status 'Pending Boarding' aanmaken?",
+    "pendingConfirmInfo": "Er wordt automatisch een taak aangemaakt om de startdatum later toe te wijzen. Zodra de startdatum wordt ingevuld, worden alle onboarding-taken geactiveerd.",
+    "pendingConfirmButton": "Pending Boarding Aanmaken"
   },
   "starterCard": {
     "languageNL": "Nederlands",
@@ -263,7 +275,8 @@
     "labelExtraInfo": "Extra info:",
     "badgeOnboarding": "Instroom",
     "badgeOffboarding": "Uitstroom",
-    "badgeMigration": "Migratie"
+    "badgeMigration": "Migratie",
+    "pendingBoarding": "Startdatum onbekend"
   },
   "tasks": {
     "title": "Taken",
