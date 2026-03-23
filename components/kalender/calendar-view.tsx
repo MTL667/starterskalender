@@ -7,7 +7,9 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { ChevronLeft, ChevronRight, Plus, Search, Calendar } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ChevronLeft, ChevronRight, Plus, Search, Calendar, Building2 } from 'lucide-react'
 import { StarterCard } from './starter-card'
 import { StarterDialog } from './starter-dialog'
 import { getWeeksInYear } from '@/lib/week-utils'
@@ -20,7 +22,7 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-type ViewMode = 'week' | 'month' | 'year'
+type ViewMode = 'week' | 'month' | 'year' | 'custom'
 
 type StarterType = 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
@@ -63,20 +65,20 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedEntity, setSelectedEntity] = useState<string>('all')
+  const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
   const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
   const [deepLinkHandled, setDeepLinkHandled] = useState(false)
+  const [customFrom, setCustomFrom] = useState(() => format(today, 'yyyy-MM-dd'))
+  const [customTo, setCustomTo] = useState(() => format(today, 'yyyy-MM-dd'))
 
   const weeksInYear = getWeeksInYear(year)
 
-  // Bepaal het jaar om te fetchen op basis van view mode
-  const fetchYear = viewMode === 'year' ? year : getYear(currentDate)
+  const fetchYear = viewMode === 'year' ? year : viewMode === 'custom' ? getYear(new Date(customFrom)) : getYear(currentDate)
 
-  // Synchroniseer year state met currentDate in week/month mode
   useEffect(() => {
-    if (viewMode !== 'year') {
+    if (viewMode !== 'year' && viewMode !== 'custom') {
       const currentYear = getYear(currentDate)
       if (currentYear !== year) {
         setYear(currentYear)
@@ -84,15 +86,18 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     }
   }, [currentDate, viewMode, year])
 
-  // Fetch starters en entities
   useEffect(() => {
     setLoading(true)
     
-    // Bepaal of we meerdere jaren moeten fetchen (voor cross-year weeks/months)
     const yearsToFetch = new Set<number>([fetchYear])
     
-    if (viewMode !== 'year') {
-      // Check of de periode de jaargrens overschrijdt
+    if (viewMode === 'custom') {
+      const startYear = getYear(new Date(customFrom))
+      const endYear = getYear(new Date(customTo))
+      for (let y = startYear; y <= endYear; y++) {
+        yearsToFetch.add(y)
+      }
+    } else if (viewMode !== 'year') {
       const rangeStart = viewMode === 'week' 
         ? startOfWeek(currentDate, { weekStartsOn: 1 })
         : startOfMonth(currentDate)
@@ -100,26 +105,19 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
         ? endOfWeek(currentDate, { weekStartsOn: 1 })
         : endOfMonth(currentDate)
       
-      const startYear = getYear(rangeStart)
-      const endYear = getYear(rangeEnd)
-      
-      yearsToFetch.add(startYear)
-      yearsToFetch.add(endYear)
+      yearsToFetch.add(getYear(rangeStart))
+      yearsToFetch.add(getYear(rangeEnd))
     }
     
     const years = Array.from(yearsToFetch)
-    console.log(`📅 Fetching starters for years: ${years.join(', ')}, currentDate:`, currentDate, `viewMode: ${viewMode}`)
     
     Promise.all([
-      // Fetch starters voor alle benodigde jaren
       Promise.all(years.map(y => 
         fetch(`/api/starters?year=${y}`).then(res => res.json())
       )).then(results => results.flat()),
       fetch('/api/entities').then(res => res.json()),
     ])
       .then(([startersData, entitiesData]) => {
-        console.log(`✅ Received ${startersData.length} starters for years ${years.join(', ')}`)
-        console.log('Starters:', startersData.map((s: Starter) => ({ name: s.name, startDate: s.startDate, year: (s as any).year, weekNumber: s.weekNumber })))
         setStarters(startersData)
         setEntities(entitiesData)
         setLoading(false)
@@ -128,7 +126,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
         console.error('Error fetching data:', error)
         setLoading(false)
       })
-  }, [fetchYear, currentDate, viewMode])
+  }, [fetchYear, currentDate, viewMode, customFrom, customTo])
 
   // Deep-link: open starter dialog when starterId is in URL
   useEffect(() => {
@@ -159,20 +157,21 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     setDeepLinkHandled(true)
   }, [deepLinkHandled, loading, starters, searchParams])
 
-  // Bepaal de datum range voor filtering op basis van view mode
   let dateRangeStart: Date, dateRangeEnd: Date
   if (viewMode === 'week') {
     dateRangeStart = startOfWeek(currentDate, { weekStartsOn: 1 })
     dateRangeEnd = endOfWeek(currentDate, { weekStartsOn: 1 })
-    console.log(`📆 Week view - Range: ${format(dateRangeStart, 'yyyy-MM-dd')} to ${format(dateRangeEnd, 'yyyy-MM-dd')}`)
   } else if (viewMode === 'month') {
     dateRangeStart = startOfMonth(currentDate)
     dateRangeEnd = endOfMonth(currentDate)
-    console.log(`📆 Month view - Range: ${format(dateRangeStart, 'yyyy-MM-dd')} to ${format(dateRangeEnd, 'yyyy-MM-dd')}`)
+  } else if (viewMode === 'custom') {
+    dateRangeStart = new Date(customFrom)
+    const end = new Date(customTo)
+    end.setHours(23, 59, 59, 999)
+    dateRangeEnd = end
   } else {
     dateRangeStart = startOfYear(new Date(year, 0, 1))
     dateRangeEnd = endOfYear(new Date(year, 0, 1))
-    console.log(`📆 Year view - Range: ${format(dateRangeStart, 'yyyy-MM-dd')} to ${format(dateRangeEnd, 'yyyy-MM-dd')}`)
   }
 
   // Filter starters
@@ -183,17 +182,15 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       if (type !== starterTypeFilter) return false
     }
 
-    // Filter op datum range (voor week en maand view)
     if (viewMode !== 'year') {
       const starterDate = new Date(starter.startDate)
-      const inRange = starterDate >= dateRangeStart && starterDate <= dateRangeEnd
-      if (!inRange) {
+      if (starterDate < dateRangeStart || starterDate > dateRangeEnd) {
         return false
       }
     }
 
     // Filter op entiteit
-    if (selectedEntity !== 'all' && starter.entity?.id !== selectedEntity) {
+    if (selectedEntities.size > 0 && (!starter.entity || !selectedEntities.has(starter.entity.id))) {
       return false
     }
 
@@ -273,25 +270,21 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     }
   }
 
-  // Formateer de huidige periode voor display
   const getPeriodLabel = () => {
     if (viewMode === 'week') {
       const monday = startOfWeek(currentDate, { weekStartsOn: 1 })
       const sunday = endOfWeek(currentDate, { weekStartsOn: 1 })
-      
-      // Check of maandag en zondag in hetzelfde jaar zijn
       const mondayYear = getYear(monday)
       const sundayYear = getYear(sunday)
-      
       if (mondayYear === sundayYear) {
-        // Zelfde jaar: "5 januari - 11 januari 2026"
         return `${format(monday, 'd MMMM', { locale: dateLocale })} - ${format(sunday, 'd MMMM yyyy', { locale: dateLocale })}`
       } else {
-        // Verschillende jaren: "30 december 2025 - 5 januari 2026"
         return `${format(monday, 'd MMMM yyyy', { locale: dateLocale })} - ${format(sunday, 'd MMMM yyyy', { locale: dateLocale })}`
       }
     } else if (viewMode === 'month') {
       return format(currentDate, 'MMMM yyyy', { locale: dateLocale })
+    } else if (viewMode === 'custom') {
+      return `${format(new Date(customFrom), 'd MMM yyyy', { locale: dateLocale })} - ${format(new Date(customTo), 'd MMM yyyy', { locale: dateLocale })}`
     } else {
       return year.toString()
     }
@@ -389,11 +382,10 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       {/* Filters en acties */}
       <Card className="p-4">
         <div className="flex flex-col gap-4">
-          {/* View mode selector en navigatie */}
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Select value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[160px]">
                   <Calendar className="h-4 w-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
@@ -401,32 +393,46 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                   <SelectItem value="week">{t('viewWeek')}</SelectItem>
                   <SelectItem value="month">{t('viewMonth')}</SelectItem>
                   <SelectItem value="year">{t('viewYear')}</SelectItem>
+                  <SelectItem value="custom">{t('viewCustom')}</SelectItem>
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handlePrevious}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="font-semibold text-base min-w-[180px] text-center px-2">
-                  {getPeriodLabel()}
+              {viewMode === 'custom' ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="w-[150px]"
+                  />
+                  <span className="text-muted-foreground text-sm">—</span>
+                  <Input
+                    type="date"
+                    value={customTo}
+                    min={customFrom}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="w-[150px]"
+                  />
                 </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleNext}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="icon" onClick={handlePrevious}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <div className="font-semibold text-base min-w-[180px] text-center px-2">
+                      {getPeriodLabel()}
+                    </div>
+                    <Button variant="outline" size="icon" onClick={handleNext}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
 
-              <Button variant="outline" onClick={handleToday}>
-                {t('today')}
-              </Button>
+                  <Button variant="outline" onClick={handleToday}>
+                    {t('today')}
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -455,19 +461,61 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
               </SelectContent>
             </Select>
 
-            <Select value={selectedEntity} onValueChange={setSelectedEntity}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder={t('allEntities')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('allEntities')}</SelectItem>
-                {entities.map(entity => (
-                  <SelectItem key={entity.id} value={entity.id}>
-                    {entity.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-[200px] justify-start font-normal">
+                  <Building2 className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">
+                    {selectedEntities.size === 0
+                      ? t('allEntities')
+                      : selectedEntities.size === 1
+                        ? entities.find(e => selectedEntities.has(e.id))?.name
+                        : t('entitiesSelected', { count: selectedEntities.size })}
+                  </span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[220px] p-2" align="start">
+                <div className="space-y-1">
+                  <button
+                    className="flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                    onClick={() => setSelectedEntities(new Set())}
+                  >
+                    <Checkbox
+                      checked={selectedEntities.size === 0}
+                      className="pointer-events-none"
+                    />
+                    {t('allEntities')}
+                  </button>
+                  {entities.map(entity => (
+                    <button
+                      key={entity.id}
+                      className="flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                      onClick={() => {
+                        setSelectedEntities(prev => {
+                          const next = new Set(prev)
+                          if (next.has(entity.id)) {
+                            next.delete(entity.id)
+                          } else {
+                            next.add(entity.id)
+                          }
+                          return next
+                        })
+                      }}
+                    >
+                      <Checkbox
+                        checked={selectedEntities.has(entity.id)}
+                        className="pointer-events-none"
+                      />
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: entity.colorHex }}
+                      />
+                      {entity.name}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
 
             {canEdit && (
               <Button onClick={handleNewStarter}>
@@ -537,12 +585,13 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
           })}
         </div>
       ) : (
-        // Week/Maand view: toon als lijst gegroepeerd per dag
         <div className="space-y-4">
           {filteredStarters.length === 0 ? (
             <Card className="p-8">
               <div className="text-center text-muted-foreground">
-                {t('noStartersPeriod', { period: viewMode === 'week' ? t('periodWeek') : t('periodMonth') })}
+                {viewMode === 'custom'
+                  ? t('noStartersPeriod', { period: t('periodCustom') })
+                  : t('noStartersPeriod', { period: viewMode === 'week' ? t('periodWeek') : t('periodMonth') })}
               </div>
             </Card>
           ) : (
@@ -592,7 +641,9 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       <div className="text-center text-sm text-muted-foreground">
         {t('resultCount', {
           count: filteredStarters.length,
-          period: viewMode === 'week' ? t('periodThisWeek') : viewMode === 'month' ? t('periodThisMonth') : t('periodInYear', { year })
+          period: viewMode === 'custom'
+            ? t('periodCustomRange')
+            : viewMode === 'week' ? t('periodThisWeek') : viewMode === 'month' ? t('periodThisMonth') : t('periodInYear', { year })
         })}
       </div>
 
