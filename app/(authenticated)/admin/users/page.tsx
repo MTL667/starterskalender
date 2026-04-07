@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, UserPlus, Trash2, Building2, Search, X } from 'lucide-react'
+import { ArrowLeft, UserPlus, Trash2, Building2, Search, X, Bell } from 'lucide-react'
 import Link from 'next/link'
 import { UserMembershipsDialog } from '@/components/admin/user-memberships-dialog'
+import { UserNotificationPrefsDialog } from '@/components/admin/user-notification-prefs-dialog'
 
 interface User {
   id: string
@@ -55,6 +56,7 @@ export default function UsersAdminPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [membershipsDialogOpen, setMembershipsDialogOpen] = useState(false)
+  const [notifPrefsDialogOpen, setNotifPrefsDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -330,6 +332,19 @@ export default function UsersAdminPage() {
                       <Building2 className="h-4 w-4 mr-2" />
                       {t('entities')}
                     </Button>
+                    {user.role !== 'NONE' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUser(user)
+                          setNotifPrefsDialogOpen(true)
+                        }}
+                      >
+                        <Bell className="h-4 w-4 mr-2" />
+                        {t('notifications')}
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -423,7 +438,20 @@ export default function UsersAdminPage() {
           onClose={() => {
             setMembershipsDialogOpen(false)
             setSelectedUser(null)
-            fetchUsers() // Refresh to show updated memberships
+            fetchUsers()
+          }}
+          userId={selectedUser.id}
+          userName={selectedUser.name || selectedUser.email}
+        />
+      )}
+
+      {/* User Notification Preferences Dialog */}
+      {selectedUser && (
+        <UserNotificationPrefsDialog
+          open={notifPrefsDialogOpen}
+          onClose={() => {
+            setNotifPrefsDialogOpen(false)
+            setSelectedUser(null)
           }}
           userId={selectedUser.id}
           userName={selectedUser.name || selectedUser.email}

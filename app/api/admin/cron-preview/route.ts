@@ -144,7 +144,7 @@ export async function POST(req: Request) {
       const enabledPrefs = user.notificationPreferences.filter(p => p[notificationType])
       
       let accessibleEntityIds: string[] = []
-      if (user.role === 'HR_ADMIN') {
+      if (user.role === 'HR_ADMIN' || user.role === 'GLOBAL_VIEWER') {
         accessibleEntityIds = enabledPrefs.map(p => p.entityId)
       } else {
         const preferencesMap = new Set(enabledPrefs.map(p => p.entityId))

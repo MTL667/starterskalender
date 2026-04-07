@@ -457,7 +457,22 @@
     "searchPlaceholder": "Zoek op naam, e-mail of entiteit...",
     "allRoles": "Alle rollen",
     "noResults": "Geen gebruikers gevonden",
-    "showingCount": "{count} van {total} gebruikers"
+    "showingCount": "{count} van {total} gebruikers",
+    "notifications": "Notificaties"
+  },
+  "adminUserNotifications": {
+    "title": "Notificaties — {name}",
+    "description": "Beheer welke e-mailnotificaties deze gebruiker ontvangt per entiteit",
+    "noEntities": "Deze gebruiker heeft geen toegang tot entiteiten",
+    "entityCount": "{count} entiteiten",
+    "enableAll": "Alles aan",
+    "disableAll": "Alles uit",
+    "weeklyReminder": "Wekelijks",
+    "monthlySummary": "Maandelijks",
+    "quarterlySummary": "Kwartaal",
+    "yearlySummary": "Jaarlijks",
+    "saved": "Opgeslagen",
+    "errorSaving": "Fout bij opslaan van notificatievoorkeuren"
   },
   "adminEntities": {
     "title": "Entiteiten",

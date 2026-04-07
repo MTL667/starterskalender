@@ -457,7 +457,22 @@
     "searchPlaceholder": "Rechercher par nom, email ou entité...",
     "allRoles": "Tous les rôles",
     "noResults": "Aucun utilisateur trouvé",
-    "showingCount": "{count} sur {total} utilisateurs"
+    "showingCount": "{count} sur {total} utilisateurs",
+    "notifications": "Notifications"
+  },
+  "adminUserNotifications": {
+    "title": "Notifications — {name}",
+    "description": "Gérer les notifications email que cet utilisateur reçoit par entité",
+    "noEntities": "Cet utilisateur n'a accès à aucune entité",
+    "entityCount": "{count} entités",
+    "enableAll": "Tout activer",
+    "disableAll": "Tout désactiver",
+    "weeklyReminder": "Hebdomadaire",
+    "monthlySummary": "Mensuel",
+    "quarterlySummary": "Trimestriel",
+    "yearlySummary": "Annuel",
+    "saved": "Enregistré",
+    "errorSaving": "Erreur lors de l'enregistrement des préférences de notification"
   },
   "adminEntities": {
     "title": "Entités",

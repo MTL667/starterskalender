@@ -117,11 +117,9 @@ export async function GET(req: Request) {
       // Bepaal welke entiteiten deze user mag zien
       let accessibleEntityIds: string[]
       
-      if (user.role === 'HR_ADMIN') {
-        // HR_ADMIN ziet alle entiteiten met weeklyReminder enabled
+      if (user.role === 'HR_ADMIN' || user.role === 'GLOBAL_VIEWER') {
         accessibleEntityIds = user.notificationPreferences.map(p => p.entityId)
       } else {
-        // Andere users: alleen entiteiten met membership EN weeklyReminder enabled
         const preferencesMap = new Set(user.notificationPreferences.map(p => p.entityId))
         accessibleEntityIds = user.memberships
           .filter(m => preferencesMap.has(m.entityId))
