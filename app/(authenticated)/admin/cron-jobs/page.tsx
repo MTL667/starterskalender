@@ -1,12 +1,13 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, CheckCircle2, Clock, Send, Loader2, Info } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Clock, Send, Loader2, Info, Search } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Input } from '@/components/ui/input'
 
 interface JobResult {
   success: boolean
@@ -33,6 +34,7 @@ interface RecipientPreview {
   name: string | null
   startersCount: number
   entities: string[]
+  hasMatch: boolean
 }
 
 const cronJobConfigs = [
@@ -43,6 +45,137 @@ const cronJobConfigs = [
 ] as const
 
 type CronJobConfig = (typeof cronJobConfigs)[number]
+
+function RecipientSelector({
+  jobId,
+  recipients,
+  selectedRecipients,
+  searchQuery,
+  onSearchChange,
+  onToggle,
+  onSelectAll,
+  t,
+  tc,
+}: {
+  jobId: string
+  recipients: RecipientPreview[]
+  selectedRecipients: Set<string>
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  onToggle: (jobId: string, email: string) => void
+  onSelectAll: (jobId: string, selectAll: boolean) => void
+  t: ReturnType<typeof useTranslations>
+  tc: ReturnType<typeof useTranslations>
+}) {
+  const filtered = useMemo(() => {
+    if (!searchQuery.trim()) return recipients
+    const q = searchQuery.toLowerCase()
+    return recipients.filter(r =>
+      r.email.toLowerCase().includes(q) ||
+      (r.name && r.name.toLowerCase().includes(q)) ||
+      r.entities.some(e => e.toLowerCase().includes(q))
+    )
+  }, [recipients, searchQuery])
+
+  const matchingCount = recipients.filter(r => r.hasMatch).length
+
+  return (
+    <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-medium">
+          {t('selectRecipientsCount', { count: selectedRecipients.size })}
+        </h4>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onSelectAll(jobId, true)}
+            className="h-7 text-xs"
+          >
+            {tc('all')}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => onSelectAll(jobId, false)}
+            className="h-7 text-xs"
+          >
+            {tc('none')}
+          </Button>
+        </div>
+      </div>
+
+      {recipients.length > 5 && (
+        <div className="relative">
+          <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder={t('searchRecipients')}
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-8 h-8 text-sm"
+          />
+        </div>
+      )}
+
+      {matchingCount > 0 && matchingCount < recipients.length && (
+        <p className="text-xs text-muted-foreground">
+          {t('matchingRecipientsInfo', { matching: matchingCount, total: recipients.length })}
+        </p>
+      )}
+
+      <div className="max-h-72 overflow-y-auto space-y-0.5">
+        {filtered.map((recipient) => {
+          const isSelected = selectedRecipients.has(recipient.email)
+
+          return (
+            <label
+              key={recipient.email}
+              className={`flex items-start gap-2 p-2 rounded cursor-pointer transition-colors ${
+                recipient.hasMatch
+                  ? 'hover:bg-accent'
+                  : 'hover:bg-accent opacity-60'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onToggle(jobId, recipient.email)}
+                className="mt-1"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium truncate">
+                    {recipient.name || recipient.email}
+                  </span>
+                  {recipient.hasMatch && (
+                    <Badge variant="secondary" className="text-[10px] h-4 px-1.5 shrink-0">
+                      {t('wouldReceive')}
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {recipient.email !== recipient.name && (
+                    <span className="block truncate">{recipient.email}</span>
+                  )}
+                  {recipient.startersCount > 0
+                    ? (recipient.startersCount === 1 ? t('starterCount', { count: recipient.startersCount }) : t('starterCountPlural', { count: recipient.startersCount }))
+                    : t('noStartersInPeriod')
+                  }
+                  {recipient.entities.length > 0 && (
+                    <span> • {recipient.entities.join(', ')}</span>
+                  )}
+                </div>
+              </div>
+            </label>
+          )
+        })}
+        {filtered.length === 0 && searchQuery && (
+          <p className="text-xs text-muted-foreground text-center py-3">{t('noSearchResults')}</p>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function CronJobsPage() {
   const t = useTranslations('adminCronJobs')
@@ -57,6 +190,7 @@ export default function CronJobsPage() {
   const [recipientPreviews, setRecipientPreviews] = useState<Record<string, RecipientPreview[]>>({})
   const [selectedRecipients, setSelectedRecipients] = useState<Record<string, Set<string>>>({})
   const [showRecipients, setShowRecipients] = useState<Record<string, boolean>>({})
+  const [recipientSearch, setRecipientSearch] = useState<Record<string, string>>({})
 
   // Load diagnostics on mount
   useEffect(() => {
@@ -101,9 +235,13 @@ export default function CronJobsPage() {
       if (response.ok) {
         setRecipientPreviews(prev => ({ ...prev, [job.id]: data.recipients }))
         
-        // Standaard alle recipients selecteren
-        const allEmails = new Set<string>(data.recipients.map((r: RecipientPreview) => r.email))
-        setSelectedRecipients(prev => ({ ...prev, [job.id]: allEmails }))
+        // Standaard alleen matching recipients selecteren
+        const matchingEmails = new Set<string>(
+          data.recipients
+            .filter((r: RecipientPreview) => r.hasMatch)
+            .map((r: RecipientPreview) => r.email)
+        )
+        setSelectedRecipients(prev => ({ ...prev, [job.id]: matchingEmails }))
         
         // Toon recipient lijst
         setShowRecipients(prev => ({ ...prev, [job.id]: true }))
@@ -333,65 +471,17 @@ export default function CronJobsPage() {
 
                 {/* Recipient Selection */}
                 {showRecipients[job.id] && recipientPreviews[job.id] && (
-                  <div className="border rounded-lg p-3 space-y-3 bg-muted/30">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium">
-                        {t('selectRecipientsCount', { count: selectedRecipients[job.id]?.size || 0 })}
-                      </h4>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => selectAllRecipients(job.id, true)}
-                          className="h-7 text-xs"
-                        >
-                          {tc('all')}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => selectAllRecipients(job.id, false)}
-                          className="h-7 text-xs"
-                        >
-                          {tc('none')}
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="max-h-60 overflow-y-auto space-y-1">
-                      {recipientPreviews[job.id].map((recipient) => {
-                        const isSelected = selectedRecipients[job.id]?.has(recipient.email) || false
-                        
-                        return (
-                          <label
-                            key={recipient.email}
-                            className="flex items-start gap-2 p-2 rounded hover:bg-accent cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => toggleRecipient(job.id, recipient.email)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium truncate">
-                                {recipient.name || recipient.email}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {recipient.email !== recipient.name && (
-                                  <span className="block truncate">{recipient.email}</span>
-                                )}
-                                {recipient.startersCount === 1 ? t('starterCount', { count: recipient.startersCount }) : t('starterCountPlural', { count: recipient.startersCount })}
-                                {recipient.entities.length > 0 && (
-                                  <span> • {recipient.entities.join(', ')}</span>
-                                )}
-                              </div>
-                            </div>
-                          </label>
-                        )
-                      })}
-                    </div>
-                  </div>
+                  <RecipientSelector
+                    jobId={job.id}
+                    recipients={recipientPreviews[job.id]}
+                    selectedRecipients={selectedRecipients[job.id] || new Set()}
+                    searchQuery={recipientSearch[job.id] || ''}
+                    onSearchChange={(query) => setRecipientSearch(prev => ({ ...prev, [job.id]: query }))}
+                    onToggle={toggleRecipient}
+                    onSelectAll={selectAllRecipients}
+                    t={t}
+                    tc={tc}
+                  />
                 )}
 
                 <Button

@@ -694,7 +694,12 @@
     "rebuildApp": "Reconstruire l'application",
     "infoTitle": "Information",
     "starterCount": "{count} collaborateur",
-    "starterCountPlural": "{count} collaborateurs"
+    "starterCountPlural": "{count} collaborateurs",
+    "searchRecipients": "Rechercher par nom, email ou entité...",
+    "matchingRecipientsInfo": "{matching} sur {total} utilisateurs recevraient normalement un email",
+    "wouldReceive": "match",
+    "noStartersInPeriod": "Aucun collaborateur dans cette période",
+    "noSearchResults": "Aucun résultat trouvé"
   },
   "adminBranding": {
     "title": "Image de marque",

@@ -695,7 +695,12 @@
     "rebuildApp": "Rebuild de app",
     "infoTitle": "Informatie",
     "starterCount": "{count} starter",
-    "starterCountPlural": "{count} starters"
+    "starterCountPlural": "{count} starters",
+    "searchRecipients": "Zoek op naam, email of entiteit...",
+    "matchingRecipientsInfo": "{matching} van {total} gebruikers zouden normaal een email ontvangen",
+    "wouldReceive": "match",
+    "noStartersInPeriod": "Geen starters in deze periode",
+    "noSearchResults": "Geen resultaten gevonden"
   },
   "adminBranding": {
     "title": "Branding",

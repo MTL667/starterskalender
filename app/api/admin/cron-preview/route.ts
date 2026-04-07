@@ -101,20 +101,13 @@ export async function POST(req: Request) {
       },
     })
 
-    // Haal alle users op die deze notificatie enabled hebben
-    const allUsers = await prisma.user.findMany({
+    // Haal ALLE users op (met memberships en notification preferences)
+    const allUsersRaw = await prisma.user.findMany({
       where: {
-        notificationPreferences: {
-          some: {
-            [notificationType]: true,
-          },
-        },
+        role: { not: 'NONE' },
       },
       include: {
         notificationPreferences: {
-          where: {
-            [notificationType]: true,
-          },
           include: {
             entity: {
               select: {
@@ -135,6 +128,7 @@ export async function POST(req: Request) {
           },
         },
       },
+      orderBy: { name: 'asc' },
     })
 
     // Bereken voor elke user welke starters ze zouden zien
@@ -143,47 +137,51 @@ export async function POST(req: Request) {
       name: string | null
       startersCount: number
       entities: string[]
+      hasMatch: boolean
     }> = []
 
-    for (const user of allUsers) {
-      let accessibleEntityIds: string[]
+    for (const user of allUsersRaw) {
+      const enabledPrefs = user.notificationPreferences.filter(p => p[notificationType])
       
+      let accessibleEntityIds: string[] = []
       if (user.role === 'HR_ADMIN') {
-        accessibleEntityIds = user.notificationPreferences.map(p => p.entityId)
+        accessibleEntityIds = enabledPrefs.map(p => p.entityId)
       } else {
-        const preferencesMap = new Set(user.notificationPreferences.map(p => p.entityId))
+        const preferencesMap = new Set(enabledPrefs.map(p => p.entityId))
         accessibleEntityIds = user.memberships
           .filter(m => preferencesMap.has(m.entityId))
           .map(m => m.entityId)
-      }
-
-      if (accessibleEntityIds.length === 0) {
-        continue
       }
 
       const userStarters = starters.filter(s => 
         s.entityId && accessibleEntityIds.includes(s.entityId)
       )
 
-      if (userStarters.length === 0) {
-        continue
-      }
-
-      // Groepeer per entiteit
       const entitiesSet = new Set<string>()
-      userStarters.forEach(s => {
-        if (s.entity) {
-          entitiesSet.add(s.entity.name)
-        }
-      })
+      if (userStarters.length > 0) {
+        userStarters.forEach(s => {
+          if (s.entity) entitiesSet.add(s.entity.name)
+        })
+      } else {
+        const memberEntities = user.memberships.map(m => m.entity.name)
+        memberEntities.forEach(name => entitiesSet.add(name))
+      }
 
       recipients.push({
         email: user.email,
         name: user.name,
         startersCount: userStarters.length,
         entities: Array.from(entitiesSet),
+        hasMatch: userStarters.length > 0 && enabledPrefs.length > 0,
       })
     }
+
+    // Sorteer: eerst matching users, dan de rest
+    recipients.sort((a, b) => {
+      if (a.hasMatch && !b.hasMatch) return -1
+      if (!a.hasMatch && b.hasMatch) return 1
+      return (a.name || a.email).localeCompare(b.name || b.email)
+    })
 
     return NextResponse.json({
       cronType,
