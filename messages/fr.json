@@ -510,7 +510,9 @@
     "roleTitlePlaceholder": "Ex. Senior Developer",
     "descriptionOptional": "Description (optionnel)",
     "descriptionPlaceholder": "Informations supplémentaires sur cette fonction",
-    "confirmDeleteRole": "Êtes-vous sûr de vouloir supprimer cette fonction ?"
+    "confirmDeleteRole": "Êtes-vous sûr de vouloir supprimer cette fonction ?",
+    "noMaterials": "Pas de matériaux",
+    "rolesWithoutMaterialsWarning": "{count, plural, one {# fonction active n'a pas de matériaux attribués} other {# fonctions actives n'ont pas de matériaux attribués}}"
   },
   "adminMaterials": {
     "title": "Gestion des matériaux",

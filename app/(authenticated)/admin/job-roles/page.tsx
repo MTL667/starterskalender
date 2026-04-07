@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Pencil, Trash2, Package } from 'lucide-react'
+import { Plus, Pencil, Trash2, Package, AlertTriangle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { JobRoleMaterialsDialog } from '@/components/admin/job-role-materials-dialog'
 
 interface Entity {
@@ -30,6 +31,9 @@ interface JobRole {
     id: string
     name: string
     colorHex: string
+  }
+  _count?: {
+    materials: number
   }
 }
 
@@ -59,7 +63,7 @@ export default function JobRolesPage() {
   const loadData = () => {
     Promise.all([
       fetch('/api/entities').then(res => res.json()),
-      fetch('/api/job-roles').then(res => res.json()),
+      fetch('/api/job-roles?withMaterialCount=true').then(res => res.json()),
     ])
       .then(([entitiesData, jobRolesData]) => {
         setEntities(entitiesData)
@@ -143,6 +147,10 @@ export default function JobRolesPage() {
     return acc
   }, {} as Record<string, JobRole[]>)
 
+  const rolesWithoutMaterials = jobRoles.filter(
+    r => r.isActive && r._count && r._count.materials === 0
+  )
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-8">
@@ -151,6 +159,20 @@ export default function JobRolesPage() {
           {t('subtitle')}
         </p>
       </div>
+
+      {!loading && rolesWithoutMaterials.length > 0 && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <span className="font-medium">
+              {t('rolesWithoutMaterialsWarning', { count: rolesWithoutMaterials.length })}
+            </span>
+            <span className="block text-sm mt-1">
+              {rolesWithoutMaterials.map(r => `${r.title} (${r.entity.name})`).join(', ')}
+            </span>
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
@@ -212,6 +234,12 @@ export default function JobRolesPage() {
                               <span className="font-medium">{role.title}</span>
                               {!role.isActive && (
                                 <Badge variant="secondary">{tc('inactive')}</Badge>
+                              )}
+                              {role.isActive && role._count && role._count.materials === 0 && (
+                                <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 gap-1">
+                                  <AlertTriangle className="h-3 w-3" />
+                                  {t('noMaterials')}
+                                </Badge>
                               )}
                             </div>
                             {role.description && (

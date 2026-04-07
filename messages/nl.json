@@ -510,7 +510,9 @@
     "roleTitlePlaceholder": "Bijv. Senior Developer",
     "descriptionOptional": "Beschrijving (optioneel)",
     "descriptionPlaceholder": "Extra informatie over deze functie",
-    "confirmDeleteRole": "Weet je zeker dat je deze functie wilt verwijderen?"
+    "confirmDeleteRole": "Weet je zeker dat je deze functie wilt verwijderen?",
+    "noMaterials": "Geen materialen",
+    "rolesWithoutMaterialsWarning": "{count, plural, one {# actieve functie heeft geen materialen toegewezen} other {# actieve functies hebben geen materialen toegewezen}}"
   },
   "adminMaterials": {
     "title": "Materialenbeheer",
