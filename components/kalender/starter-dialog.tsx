@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2 } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
@@ -117,6 +117,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [phoneTaskToggling, setPhoneTaskToggling] = useState(false)
   const [regeneratingTasks, setRegeneratingTasks] = useState(false)
   const [pendingConfirmOpen, setPendingConfirmOpen] = useState(false)
+  const [assigningMaterials, setAssigningMaterials] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     name: '',
@@ -609,6 +610,27 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     } catch (error) {
       console.error('Error toggling material:', error)
       alert(t('errorMaterial'))
+    }
+  }
+
+  const handleAssignMaterials = async () => {
+    if (!starter) return
+    setAssigningMaterials(true)
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/materials`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        const materialsRes = await fetch(`/api/starters/${starter.id}/materials`)
+        if (materialsRes.ok) {
+          setStarterMaterials(await materialsRes.json())
+        }
+      }
+    } catch (error) {
+      console.error('Error assigning materials:', error)
+      alert(t('errorMaterial'))
+    } finally {
+      setAssigningMaterials(false)
     }
   }
 
@@ -1335,60 +1357,94 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             )}
 
             {/* Materialen sectie (alleen bij edit) */}
-            {isEdit && starterMaterials.length > 0 && (
+            {isEdit && (
               <div className="border-t pt-4">
                 <Label className="text-base font-semibold mb-3 block">
                   {t('materialsTitle')}
                 </Label>
-                <div className="space-y-2">
-                  {starterMaterials.map((sm: any) => (
-                    <div
-                      key={sm.id}
-                      className="flex items-start justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex items-start gap-3 flex-1">
-                        <Checkbox
-                          id={`material-${sm.materialId}`}
-                          checked={sm.isProvided}
-                          onCheckedChange={(checked) =>
-                            handleMaterialToggle(sm.materialId, checked as boolean)
-                          }
-                          disabled={!canEdit}
-                        />
-                        <div className="flex-1">
-                          <Label
-                            htmlFor={`material-${sm.materialId}`}
-                            className="cursor-pointer font-normal"
-                          >
-                            {sm.material.name}
-                            {sm.material.category && (
-                              <Badge variant="outline" className="ml-2 text-xs">
-                                {sm.material.category}
-                              </Badge>
-                            )}
-                          </Label>
-                          {sm.notes && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {sm.notes}
-                            </p>
+
+                {starterMaterials.length === 0 ? (
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        {t('noMaterialsWarning')}
+                      </p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        {t('noMaterialsHint')}
+                      </p>
+                      {canEdit && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-2 h-7 text-xs"
+                          onClick={handleAssignMaterials}
+                          disabled={assigningMaterials}
+                        >
+                          {assigningMaterials ? (
+                            <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Package className="mr-1.5 h-3 w-3" />
                           )}
-                          {sm.isProvided && sm.providedAt && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {t('materialsProvided')}{' '}
-                              {new Date(sm.providedAt).toLocaleDateString('nl-BE', {
-                                dateStyle: 'short',
-                              })}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                          {t('assignMaterials')}
+                        </Button>
+                      )}
                     </div>
-                  ))}
-                </div>
-                {canEdit && (
-                  <p className="text-xs text-muted-foreground mt-3">
-                    {t('materialsCheckbox')}
-                  </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      {starterMaterials.map((sm: any) => (
+                        <div
+                          key={sm.id}
+                          className="flex items-start justify-between p-3 border rounded-lg"
+                        >
+                          <div className="flex items-start gap-3 flex-1">
+                            <Checkbox
+                              id={`material-${sm.materialId}`}
+                              checked={sm.isProvided}
+                              onCheckedChange={(checked) =>
+                                handleMaterialToggle(sm.materialId, checked as boolean)
+                              }
+                              disabled={!canEdit}
+                            />
+                            <div className="flex-1">
+                              <Label
+                                htmlFor={`material-${sm.materialId}`}
+                                className="cursor-pointer font-normal"
+                              >
+                                {sm.material.name}
+                                {sm.material.category && (
+                                  <Badge variant="outline" className="ml-2 text-xs">
+                                    {sm.material.category}
+                                  </Badge>
+                                )}
+                              </Label>
+                              {sm.notes && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {sm.notes}
+                                </p>
+                              )}
+                              {sm.isProvided && sm.providedAt && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {t('materialsProvided')}{' '}
+                                  {new Date(sm.providedAt).toLocaleDateString('nl-BE', {
+                                    dateStyle: 'short',
+                                  })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {canEdit && (
+                      <p className="text-xs text-muted-foreground mt-3">
+                        {t('materialsCheckbox')}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             )}

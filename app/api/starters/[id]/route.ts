@@ -133,7 +133,7 @@ export async function PATCH(
       },
     })
 
-    // When activating a pending boarding starter, create automatic onboarding tasks
+    // When activating a pending boarding starter, create automatic onboarding tasks + assign materials
     if (isActivatingPending) {
       try {
         // Complete/delete the "assign start date" task
@@ -156,6 +156,55 @@ export async function PATCH(
         console.log(`✅ Created ${tasks.length} automatic tasks for activated starter ${starter.name}`)
       } catch (taskError) {
         console.error('Failed to create tasks for activated starter:', taskError)
+      }
+
+      // Auto-assign materials from job role
+      if (starter.roleTitle && starter.entityId) {
+        try {
+          const jobRole = await prisma.jobRole.findUnique({
+            where: {
+              entityId_title: {
+                entityId: starter.entityId,
+                title: starter.roleTitle,
+              },
+            },
+            include: {
+              materials: {
+                include: { material: true },
+              },
+            },
+          })
+
+          if (jobRole) {
+            const activeMaterials = jobRole.materials.filter(jrm => jrm.material.isActive)
+            let assigned = 0
+            for (const jrm of activeMaterials) {
+              const existing = await prisma.starterMaterial.findUnique({
+                where: {
+                  starterId_materialId: {
+                    starterId: id,
+                    materialId: jrm.materialId,
+                  },
+                },
+              })
+              if (!existing) {
+                await prisma.starterMaterial.create({
+                  data: {
+                    starterId: id,
+                    materialId: jrm.materialId,
+                    notes: jrm.notes,
+                  },
+                })
+                assigned++
+              }
+            }
+            if (assigned > 0) {
+              console.log(`📦 Assigned ${assigned} materials to activated starter ${starter.name}`)
+            }
+          }
+        } catch (materialError) {
+          console.error('Failed to assign materials for activated starter:', materialError)
+        }
       }
     }
 
