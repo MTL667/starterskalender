@@ -48,33 +48,6 @@ async function main() {
 
   console.log('Created entities:', entity1.name, entity2.name, entity3.name)
 
-  // Maak dropdown options
-  const dropdownGroups = [
-    { group: 'Regio', values: ['Vlaanderen', 'Brussel', 'Wallonië'] },
-    { group: 'Via', values: ['Recruitmentbureau', 'LinkedIn', 'Referral', 'Website'] },
-  ]
-
-  for (const { group, values } of dropdownGroups) {
-    for (let i = 0; i < values.length; i++) {
-      await prisma.dropdownOption.upsert({
-        where: {
-          id: `${group.toLowerCase()}-${i}`,
-        },
-        update: {},
-        create: {
-          id: `${group.toLowerCase()}-${i}`,
-          group,
-          label: values[i],
-          value: values[i].toLowerCase(),
-          order: i,
-          isActive: true,
-        },
-      })
-    }
-  }
-
-  console.log('Created dropdown options')
-
   // Maak dummy starters
   const currentYear = new Date().getFullYear()
   const today = new Date()

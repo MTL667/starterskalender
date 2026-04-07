@@ -193,18 +193,6 @@ model Starter {
   @@index([isPendingBoarding])
 }
 
-model DropdownOption {
-  id       String  @id @default(cuid())
-  group    String  // bv. "Regio", "Via", etc.
-  label    String  // Weergave label
-  value    String  // Interne waarde
-  order    Int     @default(0) // Sorteervolgorde
-  isActive Boolean @default(true)
-
-  @@index([group, isActive])
-  @@index([group, order])
-}
-
 model JobRole {
   id             String          @id @default(cuid())
   entityId       String

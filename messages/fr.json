@@ -421,8 +421,6 @@
     "cronJobsDescription": "Envoyer manuellement des notifications email",
     "taskDiagnostics": "Diagnostics des tâches",
     "taskDiagnosticsDescription": "Vérifier le statut du système de gestion des tâches",
-    "dropdowns": "Options de menu déroulant",
-    "dropdownsDescription": "Gérer les options de menu déroulant pour région, via, etc.",
     "emailTest": "Test email",
     "emailTestDescription": "Envoyer un email de test via SendGrid",
     "emailTemplates": "Modèles email",
@@ -584,20 +582,6 @@
     "reasonOptional": "Raison (optionnel)",
     "reasonPlaceholder": "Ex : Gel des embauches, Réorganisation, etc.",
     "confirmDeleteBlockade": "Êtes-vous sûr de vouloir supprimer ce blocage ?"
-  },
-  "adminDropdowns": {
-    "title": "Options de menu déroulant",
-    "subtitle": "Gérer les valeurs des menus déroulants pour les formulaires",
-    "groupRegion": "Région",
-    "groupVia": "Via",
-    "groupRole": "Fonction",
-    "groupDomain": "Domaine",
-    "noOptions": "Aucune option dans ce groupe pour le moment",
-    "value": "Valeur",
-    "newOption": "Nouvelle option de menu déroulant",
-    "addOptionTo": "Ajouter une nouvelle option à",
-    "label": "Libellé *",
-    "order": "Ordre"
   },
   "adminEmailTemplates": {
     "title": "Modèles email",

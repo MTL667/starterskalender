@@ -97,12 +97,6 @@ export default async function AdminPage() {
       href: '/admin/task-diagnostics',
     },
     {
-      title: t('dropdowns'),
-      description: t('dropdownsDescription'),
-      icon: Settings,
-      href: '/admin/dropdowns',
-    },
-    {
       title: t('emailTest'),
       description: t('emailTestDescription'),
       icon: Mail,

@@ -421,8 +421,6 @@
     "cronJobsDescription": "Handmatig email notificaties versturen",
     "taskDiagnostics": "Taak Diagnostics",
     "taskDiagnosticsDescription": "Controleer de status van het taakbeheersysteem",
-    "dropdowns": "Dropdown Opties",
-    "dropdownsDescription": "Beheer dropdown opties voor regio, via, etc.",
     "emailTest": "E-mail Test",
     "emailTestDescription": "Verstuur een test e-mail via SendGrid",
     "emailTemplates": "E-mail Templates",
@@ -584,20 +582,6 @@
     "reasonOptional": "Reden (optioneel)",
     "reasonPlaceholder": "Bijv: Wervingsstop, Reorganisatie, etc.",
     "confirmDeleteBlockade": "Weet je zeker dat je deze blokkade wilt verwijderen?"
-  },
-  "adminDropdowns": {
-    "title": "Dropdown Opties",
-    "subtitle": "Beheer dropdown waarden voor formulieren",
-    "groupRegion": "Regio",
-    "groupVia": "Via",
-    "groupRole": "Functie",
-    "groupDomain": "Domein",
-    "noOptions": "Nog geen opties in deze groep",
-    "value": "Waarde",
-    "newOption": "Nieuwe Dropdown Optie",
-    "addOptionTo": "Voeg een nieuwe optie toe aan",
-    "label": "Label *",
-    "order": "Volgorde"
   },
   "adminEmailTemplates": {
     "title": "E-mail Templates",
