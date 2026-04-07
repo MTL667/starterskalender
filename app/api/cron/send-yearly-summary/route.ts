@@ -8,6 +8,7 @@ import {
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
 import { verifyCronAuth } from '@/lib/cron-auth'
+import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity } from '@/lib/cron-email-helpers'
 
 /**
  * Cron Job: Jaarlijks overzicht
@@ -72,6 +73,7 @@ export async function GET(req: Request) {
       },
       include: {
         entity: true,
+        fromEntity: { select: { name: true } },
       },
       orderBy: {
         startDate: 'asc',
@@ -139,29 +141,13 @@ export async function GET(req: Request) {
       }
 
       try {
-        // Groepeer starters per entiteit voor overzicht
-        const startersByEntity = userStarters.reduce((acc, starter) => {
-          const entityName = starter.entity!.name
-          if (!acc[entityName]) {
-            acc[entityName] = []
-          }
-          acc[entityName].push(starter)
-          return acc
-        }, {} as Record<string, typeof userStarters>)
+        const startersByEntity = groupByEntity(userStarters)
+        const startersListHtml = renderAllEntities(userStarters)
+        const counts = countByType(userStarters)
+        const subjectParts = buildSubjectParts(counts)
+        const summaryHtml = renderSummaryBlocks(counts)
 
-        // Genereer HTML lijst per entiteit
-        const startersListHtml = Object.entries(startersByEntity)
-          .map(([entityName, starters]) => {
-            const starterItems = starters.map(s => {
-              const flag = s.language === 'FR' ? '🇫🇷' : '🇳🇱'
-              const roleHtml = s.roleTitle ? '<span style="color: #6b7280;">' + s.roleTitle + '</span><br/>' : ''
-              const dateStr = s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Datum onbekend'
-              return '<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;"><strong>' + s.name + '</strong> ' + flag + '<br/>' + roleHtml + '<span style="color: #6b7280; font-size: 14px;">Start: ' + dateStr + '</span></li>'
-            }).join('')
-            return '<div style="margin-bottom: 20px;"><h3 style="color: #1f2937; margin-bottom: 10px;">' + entityName + ' (' + starters.length + ')</h3><ul style="list-style-type: none; padding: 0;">' + starterItems + '</ul></div>'
-          }).join('')
-
-        // Genereer maandelijkse statistieken
+        // Maandelijkse statistieken
         const byMonth = userStarters.reduce((acc, s) => {
           const month = s.startDate ? new Date(s.startDate).getMonth() : 0
           acc[month] = (acc[month] || 0) + 1
@@ -171,40 +157,25 @@ export async function GET(req: Request) {
         const monthNames = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
         const statsMonthItems = monthNames.map((name, i) => {
           const count = byMonth[i] || 0
-          return '<div style="text-align: center; padding: 10px; background: white; border-radius: 4px;"><div style="font-weight: bold; color: #3b82f6; font-size: 20px;">' + count + '</div><div style="font-size: 12px; color: #6b7280;">' + name + '</div></div>'
+          return `<div style="text-align: center; padding: 10px; background: white; border-radius: 4px;"><div style="font-weight: bold; color: #3b82f6; font-size: 20px;">${count}</div><div style="font-size: 12px; color: #6b7280;">${name}</div></div>`
         }).join('')
-        const statsHtml = '<div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;"><h3 style="margin-top: 0; color: #1f2937;">📊 Statistieken per Maand</h3><div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">' + statsMonthItems + '</div></div>'
+        const statsHtml = `<div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;"><h3 style="margin-top: 0; color: #1f2937;">📊 Per Maand</h3><div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">${statsMonthItems}</div></div>`
 
         const entityNames = Object.keys(startersByEntity).join(', ')
 
-        const subject = `🎉 Jaaroverzicht ${year} - ${userStarters.length} starters`
+        const subject = `🎉 Jaaroverzicht ${year} - ${subjectParts}`
         const html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #1f2937;">🎉 Jaaroverzicht ${year}</h2>
-            
-            <p style="color: #4b5563; line-height: 1.6;">
-              Hallo ${user.name || user.email},
-            </p>
-            
-            <p style="color: #4b5563; line-height: 1.6;">
-              Een kijkje terug op ${year}!
-            </p>
-            
-            <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h3 style="margin: 0; color: #92400e; font-size: 36px;">${userStarters.length}</h3>
-              <p style="margin: 5px 0 0 0; color: #92400e;">Nieuwe starters in ${year}</p>
-            </div>
-            
+            <p style="color: #4b5563; line-height: 1.6;">Hallo ${user.name || user.email},</p>
+            <p style="color: #4b5563; line-height: 1.6;">Een terugblik op ${year}:</p>
+            ${summaryHtml}
             ${statsHtml}
-            
-            <h3 style="color: #1f2937;">Alle starters van ${year}:</h3>
+            <h3 style="color: #1f2937;">Overzicht ${year}:</h3>
             ${startersListHtml}
-            
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-            
             <p style="color: #9ca3af; font-size: 12px;">
-              Jaaroverzicht voor ${entityNames}.
-              <br/>
+              Jaaroverzicht voor ${entityNames}.<br/>
               Wijzig je voorkeuren in je profielinstellingen.
             </p>
           </div>

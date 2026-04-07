@@ -8,6 +8,7 @@ import {
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
 import { verifyCronAuth } from '@/lib/cron-auth'
+import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity } from '@/lib/cron-email-helpers'
 
 /**
  * Cron Job: Wekelijkse reminder - 1 week voor startdatum
@@ -76,6 +77,7 @@ export async function GET(req: Request) {
       },
       include: {
         entity: true,
+        fromEntity: { select: { name: true } },
       },
     })
 
@@ -140,40 +142,22 @@ export async function GET(req: Request) {
       }
 
       try {
-        // Groepeer starters per entiteit voor overzicht
-        const startersByEntity = userStarters.reduce((acc, starter) => {
-          const entityName = starter.entity!.name
-          if (!acc[entityName]) {
-            acc[entityName] = []
-          }
-          acc[entityName].push(starter)
-          return acc
-        }, {} as Record<string, typeof userStarters>)
+        const startersByEntity = groupByEntity(userStarters)
+        const startersListHtml = renderAllEntities(userStarters)
+        const counts = countByType(userStarters)
+        const subjectParts = buildSubjectParts(counts)
+        const summaryHtml = renderSummaryBlocks(counts)
 
-        // Genereer HTML lijst van starters gegroepeerd per entiteit
-        const startersListHtml = Object.entries(startersByEntity)
-          .map(([entityName, starters]) => {
-            const starterItems = starters.map(s => {
-              const flag = s.language === 'FR' ? '🇫🇷' : '🇳🇱'
-              const roleHtml = s.roleTitle ? '<span style="color: #6b7280;">' + s.roleTitle + '</span><br/>' : ''
-              const dateStr = s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Datum onbekend'
-              return '<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;"><strong>' + s.name + '</strong> ' + flag + '<br/>' + roleHtml + '<span style="color: #6b7280; font-size: 14px;">Start: ' + dateStr + '</span></li>'
-            }).join('')
-            return '<div style="margin-bottom: 20px;"><h3 style="color: #1f2937; margin-bottom: 10px;">' + entityName + '</h3><ul style="list-style-type: none; padding: 0;">' + starterItems + '</ul></div>'
-          }).join('')
-
-        // Custom template voor gecombineerde weekly reminder
-        const starterWord = userStarters.length !== 1 ? 'starters' : 'starter'
-        const beginWord = userStarters.length !== 1 ? 'beginnen' : 'begint'
-        const subject = '🔔 ' + userStarters.length + ' ' + starterWord + ' ' + beginWord + ' volgende week'
-        const html = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">' +
-          '<h2 style="color: #1f2937;">👋 Hallo ' + (user.name || user.email) + ',</h2>' +
-          '<p style="color: #4b5563; line-height: 1.6;">Dit is een vriendelijke herinnering dat <strong>' + userStarters.length + ' ' + starterWord + '</strong> volgende week ' + beginWord + '.</p>' +
+        const subject = `🔔 ${subjectParts} volgende week`
+        const html = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">` +
+          `<h2 style="color: #1f2937;">👋 Hallo ${user.name || user.email},</h2>` +
+          `<p style="color: #4b5563; line-height: 1.6;">Dit is een herinnering voor volgende week:</p>` +
+          summaryHtml +
           startersListHtml +
-          '<p style="color: #4b5563; line-height: 1.6;">Zorg ervoor dat alle voorbereidingen getroffen zijn voor een succesvolle onboarding!</p>' +
-          '<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">' +
-          '<p style="color: #9ca3af; font-size: 12px;">Je ontvangt deze email omdat je geabonneerd bent op wekelijkse reminders.<br/>Wijzig je voorkeuren in je profielinstellingen.</p>' +
-          '</div>'
+          `<p style="color: #4b5563; line-height: 1.6;">Zorg ervoor dat alle voorbereidingen getroffen zijn!</p>` +
+          `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">` +
+          `<p style="color: #9ca3af; font-size: 12px;">Je ontvangt deze email omdat je geabonneerd bent op wekelijkse reminders.<br/>Wijzig je voorkeuren in je profielinstellingen.</p>` +
+          `</div>`
 
         await sendEmail({
           to: user.email,

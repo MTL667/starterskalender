@@ -33,6 +33,9 @@ interface RecipientPreview {
   email: string
   name: string | null
   startersCount: number
+  offboardingCount?: number
+  migrationCount?: number
+  totalCount?: number
   entities: string[]
   hasMatch: boolean
 }
@@ -157,10 +160,17 @@ function RecipientSelector({
                   {recipient.email !== recipient.name && (
                     <span className="block truncate">{recipient.email}</span>
                   )}
-                  {recipient.startersCount > 0
-                    ? (recipient.startersCount === 1 ? t('starterCount', { count: recipient.startersCount }) : t('starterCountPlural', { count: recipient.startersCount }))
-                    : t('noStartersInPeriod')
-                  }
+                  {(recipient.totalCount ?? recipient.startersCount) > 0 ? (
+                    <span>
+                      {recipient.startersCount > 0 && `🟢 ${recipient.startersCount} starter${recipient.startersCount !== 1 ? 's' : ''}`}
+                      {recipient.startersCount > 0 && (recipient.offboardingCount || 0) > 0 && ', '}
+                      {(recipient.offboardingCount || 0) > 0 && `🔴 ${recipient.offboardingCount} vertrekker${recipient.offboardingCount !== 1 ? 's' : ''}`}
+                      {((recipient.offboardingCount || 0) > 0 || recipient.startersCount > 0) && (recipient.migrationCount || 0) > 0 && ', '}
+                      {(recipient.migrationCount || 0) > 0 && `🔄 ${recipient.migrationCount} mutatie${recipient.migrationCount !== 1 ? 's' : ''}`}
+                    </span>
+                  ) : (
+                    t('noStartersInPeriod')
+                  )}
                   {recipient.entities.length > 0 && (
                     <span> • {recipient.entities.join(', ')}</span>
                   )}

@@ -8,6 +8,7 @@ import {
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
 import { verifyCronAuth } from '@/lib/cron-auth'
+import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity } from '@/lib/cron-email-helpers'
 
 /**
  * Cron Job: Kwartaal overzicht
@@ -90,6 +91,7 @@ export async function GET(req: Request) {
       },
       include: {
         entity: true,
+        fromEntity: { select: { name: true } },
       },
       orderBy: {
         startDate: 'asc',
@@ -157,51 +159,23 @@ export async function GET(req: Request) {
       }
 
       try {
-        // Groepeer starters per entiteit voor overzicht
-        const startersByEntity = userStarters.reduce((acc, starter) => {
-          const entityName = starter.entity!.name
-          if (!acc[entityName]) {
-            acc[entityName] = []
-          }
-          acc[entityName].push(starter)
-          return acc
-        }, {} as Record<string, typeof userStarters>)
-
-        // Genereer HTML lijst
-        const startersListHtml = Object.entries(startersByEntity)
-          .map(([entityName, starters]) => {
-            const starterItems = starters.map(s => {
-              const flag = s.language === 'FR' ? '🇫🇷' : '🇳🇱'
-              const roleHtml = s.roleTitle ? '<span style="color: #6b7280;">' + s.roleTitle + '</span><br/>' : ''
-              const dateStr = s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Datum onbekend'
-              return '<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;"><strong>' + s.name + '</strong> ' + flag + '<br/>' + roleHtml + '<span style="color: #6b7280; font-size: 14px;">Start: ' + dateStr + '</span></li>'
-            }).join('')
-            return '<div style="margin-bottom: 20px;"><h3 style="color: #1f2937; margin-bottom: 10px;">' + entityName + ' (' + starters.length + ')</h3><ul style="list-style-type: none; padding: 0;">' + starterItems + '</ul></div>'
-          }).join('')
-
+        const startersByEntity = groupByEntity(userStarters)
+        const startersListHtml = renderAllEntities(userStarters)
+        const counts = countByType(userStarters)
+        const subjectParts = buildSubjectParts(counts)
+        const summaryHtml = renderSummaryBlocks(counts)
         const entityNames = Object.keys(startersByEntity).join(', ')
 
-        const subject = `📈 Kwartaaloverzicht Q${quarter} ${year} - ${userStarters.length} starters`
+        const subject = `📈 Kwartaaloverzicht Q${quarter} ${year} - ${subjectParts}`
         const html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #1f2937;">📈 Kwartaaloverzicht Q${quarter} ${year}</h2>
-            
-            <p style="color: #4b5563; line-height: 1.6;">
-              Hallo ${user.name || user.email},
-            </p>
-            
-            <div style="background: #f0fdf4; padding: 15px; border-radius: 8px; margin: 20px 0; text-align: center;">
-              <h3 style="margin: 0; color: #15803d; font-size: 36px;">${userStarters.length}</h3>
-              <p style="margin: 5px 0 0 0; color: #15803d;">Nieuwe starters dit kwartaal</p>
-            </div>
-            
+            <p style="color: #4b5563; line-height: 1.6;">Hallo ${user.name || user.email},</p>
+            ${summaryHtml}
             ${startersListHtml}
-            
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-            
             <p style="color: #9ca3af; font-size: 12px;">
-              Kwartaaloverzicht voor ${entityNames}.
-              <br/>
+              Kwartaaloverzicht voor ${entityNames}.<br/>
               Wijzig je voorkeuren in je profielinstellingen.
             </p>
           </div>

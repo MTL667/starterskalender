@@ -136,6 +136,9 @@ export async function POST(req: Request) {
       email: string
       name: string | null
       startersCount: number
+      offboardingCount: number
+      migrationCount: number
+      totalCount: number
       entities: string[]
       hasMatch: boolean
     }> = []
@@ -167,10 +170,17 @@ export async function POST(req: Request) {
         memberEntities.forEach(name => entitiesSet.add(name))
       }
 
+      const onboardingCount = userStarters.filter(s => s.type === 'ONBOARDING').length
+      const offboardingCount = userStarters.filter(s => s.type === 'OFFBOARDING').length
+      const migrationCount = userStarters.filter(s => s.type === 'MIGRATION').length
+
       recipients.push({
         email: user.email,
         name: user.name,
-        startersCount: userStarters.length,
+        startersCount: onboardingCount,
+        offboardingCount,
+        migrationCount,
+        totalCount: userStarters.length,
         entities: Array.from(entitiesSet),
         hasMatch: userStarters.length > 0 && enabledPrefs.length > 0,
       })
@@ -183,9 +193,16 @@ export async function POST(req: Request) {
       return (a.name || a.email).localeCompare(b.name || b.email)
     })
 
+    const totalOnboarding = starters.filter(s => s.type === 'ONBOARDING').length
+    const totalOffboarding = starters.filter(s => s.type === 'OFFBOARDING').length
+    const totalMigration = starters.filter(s => s.type === 'MIGRATION').length
+
     return NextResponse.json({
       cronType,
       totalStarters: starters.length,
+      totalOnboarding,
+      totalOffboarding,
+      totalMigration,
       recipients,
       dateRange: {
         start: dateRange.start.toISOString(),
