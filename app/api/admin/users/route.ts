@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { hash } from 'bcryptjs'
 import { z } from 'zod'
-import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { isHRAdmin } from '@/lib/rbac'
 
 const CreateUserSchema = z.object({
   name: z.string().min(1),
@@ -15,14 +15,11 @@ const CreateUserSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    // Only HR_ADMIN can view users
-    if (session.user.role !== 'HR_ADMIN') {
+    if (!isHRAdmin(user)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -58,21 +55,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    // Only HR_ADMIN can create users
-    if (session.user.role !== 'HR_ADMIN') {
+    if (!isHRAdmin(currentUser)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const body = await request.json()
     const data = CreateUserSchema.parse(body)
 
-    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: data.email },
     })
@@ -81,11 +74,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Dit e-mailadres is al geregistreerd' }, { status: 400 })
     }
 
-    // Hash password
     const hashedPassword = await hash(data.password, 12)
 
-    // Create user
-    const user = await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         email: data.email,
         name: data.name,
@@ -101,13 +92,13 @@ export async function POST(request: NextRequest) {
     })
 
     await createAuditLog({
-      actorId: session.user.id,
+      actorId: currentUser.id,
       action: 'CREATE',
-      target: `User:${user.id}`,
-      meta: { email: user.email, role: user.role },
+      target: `User:${newUser.id}`,
+      meta: { email: newUser.email, role: newUser.role },
     })
 
-    return NextResponse.json(user)
+    return NextResponse.json(newUser)
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Ongeldige invoer', details: error.errors }, { status: 400 })

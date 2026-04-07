@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { isHRAdmin } from '@/lib/rbac'
 
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions)
-
-  if (!session || session.user.role !== 'HR_ADMIN') {
+  const user = await getCurrentUser()
+  if (!user || !isHRAdmin(user)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 

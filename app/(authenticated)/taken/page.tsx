@@ -17,124 +17,13 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Ban,
-  Plus,
-  Filter,
-  X,
-  ExternalLink,
-} from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
-
-interface Task {
-  id: string
-  type: string
-  title: string
-  description?: string
-  status: string
-  priority: string
-  dueDate?: string
-  completedAt?: string
-  assignedAt?: string
-  starter?: {
-    id: string
-    name: string
-    startDate: string
-    notes?: string | null
-    entity?: {
-      id: string
-      name: string
-      colorHex: string
-    }
-  }
-  entity?: {
-    id: string
-    name: string
-    colorHex: string
-  }
-  assignedTo?: {
-    id: string
-    name: string
-    email: string
-  }
-  completedBy?: {
-    id: string
-    name: string
-    email: string
-  }
-  blockedReason?: string
-  completionNotes?: string
-}
-
-const taskTypeKeys: Record<string, string> = {
-  IT_SETUP: 'itSetup',
-  HR_ADMIN: 'hrAdmin',
-  FACILITIES: 'facilities',
-  MANAGER_ACTION: 'managerAction',
-  CUSTOM: 'custom',
-}
-
-const priorityKeys: Record<string, string> = {
-  LOW: 'priorityLow',
-  MEDIUM: 'priorityNormal',
-  HIGH: 'priorityHigh',
-  URGENT: 'priorityUrgent',
-}
-
-const statusKeys: Record<string, string> = {
-  PENDING: 'queued',
-  IN_PROGRESS: 'inProgress',
-  BLOCKED: 'blocked',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled',
-}
-
-const getPriorityColor = (priority: string) => {
-  switch (priority) {
-    case 'URGENT':
-      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-    case 'HIGH':
-      return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-    case 'MEDIUM':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-    case 'LOW':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
-}
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'COMPLETED':
-      return <CheckCircle2 className="h-4 w-4 text-green-500" />
-    case 'IN_PROGRESS':
-      return <Clock className="h-4 w-4 text-blue-500" />
-    case 'BLOCKED':
-      return <AlertCircle className="h-4 w-4 text-orange-500" />
-    case 'CANCELLED':
-      return <Ban className="h-4 w-4 text-gray-500" />
-    default:
-      return <Clock className="h-4 w-4 text-gray-400" />
-  }
-}
+import { Filter } from 'lucide-react'
+import type { Task } from '@/lib/types'
+import { TaskCard } from '@/components/tasks/task-card'
+import { TaskDetailDialog } from '@/components/tasks/task-detail-dialog'
 
 export default function TakenPage() {
   const t = useTranslations('tasks')
@@ -149,28 +38,24 @@ export default function TakenPage() {
   const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
   const [reassigning, setReassigning] = useState(false)
 
-  const isAdmin = (session?.user as any)?.role === 'HR_ADMIN'
+  const isAdmin = session?.user?.role === 'HR_ADMIN'
+  const currentUserId = session?.user?.id
 
-  // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
   const [assignedToMe, setAssignedToMe] = useState(true)
   const [assignedToMeInitialized, setAssignedToMeInitialized] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Check for taskId in URL (from notification click)
   useEffect(() => {
     const taskId = searchParams.get('taskId')
     if (taskId && tasks.length > 0) {
-      // Find task in loaded tasks
       const task = tasks.find(t => t.id === taskId)
       if (task) {
         setSelectedTask(task)
         setDialogOpen(true)
-        // Remove taskId from URL
         router.replace('/taken', { scroll: false })
       } else {
-        // Task not in filtered list, fetch it directly
         fetchSpecificTask(taskId)
       }
     }
@@ -183,7 +68,6 @@ export default function TakenPage() {
         const task = await res.json()
         setSelectedTask(task)
         setDialogOpen(true)
-        // Remove taskId from URL
         router.replace('/taken', { scroll: false })
       }
     } catch (error) {
@@ -191,7 +75,6 @@ export default function TakenPage() {
     }
   }
 
-  // Set default filter based on role: admins see all, others see only their tasks
   useEffect(() => {
     if (session?.user && !assignedToMeInitialized) {
       setAssignedToMe(!isAdmin)
@@ -298,18 +181,20 @@ export default function TakenPage() {
       }),
   }
 
+  const openTask = (task: Task) => {
+    setSelectedTask(task)
+    setDialogOpen(true)
+  }
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">{t('title')}</h1>
-          <p className="text-muted-foreground">
-            {t('subtitle')}
-          </p>
+          <p className="text-muted-foreground">{t('subtitle')}</p>
         </div>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -328,32 +213,32 @@ export default function TakenPage() {
               />
             </div>
             <div>
-              <Label>Status</Label>
+              <Label>{t('allStatuses')}</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Alle statussen</SelectItem>
-                  <SelectItem value="PENDING">In wachtrij</SelectItem>
-                  <SelectItem value="IN_PROGRESS">Bezig</SelectItem>
-                  <SelectItem value="BLOCKED">Geblokkeerd</SelectItem>
-                  <SelectItem value="COMPLETED">Voltooid</SelectItem>
+                  <SelectItem value="all">{t('allStatuses')}</SelectItem>
+                  <SelectItem value="PENDING">{t('queued')}</SelectItem>
+                  <SelectItem value="IN_PROGRESS">{t('inProgress')}</SelectItem>
+                  <SelectItem value="BLOCKED">{t('blocked')}</SelectItem>
+                  <SelectItem value="COMPLETED">{t('completed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Type</Label>
+              <Label>{t('allTypes')}</Label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Alle types</SelectItem>
-                  <SelectItem value="IT_SETUP">IT Setup</SelectItem>
-                  <SelectItem value="HR_ADMIN">HR Administratie</SelectItem>
-                  <SelectItem value="FACILITIES">Facilities</SelectItem>
-                  <SelectItem value="MANAGER_ACTION">Manager Actie</SelectItem>
+                  <SelectItem value="all">{t('allTypes')}</SelectItem>
+                  <SelectItem value="IT_SETUP">{t('itSetup')}</SelectItem>
+                  <SelectItem value="HR_ADMIN">{t('hrAdmin')}</SelectItem>
+                  <SelectItem value="FACILITIES">{t('facilities')}</SelectItem>
+                  <SelectItem value="MANAGER_ACTION">{t('managerAction')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -363,29 +248,27 @@ export default function TakenPage() {
                 onClick={() => setAssignedToMe(!assignedToMe)}
                 className="w-full"
               >
-                {assignedToMe ? 'Mijn taken' : 'Alle taken'}
+                {assignedToMe ? t('myTasks') : t('allTasks')}
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Task Groups */}
       {loading ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-muted-foreground">Taken laden...</p>
+            <p className="text-muted-foreground">{t('loadingTasks')}</p>
           </CardContent>
         </Card>
       ) : filteredTasks.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <p className="text-muted-foreground">Geen taken gevonden</p>
+            <p className="text-muted-foreground">{t('noTasksFound')}</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-6">
-          {/* Urgent tasks */}
           {groupedTasks.urgent.length > 0 && (
             <Card className="border-red-200 dark:border-red-900">
               <CardHeader>
@@ -395,21 +278,12 @@ export default function TakenPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {groupedTasks.urgent.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    t={t}
-                    onClick={() => {
-                      setSelectedTask(task)
-                      setDialogOpen(true)
-                    }}
-                  />
+                  <TaskCard key={task.id} task={task} onClick={() => openTask(task)} />
                 ))}
               </CardContent>
             </Card>
           )}
 
-          {/* Other tasks */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
@@ -419,15 +293,7 @@ export default function TakenPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {groupedTasks.pending.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    t={t}
-                    onClick={() => {
-                      setSelectedTask(task)
-                      setDialogOpen(true)
-                    }}
-                  />
+                  <TaskCard key={task.id} task={task} onClick={() => openTask(task)} />
                 ))}
               </CardContent>
             </Card>
@@ -440,15 +306,7 @@ export default function TakenPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {groupedTasks.inProgress.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    t={t}
-                    onClick={() => {
-                      setSelectedTask(task)
-                      setDialogOpen(true)
-                    }}
-                  />
+                  <TaskCard key={task.id} task={task} onClick={() => openTask(task)} />
                 ))}
               </CardContent>
             </Card>
@@ -461,15 +319,7 @@ export default function TakenPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {groupedTasks.completed.slice(0, 5).map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    t={t}
-                    onClick={() => {
-                      setSelectedTask(task)
-                      setDialogOpen(true)
-                    }}
-                  />
+                  <TaskCard key={task.id} task={task} onClick={() => openTask(task)} />
                 ))}
               </CardContent>
             </Card>
@@ -484,15 +334,7 @@ export default function TakenPage() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {groupedTasks.blocked.map((task) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    t={t}
-                    onClick={() => {
-                      setSelectedTask(task)
-                      setDialogOpen(true)
-                    }}
-                  />
+                  <TaskCard key={task.id} task={task} onClick={() => openTask(task)} />
                 ))}
               </CardContent>
             </Card>
@@ -500,224 +342,17 @@ export default function TakenPage() {
         </div>
       )}
 
-      {/* Task Detail Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedTask && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  {getStatusIcon(selectedTask.status)}
-                  {selectedTask.title}
-                </DialogTitle>
-                <DialogDescription>
-                  {t(taskTypeKeys[selectedTask.type] || 'custom')}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Badge className={getPriorityColor(selectedTask.priority)}>
-                    {t(priorityKeys[selectedTask.priority] || 'priorityNormal')}
-                  </Badge>
-                  <Badge variant="outline">
-                    {t(statusKeys[selectedTask.status] || 'queued')}
-                  </Badge>
-                </div>
-
-                {selectedTask.description && (
-                  <div>
-                    <Label>{tc('description')}</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {selectedTask.description}
-                    </p>
-                  </div>
-                )}
-
-                {selectedTask.starter && (
-                  <div>
-                    <Label>{t('starter')}</Label>
-                    <div className="mt-1 p-3 bg-muted rounded-md">
-                      <p className="font-medium">{selectedTask.starter.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {t('start')}:{' '}
-                        {new Date(
-                          selectedTask.starter.startDate
-                        ).toLocaleDateString('nl-BE')}
-                      </p>
-                      {selectedTask.starter.entity && (
-                        <Badge
-                          className="mt-2"
-                          style={{
-                            backgroundColor: selectedTask.starter.entity.colorHex,
-                            color: 'white',
-                          }}
-                        >
-                          {selectedTask.starter.entity.name}
-                        </Badge>
-                      )}
-                      {selectedTask.starter.notes && (
-                        <div className="mt-2 pt-2 border-t border-border/50">
-                          <p className="text-xs font-medium text-muted-foreground mb-1">{t('starterNotes')}</p>
-                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedTask.starter.notes}</p>
-                        </div>
-                      )}
-                      <div className="mt-2 pt-2 border-t border-border/50">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-xs"
-                          onClick={() => {
-                            router.push(`/kalender?starterId=${selectedTask.starter!.id}`)
-                          }}
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1.5" />
-                          {t('viewStarter')}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <Label>{t('assignedTo')}</Label>
-                  {isAdmin && selectedTask.status !== 'COMPLETED' ? (
-                    <div className="mt-1">
-                      <Select
-                        value={selectedTask.assignedTo?.id || '__unassigned__'}
-                        onValueChange={(value) => handleReassign(selectedTask.id, value === '__unassigned__' ? '' : value)}
-                        disabled={reassigning}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder={t('selectUser')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__unassigned__">
-                            <span className="text-muted-foreground">{t('unassigned')}</span>
-                          </SelectItem>
-                          {users.map(user => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.name || user.email}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <p className="text-sm mt-1">
-                      {selectedTask.assignedTo
-                        ? (selectedTask.assignedTo.name || selectedTask.assignedTo.email)
-                        : <span className="text-muted-foreground">{t('unassigned')}</span>
-                      }
-                    </p>
-                  )}
-                </div>
-
-                {selectedTask.dueDate && (
-                  <div>
-                    <Label>{t('deadline')}</Label>
-                    <p className="text-sm mt-1">
-                      {new Date(selectedTask.dueDate).toLocaleDateString('nl-BE')}
-                    </p>
-                  </div>
-                )}
-
-                {selectedTask.completedBy && (
-                  <div>
-                    <Label>{t('completedBy')}</Label>
-                    <p className="text-sm mt-1">
-                      {selectedTask.completedBy.name || selectedTask.completedBy.email}
-                      {selectedTask.completedAt && (
-                        <span className="text-muted-foreground ml-2">
-                          {t('on')}{' '}
-                          {new Date(selectedTask.completedAt).toLocaleDateString(
-                            'nl-BE'
-                          )}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                )}
-
-                {selectedTask.completionNotes && (
-                  <div>
-                    <Label>{t('completionNotes')}</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {selectedTask.completionNotes}
-                    </p>
-                  </div>
-                )}
-
-                {selectedTask.blockedReason && (
-                  <div>
-                    <Label>{t('blockReason')}</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {selectedTask.blockedReason}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter>
-                {selectedTask.status !== 'COMPLETED' &&
-                  (isAdmin || selectedTask.assignedTo?.id === (session?.user as any)?.id) && (
-                    <Button
-                      onClick={() => handleCompleteTask(selectedTask.id)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {t('markCompleted')}
-                    </Button>
-                  )}
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>
-                  {tc('close')}
-                </Button>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <TaskDetailDialog
+        task={selectedTask}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        isAdmin={isAdmin}
+        currentUserId={currentUserId}
+        users={users}
+        reassigning={reassigning}
+        onComplete={handleCompleteTask}
+        onReassign={handleReassign}
+      />
     </div>
   )
 }
-
-function TaskCard({ task, t, onClick }: { task: Task; t: ReturnType<typeof useTranslations<'tasks'>>; onClick: () => void }) {
-  return (
-    <div
-      onClick={onClick}
-      className={cn(
-        'p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md hover:scale-[1.02]',
-        task.priority === 'URGENT' && 'border-red-300 bg-red-50 dark:bg-red-950/20',
-        task.status === 'COMPLETED' && 'opacity-60'
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            {getStatusIcon(task.status)}
-            <h4 className="font-medium text-sm truncate">{task.title}</h4>
-          </div>
-          {task.starter && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {task.starter.name}
-            </p>
-          )}
-          {task.dueDate && task.status !== 'COMPLETED' && (
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('deadline')}: {new Date(task.dueDate).toLocaleDateString('nl-BE')}
-            </p>
-          )}
-          {task.completedAt && task.status === 'COMPLETED' && (
-            <p className="text-xs text-muted-foreground mt-1">
-              ✅ {new Date(task.completedAt).toLocaleDateString('nl-BE')}
-            </p>
-          )}
-        </div>
-        <Badge className={cn('text-xs', getPriorityColor(task.priority))}>
-          {t(priorityKeys[task.priority] || 'priorityNormal')}
-        </Badge>
-      </div>
-    </div>
-  )
-}
-

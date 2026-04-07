@@ -1,28 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { z } from 'zod'
-import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { isHRAdmin } from '@/lib/rbac'
 
 const MembershipSchema = z.object({
   entityId: z.string(),
   canEdit: z.boolean(),
 })
 
-// Get user memberships
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    if (session.user.role !== 'HR_ADMIN') {
+    if (!isHRAdmin(currentUser)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -48,19 +45,16 @@ export async function GET(
   }
 }
 
-// Add membership
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    if (session.user.role !== 'HR_ADMIN') {
+    if (!isHRAdmin(currentUser)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -80,7 +74,7 @@ export async function POST(
     })
 
     await createAuditLog({
-      actorId: session.user.id,
+      actorId: currentUser.id,
       action: 'CREATE',
       target: `Membership:${membership.id}`,
       meta: { userId: id, entityId: data.entityId, canEdit: data.canEdit },
@@ -96,19 +90,16 @@ export async function POST(
   }
 }
 
-// Delete membership
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    if (session.user.role !== 'HR_ADMIN') {
+    if (!isHRAdmin(currentUser)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -126,7 +117,7 @@ export async function DELETE(
     })
 
     await createAuditLog({
-      actorId: session.user.id,
+      actorId: currentUser.id,
       action: 'DELETE',
       target: `Membership:${membershipId}`,
       meta: { userId: id },
@@ -138,4 +129,3 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-

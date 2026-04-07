@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { z } from 'zod'
-import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { isHRAdmin } from '@/lib/rbac'
 
 const UpdateUserSchema = z.object({
   role: z.enum(['HR_ADMIN', 'ENTITY_EDITOR', 'ENTITY_VIEWER', 'GLOBAL_VIEWER']).optional(),
@@ -16,14 +16,11 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    // Only HR_ADMIN can update users
-    if (session.user.role !== 'HR_ADMIN') {
+    if (!isHRAdmin(currentUser)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -42,7 +39,7 @@ export async function PATCH(
     })
 
     await createAuditLog({
-      actorId: session.user.id,
+      actorId: currentUser.id,
       action: 'UPDATE',
       target: `User:${user.id}`,
       meta: { changes: data },
@@ -64,19 +61,15 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user) {
+    const currentUser = await getCurrentUser()
+    if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    // Only HR_ADMIN can delete users
-    if (session.user.role !== 'HR_ADMIN') {
+    if (!isHRAdmin(currentUser)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Prevent deleting self
-    if (id === session.user.id) {
+    if (id === currentUser.id) {
       return NextResponse.json({ error: 'Je kunt jezelf niet verwijderen' }, { status: 400 })
     }
 
@@ -85,7 +78,7 @@ export async function DELETE(
     })
 
     await createAuditLog({
-      actorId: session.user.id,
+      actorId: currentUser.id,
       action: 'DELETE',
       target: `User:${user.id}`,
       meta: { email: user.email },
@@ -97,4 +90,3 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-

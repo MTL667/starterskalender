@@ -1,22 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { isHRAdmin } from '@/lib/rbac'
 
-/**
- * GET /api/admin/email-logs
- * 
- * Haal email logs op, gegroepeerd per type
- * 
- * Query params:
- * - type: WEEKLY_REMINDER | MONTHLY_SUMMARY | QUARTERLY_SUMMARY | YEARLY_SUMMARY
- * - limit: number (default 5)
- */
 export async function GET(req: Request) {
-  const session = await getServerSession(authOptions)
-
-  // Alleen admins kunnen email logs bekijken
-  if (!session || session.user.role !== 'HR_ADMIN') {
+  const user = await getCurrentUser()
+  if (!user || !isHRAdmin(user)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -26,7 +15,6 @@ export async function GET(req: Request) {
     const limit = parseInt(searchParams.get('limit') || '5')
 
     if (!type) {
-      // Geen type opgegeven, haal laatste logs op per type
       const weeklyLogs = await prisma.emailLog.findMany({
         where: { type: 'WEEKLY_REMINDER' },
         orderBy: { sentAt: 'desc' },
@@ -58,7 +46,6 @@ export async function GET(req: Request) {
         YEARLY_SUMMARY: yearlyLogs,
       })
     } else {
-      // Specifiek type opgegeven
       const logs = await prisma.emailLog.findMany({
         where: { type: type as any },
         orderBy: { sentAt: 'desc' },
@@ -78,4 +65,3 @@ export async function GET(req: Request) {
     )
   }
 }
-

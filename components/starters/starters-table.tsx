@@ -21,39 +21,10 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+import type { Starter, StarterFilter, EntityRef } from '@/lib/types'
+
 type SortColumn = 'name' | 'roleTitle' | 'region' | 'startDate' | 'entity'
 type SortDirection = 'asc' | 'desc'
-type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
-
-interface Starter {
-  id: string
-  type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
-  name: string
-  language?: string
-  roleTitle?: string | null
-  region?: string | null
-  contractSignedOn?: string | null
-  startDate: string | null
-  weekNumber: number | null
-  isPendingBoarding?: boolean
-  hasExperience?: boolean
-  experienceSince?: string | null
-  experienceRole?: string | null
-  experienceEntity?: string | null
-  phoneNumber?: string | null
-  desiredEmail?: string | null
-  entity?: {
-    id: string
-    name: string
-    colorHex: string
-  } | null
-}
-
-interface Entity {
-  id: string
-  name: string
-  colorHex: string
-}
 
 export function StartersTable({ initialYear, canEdit }: { initialYear: number; canEdit: boolean }) {
   const t = useTranslations('starters')
@@ -67,7 +38,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   const [customFrom, setCustomFrom] = useState(() => format(today, 'yyyy-MM-dd'))
   const [customTo, setCustomTo] = useState(() => format(today, 'yyyy-MM-dd'))
   const [starters, setStarters] = useState<Starter[]>([])
-  const [entities, setEntities] = useState<Entity[]>([])
+  const [entities, setEntities] = useState<EntityRef[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())

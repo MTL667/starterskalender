@@ -23,37 +23,9 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+import type { Starter, StarterFilter, EntityRef } from '@/lib/types'
+
 type ViewMode = 'week' | 'month' | 'year' | 'custom'
-
-type StarterType = 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
-type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
-
-interface Starter {
-  id: string
-  type?: StarterType
-  name: string
-  language?: string
-  roleTitle?: string | null
-  region?: string | null
-  via?: string | null
-  notes?: string | null
-  contractSignedOn?: string | null
-  startDate: string | null
-  weekNumber: number | null
-  isPendingBoarding?: boolean
-  isCancelled?: boolean
-  entity?: {
-    id: string
-    name: string
-    colorHex: string
-  } | null
-}
-
-interface Entity {
-  id: string
-  name: string
-  colorHex: string
-}
 
 export function CalendarView({ initialYear, canEdit }: { initialYear: number; canEdit: boolean }) {
   const t = useTranslations('calendar')
@@ -66,7 +38,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   const [currentDate, setCurrentDate] = useState(today)
   const [year, setYear] = useState(initialYear)
   const [starters, setStarters] = useState<Starter[]>([])
-  const [entities, setEntities] = useState<Entity[]>([])
+  const [entities, setEntities] = useState<EntityRef[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
