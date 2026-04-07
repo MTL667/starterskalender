@@ -289,7 +289,13 @@ export default function TakenPage() {
     pending: filteredTasks.filter((t) => t.status === 'PENDING'),
     inProgress: filteredTasks.filter((t) => t.status === 'IN_PROGRESS'),
     blocked: filteredTasks.filter((t) => t.status === 'BLOCKED'),
-    completed: filteredTasks.filter((t) => t.status === 'COMPLETED'),
+    completed: filteredTasks
+      .filter((t) => t.status === 'COMPLETED')
+      .sort((a, b) => {
+        const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0
+        const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0
+        return dateB - dateA
+      }),
   }
 
   return (
@@ -699,6 +705,11 @@ function TaskCard({ task, t, onClick }: { task: Task; t: ReturnType<typeof useTr
           {task.dueDate && task.status !== 'COMPLETED' && (
             <p className="text-xs text-muted-foreground mt-1">
               {t('deadline')}: {new Date(task.dueDate).toLocaleDateString('nl-BE')}
+            </p>
+          )}
+          {task.completedAt && task.status === 'COMPLETED' && (
+            <p className="text-xs text-muted-foreground mt-1">
+              ✅ {new Date(task.completedAt).toLocaleDateString('nl-BE')}
             </p>
           )}
         </div>
