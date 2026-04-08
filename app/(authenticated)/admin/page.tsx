@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope, FileSignature, Grid3X3 } from 'lucide-react'
+import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope, FileSignature, Grid3X3, BarChart3 } from 'lucide-react'
 
 export default async function AdminPage() {
   const user = await requireAdmin().catch(() => null)
@@ -62,6 +62,12 @@ export default async function AdminPage() {
       description: t('blockedPeriodsDescription'),
       icon: Ban,
       href: '/admin/blocked-periods',
+    },
+    {
+      title: t('kpiDashboard'),
+      description: t('kpiDashboardDescription'),
+      icon: BarChart3,
+      href: '/admin/kpi',
     },
   ]
 
