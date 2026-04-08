@@ -10,6 +10,8 @@ import { getDateLocale } from '@/lib/date-locale'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { useSession } from 'next-auth/react'
 import { PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
+import { HealthDot } from '@/components/health-badge'
+import { useHealthScores } from '@/lib/use-health-scores'
 
 interface Starter {
   id: string
@@ -49,6 +51,9 @@ export function RecentStarters({ year }: { year: number }) {
 
   // Check if user can edit starters
   const canEdit = session?.user?.role === 'HR_ADMIN' || session?.user?.role === 'ENTITY_EDITOR'
+
+  const starterIds = starters.map(s => s.id)
+  const { scores: healthScores } = useHealthScores(starterIds)
 
   // Check if starter starts today
   const isToday = (startDate: string | null): boolean => {
@@ -237,6 +242,9 @@ export function RecentStarters({ year }: { year: number }) {
                         <PlaneLanding className="h-4 w-4 text-green-500 shrink-0" />
                       )}
                       <div className="font-medium">{starter.firstName} {starter.lastName}</div>
+                      {healthScores[starter.id] && (
+                        <HealthDot level={healthScores[starter.id].level} />
+                      )}
                       {starter.language && (
                         <span className="text-sm" title={starter.language === 'NL' ? starterCardT('languageNL') : starterCardT('languageFR')}>
                           {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}

@@ -22,6 +22,8 @@ import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
+import { HealthProgressBar } from '@/components/health-badge'
+import { useHealthScores } from '@/lib/use-health-scores'
 
 interface Starter {
   id: string
@@ -98,6 +100,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const tc = useTranslations('common')
   const { data: session } = useSession()
   const isEdit = !!starter
+  const healthIds = starter ? [starter.id] : []
+  const { scores: healthScores } = useHealthScores(healthIds)
+  const healthScore = starter ? healthScores[starter.id] : undefined
   const [loading, setLoading] = useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
@@ -795,6 +800,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             }
           </DialogDescription>
         </DialogHeader>
+
+        {isEdit && healthScore && !starter?.isCancelled && (
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <HealthProgressBar score={healthScore} />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">

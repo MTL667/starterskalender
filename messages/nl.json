@@ -1103,5 +1103,17 @@
     "legendRequired": "Verplicht",
     "legendOptional": "Optioneel",
     "legendNotAssigned": "Niet toegewezen"
+  },
+  "health": {
+    "green": "Gezond",
+    "orange": "Aandacht nodig",
+    "red": "Kritiek",
+    "overallHealth": "Startersgezondheid",
+    "tasks": "Taken",
+    "materials": "Materialen",
+    "timeline": "Tijdlijn",
+    "overdue": "te laat",
+    "daysLeft": "dagen resterend",
+    "started": "Gestart"
   }
 }

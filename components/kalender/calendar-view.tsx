@@ -25,6 +25,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
 import type { Starter, StarterFilter, EntityRef } from '@/lib/types'
+import { useHealthScores } from '@/lib/use-health-scores'
 
 type ViewMode = 'week' | 'month' | 'year' | 'custom'
 
@@ -41,6 +42,8 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   const [starters, setStarters] = useState<Starter[]>([])
   const [entities, setEntities] = useState<EntityRef[]>([])
   const [loading, setLoading] = useState(true)
+  const calendarStarterIds = starters.filter(s => !s.isCancelled).map(s => s.id)
+  const { scores: healthScores } = useHealthScores(calendarStarterIds)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
   const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
@@ -592,6 +595,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                         key={starter.id}
                         starter={starter}
                         onClick={() => handleStarterClick(starter)}
+                        healthLevel={healthScores[starter.id]?.level}
                       />
                     ))
                   )}
@@ -642,6 +646,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                           key={starter.id}
                           starter={starter}
                           onClick={() => handleStarterClick(starter)}
+                          healthLevel={healthScores[starter.id]?.level}
                         />
                       ))}
                     </div>

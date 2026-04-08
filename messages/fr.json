@@ -1102,5 +1102,17 @@
     "legendRequired": "Obligatoire",
     "legendOptional": "Optionnel",
     "legendNotAssigned": "Non attribué"
+  },
+  "health": {
+    "green": "En bonne santé",
+    "orange": "Attention requise",
+    "red": "Critique",
+    "overallHealth": "Santé du starter",
+    "tasks": "Tâches",
+    "materials": "Matériaux",
+    "timeline": "Calendrier",
+    "overdue": "en retard",
+    "daysLeft": "jours restants",
+    "started": "Commencé"
   }
 }

@@ -6,6 +6,7 @@ import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
 import { PlaneLanding, PlaneTakeoff, ArrowLeftRight, Clock } from 'lucide-react'
+import { HealthDot } from '@/components/health-badge'
 
 interface Starter {
   id: string
@@ -28,7 +29,7 @@ interface Starter {
   } | null
 }
 
-export function StarterCard({ starter, onClick }: { starter: Starter; onClick: () => void }) {
+export function StarterCard({ starter, onClick, healthLevel }: { starter: Starter; onClick: () => void; healthLevel?: 'green' | 'orange' | 'red' }) {
   const t = useTranslations('starterCard')
   const dateLocale = getDateLocale(useLocale())
   const isMigration = starter.type === 'MIGRATION'
@@ -53,6 +54,9 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
           <div className={`font-medium text-sm truncate ${starter.isCancelled ? 'line-through text-muted-foreground' : ''}`}>
             {starter.firstName} {starter.lastName}
           </div>
+          {healthLevel && !starter.isCancelled && (
+            <HealthDot level={healthLevel} />
+          )}
           {starter.language && (
             <span className="text-xs shrink-0" title={starter.language === 'NL' ? t('languageNL') : t('languageFR')}>
               {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}
