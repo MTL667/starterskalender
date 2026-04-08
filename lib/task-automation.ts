@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { eventBus } from '@/lib/events'
 
 /**
  * Vervang variabelen in een string met waarden
@@ -185,6 +186,10 @@ export async function createAutomaticTasks(starter: any, explicitType?: string) 
             linkUrl: `/taken?taskId=${task.id}`,
           },
         })
+
+        if (starter.entityId) {
+          eventBus.emit({ type: 'notification:new', entityId: starter.entityId, payload: { taskId: task.id } })
+        }
 
         // Haal notification channel setting op
         const assignment = await prisma.taskAssignment.findFirst({

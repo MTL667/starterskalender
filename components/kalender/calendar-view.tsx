@@ -1,8 +1,9 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useSSE } from '@/components/providers/sse-provider'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -234,14 +235,20 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     setDialogOpen(true)
   }
 
+  const refetchStarters = useCallback(() => {
+    fetch(`/api/starters?year=${fetchYear}&includePending=true`)
+      .then(res => res.json())
+      .then(data => setStarters(data))
+  }, [fetchYear])
+
+  useSSE('starter:*', () => refetchStarters())
+
   const handleDialogClose = (refreshData?: boolean) => {
     setDialogOpen(false)
     setSelectedStarter(null)
     
     if (refreshData) {
-      fetch(`/api/starters?year=${fetchYear}&includePending=true`)
-        .then(res => res.json())
-        .then(data => setStarters(data))
+      refetchStarters()
     }
   }
 

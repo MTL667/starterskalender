@@ -7,6 +7,7 @@ import { calculateWeekNumber, getYearInTimezone } from '@/lib/week-utils'
 import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
 import { createAutomaticTasks } from '@/lib/task-automation'
+import { eventBus } from '@/lib/events'
 
 const UpdateStarterSchema = z.object({
   firstName: z.string().min(1).optional(),
@@ -210,6 +211,10 @@ export async function PATCH(
       }
     }
 
+    if (starter.entityId) {
+      eventBus.emit({ type: 'starter:updated', entityId: starter.entityId, payload: { starterId: starter.id } })
+    }
+
     return NextResponse.json(starter)
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -239,7 +244,7 @@ export async function DELETE(
 
     const starter = await prisma.starter.findUnique({
       where: { id: id },
-      select: { id: true, firstName: true, lastName: true },
+      select: { id: true, firstName: true, lastName: true, entityId: true },
     })
 
     if (!starter) {
@@ -256,6 +261,10 @@ export async function DELETE(
       target: `Starter:${id}`,
       meta: { name: `${starter.firstName} ${starter.lastName}` },
     })
+
+    if (starter.entityId) {
+      eventBus.emit({ type: 'starter:deleted', entityId: starter.entityId, payload: { starterId: id } })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

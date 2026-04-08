@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
 import { sendEmail } from '@/lib/email'
+import { eventBus } from '@/lib/events'
 
 const CancelSchema = z.object({
   cancelReason: z.string().optional(),
@@ -150,6 +151,10 @@ export async function POST(
         console.error('Error sending cancellation emails:', emailError)
         // Don't fail the request if email fails
       }
+    }
+
+    if (starter.entityId) {
+      eventBus.emit({ type: 'starter:updated', entityId: starter.entityId, payload: { starterId: starter.id } })
     }
 
     return NextResponse.json(updatedStarter)

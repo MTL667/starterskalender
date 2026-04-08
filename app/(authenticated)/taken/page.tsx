@@ -1,9 +1,10 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { useSSE } from '@/components/providers/sse-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -114,6 +115,8 @@ export default function TakenPage() {
       setLoading(false)
     }
   }
+
+  useSSE('task:*', () => fetchTasks())
 
   const handleCompleteTask = async (taskId: string) => {
     try {

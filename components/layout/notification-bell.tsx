@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { useSSE } from '@/components/providers/sse-provider'
 import { Bell, Check, CheckCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -52,12 +53,10 @@ export function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications()
-    
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000)
-    
-    return () => clearInterval(interval)
   }, [])
+
+  useSSE('notification:new', () => fetchNotifications())
+  useSSE('task:*', () => fetchNotifications())
 
   const markAsRead = async (notificationId: string) => {
     try {

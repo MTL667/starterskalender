@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { eventBus } from '@/lib/events'
 
 // GET /api/tasks - Haal taken op (met filters)
 export async function GET(req: Request) {
@@ -216,7 +217,9 @@ export async function POST(req: Request) {
       },
     })
 
-    // TODO: Create notification for assigned user (will be implemented in notification API)
+    if (task.entityId) {
+      eventBus.emit({ type: 'task:created', entityId: task.entityId, payload: { taskId: task.id } })
+    }
 
     return NextResponse.json(task, { status: 201 })
   } catch (error) {

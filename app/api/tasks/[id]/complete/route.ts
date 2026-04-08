@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { eventBus } from '@/lib/events'
 
 // POST /api/tasks/[id]/complete - Markeer taak als voltooid
 export async function POST(
@@ -118,6 +119,10 @@ export async function POST(
       },
     })
 
+    if (updatedTask.entityId) {
+      eventBus.emit({ type: 'task:completed', entityId: updatedTask.entityId, payload: { taskId: updatedTask.id } })
+    }
+
     // Maak notificatie aan voor de aanmaker (als verschillend van voltooier)
     if (task.createdById && task.createdById !== user.id) {
       await prisma.notification.create({
@@ -131,6 +136,10 @@ export async function POST(
           linkUrl: `/taken/${task.id}`,
         },
       })
+
+      if (updatedTask.entityId) {
+        eventBus.emit({ type: 'notification:new', entityId: updatedTask.entityId, payload: { taskId: task.id } })
+      }
     }
 
     return NextResponse.json(updatedTask)

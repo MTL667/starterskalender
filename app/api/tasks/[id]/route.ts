@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { sendTaskReassignmentEmail } from '@/lib/task-automation'
+import { eventBus } from '@/lib/events'
 
 // GET /api/tasks/[id] - Haal specifieke taak op
 export async function GET(
@@ -201,6 +202,10 @@ export async function PATCH(
         },
       },
     })
+
+    if (updatedTask.entityId) {
+      eventBus.emit({ type: 'task:updated', entityId: updatedTask.entityId, payload: { taskId: updatedTask.id } })
+    }
 
     // Send email to new assignee on reassignment
     if (updateData.assignedToId && updateData.assignedToId !== task.assignedToId) {

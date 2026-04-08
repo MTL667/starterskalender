@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare } from 'lucide-react'
+import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare, Wifi, WifiOff } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { LanguageSwitcher } from '@/components/layout/language-switcher'
+import { useSSEStatus } from '@/components/providers/sse-provider'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
@@ -15,6 +16,7 @@ import { useTranslations } from 'next-intl'
 export function Navbar() {
   const pathname = usePathname()
   const { data: session } = useSession()
+  const sseStatus = useSSEStatus()
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoLoading, setLogoLoading] = useState(true)
   const t = useTranslations('navbar')
@@ -124,6 +126,12 @@ export function Navbar() {
           <div className="text-sm text-muted-foreground hidden sm:block">
             {session?.user?.name || session?.user?.email}
           </div>
+          {sseStatus === 'disconnected' && (
+            <span title="Real-time verbinding verbroken"><WifiOff className="h-4 w-4 text-orange-500" /></span>
+          )}
+          {sseStatus === 'reconnecting' && (
+            <span title="Opnieuw verbinden..."><Wifi className="h-4 w-4 text-orange-400 animate-pulse" /></span>
+          )}
           <NotificationBell />
           <Link href="/profiel">
             <Button

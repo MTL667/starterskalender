@@ -7,6 +7,7 @@ import { calculateWeekNumber, getYearInTimezone } from '@/lib/week-utils'
 import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
 import { createAutomaticTasks } from '@/lib/task-automation'
+import { eventBus } from '@/lib/events'
 
 const VALID_TYPES = ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'] as const
 
@@ -221,6 +222,10 @@ export async function POST(request: NextRequest) {
       } catch (taskError) {
         console.error('Failed to create automatic tasks:', taskError)
       }
+    }
+
+    if (starter.entityId) {
+      eventBus.emit({ type: 'starter:created', entityId: starter.entityId, payload: { starterId: starter.id } })
     }
 
     return NextResponse.json(starter, { status: 201 })

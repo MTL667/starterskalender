@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { useSession } from 'next-auth/react'
+import { useSSE } from '@/components/providers/sse-provider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckSquare, Clock, AlertCircle, ArrowRight } from 'lucide-react'
@@ -48,6 +49,8 @@ export function MyTasks() {
       setLoading(false)
     }
   }, [session])
+
+  useSSE('task:*', () => fetchMyTasks())
 
   const fetchMyTasks = async () => {
     try {
