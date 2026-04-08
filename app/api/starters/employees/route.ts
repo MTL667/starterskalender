@@ -20,7 +20,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      where.name = { contains: search, mode: 'insensitive' }
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+      ]
     }
 
     where = filterStartersByRBAC(user, where)
@@ -29,7 +32,8 @@ export async function GET(request: NextRequest) {
       where,
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         language: true,
         roleTitle: true,
         region: true,
@@ -43,8 +47,8 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { name: 'asc' },
-      distinct: ['name'],
+      orderBy: { lastName: 'asc' },
+      distinct: ['firstName', 'lastName'],
     })
 
     return NextResponse.json(starters)

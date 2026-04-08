@@ -41,7 +41,8 @@ export async function PATCH(
         material: true,
         starter: {
           select: {
-            name: true,
+            firstName: true,
+            lastName: true,
           },
         },
       },
@@ -52,7 +53,7 @@ export async function PATCH(
       action: 'UPDATE',
       target: `StarterMaterial:${starterMaterial.id}`,
       meta: {
-        starter: starterMaterial.starter.name,
+        starter: `${starterMaterial.starter.firstName} ${starterMaterial.starter.lastName}`,
         material: starterMaterial.material.name,
         isProvided: starterMaterial.isProvided,
       },

@@ -10,7 +10,8 @@ import { PlaneLanding, PlaneTakeoff, ArrowLeftRight, Clock } from 'lucide-react'
 interface Starter {
   id: string
   type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
-  name: string
+  firstName: string
+  lastName: string
   language?: string
   roleTitle?: string | null
   region?: string | null
@@ -50,7 +51,7 @@ export function StarterCard({ starter, onClick }: { starter: Starter; onClick: (
             <PlaneLanding className="h-3.5 w-3.5 text-green-500 shrink-0" />
           )}
           <div className={`font-medium text-sm truncate ${starter.isCancelled ? 'line-through text-muted-foreground' : ''}`}>
-            {starter.name}
+            {starter.firstName} {starter.lastName}
           </div>
           {starter.language && (
             <span className="text-xs shrink-0" title={starter.language === 'NL' ? t('languageNL') : t('languageFR')}>

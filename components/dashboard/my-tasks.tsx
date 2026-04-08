@@ -17,7 +17,8 @@ interface Task {
   status?: string
   dueDate?: string
   starter?: {
-    name: string
+    firstName: string
+    lastName: string
   }
 }
 
@@ -136,7 +137,7 @@ export function MyTasks() {
                         </div>
                         {task.starter && (
                           <p className="text-xs text-muted-foreground mt-1 ml-6">
-                            {task.starter.name}
+                            {task.starter.firstName} {task.starter.lastName}
                           </p>
                         )}
                         {task.dueDate && (

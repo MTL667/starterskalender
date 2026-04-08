@@ -117,7 +117,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       return (
-        starter.name.toLowerCase().includes(query) ||
+        `${starter.firstName} ${starter.lastName}`.toLowerCase().includes(query) ||
         starter.roleTitle?.toLowerCase().includes(query) ||
         starter.region?.toLowerCase().includes(query)
       )
@@ -150,7 +150,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         return (
-          starter.name.toLowerCase().includes(query) ||
+          `${starter.firstName} ${starter.lastName}`.toLowerCase().includes(query) ||
           starter.roleTitle?.toLowerCase().includes(query) ||
           starter.region?.toLowerCase().includes(query)
         )
@@ -164,8 +164,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
       switch (sortColumn) {
         case 'name':
-          aValue = a.name.toLowerCase()
-          bValue = b.name.toLowerCase()
+          aValue = `${a.firstName} ${a.lastName}`.toLowerCase()
+          bValue = `${b.firstName} ${b.lastName}`.toLowerCase()
           break
         case 'roleTitle':
           aValue = (a.roleTitle || '').toLowerCase()
@@ -239,7 +239,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       }
       
       return {
-        Naam: s.name,
+        [t('columnFirstName')]: s.firstName,
+        [t('columnLastName')]: s.lastName,
         Email: s.desiredEmail || '',
         Telefoon: s.phoneNumber || '',
         Taal: s.language || 'NL',
@@ -290,7 +291,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       }
       
       return [
-        s.name,
+        s.firstName,
+        s.lastName,
         s.desiredEmail || '',
         s.phoneNumber || '',
         s.language || 'NL',
@@ -304,22 +306,23 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     })
 
     autoTable(doc, {
-      head: [[t('columnName'), t('columnEmail'), t('columnPhone'), t('columnLanguage'), t('columnRole'), t('columnRegion'), t('columnExperience'), t('columnStartDate'), t('columnWeek'), t('columnEntity')]],
+      head: [[t('columnFirstName'), t('columnLastName'), t('columnEmail'), t('columnPhone'), t('columnLanguage'), t('columnRole'), t('columnRegion'), t('columnExperience'), t('columnStartDate'), t('columnWeek'), t('columnEntity')]],
       body: tableData,
       startY: 35,
       styles: { fontSize: 7 },
       headStyles: { fillColor: [59, 130, 246] },
       columnStyles: {
-        0: { cellWidth: 25 }, // Naam
-        1: { cellWidth: 30 }, // Email
-        2: { cellWidth: 22 }, // Telefoon
-        3: { cellWidth: 10 }, // Taal
-        4: { cellWidth: 20 }, // Functie
-        5: { cellWidth: 18 }, // Regio
-        6: { cellWidth: 20 }, // Ervaring
-        7: { cellWidth: 20 }, // Startdatum
-        8: { cellWidth: 10 }, // Week
-        9: { cellWidth: 20 }, // Entiteit
+        0: { cellWidth: 20 }, // Voornaam
+        1: { cellWidth: 22 }, // Achternaam
+        2: { cellWidth: 30 }, // Email
+        3: { cellWidth: 22 }, // Telefoon
+        4: { cellWidth: 10 }, // Taal
+        5: { cellWidth: 20 }, // Functie
+        6: { cellWidth: 18 }, // Regio
+        7: { cellWidth: 20 }, // Ervaring
+        8: { cellWidth: 20 }, // Startdatum
+        9: { cellWidth: 10 }, // Week
+        10: { cellWidth: 20 }, // Entiteit
       },
     })
 
@@ -342,7 +345,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       }
       
       return {
-        [t('columnName')]: s.name,
+        [t('columnFirstName')]: s.firstName,
+        [t('columnLastName')]: s.lastName,
         [t('columnEmail')]: s.desiredEmail || '',
         [t('columnPhone')]: s.phoneNumber || '',
         [t('columnLanguage')]: s.language || 'NL',
@@ -358,7 +362,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
     const ws = XLSX.utils.json_to_sheet(xlsData)
     
     ws['!cols'] = [
-      { wch: 25 }, // Naam
+      { wch: 18 }, // Voornaam
+      { wch: 22 }, // Achternaam
       { wch: 30 }, // Email
       { wch: 18 }, // Telefoon
       { wch: 8 },  // Taal
@@ -590,7 +595,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                         )}
                       </span>
                     </td>
-                    <td className="py-3 font-medium">{starter.name}</td>
+                    <td className="py-3 font-medium">{starter.firstName} {starter.lastName}</td>
                     <td className="py-3 text-sm">
                       <span title={starter.language === 'NL' ? t('languageNL') : t('languageFR')}>
                         {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'} {starter.language || 'NL'}
@@ -676,7 +681,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    <span className="text-sm font-medium truncate">{starter.name}</span>
+                    <span className="text-sm font-medium truncate">{starter.firstName} {starter.lastName}</span>
                     {starter.roleTitle && <span className="text-xs text-muted-foreground">{starter.roleTitle}</span>}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

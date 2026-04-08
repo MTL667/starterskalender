@@ -49,7 +49,8 @@ export async function GET(req: Request) {
         starter: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
           },
         },
         assignedTo: {

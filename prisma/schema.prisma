@@ -154,7 +154,8 @@ model Starter {
   fromEntityId      String?                          // Bron-entiteit (bij migratie)
   fromEntity        Entity?   @relation("StarterFromEntity", fields: [fromEntityId], references: [id], onDelete: SetNull)
   fromRoleTitle     String?                          // Bron-functie (bij migratie)
-  name              String
+  firstName         String
+  lastName          String
   language          String    @default("NL")
   region            String?
   roleTitle         String?

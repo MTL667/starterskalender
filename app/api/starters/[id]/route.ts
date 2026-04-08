@@ -9,7 +9,8 @@ import { normalizeString } from '@/lib/utils'
 import { createAutomaticTasks } from '@/lib/task-automation'
 
 const UpdateStarterSchema = z.object({
-  name: z.string().min(1).optional(),
+  firstName: z.string().min(1).optional(),
+  lastName: z.string().min(1).optional(),
   language: z.enum(['NL', 'FR']).optional(),
   entityId: z.string().nullable().optional(),
   region: z.string().nullable().optional(),
@@ -85,7 +86,8 @@ export async function PATCH(
 
     const updateData: any = {}
 
-    if (data.name !== undefined) updateData.name = normalizeString(data.name)
+    if (data.firstName !== undefined) updateData.firstName = normalizeString(data.firstName)
+    if (data.lastName !== undefined) updateData.lastName = normalizeString(data.lastName)
     if (data.language !== undefined) updateData.language = data.language
     if (data.entityId !== undefined) updateData.entityId = data.entityId
     if (data.region !== undefined) updateData.region = normalizeString(data.region)
@@ -127,7 +129,7 @@ export async function PATCH(
       action: 'UPDATE',
       target: `Starter:${starter.id}`,
       meta: {
-        name: starter.name,
+        name: `${starter.firstName} ${starter.lastName}`,
         changes: Object.keys(updateData),
         ...(isActivatingPending ? { activatedFromPending: true } : {}),
       },
@@ -151,9 +153,9 @@ export async function PATCH(
         })
 
         const starterType = existingStarter.type || 'ONBOARDING'
-        console.log(`🚀 Activating pending starter "${starter.name}" - creating ${starterType} tasks`)
+        console.log(`🚀 Activating pending starter "${starter.firstName} ${starter.lastName}" - creating ${starterType} tasks`)
         const tasks = await createAutomaticTasks(starter, starterType)
-        console.log(`✅ Created ${tasks.length} automatic tasks for activated starter ${starter.name}`)
+        console.log(`✅ Created ${tasks.length} automatic tasks for activated starter ${starter.firstName} ${starter.lastName}`)
       } catch (taskError) {
         console.error('Failed to create tasks for activated starter:', taskError)
       }
@@ -199,7 +201,7 @@ export async function PATCH(
               }
             }
             if (assigned > 0) {
-              console.log(`📦 Assigned ${assigned} materials to activated starter ${starter.name}`)
+              console.log(`📦 Assigned ${assigned} materials to activated starter ${starter.firstName} ${starter.lastName}`)
             }
           }
         } catch (materialError) {
@@ -237,7 +239,7 @@ export async function DELETE(
 
     const starter = await prisma.starter.findUnique({
       where: { id: id },
-      select: { id: true, name: true },
+      select: { id: true, firstName: true, lastName: true },
     })
 
     if (!starter) {
@@ -252,7 +254,7 @@ export async function DELETE(
       actorId: user.id,
       action: 'DELETE',
       target: `Starter:${id}`,
-      meta: { name: starter.name },
+      meta: { name: `${starter.firstName} ${starter.lastName}` },
     })
 
     return NextResponse.json({ success: true })

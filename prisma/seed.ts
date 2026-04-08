@@ -54,7 +54,8 @@ async function main() {
 
   const starters = [
     {
-      name: 'Jan Janssens',
+      firstName: 'Jan',
+      lastName: 'Janssens',
       entityId: entity1.id,
       roleTitle: 'Software Engineer',
       region: 'Vlaanderen',
@@ -62,7 +63,8 @@ async function main() {
       startDate: addDays(today, -30),
     },
     {
-      name: 'Marie Dubois',
+      firstName: 'Marie',
+      lastName: 'Dubois',
       entityId: entity2.id,
       roleTitle: 'Project Manager',
       region: 'Brussel',
@@ -70,7 +72,8 @@ async function main() {
       startDate: addDays(today, 14),
     },
     {
-      name: 'Pieter Peeters',
+      firstName: 'Pieter',
+      lastName: 'Peeters',
       entityId: entity3.id,
       roleTitle: 'Consultant',
       region: 'Wallonië',

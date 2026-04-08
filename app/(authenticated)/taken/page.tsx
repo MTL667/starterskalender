@@ -159,7 +159,8 @@ export default function TakenPage() {
       return (
         task.title.toLowerCase().includes(search) ||
         task.description?.toLowerCase().includes(search) ||
-        task.starter?.name.toLowerCase().includes(search)
+        (task.starter &&
+          `${task.starter.firstName} ${task.starter.lastName}`.toLowerCase().includes(search))
       )
     }
     return true

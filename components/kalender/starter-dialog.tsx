@@ -26,7 +26,8 @@ import { SignatureGeneratorDialog } from '@/components/signature-generator-dialo
 interface Starter {
   id: string
   type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
-  name: string
+  firstName: string
+  lastName: string
   language?: string
   roleTitle?: string | null
   region?: string | null
@@ -120,7 +121,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [assigningMaterials, setAssigningMaterials] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
-    name: '',
+    firstName: '',
+    lastName: '',
     language: 'NL',
     entityId: '',
     fromEntityId: '',
@@ -292,7 +294,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     if (starter) {
       setFormData({
         type: starter.type || 'ONBOARDING',
-        name: starter.name,
+        firstName: starter.firstName,
+        lastName: starter.lastName,
         language: starter.language || 'NL',
         entityId: starter.entity?.id || '',
         fromEntityId: starter.fromEntity?.id || starter.fromEntityId || '',
@@ -313,7 +316,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     } else {
       setFormData({
         type: 'ONBOARDING',
-        name: '',
+        firstName: '',
+        lastName: '',
         language: 'NL',
         entityId: '',
         fromEntityId: '',
@@ -345,7 +349,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     if (formData.type === 'MIGRATION') {
       setFormData(prev => ({
         ...prev,
-        name: employee.name,
+        firstName: employee.name?.split(' ')[0] || '',
+        lastName: employee.name?.split(' ').slice(1).join(' ') || '',
         language: employee.language || 'NL',
         fromEntityId: employee.entity?.id || '',
         fromRoleTitle: employee.roleTitle || '',
@@ -358,7 +363,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     } else {
       setFormData(prev => ({
         ...prev,
-        name: employee.name,
+        firstName: employee.name?.split(' ')[0] || '',
+        lastName: employee.name?.split(' ').slice(1).join(' ') || '',
         language: employee.language || 'NL',
         entityId: employee.entity?.id || '',
         roleTitle: employee.roleTitle || '',
@@ -425,7 +431,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.name.trim()) {
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
       return
     }
 
@@ -476,7 +482,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
       const data: any = {
         type: formData.type,
-        name: formData.name,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
         language: formData.language,
         entityId: formData.entityId || null,
         fromEntityId: formData.type === 'MIGRATION' ? (formData.fromEntityId || null) : null,
@@ -758,7 +765,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   // Check of alle velden voor signature generatie ingevuld zijn en template bestaat
   const canGenerateSignature = !!(
     hasSignatureTemplate &&
-    formData.name &&
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
     formData.roleTitle &&
     formData.phoneNumber &&
     formData.desiredEmail
@@ -814,9 +822,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             </div>
 
             <div>
-              <Label htmlFor="name">{t('labelName')}</Label>
               {(formData.type === 'OFFBOARDING' || formData.type === 'MIGRATION') && !isEdit && !manualEntry ? (
                 <div className="space-y-2">
+                  <Label htmlFor="employeeSearch">{t('labelName')}</Label>
                   {selectedEmployee ? (
                     <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
                       <UserCheck className="h-4 w-4 text-green-600 shrink-0" />
@@ -835,7 +843,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                         size="sm"
                         onClick={() => {
                           setSelectedEmployee(null)
-                          setFormData(prev => ({ ...prev, name: '', language: 'NL', entityId: '', fromEntityId: '', fromRoleTitle: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
+                          setFormData(prev => ({ ...prev, firstName: '', lastName: '', language: 'NL', entityId: '', fromEntityId: '', fromRoleTitle: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
                         }}
                         className="h-6 px-2 text-xs"
                       >
@@ -912,13 +920,28 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 </div>
               ) : (
                 <div>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    disabled={!canEdit}
-                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">{t('labelFirstName')}</Label>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        required
+                        disabled={!canEdit}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">{t('labelLastName')}</Label>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        required
+                        disabled={!canEdit}
+                      />
+                    </div>
+                  </div>
                   {(formData.type === 'OFFBOARDING' || formData.type === 'MIGRATION') && !isEdit && manualEntry && (
                     <Button
                       type="button"
@@ -927,7 +950,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       className="text-xs text-muted-foreground mt-1"
                       onClick={() => {
                         setManualEntry(false)
-                        setFormData(prev => ({ ...prev, name: '', language: 'NL', entityId: '', fromEntityId: '', fromRoleTitle: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
+                        setFormData(prev => ({ ...prev, firstName: '', lastName: '', language: 'NL', entityId: '', fromEntityId: '', fromRoleTitle: '', roleTitle: '', region: '', phoneNumber: '', desiredEmail: '' }))
                       }}
                     >
                       <Search className="h-3 w-3 mr-1" />
@@ -1602,7 +1625,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         open={signatureDialogOpen}
         onClose={() => setSignatureDialogOpen(false)}
         starterData={{
-          name: formData.name,
+          name: `${formData.firstName} ${formData.lastName}`,
           roleTitle: formData.roleTitle,
           phoneNumber: formData.phoneNumber,
           desiredEmail: formData.desiredEmail,

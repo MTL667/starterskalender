@@ -14,7 +14,8 @@ import { PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
 interface Starter {
   id: string
   type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
-  name: string
+  firstName: string
+  lastName: string
   language?: string
   roleTitle?: string | null
   contractSignedOn?: string | null
@@ -235,7 +236,7 @@ export function RecentStarters({ year }: { year: number }) {
                       ) : (
                         <PlaneLanding className="h-4 w-4 text-green-500 shrink-0" />
                       )}
-                      <div className="font-medium">{starter.name}</div>
+                      <div className="font-medium">{starter.firstName} {starter.lastName}</div>
                       {starter.language && (
                         <span className="text-sm" title={starter.language === 'NL' ? starterCardT('languageNL') : starterCardT('languageFR')}>
                           {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}

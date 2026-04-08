@@ -38,12 +38,12 @@ export async function POST(
       },
     })
 
-    console.log(`🗑️ Deleted ${deleted.count} old auto-generated tasks for starter "${starter.name}" (${starter.type})`)
+    console.log(`🗑️ Deleted ${deleted.count} old auto-generated tasks for starter "${starter.firstName} ${starter.lastName}" (${starter.type})`)
 
     // Recreate tasks with the correct type
     const newTasks = await createAutomaticTasks(starter, starter.type)
 
-    console.log(`✅ Regenerated ${newTasks.length} tasks for starter "${starter.name}" (${starter.type})`)
+    console.log(`✅ Regenerated ${newTasks.length} tasks for starter "${starter.firstName} ${starter.lastName}" (${starter.type})`)
 
     await createAuditLog({
       actorId: user.id,

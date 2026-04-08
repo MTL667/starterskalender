@@ -90,7 +90,7 @@ export function TaskDetailDialog({
             <div>
               <Label>{t('starter')}</Label>
               <div className="mt-1 p-3 bg-muted rounded-md">
-                <p className="font-medium">{task.starter.name}</p>
+                <p className="font-medium">{task.starter.firstName} {task.starter.lastName}</p>
                 <p className="text-sm text-muted-foreground">
                   {t('start')}:{' '}
                   {new Date(task.starter.startDate).toLocaleDateString('nl-BE')}

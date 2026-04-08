@@ -67,7 +67,8 @@ export async function GET(req: Request) {
         starter: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             startDate: true,
             notes: true,
             entity: {
@@ -178,7 +179,8 @@ export async function POST(req: Request) {
         starter: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             startDate: true,
           },
         },

@@ -32,7 +32,7 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
           </div>
           {task.starter && (
             <p className="text-xs text-muted-foreground mt-1">
-              {task.starter.name}
+              {task.starter.firstName} {task.starter.lastName}
             </p>
           )}
           {task.dueDate && task.status !== 'COMPLETED' && (

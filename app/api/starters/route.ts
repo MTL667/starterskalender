@@ -12,7 +12,8 @@ const VALID_TYPES = ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'] as const
 
 const StarterSchema = z.object({
   type: z.enum(VALID_TYPES).default('ONBOARDING'),
-  name: z.string().min(1),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   language: z.enum(['NL', 'FR']).default('NL'),
   entityId: z.string().nullable().optional(),
   fromEntityId: z.string().nullable().optional(),
@@ -74,7 +75,8 @@ export async function GET(request: NextRequest) {
     if (search) {
       andConditions.push({
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
           { roleTitle: { contains: search, mode: 'insensitive' } },
           { region: { contains: search, mode: 'insensitive' } },
         ],
@@ -111,7 +113,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: [{ startDate: 'asc' }, { name: 'asc' }],
+      orderBy: [{ startDate: 'asc' }, { lastName: 'asc' }],
     })
 
     return NextResponse.json(starters)
@@ -154,7 +156,8 @@ export async function POST(request: NextRequest) {
     const starter = await prisma.starter.create({
       data: {
         type: data.type,
-        name: normalizeString(data.name)!,
+        firstName: normalizeString(data.firstName)!,
+        lastName: normalizeString(data.lastName)!,
         language: data.language,
         entityId: data.entityId,
         fromEntityId: data.type === 'MIGRATION' ? data.fromEntityId : null,
@@ -186,7 +189,7 @@ export async function POST(request: NextRequest) {
       actorId: user.id,
       action: 'CREATE',
       target: `Starter:${starter.id}`,
-      meta: { name: starter.name, entityId: starter.entityId, isPendingBoarding: isPending },
+      meta: { name: `${starter.firstName} ${starter.lastName}`, entityId: starter.entityId, isPendingBoarding: isPending },
     })
 
     if (isPending) {
@@ -195,8 +198,8 @@ export async function POST(request: NextRequest) {
         await prisma.task.create({
           data: {
             type: 'HR_ADMIN',
-            title: `Startdatum toewijzen aan ${starter.name}`,
-            description: `De starter "${starter.name}" is aangemaakt zonder startdatum. Wijs een startdatum toe om de onboarding te activeren.`,
+            title: `Startdatum toewijzen aan ${starter.firstName} ${starter.lastName}`,
+            description: `De starter "${starter.firstName} ${starter.lastName}" is aangemaakt zonder startdatum. Wijs een startdatum toe om de onboarding te activeren.`,
             priority: 'HIGH',
             starterId: starter.id,
             entityId: starter.entityId,
@@ -205,16 +208,16 @@ export async function POST(request: NextRequest) {
             createdById: user.id,
           },
         })
-        console.log(`📋 Created pending boarding task for starter "${starter.name}"`)
+        console.log(`📋 Created pending boarding task for starter "${starter.firstName} ${starter.lastName}"`)
       } catch (taskError) {
         console.error('Failed to create pending boarding task:', taskError)
       }
     } else {
       // Automatisch taken aanmaken op basis van templates
       try {
-        console.log(`🚀 Creating tasks for starter "${starter.name}" with type: ${data.type} (starter.type: ${starter.type})`)
+        console.log(`🚀 Creating tasks for starter "${starter.firstName} ${starter.lastName}" with type: ${data.type} (starter.type: ${starter.type})`)
         const tasks = await createAutomaticTasks(starter, data.type)
-        console.log(`✅ Created ${tasks.length} automatic tasks for starter ${starter.name}`)
+        console.log(`✅ Created ${tasks.length} automatic tasks for starter ${starter.firstName} ${starter.lastName}`)
       } catch (taskError) {
         console.error('Failed to create automatic tasks:', taskError)
       }

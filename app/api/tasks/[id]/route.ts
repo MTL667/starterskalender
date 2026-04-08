@@ -25,7 +25,8 @@ export async function GET(
         starter: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             startDate: true,
             phoneNumber: true,
             desiredEmail: true,
@@ -165,7 +166,8 @@ export async function PATCH(
         starter: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             startDate: true,
             notes: true,
           },

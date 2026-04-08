@@ -84,7 +84,7 @@ export async function POST(
       action: 'CANCEL_STARTER',
       target: `Starter:${starter.id}`,
       meta: { 
-        starterName: starter.name, 
+        starterName: `${starter.firstName} ${starter.lastName}`, 
         entityName: starter.entity?.name,
         cancelReason: data.cancelReason 
       },
@@ -124,10 +124,10 @@ export async function POST(
       try {
         await sendEmail({
           to: uniqueRecipients,
-          subject: `Starter Geannuleerd: ${starter.name}`,
+          subject: `Starter Geannuleerd: ${starter.firstName} ${starter.lastName}`,
           html: `
             <h2>Starter is geannuleerd</h2>
-            <p><strong>Naam:</strong> ${starter.name}</p>
+            <p><strong>Naam:</strong> ${starter.firstName} ${starter.lastName}</p>
             <p><strong>Functie:</strong> ${starter.roleTitle || 'N/A'}</p>
             <p><strong>Entiteit:</strong> ${starter.entity?.name || 'N/A'}</p>
             <p><strong>Startdatum:</strong> ${starter.startDate ? new Date(starter.startDate).toLocaleDateString('nl-BE') : 'Nog niet gekend'}</p>

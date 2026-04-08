@@ -5,7 +5,8 @@
 
 type StarterWithEntity = {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   type: string
   language: string
   roleTitle: string | null
@@ -55,7 +56,7 @@ export function renderStarterItem(s: StarterWithEntity): string {
 
   return (
     `<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid ${borderColor}; border-radius: 4px;">` +
-    `${icon} <strong>${s.name}</strong> ${flag}<br/>` +
+    `${icon} <strong>${s.firstName} ${s.lastName}</strong> ${flag}<br/>` +
     roleHtml +
     migrationHtml +
     `<span style="color: #6b7280; font-size: 14px;">${dateLabel}: ${dateStr}</span>` +

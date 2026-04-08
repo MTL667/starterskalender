@@ -263,7 +263,7 @@ export default function TaskDiagnosticsPage() {
                   <div className="flex-1">
                     <div className="font-medium">{task.title}</div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {task.starter && `${t('for')} ${task.starter.name} | `}
+                      {task.starter && `${t('for')} ${task.starter.firstName} ${task.starter.lastName} | `}
                       {tc('type')}: {task.type} | 
                       {tc('status')}: {task.status} |
                       {t('createdAt')} {new Date(task.createdAt).toLocaleDateString('nl-BE')}

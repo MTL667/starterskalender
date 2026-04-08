@@ -3,7 +3,8 @@ import { nl } from 'date-fns/locale'
 
 interface Starter {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   language?: string
   roleTitle?: string | null
   contractSignedOn?: Date | string | null
@@ -20,6 +21,8 @@ interface TemplateVariables {
 
   // Starter variabelen (voor weekly reminder)
   starterName?: string
+  starterFirstName?: string
+  starterLastName?: string
   starterRole?: string
   starterStartDate?: string
   starterLanguage?: string
@@ -68,7 +71,9 @@ export function getWeeklyReminderVariables(
   return {
     userName,
     userEmail,
-    starterName: starter.name,
+    starterName: `${starter.firstName} ${starter.lastName}`,
+    starterFirstName: starter.firstName,
+    starterLastName: starter.lastName,
     starterRole: starter.roleTitle || 'Geen functie opgegeven',
     starterStartDate: format(startDate, 'EEEE d MMMM yyyy', { locale: nl }),
     starterLanguage: starter.language === 'FR' ? 'Frans' : 'Nederlands',
@@ -97,7 +102,7 @@ export function getMonthlySummaryVariables(
           const startDate = s.startDate ? (typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate) : null
           return `
             <li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">
-              <strong>${s.name}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
+              <strong>${s.firstName} ${s.lastName}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
               ${s.roleTitle ? `<span style="color: #6b7280;">${s.roleTitle}</span><br/>` : ''}
               <span style="color: #6b7280; font-size: 14px;">Start: ${startDate ? format(startDate, 'd MMMM yyyy', { locale: nl }) : 'Datum onbekend'}</span>
             </li>
@@ -137,7 +142,7 @@ export function getQuarterlySummaryVariables(
           const startDate = s.startDate ? (typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate) : null
           return `
             <li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">
-              <strong>${s.name}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
+              <strong>${s.firstName} ${s.lastName}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
               ${s.roleTitle ? `<span style="color: #6b7280;">${s.roleTitle}</span><br/>` : ''}
               <span style="color: #6b7280; font-size: 14px;">Start: ${startDate ? format(startDate, 'd MMMM yyyy', { locale: nl }) : 'Datum onbekend'}</span>
             </li>
@@ -175,7 +180,7 @@ export function getYearlySummaryVariables(
           const startDate = s.startDate ? (typeof s.startDate === 'string' ? new Date(s.startDate) : s.startDate) : null
           return `
             <li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">
-              <strong>${s.name}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
+              <strong>${s.firstName} ${s.lastName}</strong> ${s.language === 'FR' ? '🇫🇷' : '🇳🇱'}<br/>
               ${s.roleTitle ? `<span style="color: #6b7280;">${s.roleTitle}</span><br/>` : ''}
               <span style="color: #6b7280; font-size: 14px;">Start: ${startDate ? format(startDate, 'd MMMM yyyy', { locale: nl }) : 'Datum onbekend'}</span>
             </li>
@@ -202,7 +207,9 @@ export const TEMPLATE_VARIABLES = {
   WEEKLY_REMINDER: [
     { name: 'userName', description: 'Naam van de ontvanger' },
     { name: 'userEmail', description: 'Email van de ontvanger' },
-    { name: 'starterName', description: 'Naam van de starter' },
+    { name: 'starterName', description: 'Volledige naam van de starter (voornaam + familienaam)' },
+    { name: 'starterFirstName', description: 'Voornaam van de starter' },
+    { name: 'starterLastName', description: 'Familienaam van de starter' },
     { name: 'starterRole', description: 'Functie van de starter' },
     { name: 'starterStartDate', description: 'Startdatum (volledig geformatteerd)' },
     { name: 'starterLanguage', description: 'Taal van de starter (Nederlands/Frans)' },

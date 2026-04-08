@@ -22,7 +22,7 @@ function replaceVariables(
 export async function createAutomaticTasks(starter: any, explicitType?: string) {
   try {
     const starterType = explicitType || starter.type || 'ONBOARDING'
-    console.log(`🔧 createAutomaticTasks called for "${starter.name}" with type: ${starterType} (explicit: ${explicitType}, starter.type: ${starter.type})`)
+    console.log(`🔧 createAutomaticTasks called for "${starter.firstName} ${starter.lastName}" with type: ${starterType} (explicit: ${explicitType}, starter.type: ${starter.type})`)
 
     // Auto-fix: update templates with null forStarterType based on known titles
     const TITLE_TO_TYPE: Record<string, string> = {
@@ -95,7 +95,7 @@ export async function createAutomaticTasks(starter: any, explicitType?: string) 
 
       // Variabelen voor template
       const variables = {
-        starterName: starter.name,
+        starterName: `${starter.firstName} ${starter.lastName}`,
         entityName: starter.entity?.name || 'Onbekend',
         roleTitle: starter.roleTitle || 'Onbekend',
         startDate: new Date(starter.startDate).toLocaleDateString('nl-BE'),
@@ -179,7 +179,7 @@ export async function createAutomaticTasks(starter: any, explicitType?: string) 
             userId: assignedToId,
             type: 'TASK_ASSIGNED',
             title: 'Nieuwe taak toegewezen',
-            message: `Je hebt een nieuwe taak: "${title}" voor starter ${starter.name}`,
+            message: `Je hebt een nieuwe taak: "${title}" voor starter ${starter.firstName} ${starter.lastName}`,
             taskId: task.id,
             starterId: starter.id,
             linkUrl: `/taken?taskId=${task.id}`,
@@ -219,7 +219,7 @@ export async function createAutomaticTasks(starter: any, explicitType?: string) 
         }
       }
 
-      console.log(`✅ Created task: ${title} (${task.type}) for starter ${starter.name}`)
+      console.log(`✅ Created task: ${title} (${task.type}) for starter ${starter.firstName} ${starter.lastName}`)
     }
 
     return createdTasks
@@ -238,7 +238,7 @@ async function sendTaskAssignmentEmail(task: any, starter: any) {
   }
 
   const assigneeName = task.assignedTo.name || task.assignedTo.email
-  const starterName = starter.name
+  const starterName = `${starter.firstName} ${starter.lastName}`
   const entityName = task.entity?.name || 'Onbekend'
   const startDate = new Date(starter.startDate).toLocaleDateString('nl-BE')
   const dueDate = task.dueDate
@@ -369,7 +369,9 @@ export async function sendTaskReassignmentEmail(task: any, reassignedByName: str
   }
 
   const assigneeName = task.assignedTo.name || task.assignedTo.email
-  const starterName = task.starter?.name || '—'
+  const starterName = task.starter
+    ? `${task.starter.firstName} ${task.starter.lastName}`
+    : '—'
   const entityName = task.entity?.name || '—'
   const dueDate = task.dueDate
     ? new Date(task.dueDate).toLocaleDateString('nl-BE')

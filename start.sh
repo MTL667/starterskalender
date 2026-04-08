@@ -10,6 +10,12 @@ if [ -f /app/migrations/fix-contractSignedOn.sql ]; then
   su-exec nextjs:nodejs node node_modules/.bin/prisma db execute --file /app/migrations/fix-contractSignedOn.sql || echo "⚠️  Migration already applied or failed (continuing...)"
 fi
 
+# Split Starter.name into firstName + lastName (must run BEFORE db push)
+echo "🔧 Splitting Starter name into firstName/lastName..."
+if [ -f /app/migrations/split-starter-name.sql ]; then
+  su-exec nextjs:nodejs node node_modules/.bin/prisma db execute --file /app/migrations/split-starter-name.sql || echo "⚠️  Migration already applied or failed (continuing...)"
+fi
+
 # Sync database schema (push schema changes without migrations)
 echo "🗄️  Syncing database schema..."
 su-exec nextjs:nodejs node node_modules/.bin/prisma db push --accept-data-loss

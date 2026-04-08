@@ -10,7 +10,8 @@ export interface EntityRef {
 export interface Starter {
   id: string
   type?: StarterType
-  name: string
+  firstName: string
+  lastName: string
   language?: string
   roleTitle?: string | null
   region?: string | null
@@ -32,7 +33,8 @@ export interface Starter {
 
 export interface TaskStarter {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   startDate: string
   notes?: string | null
   entity?: EntityRef

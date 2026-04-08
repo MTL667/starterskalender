@@ -7,7 +7,8 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY || '')
 
 export interface EmailStarter {
   id: string
-  name: string
+  firstName: string
+  lastName: string
   region?: string | null
   roleTitle?: string | null
   startDate: Date | null
@@ -36,7 +37,7 @@ export async function sendReminderEmail(input: SendReminderEmailInput): Promise<
     .map(
       (s) => `
     <tr>
-      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.name}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.firstName} ${s.lastName}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.region || '-'}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.roleTitle || '-'}</td>
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${s.startDate ? format(s.startDate, 'dd/MM/yyyy', { locale: nl }) : 'Datum onbekend'}</td>

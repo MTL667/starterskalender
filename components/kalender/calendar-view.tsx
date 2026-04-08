@@ -172,7 +172,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       return (
-        starter.name.toLowerCase().includes(query) ||
+        `${starter.firstName} ${starter.lastName}`.toLowerCase().includes(query) ||
         starter.roleTitle?.toLowerCase().includes(query) ||
         starter.region?.toLowerCase().includes(query)
       )
@@ -204,7 +204,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       return (
-        starter.name.toLowerCase().includes(query) ||
+        `${starter.firstName} ${starter.lastName}`.toLowerCase().includes(query) ||
         starter.roleTitle?.toLowerCase().includes(query) ||
         starter.region?.toLowerCase().includes(query)
       )
@@ -297,7 +297,8 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
 
   const exportCSV = async () => {
     const csvData = filteredStarters.map(s => ({
-      [t('exportName')]: s.name,
+      [t('exportFirstName')]: s.firstName,
+      [t('exportLastName')]: s.lastName,
       [t('exportRole')]: s.roleTitle || '',
       [t('exportRegion')]: s.region || '',
       [t('exportStartDate')]: s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
@@ -330,7 +331,8 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     
     // Data voorbereiden
     const tableData = filteredStarters.map(s => [
-      s.name,
+      s.firstName,
+      s.lastName,
       s.roleTitle || '',
       s.region || '',
       s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
@@ -340,7 +342,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
 
     // Tabel maken
     autoTable(doc, {
-      head: [['Naam', 'Functie', 'Regio', 'Startdatum', 'Week', 'Entiteit']],
+      head: [[t('exportFirstName'), t('exportLastName'), 'Functie', 'Regio', 'Startdatum', 'Week', 'Entiteit']],
       body: tableData,
       startY: 35,
       styles: { fontSize: 9 },
@@ -353,7 +355,8 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
 
   const exportXLS = async () => {
     const xlsData = filteredStarters.map(s => ({
-      'Naam': s.name,
+      [t('exportFirstName')]: s.firstName,
+      [t('exportLastName')]: s.lastName,
       'Functie': s.roleTitle || '',
       'Regio': s.region || '',
       'Startdatum': s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
@@ -366,7 +369,8 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     
     // Set column widths
     ws['!cols'] = [
-      { wch: 25 }, // Naam
+      { wch: 18 }, // Voornaam
+      { wch: 22 }, // Achternaam
       { wch: 20 }, // Functie
       { wch: 15 }, // Regio
       { wch: 15 }, // Startdatum
@@ -663,7 +667,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="flex items-center gap-1.5 flex-1 min-w-0">
                     <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    <div className="font-medium text-sm truncate">{starter.name}</div>
+                    <div className="font-medium text-sm truncate">{starter.firstName} {starter.lastName}</div>
                     {starter.language && (
                       <span className="text-xs shrink-0">{starter.language === 'NL' ? '🇳🇱' : '🇫🇷'}</span>
                     )}

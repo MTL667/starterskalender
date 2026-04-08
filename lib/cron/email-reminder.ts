@@ -73,7 +73,8 @@ export async function runEmailReminderJob(): Promise<void> {
         to: entity.notifyEmails,
         starters: entityStarters.map(s => ({
           id: s.id,
-          name: s.name,
+          firstName: s.firstName,
+          lastName: s.lastName,
           region: s.region,
           roleTitle: s.roleTitle,
           startDate: s.startDate,

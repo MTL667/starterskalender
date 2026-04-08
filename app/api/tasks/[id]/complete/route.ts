@@ -20,7 +20,14 @@ export async function POST(
     const task = await prisma.task.findUnique({
       where: { id },
       include: {
-        starter: true,
+        starter: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            startDate: true,
+          },
+        },
         assignedTo: {
           select: {
             email: true,
@@ -68,7 +75,8 @@ export async function POST(
         starter: {
           select: {
             id: true,
-            name: true,
+            firstName: true,
+            lastName: true,
             startDate: true,
           },
         },
