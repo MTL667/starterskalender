@@ -56,7 +56,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
   const [uploadForm, setUploadForm] = useState({
     title: '',
     signingMethod: 'SES' as 'SES' | 'QES',
-    prerequisiteId: '',
+    prerequisiteId: 'none',
     dueDate: '',
   })
 
@@ -91,7 +91,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
       formData.append('file', file)
       formData.append('title', uploadForm.title)
       formData.append('signingMethod', uploadForm.signingMethod)
-      if (uploadForm.prerequisiteId) {
+      if (uploadForm.prerequisiteId && uploadForm.prerequisiteId !== 'none') {
         formData.append('prerequisiteId', uploadForm.prerequisiteId)
       }
       if (uploadForm.dueDate) {
@@ -105,7 +105,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
 
       if (res.ok) {
         setUploadOpen(false)
-        setUploadForm({ title: '', signingMethod: 'SES', prerequisiteId: '', dueDate: '' })
+        setUploadForm({ title: '', signingMethod: 'SES', prerequisiteId: 'none', dueDate: '' })
         if (fileInputRef.current) fileInputRef.current.value = ''
         await fetchDocuments()
         onDocumentChange?.()
@@ -413,7 +413,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                     <SelectValue placeholder={t('prerequisiteNone')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">{t('prerequisiteNone')}</SelectItem>
+                    <SelectItem value="none">{t('prerequisiteNone')}</SelectItem>
                     {documents.map(d => (
                       <SelectItem key={d.id} value={d.id}>{d.title}</SelectItem>
                     ))}
