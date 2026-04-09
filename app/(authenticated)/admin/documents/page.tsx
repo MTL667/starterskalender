@@ -48,21 +48,19 @@ export default function AdminDocumentsPage() {
   }, [session, isAdmin, router])
 
   useEffect(() => {
-    const year = new Date().getFullYear()
     Promise.all([
-      fetch(`/api/starters?year=${year}`).then(r => r.json()),
-      fetch(`/api/starters?year=${year + 1}`).then(r => r.json()),
+      fetch('/api/starters').then(r => r.json()),
       fetch('/api/entities').then(r => r.json()),
     ])
-      .then(([current, next, ents]) => {
-        const all = [...current, ...next]
-          .filter((s: Starter) => !s.isCancelled)
-          .sort((a: Starter, b: Starter) => {
+      .then(([all, ents]) => {
+        const sorted = (all as Starter[])
+          .filter((s) => !s.isCancelled)
+          .sort((a, b) => {
             if (!a.startDate) return 1
             if (!b.startDate) return -1
-            return new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+            return new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
           })
-        setStarters(all)
+        setStarters(sorted)
         setEntities(ents)
         setLoading(false)
       })
