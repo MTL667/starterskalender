@@ -58,6 +58,7 @@ export function HealthProgressBar({ score }: { score: StarterHealthScore }) {
   const categories = [
     { label: t('tasks'), value: score.taskScore, detail: `${score.tasks.completed}/${score.tasks.total}${score.tasks.overdue > 0 ? ` (${score.tasks.overdue} ${t('overdue')})` : ''}` },
     { label: t('materials'), value: score.materialScore, detail: `${score.materials.provided}/${score.materials.total}` },
+    { label: t('documents'), value: score.documentScore, detail: `${score.documents.signed}/${score.documents.total}` },
     { label: t('timeline'), value: score.timelineScore, detail: score.daysUntilStart !== null ? (score.daysUntilStart > 0 ? `${score.daysUntilStart} ${t('daysLeft')}` : t('started')) : '-' },
   ]
 

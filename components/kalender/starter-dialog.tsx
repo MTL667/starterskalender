@@ -24,6 +24,7 @@ import { useSession } from 'next-auth/react'
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
 import { HealthProgressBar } from '@/components/health-badge'
 import { useHealthScores } from '@/lib/use-health-scores'
+import { StarterDocuments } from '@/components/kalender/starter-documents'
 
 interface Starter {
   id: string
@@ -1481,6 +1482,14 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   </>
                 )}
               </div>
+            )}
+
+            {/* Documenten sectie (alleen bij edit) */}
+            {isEdit && starter && !starter.isCancelled && (
+              <StarterDocuments
+                starterId={starter.id}
+                canEdit={canEdit}
+              />
             )}
 
             {/* Taken sectie (alleen bij edit) */}

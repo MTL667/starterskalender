@@ -8,10 +8,12 @@ export interface StarterHealthScore {
   overall: number
   taskScore: number
   materialScore: number
+  documentScore: number
   timelineScore: number
   level: 'green' | 'orange' | 'red'
   tasks: { completed: number; total: number; overdue: number }
   materials: { provided: number; total: number }
+  documents: { signed: number; total: number }
   daysUntilStart: number | null
 }
 
@@ -66,6 +68,12 @@ export async function GET(request: NextRequest) {
             isProvided: true,
           },
         },
+        documents: {
+          where: { status: { not: 'CANCELLED' } },
+          select: {
+            status: true,
+          },
+        },
       },
     })
 
@@ -85,6 +93,12 @@ export async function GET(request: NextRequest) {
       const providedMaterials = starter.starterMaterials.filter(m => m.isProvided).length
       const materialScore = totalMaterials > 0
         ? Math.round((providedMaterials / totalMaterials) * 100)
+        : 100
+
+      const totalDocs = starter.documents.length
+      const signedDocs = starter.documents.filter(d => d.status === 'SIGNED').length
+      const documentScore = totalDocs > 0
+        ? Math.round((signedDocs / totalDocs) * 100)
         : 100
 
       let daysUntilStart: number | null = null
@@ -111,17 +125,21 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      const overall = Math.round(taskScore * 0.4 + materialScore * 0.35 + timelineScore * 0.25)
+      const overall = Math.round(
+        taskScore * 0.35 + materialScore * 0.25 + documentScore * 0.20 + timelineScore * 0.20
+      )
 
       return {
         starterId: starter.id,
         overall,
         taskScore,
         materialScore,
+        documentScore,
         timelineScore,
         level: calcLevel(overall),
         tasks: { completed: completedTasks, total: totalTasks, overdue: overdueTasks },
         materials: { provided: providedMaterials, total: totalMaterials },
+        documents: { signed: signedDocs, total: totalDocs },
         daysUntilStart,
       }
     })

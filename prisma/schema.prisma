@@ -75,6 +75,18 @@ enum StarterType {
   MIGRATION          // Interne mutatie tussen entiteiten
 }
 
+enum SigningMethod {
+  SES                // Simple Electronic Signature (click-to-sign)
+  QES                // Qualified Electronic Signature (Itsme)
+}
+
+enum DocumentStatus {
+  PENDING            // Wacht op ondertekening
+  SIGNED             // Ondertekend
+  EXPIRED            // Verlopen (deadline overschreden)
+  CANCELLED          // Geannuleerd
+}
+
 model User {
   id                      String                   @id @default(cuid())
   email                   String                   @unique
@@ -184,6 +196,7 @@ model Starter {
   updatedAt        DateTime          @updatedAt
   starterMaterials StarterMaterial[] // Materiaal toegewezen aan deze starter
   tasks            Task[]            // Taken gekoppeld aan deze starter
+  documents        StarterDocument[] // Documenten voor ondertekening
 
   @@index([type])
   @@index([year, startDate])
@@ -433,6 +446,9 @@ model Task {
   
   // Template tracking
   templateId      String?         // Als aangemaakt vanuit template
+
+  // Document koppeling
+  document        StarterDocument?
   
   @@index([status, assignedToId])
   @@index([starterId, status])
@@ -551,6 +567,57 @@ model EmailLog {
   @@index([recipient, sentAt])
   @@index([recipientUserId])
   @@index([status])
+}
+
+// Document ondertekening
+model StarterDocument {
+  id                    String          @id @default(cuid())
+  starterId             String
+  starter               Starter         @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  title                 String          // Document naam (bv. "Arbeidscontract")
+  signingMethod         SigningMethod   @default(SES)
+  status                DocumentStatus  @default(PENDING)
+
+  // Teams/SharePoint opslag
+  teamsDriveId          String?         // SharePoint drive ID
+  teamsItemId           String?         // SharePoint item ID (origineel document)
+  teamsPath             String?         // Pad in Teams mappenstructuur
+  signedTeamsItemId     String?         // SharePoint item ID (getekend document)
+
+  // Ondertekening details
+  signedAt              DateTime?
+  signedByIp            String?
+  signedByName          String?         // Naam van ondertekenaar
+
+  // Itsme QES details (Phase 5B)
+  itsmeSignatureId      String?         // Itsme transactie ID
+  itsmeCertificateInfo  String?         @db.Text // Certificaat informatie
+
+  // Volgorde en afhankelijkheden
+  sortOrder             Int             @default(0)
+  prerequisiteId        String?         // Document dat eerst getekend moet worden
+  prerequisite          StarterDocument? @relation("DocumentChain", fields: [prerequisiteId], references: [id], onDelete: SetNull)
+  dependents            StarterDocument[] @relation("DocumentChain")
+
+  // Deadline
+  dueDate               DateTime?
+
+  // Gekoppelde taak
+  taskId                String?         @unique
+  task                  Task?           @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  // Metadata
+  fileName              String?         // Originele bestandsnaam
+  fileSize              Int?            // Bestandsgrootte in bytes
+  mimeType              String          @default("application/pdf")
+  uploadedById          String?         // User ID die document uploadde
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([starterId, status])
+  @@index([starterId, sortOrder])
+  @@index([status])
+  @@index([taskId])
 }
 
 // Email Signature Templates per Entiteit
