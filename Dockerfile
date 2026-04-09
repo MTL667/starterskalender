@@ -21,6 +21,7 @@ COPY . .
 
 # Environment variabelen voor build
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Build Next.js (Prisma is al gegenereerd in deps stage)
 RUN npm run build

@@ -11,6 +11,8 @@ const nextConfig = {
   },
   // Enable standalone output for Docker
   output: 'standalone',
+  // Keep heavy packages out of the server bundle
+  serverExternalPackages: ['pdf-lib', 'pdfjs-dist'],
   // Environment variables exposed to client
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
