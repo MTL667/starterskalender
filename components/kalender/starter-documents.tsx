@@ -15,7 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { FileText, Upload, Trash2, CheckCircle2, Clock, Lock, ExternalLink, Loader2, Eye, Mail, Send } from 'lucide-react'
+import { FileText, Upload, Trash2, CheckCircle2, Clock, Lock, ExternalLink, Loader2, Eye, Mail, Send, PenLine } from 'lucide-react'
+import { PdfFieldPlacer, type SignatureFieldDef } from '@/components/documents/pdf-field-placer'
 
 interface StarterDocument {
   id: string
@@ -36,6 +37,8 @@ interface StarterDocument {
   recipientEmail: string | null
   emailSentAt: string | null
   signingToken: string | null
+  signatureFields: any[] | null
+  localFilePath: string | null
 }
 
 interface Props {
@@ -52,6 +55,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewDoc, setPreviewDoc] = useState<StarterDocument | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [fieldPlacerDoc, setFieldPlacerDoc] = useState<StarterDocument | null>(null)
   const [signing, setSigning] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -320,6 +324,21 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
               </div>
 
               <div className="flex items-center gap-1 shrink-0 ml-2">
+                {canEdit && doc.status === 'PENDING' && doc.localFilePath && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setFieldPlacerDoc(doc)}
+                    title={t('placeFields')}
+                  >
+                    <PenLine className="h-3 w-3 mr-1" />
+                    {(doc.signatureFields && (doc.signatureFields as any[]).length > 0)
+                      ? `${(doc.signatureFields as any[]).length} veld(en)`
+                      : t('placeFields')}
+                  </Button>
+                )}
                 {doc.teamsItemId && (
                   <Button
                     type="button"
@@ -507,6 +526,32 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Signature Field Placer Dialog */}
+      <Dialog open={!!fieldPlacerDoc} onOpenChange={(open) => { if (!open) setFieldPlacerDoc(null) }}>
+        <DialogContent className="max-w-6xl h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{fieldPlacerDoc?.title} — Handtekeningvelden plaatsen</DialogTitle>
+          </DialogHeader>
+          {fieldPlacerDoc && (
+            <PdfFieldPlacer
+              pdfUrl={`/api/starters/${starterId}/documents/${fieldPlacerDoc.id}/pdf`}
+              initialFields={(fieldPlacerDoc.signatureFields as SignatureFieldDef[]) || []}
+              onSave={async (fields) => {
+                await fetch(`/api/starters/${starterId}/documents/${fieldPlacerDoc.id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ signatureFields: fields }),
+                })
+                setFieldPlacerDoc(null)
+                await fetchDocuments()
+                onDocumentChange?.()
+              }}
+              onClose={() => setFieldPlacerDoc(null)}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

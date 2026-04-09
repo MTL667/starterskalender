@@ -44,6 +44,46 @@ export async function GET(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; documentId: string }> }
+) {
+  try {
+    const { id, documentId } = await params
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!canMutateStarter(user)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const document = await prisma.starterDocument.findFirst({
+      where: { id: documentId, starterId: id },
+    })
+
+    if (!document) {
+      return NextResponse.json({ error: 'Document not found' }, { status: 404 })
+    }
+
+    const body = await request.json()
+
+    if (body.signatureFields !== undefined) {
+      const updated = await prisma.starterDocument.update({
+        where: { id: documentId },
+        data: { signatureFields: body.signatureFields },
+      })
+      return NextResponse.json(updated)
+    }
+
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
+  } catch (error) {
+    console.error('Error updating document:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; documentId: string }> }

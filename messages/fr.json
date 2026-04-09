@@ -1163,6 +1163,7 @@
     "preview": "Aperçu",
     "delete": "Supprimer",
     "loadingPreview": "Chargement du document...",
+    "placeFields": "Placer les champs",
     "cancel": "Annuler"
   }
 }

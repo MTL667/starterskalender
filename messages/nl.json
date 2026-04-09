@@ -1164,6 +1164,7 @@
     "preview": "Bekijken",
     "delete": "Verwijderen",
     "loadingPreview": "Document laden...",
+    "placeFields": "Velden plaatsen",
     "cancel": "Annuleren"
   }
 }
