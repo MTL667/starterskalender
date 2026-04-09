@@ -56,12 +56,12 @@ export async function sendReminderEmail(input: SendReminderEmailInput): Promise<
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Starterskalender Reminder</title>
+  <title>Airport Reminder</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background: #f9fafb;">
   <div style="max-width: 800px; margin: 0 auto; padding: 40px 20px;">
     <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 32px;">
-      <h1 style="color: #1f2937; font-size: 24px; margin: 0 0 16px;">Starterskalender Reminder</h1>
+      <h1 style="color: #1f2937; font-size: 24px; margin: 0 0 16px;">Airport Reminder</h1>
       <p style="color: #6b7280; margin: 0 0 24px;">De volgende personen starten volgende week bij <strong>${entityName}</strong>:</p>
       
       <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
@@ -88,7 +88,7 @@ export async function sendReminderEmail(input: SendReminderEmailInput): Promise<
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
       
       <p style="color: #9ca3af; font-size: 14px; margin: 0;">
-        Deze e-mail werd automatisch verstuurd vanuit de Starterskalender applicatie.
+        Deze e-mail werd automatisch verstuurd vanuit de Airport applicatie.
       </p>
     </div>
   </div>
@@ -100,7 +100,7 @@ export async function sendReminderEmail(input: SendReminderEmailInput): Promise<
     to,
     from: process.env.MAIL_FROM || 'noreply@example.com',
     replyTo: process.env.MAIL_REPLY_TO,
-    subject: `Starterskalender: ${starters.length} nieuwe starter(s) volgende week - ${entityName}`,
+    subject: `Airport: ${starters.length} nieuwe starter(s) volgende week - ${entityName}`,
     html: htmlContent,
   }
 
@@ -181,7 +181,7 @@ export async function sendTestEmail(to: string): Promise<void> {
     to,
     from: fromEmail,
     replyTo: process.env.MAIL_REPLY_TO,
-    subject: 'Starterskalender - Test E-mail',
+    subject: 'Airport - Test E-mail',
     html: `
 <!DOCTYPE html>
 <html>
@@ -193,7 +193,7 @@ export async function sendTestEmail(to: string): Promise<void> {
   <div style="max-width: 600px; margin: 0 auto; background: white; padding: 32px; border-radius: 8px;">
     <h1 style="color: #1f2937; margin: 0 0 16px;">✅ Test E-mail</h1>
     <p style="color: #6b7280; margin: 0;">
-      Dit is een test e-mail vanuit de Starterskalender applicatie.
+      Dit is een test e-mail vanuit de Airport applicatie.
       Als je deze e-mail ontvangt, is de SendGrid integratie correct geconfigureerd!
     </p>
     <div style="background: #f3f4f6; padding: 16px; margin-top: 24px; border-radius: 4px;">
@@ -201,7 +201,7 @@ export async function sendTestEmail(to: string): Promise<void> {
       <p style="margin: 8px 0 0 0; font-size: 14px; color: #6b7280;"><strong>Verzonden op:</strong> ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: nl })}</p>
     </div>
     <p style="color: #9ca3af; margin-top: 24px; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 16px;">
-      Deze email is automatisch verzonden vanuit Starterskalender als test van de email functionaliteit.
+      Deze email is automatisch verzonden vanuit Airport als test van de email functionaliteit.
     </p>
   </div>
 </body>

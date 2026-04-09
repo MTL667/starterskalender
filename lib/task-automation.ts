@@ -309,7 +309,7 @@ async function sendTaskAssignmentEmail(task: any, starter: any) {
     </div>
     <div class="content">
       <p>Hallo ${assigneeName},</p>
-      <p>Je hebt een nieuwe taak toegewezen gekregen in het Starterskalender systeem.</p>
+      <p>Je hebt een nieuwe taak toegewezen gekregen in het Airport systeem.</p>
       
       <div class="task-card">
         <h2 style="margin-top: 0;">${task.title}</h2>
@@ -350,7 +350,7 @@ async function sendTaskAssignmentEmail(task: any, starter: any) {
       </center>
 
       <div class="footer">
-        <p>Deze email is automatisch gegenereerd door Starterskalender.</p>
+        <p>Deze email is automatisch gegenereerd door Airport.</p>
       </div>
     </div>
   </div>
@@ -480,7 +480,7 @@ export async function sendTaskReassignmentEmail(task: any, reassignedByName: str
       </center>
 
       <div class="footer">
-        <p>Deze email is automatisch gegenereerd door Starterskalender.</p>
+        <p>Deze email is automatisch gegenereerd door Airport.</p>
       </div>
     </div>
   </div>

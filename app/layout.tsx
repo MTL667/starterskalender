@@ -8,7 +8,7 @@ import { getLocale, getMessages } from 'next-intl/server'
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Starterskalender",
+  title: "Airport",
   description: "Beheer je starters met een overzichtelijke kalender en automatische notificaties",
 }
 

@@ -43,11 +43,11 @@
     "migrations": "Migraties"
   },
   "metadata": {
-    "title": "Starterskalender",
+    "title": "Airport",
     "description": "Beheer je starters met een overzichtelijke kalender en automatische notificaties"
   },
   "navbar": {
-    "appTitle": "Starterskalender",
+    "appTitle": "Airport",
     "dashboard": "Dashboard",
     "calendar": "Kalender",
     "starters": "Personeel",
@@ -67,7 +67,7 @@
     "adminDescription": "Beheer instellingen"
   },
   "calendar": {
-    "title": "Starterskalender",
+    "title": "Airport",
     "subtitle": "Overzicht van alle personeelsbewegingen per week",
     "viewWeek": "Week",
     "viewMonth": "Maand",
@@ -363,7 +363,7 @@
     "languageFR": "Frans"
   },
   "onboarding": {
-    "welcomeTitle": "Welkom bij Starterskalender!",
+    "welcomeTitle": "Welkom bij Airport!",
     "setupIntro": "Laten we je applicatie opzetten in een paar eenvoudige stappen",
     "createEntities": "Entiteiten aanmaken",
     "createEntitiesDescription": "Voeg je organisatie-eenheden toe met kleuren en e-mailnotificaties",
@@ -387,7 +387,7 @@
     "back": "Terug",
     "errorOccurred": "Er is een fout opgetreden. Probeer opnieuw.",
     "setupComplete": "Setup Voltooid!",
-    "readyToUse": "Je Starterskalender is klaar voor gebruik",
+    "readyToUse": "Je Airport is klaar voor gebruik",
     "nextSteps": "Volgende stappen:",
     "nextStep1": "Ga naar de kalender en voeg je eerste starters toe",
     "nextStep2": "Pas indien nodig je entiteiten aan in de admin sectie",
@@ -771,16 +771,16 @@
     "errorUploading": "Fout bij uploaden",
     "confirmDeleteLogo": "Weet je zeker dat je het logo wilt verwijderen?",
     "logoDeleted": "Logo verwijderd!",
-    "uploadDescription": "Upload een logo om de \"Starterskalender\" tekst te vervangen.",
+    "uploadDescription": "Upload een logo om de \"Airport\" tekst te vervangen.",
     "currentLogo": "Huidige Logo",
     "noLogoSet": "Geen logo ingesteld",
-    "textShown": "De tekst \"Starterskalender\" wordt getoond",
+    "textShown": "De tekst \"Airport\" wordt getoond",
     "uploadNewLogo": "Nieuw Logo Uploaden",
     "select": "Selecteer",
     "uploading": "Uploaden...",
     "allowedFormats": "Toegestane formaten: PNG, JPG, SVG, WebP • Max 2MB",
     "deleteLogo": "Logo Verwijderen",
-    "deleteLogoHint": "Het logo wordt verwijderd en de tekst \"Starterskalender\" wordt weer getoond.",
+    "deleteLogoHint": "Het logo wordt verwijderd en de tekst \"Airport\" wordt weer getoond.",
     "stylingTips": "Styling Tips",
     "solution": "Oplossing",
     "databaseError": "Database Error",
@@ -916,7 +916,7 @@
     "exportFileName": "audit-log"
   },
   "auth": {
-    "appTitle": "Starterskalender",
+    "appTitle": "Airport",
     "loginWithOrg": "Log in met je organisatie account",
     "accessDenied": "Toegang geweigerd. Je organisatie is niet toegestaan om in te loggen, of je account is nog niet goedgekeurd.",
     "configError": "Configuratiefout. Neem contact op met de beheerder.",
@@ -930,7 +930,7 @@
     "accountAutoCreated": "Log in met je organisatie account. Je account wordt automatisch aangemaakt en wacht op goedkeuring door een beheerder.",
     "orProductionLogin": "of gebruik productie login",
     "devLoginDescription": "Log in met een willekeurig email adres voor lokaal testen.",
-    "welcomeTitle": "Welkom bij Starterskalender",
+    "welcomeTitle": "Welkom bij Airport",
     "accountCreated": "Je account is succesvol aangemaakt",
     "pendingApproval": "Je toegang moet nog worden goedgekeurd",
     "adminMustApprove": "Een beheerder moet je de juiste rechten toekennen voordat je de applicatie kunt gebruiken.",

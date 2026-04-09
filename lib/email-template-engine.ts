@@ -604,7 +604,7 @@ export const DEFAULT_TEMPLATES = {
           <tr>
             <td align="center">
               <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-                ⭐ Starterskalender · Jaarrapport {{period}} ⭐
+                ⭐ Airport · Jaarrapport {{period}} ⭐
               </p>
             </td>
           </tr>

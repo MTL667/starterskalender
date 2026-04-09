@@ -66,7 +66,7 @@ export async function sendSigningEmail(params: SigningEmailParams): Promise<void
 
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
       <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-        Deze e-mail werd automatisch verstuurd vanuit Starterskalender namens ${entityName}.
+        Deze e-mail werd automatisch verstuurd vanuit Airport namens ${entityName}.
       </p>
     </div>
   </div>

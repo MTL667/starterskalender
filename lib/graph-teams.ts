@@ -68,7 +68,7 @@ async function resolveDriveId(client: Client): Promise<string> {
 
 function buildStarterPath(entityName: string, year: number, starterLastName: string, starterFirstName: string): string {
   const safeName = (s: string) => s.replace(/[<>:"/\\|?*]/g, "_").trim();
-  return `Starterskalender/${safeName(entityName)}/${year}/${safeName(starterLastName)}, ${safeName(starterFirstName)}`;
+  return `Airport/${safeName(entityName)}/${year}/${safeName(starterLastName)}, ${safeName(starterFirstName)}`;
 }
 
 export async function uploadDocument(

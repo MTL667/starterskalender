@@ -165,7 +165,7 @@ export async function POST(
     })
 
     if (recipientEmail && updated.signingToken) {
-      const baseUrl = process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'
+      const baseUrl = process.env.NEXTAUTH_URL || 'https://airport.kevinit.be'
       const signingUrl = `${baseUrl}/sign/${updated.signingToken}`
 
       try {

@@ -66,7 +66,7 @@ export default function OnboardingPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-2xl">
           <CardHeader>
-            <CardTitle>Welkom bij Starterskalender!</CardTitle>
+            <CardTitle>Welkom bij Airport!</CardTitle>
             <CardDescription>
               Laten we je applicatie opzetten in een paar eenvoudige stappen
             </CardDescription>

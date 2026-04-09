@@ -335,7 +335,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     
     // Titel
     doc.setFontSize(18)
-    doc.text('Starterskalender', 14, 22)
+    doc.text('Airport', 14, 22)
     doc.setFontSize(11)
     doc.text(`Jaar: ${year}`, 14, 30)
     

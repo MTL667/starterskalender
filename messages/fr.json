@@ -43,11 +43,11 @@
     "migrations": "Migrations"
   },
   "metadata": {
-    "title": "Starterskalender",
+    "title": "Airport",
     "description": "Gérez vos nouveaux collaborateurs avec un calendrier clair et des notifications automatiques"
   },
   "navbar": {
-    "appTitle": "Starterskalender",
+    "appTitle": "Airport",
     "dashboard": "Tableau de bord",
     "calendar": "Calendrier",
     "starters": "Personnel",
@@ -363,7 +363,7 @@
     "languageFR": "Français"
   },
   "onboarding": {
-    "welcomeTitle": "Bienvenue sur Starterskalender !",
+    "welcomeTitle": "Bienvenue sur Airport !",
     "setupIntro": "Configurons votre application en quelques étapes simples",
     "createEntities": "Créer des entités",
     "createEntitiesDescription": "Ajoutez vos unités organisationnelles avec des couleurs et des notifications email",
@@ -387,7 +387,7 @@
     "back": "Retour",
     "errorOccurred": "Une erreur s'est produite. Veuillez réessayer.",
     "setupComplete": "Configuration terminée !",
-    "readyToUse": "Votre Starterskalender est prêt à l'emploi",
+    "readyToUse": "Votre Airport est prêt à l'emploi",
     "nextSteps": "Prochaines étapes :",
     "nextStep1": "Allez au calendrier et ajoutez vos premiers collaborateurs",
     "nextStep2": "Ajustez vos entités dans la section admin si nécessaire",
@@ -770,16 +770,16 @@
     "errorUploading": "Erreur lors du téléchargement",
     "confirmDeleteLogo": "Êtes-vous sûr de vouloir supprimer le logo ?",
     "logoDeleted": "Logo supprimé !",
-    "uploadDescription": "Téléchargez un logo pour remplacer le texte \"Starterskalender\".",
+    "uploadDescription": "Téléchargez un logo pour remplacer le texte \"Airport\".",
     "currentLogo": "Logo actuel",
     "noLogoSet": "Aucun logo défini",
-    "textShown": "Le texte \"Starterskalender\" est affiché",
+    "textShown": "Le texte \"Airport\" est affiché",
     "uploadNewLogo": "Télécharger un nouveau logo",
     "select": "Sélectionner",
     "uploading": "Téléchargement...",
     "allowedFormats": "Formats autorisés : PNG, JPG, SVG, WebP • Max 2 Mo",
     "deleteLogo": "Supprimer le logo",
-    "deleteLogoHint": "Le logo sera supprimé et le texte \"Starterskalender\" sera à nouveau affiché.",
+    "deleteLogoHint": "Le logo sera supprimé et le texte \"Airport\" sera à nouveau affiché.",
     "stylingTips": "Conseils de style",
     "solution": "Solution",
     "databaseError": "Erreur de base de données",
@@ -915,7 +915,7 @@
     "exportFileName": "journal-audit"
   },
   "auth": {
-    "appTitle": "Starterskalender",
+    "appTitle": "Airport",
     "loginWithOrg": "Connectez-vous avec votre compte d'organisation",
     "accessDenied": "Accès refusé. Votre organisation n'est pas autorisée à se connecter, ou votre compte n'a pas encore été approuvé.",
     "configError": "Erreur de configuration. Veuillez contacter l'administrateur.",
@@ -929,7 +929,7 @@
     "accountAutoCreated": "Connectez-vous avec votre compte d'organisation. Votre compte sera automatiquement créé et en attente d'approbation par un administrateur.",
     "orProductionLogin": "ou utiliser la connexion de production",
     "devLoginDescription": "Connectez-vous avec n'importe quelle adresse email pour les tests locaux.",
-    "welcomeTitle": "Bienvenue sur Starterskalender",
+    "welcomeTitle": "Bienvenue sur Airport",
     "accountCreated": "Votre compte a été créé avec succès",
     "pendingApproval": "Votre accès doit encore être approuvé",
     "adminMustApprove": "Un administrateur doit vous attribuer les droits appropriés avant que vous puissiez utiliser l'application.",

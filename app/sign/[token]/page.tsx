@@ -487,7 +487,7 @@ export default function SigningPage() {
       </main>
 
       <footer className="mt-auto py-8 text-center">
-        <p className="text-xs text-gray-400">Aangedreven door Starterskalender</p>
+        <p className="text-xs text-gray-400">Aangedreven door Airport</p>
       </footer>
     </div>
   )
