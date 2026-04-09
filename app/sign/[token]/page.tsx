@@ -10,7 +10,6 @@ import {
   Loader2,
   PenLine,
   ShieldAlert,
-  Eye,
 } from 'lucide-react'
 
 interface DocumentData {
@@ -40,7 +39,6 @@ export default function SigningPage() {
   const [signerName, setSignerName] = useState('')
   const [signing, setSigning] = useState(false)
   const [signed, setSigned] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
   const fetchDocument = useCallback(async () => {
@@ -142,7 +140,7 @@ export default function SigningPage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Success state */}
         {signed && (
           <div className="bg-white rounded-xl shadow-lg p-8 text-center mb-6">
@@ -170,153 +168,152 @@ export default function SigningPage() {
           </div>
         )}
 
-        {/* Document card */}
+        {/* Document card with PDF + signing form side by side */}
         {!signed && (
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            {/* Document info */}
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-                  <FileText className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold text-gray-900">{doc.title}</h2>
-                  {doc.starter && (
-                    <p className="text-gray-500 mt-1">
-                      Voor {doc.starter.firstName} {doc.starter.lastName}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-3 mt-3 flex-wrap">
-                    <span className="inline-flex items-center gap-1.5 text-sm px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">
-                      <PenLine className="h-3.5 w-3.5" />
-                      {doc.signingMethod === 'QES' ? 'Itsme ondertekening' : 'Digitale handtekening'}
-                    </span>
-                    {doc.dueDate && (
-                      <span className="inline-flex items-center gap-1.5 text-sm px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full">
-                        <Clock className="h-3.5 w-3.5" />
-                        Vóór {new Date(doc.dueDate).toLocaleDateString('nl-BE')}
-                      </span>
-                    )}
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            {/* PDF Viewer — left side */}
+            <div className="lg:col-span-3 bg-white rounded-xl shadow-lg overflow-hidden flex flex-col" style={{ minHeight: '70vh' }}>
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">{doc.fileName || doc.title}</span>
+              </div>
+              <div className="flex-1">
+                <iframe
+                  src={`/api/sign/${token}/pdf`}
+                  className="w-full h-full border-0"
+                  title="Document preview"
+                  style={{ minHeight: '65vh' }}
+                />
               </div>
             </div>
 
-            {/* Preview button */}
-            {doc.previewUrl && (
-              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-                <button
-                  onClick={() => setShowPreview(!showPreview)}
-                  className="flex items-center gap-2 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
-                >
-                  <Eye className="h-4 w-4" />
-                  {showPreview ? 'Preview verbergen' : 'Document bekijken'}
-                </button>
-                {showPreview && (
-                  <div className="mt-4 rounded-lg overflow-hidden border border-gray-200" style={{ height: '500px' }}>
-                    <iframe
-                      src={doc.previewUrl}
-                      className="w-full h-full"
-                      title="Document preview"
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Prerequisite warning */}
-            {prerequisiteBlocked && (
-              <div className="px-6 py-4 bg-amber-50 border-b border-amber-100">
+            {/* Signing panel — right side */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Document info */}
+              <div className="bg-white rounded-xl shadow-lg p-6">
                 <div className="flex items-start gap-3">
-                  <ShieldAlert className="h-5 w-5 text-amber-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-amber-800">Volgorde vereist</p>
-                    <p className="text-sm text-amber-600">
-                      U moet eerst &ldquo;{doc.prerequisite?.title}&rdquo; ondertekenen voordat u dit document kunt tekenen.
-                    </p>
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                    <FileText className="h-5 w-5 text-blue-600" />
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* QES not yet available */}
-            {doc.signingMethod === 'QES' && (
-              <div className="px-6 py-4 bg-purple-50 border-b border-purple-100">
-                <div className="flex items-start gap-3">
-                  <ShieldAlert className="h-5 w-5 text-purple-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-purple-800">Itsme ondertekening</p>
-                    <p className="text-sm text-purple-600">
-                      Ondertekening via Itsme is momenteel nog niet beschikbaar. Neem contact op met uw werkgever.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Signing form */}
-            {canSign && (
-              <div className="p-6">
-                {error && (
-                  <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
-                    {error}
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="signerName" className="block text-sm font-medium text-gray-700 mb-1.5">
-                      Uw volledige naam
-                    </label>
-                    <input
-                      id="signerName"
-                      type="text"
-                      value={signerName}
-                      onChange={(e) => setSignerName(e.target.value)}
-                      placeholder="Voornaam Achternaam"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                      disabled={signing}
-                    />
-                  </div>
-
-                  <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={agreedToTerms}
-                      onChange={(e) => setAgreedToTerms(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled={signing}
-                    />
-                    <span className="text-sm text-gray-600">
-                      Ik verklaar dat ik bovenstaand document heb gelezen en ga akkoord met de inhoud.
-                      Door te ondertekenen bevestig ik mijn identiteit als de genoemde persoon.
-                    </span>
-                  </label>
-
-                  <button
-                    onClick={handleSign}
-                    disabled={signing || !signerName.trim() || signerName.trim().length < 2 || !agreedToTerms}
-                    className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {signing ? (
-                      <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Bezig met ondertekenen...
-                      </>
-                    ) : (
-                      <>
-                        <PenLine className="h-5 w-5" />
-                        Document ondertekenen
-                      </>
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-gray-900">{doc.title}</h2>
+                    {doc.starter && (
+                      <p className="text-gray-500 text-sm mt-0.5">
+                        Voor {doc.starter.firstName} {doc.starter.lastName}
+                      </p>
                     )}
-                  </button>
+                    <div className="flex items-center gap-2 mt-3 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
+                        <PenLine className="h-3 w-3" />
+                        {doc.signingMethod === 'QES' ? 'Itsme' : 'Digitaal'}
+                      </span>
+                      {doc.dueDate && (
+                        <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded-full">
+                          <Clock className="h-3 w-3" />
+                          Vóór {new Date(doc.dueDate).toLocaleDateString('nl-BE')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                <p className="mt-4 text-xs text-gray-400 text-center">
-                  Uw IP-adres en naam worden geregistreerd als bewijs van ondertekening.
-                </p>
               </div>
-            )}
+
+              {/* Prerequisite warning */}
+              {prerequisiteBlocked && (
+                <div className="bg-amber-50 rounded-xl shadow-lg p-5 border border-amber-100">
+                  <div className="flex items-start gap-3">
+                    <ShieldAlert className="h-5 w-5 text-amber-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-amber-800">Volgorde vereist</p>
+                      <p className="text-sm text-amber-600">
+                        U moet eerst &ldquo;{doc.prerequisite?.title}&rdquo; ondertekenen.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* QES not yet available */}
+              {doc.signingMethod === 'QES' && (
+                <div className="bg-purple-50 rounded-xl shadow-lg p-5 border border-purple-100">
+                  <div className="flex items-start gap-3">
+                    <ShieldAlert className="h-5 w-5 text-purple-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-purple-800">Itsme ondertekening</p>
+                      <p className="text-sm text-purple-600">
+                        Ondertekening via Itsme is momenteel nog niet beschikbaar. Neem contact op met uw werkgever.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Signing form */}
+              {canSign && (
+                <div className="bg-white rounded-xl shadow-lg p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4">Ondertekenen</h3>
+
+                  {error && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                      {error}
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="signerName" className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Uw volledige naam
+                      </label>
+                      <input
+                        id="signerName"
+                        type="text"
+                        value={signerName}
+                        onChange={(e) => setSignerName(e.target.value)}
+                        placeholder="Voornaam Achternaam"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                        disabled={signing}
+                      />
+                    </div>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={agreedToTerms}
+                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        disabled={signing}
+                      />
+                      <span className="text-sm text-gray-600">
+                        Ik verklaar dat ik bovenstaand document heb gelezen en ga akkoord met de inhoud.
+                        Door te ondertekenen bevestig ik mijn identiteit als de genoemde persoon.
+                      </span>
+                    </label>
+
+                    <button
+                      onClick={handleSign}
+                      disabled={signing || !signerName.trim() || signerName.trim().length < 2 || !agreedToTerms}
+                      className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      {signing ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Bezig met ondertekenen...
+                        </>
+                      ) : (
+                        <>
+                          <PenLine className="h-5 w-5" />
+                          Document ondertekenen
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <p className="mt-4 text-xs text-gray-400 text-center">
+                    Uw IP-adres en naam worden geregistreerd als bewijs van ondertekening.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>

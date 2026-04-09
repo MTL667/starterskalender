@@ -19,3 +19,6 @@ Dockerfile*
 
 # Exclude other apps
 Rooms/
+
+# Exclude local data
+data/

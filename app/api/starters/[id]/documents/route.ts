@@ -5,6 +5,8 @@ import { canMutateStarter } from '@/lib/rbac'
 import { uploadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
 import { sendSigningEmail } from '@/lib/email-signing'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
 
 export async function GET(
   request: NextRequest,
@@ -86,6 +88,14 @@ export async function POST(
     }
 
     const nextSortOrder = (starter.documents[0]?.sortOrder ?? -1) + 1
+    const buffer = Buffer.from(await file.arrayBuffer())
+
+    // Lokaal opslaan (altijd, als fallback en voor signing page)
+    const docsDir = join(process.cwd(), 'data', 'documents', id)
+    await mkdir(docsDir, { recursive: true })
+    const localFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const localPath = join(docsDir, localFileName)
+    await writeFile(localPath, buffer)
 
     let teamsDriveId: string | null = null
     let teamsItemId: string | null = null
@@ -96,7 +106,6 @@ export async function POST(
         ? new Date(starter.startDate).getFullYear()
         : new Date().getFullYear()
 
-      const buffer = Buffer.from(await file.arrayBuffer())
       const result = await uploadDocument(
         starter.entity.name,
         year,
@@ -125,6 +134,7 @@ export async function POST(
         teamsDriveId,
         teamsItemId,
         teamsPath,
+        localFilePath: `documents/${id}/${localFileName}`,
         recipientEmail: recipientEmail || null,
         uploadedById: user.id,
       },
