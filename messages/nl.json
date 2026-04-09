@@ -434,7 +434,20 @@
     "signatureTemplates": "Signature Templates",
     "signatureTemplatesDescription": "Beheer email signature templates per entiteit",
     "kpiDashboard": "KPI Dashboard",
-    "kpiDashboardDescription": "Bekijk prestatie-indicatoren per entiteit"
+    "kpiDashboardDescription": "Bekijk prestatie-indicatoren per entiteit",
+    "documentSigning": "Document Ondertekening",
+    "documentSigningDescription": "Upload en beheer documenten voor ondertekening door starters"
+  },
+  "adminDocuments": {
+    "title": "Document Ondertekening",
+    "subtitle": "Upload en beheer documenten die door starters ondertekend moeten worden",
+    "selectStarter": "Selecteer een starter",
+    "searchPlaceholder": "Zoek op naam...",
+    "allEntities": "Alle entiteiten",
+    "noStarters": "Geen starters gevonden",
+    "manageDocuments": "Beheer documenten voor ondertekening",
+    "selectStarterPrompt": "Selecteer een starter",
+    "selectStarterHint": "Kies een starter uit de lijst om documenten te beheren"
   },
   "kpi": {
     "title": "KPI Dashboard",

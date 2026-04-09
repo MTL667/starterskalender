@@ -434,7 +434,20 @@
     "signatureTemplates": "Modèles de signature",
     "signatureTemplatesDescription": "Gérer les modèles de signature email par entité",
     "kpiDashboard": "Tableau de bord KPI",
-    "kpiDashboardDescription": "Consultez les indicateurs de performance par entité"
+    "kpiDashboardDescription": "Consultez les indicateurs de performance par entité",
+    "documentSigning": "Signature de documents",
+    "documentSigningDescription": "Téléchargez et gérez les documents à signer par les starters"
+  },
+  "adminDocuments": {
+    "title": "Signature de documents",
+    "subtitle": "Téléchargez et gérez les documents que les starters doivent signer",
+    "selectStarter": "Sélectionnez un starter",
+    "searchPlaceholder": "Rechercher par nom...",
+    "allEntities": "Toutes les entités",
+    "noStarters": "Aucun starter trouvé",
+    "manageDocuments": "Gérer les documents à signer",
+    "selectStarterPrompt": "Sélectionnez un starter",
+    "selectStarterHint": "Choisissez un starter dans la liste pour gérer les documents"
   },
   "kpi": {
     "title": "Tableau de bord KPI",
