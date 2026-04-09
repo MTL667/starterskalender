@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { FileText, Upload, Trash2, CheckCircle2, Clock, Lock, ExternalLink, Loader2, Eye } from 'lucide-react'
+import { FileText, Upload, Trash2, CheckCircle2, Clock, Lock, ExternalLink, Loader2, Eye, Mail, Send } from 'lucide-react'
 
 interface StarterDocument {
   id: string
@@ -33,6 +33,9 @@ interface StarterDocument {
   teamsDriveId: string | null
   teamsItemId: string | null
   previewUrl?: string | null
+  recipientEmail: string | null
+  emailSentAt: string | null
+  signingToken: string | null
 }
 
 interface Props {
@@ -58,6 +61,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
     signingMethod: 'SES' as 'SES' | 'QES',
     prerequisiteId: 'none',
     dueDate: '',
+    recipientEmail: '',
   })
 
   const fetchDocuments = async () => {
@@ -97,6 +101,9 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
       if (uploadForm.dueDate) {
         formData.append('dueDate', new Date(uploadForm.dueDate).toISOString())
       }
+      if (uploadForm.recipientEmail) {
+        formData.append('recipientEmail', uploadForm.recipientEmail)
+      }
 
       const res = await fetch(`/api/starters/${starterId}/documents`, {
         method: 'POST',
@@ -105,7 +112,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
 
       if (res.ok) {
         setUploadOpen(false)
-        setUploadForm({ title: '', signingMethod: 'SES', prerequisiteId: 'none', dueDate: '' })
+        setUploadForm({ title: '', signingMethod: 'SES', prerequisiteId: 'none', dueDate: '', recipientEmail: '' })
         if (fileInputRef.current) fileInputRef.current.value = ''
         await fetchDocuments()
         onDocumentChange?.()
@@ -294,6 +301,21 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                       {t('waitingFor', { title: doc.prerequisite.title })}
                     </p>
                   )}
+                  {doc.recipientEmail && (
+                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                      {doc.emailSentAt ? (
+                        <>
+                          <Send className="h-3 w-3 text-green-500" />
+                          {t('emailSent', { email: doc.recipientEmail })}
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="h-3 w-3" />
+                          {doc.recipientEmail}
+                        </>
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -421,6 +443,18 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                 </Select>
               </div>
             )}
+
+            <div>
+              <Label htmlFor="doc-email">{t('labelRecipientEmail')}</Label>
+              <Input
+                id="doc-email"
+                type="email"
+                value={uploadForm.recipientEmail}
+                onChange={e => setUploadForm({ ...uploadForm, recipientEmail: e.target.value })}
+                placeholder={t('emailPlaceholder')}
+              />
+              <p className="text-xs text-muted-foreground mt-1">{t('emailHint')}</p>
+            </div>
 
             <div>
               <Label htmlFor="doc-due">{t('labelDueDate')}</Label>

@@ -58,6 +58,6 @@ export const config = {
      * - auth/signin (signin page)
      * - auth/error (error page)
      */
-    '/((?!api/auth|api/cron|api/health|api/system|api/uploads|_next/static|_next/image|favicon.ico|auth/signin|auth/error).*)',
+    '/((?!api/auth|api/cron|api/health|api/system|api/uploads|api/sign|sign|_next/static|_next/image|favicon.ico|auth/signin|auth/error).*)',
   ],
 }

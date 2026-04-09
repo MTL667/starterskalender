@@ -4,6 +4,7 @@ import { getCurrentUser } from '@/lib/auth-utils'
 import { canMutateStarter } from '@/lib/rbac'
 import { uploadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
+import { sendSigningEmail } from '@/lib/email-signing'
 
 export async function GET(
   request: NextRequest,
@@ -74,6 +75,7 @@ export async function POST(
     const signingMethod = (formData.get('signingMethod') as string) || 'SES'
     const prerequisiteId = formData.get('prerequisiteId') as string | null
     const dueDateStr = formData.get('dueDate') as string | null
+    const recipientEmail = formData.get('recipientEmail') as string | null
 
     if (!file || !title) {
       return NextResponse.json({ error: 'File and title are required' }, { status: 400 })
@@ -123,6 +125,7 @@ export async function POST(
         teamsDriveId,
         teamsItemId,
         teamsPath,
+        recipientEmail: recipientEmail || null,
         uploadedById: user.id,
       },
     })
@@ -150,6 +153,29 @@ export async function POST(
       entityId: starter.entityId || '*',
       payload: { starterId: id, action: 'document_added' },
     })
+
+    if (recipientEmail && updated.signingToken) {
+      const baseUrl = process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'
+      const signingUrl = `${baseUrl}/sign/${updated.signingToken}`
+
+      try {
+        await sendSigningEmail({
+          recipientEmail,
+          recipientName: `${starter.firstName} ${starter.lastName}`,
+          signingUrl,
+          documents: [{ title, signingMethod }],
+          entityName: starter.entity?.name || 'Onbekend',
+          senderName: user.name || user.email,
+        })
+
+        await prisma.starterDocument.update({
+          where: { id: document.id },
+          data: { emailSentAt: new Date() },
+        })
+      } catch (emailErr) {
+        console.error('Failed to send signing email:', emailErr)
+      }
+    }
 
     return NextResponse.json(updated, { status: 201 })
   } catch (error) {
