@@ -1,3 +1,8 @@
+if (!process.env.DATABASE_URL) {
+  console.log('⏭️  Skipping fix-template-types: DATABASE_URL not set (build phase)')
+  process.exit(0)
+}
+
 const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
