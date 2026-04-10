@@ -1117,10 +1117,10 @@
     "legendNotAssigned": "Non attribué"
   },
   "health": {
-    "green": "En bonne santé",
+    "green": "Dans les temps",
     "orange": "Attention requise",
-    "red": "Critique",
-    "overallHealth": "Santé du starter",
+    "red": "En retard",
+    "overallHealth": "Progression onboarding",
     "tasks": "Tâches",
     "materials": "Matériaux",
     "documents": "Documents",

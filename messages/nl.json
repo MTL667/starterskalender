@@ -1118,10 +1118,10 @@
     "legendNotAssigned": "Niet toegewezen"
   },
   "health": {
-    "green": "Gezond",
+    "green": "Op schema",
     "orange": "Aandacht nodig",
-    "red": "Kritiek",
-    "overallHealth": "Startersgezondheid",
+    "red": "Achterstand",
+    "overallHealth": "Onboarding voortgang",
     "tasks": "Taken",
     "materials": "Materialen",
     "documents": "Documenten",
