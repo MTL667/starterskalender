@@ -5,6 +5,7 @@ import { canMutateStarter } from '@/lib/rbac'
 import { uploadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
 import { sendSigningEmail } from '@/lib/email-signing'
+import { logDocumentEvent } from '@/lib/document-audit'
 
 export async function GET(
   request: NextRequest,
@@ -145,6 +146,8 @@ export async function POST(
       data: { taskId: task.id },
     })
 
+    await logDocumentEvent(document.id, 'CREATED', { actor: user.id })
+
     eventBus.emit({
       type: 'starter:updated',
       entityId: starter.entityId || '*',
@@ -163,11 +166,19 @@ export async function POST(
           documents: [{ title, signingMethod }],
           entityName: starter.entity?.name || 'Onbekend',
           senderName: user.name || user.email,
+          dueDate: dueDateStr ? new Date(dueDateStr) : null,
+          language: starter.language,
+          documentId: document.id,
         })
 
         await prisma.starterDocument.update({
           where: { id: document.id },
           data: { emailSentAt: new Date() },
+        })
+
+        await logDocumentEvent(document.id, 'EMAIL_SENT', {
+          actor: user.id,
+          metadata: { recipientEmail },
         })
       } catch (emailErr) {
         console.error('Failed to send signing email:', emailErr)

@@ -16,6 +16,7 @@ export async function GET(
         status: true,
         teamsDriveId: true,
         teamsItemId: true,
+        signedTeamsItemId: true,
         fileName: true,
         mimeType: true,
       },
@@ -29,11 +30,15 @@ export async function GET(
       return new NextResponse('Document geannuleerd', { status: 410 })
     }
 
-    if (!isDocsGraphConfigured() || !document.teamsDriveId || !document.teamsItemId) {
+    const itemId = document.status === 'SIGNED' && document.signedTeamsItemId
+      ? document.signedTeamsItemId
+      : document.teamsItemId
+
+    if (!isDocsGraphConfigured() || !document.teamsDriveId || !itemId) {
       return new NextResponse('PDF niet beschikbaar — Teams niet geconfigureerd', { status: 404 })
     }
 
-    const fileBuffer = await downloadDocument(document.teamsDriveId, document.teamsItemId)
+    const fileBuffer = await downloadDocument(document.teamsDriveId, itemId)
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,

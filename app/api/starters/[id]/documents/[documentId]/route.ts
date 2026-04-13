@@ -29,9 +29,13 @@ export async function GET(
     }
 
     let previewUrl: string | null = null
-    if (document.teamsDriveId && document.teamsItemId && isDocsGraphConfigured()) {
+    const previewItemId = document.status === 'SIGNED' && document.signedTeamsItemId
+      ? document.signedTeamsItemId
+      : document.teamsItemId
+
+    if (document.teamsDriveId && previewItemId && isDocsGraphConfigured()) {
       try {
-        previewUrl = await getPreviewUrl(document.teamsDriveId, document.teamsItemId)
+        previewUrl = await getPreviewUrl(document.teamsDriveId, previewItemId)
       } catch (err) {
         console.error('Error getting preview URL:', err)
       }

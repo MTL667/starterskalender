@@ -620,10 +620,28 @@ model StarterDocument {
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
 
+  auditEvents           DocumentAuditEvent[]
+
   @@index([starterId, status])
   @@index([starterId, sortOrder])
   @@index([status])
   @@index([taskId])
+}
+
+// Document audit trail
+model DocumentAuditEvent {
+  id            String          @id @default(cuid())
+  documentId    String
+  document      StarterDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  event         String          // CREATED, EMAIL_SENT, EMAIL_OPENED, EMAIL_CLICKED, EMAIL_DELIVERED, EMAIL_BOUNCED, VIEWED, SIGNED, DOWNLOADED
+  actor         String?         // User ID, email, or "system"
+  ip            String?
+  userAgent     String?
+  metadata      Json?           // Extra data per event type
+  createdAt     DateTime        @default(now())
+
+  @@index([documentId, createdAt])
+  @@index([event])
 }
 
 // Email Signature Templates per Entiteit

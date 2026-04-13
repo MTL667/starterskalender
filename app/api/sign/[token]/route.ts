@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getPreviewUrl, isDocsGraphConfigured, uploadDocument, downloadDocument } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
+import { sendSignedConfirmationEmail } from '@/lib/email-signing'
+import { logDocumentEvent } from '@/lib/document-audit'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
 
 export async function GET(
@@ -42,6 +44,13 @@ export async function GET(
         // Preview not available
       }
     }
+
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip') || undefined
+    await logDocumentEvent(document.id, 'VIEWED', {
+      ip,
+      userAgent: request.headers.get('user-agent') || undefined,
+    })
 
     return NextResponse.json({
       id: document.id,
@@ -93,6 +102,7 @@ export async function POST(
             firstName: true,
             lastName: true,
             startDate: true,
+            language: true,
             entity: { select: { name: true } },
           },
         },
@@ -229,6 +239,13 @@ export async function POST(
       updateData.fileName = signedFileName
     }
 
+    await logDocumentEvent(document.id, 'SIGNED', {
+      actor: signerName.trim(),
+      ip,
+      userAgent: request.headers.get('user-agent') || undefined,
+      metadata: { signerName: signerName.trim() },
+    })
+
     const updated = await prisma.starterDocument.update({
       where: { id: document.id },
       data: updateData,
@@ -255,6 +272,23 @@ export async function POST(
           action: 'document_signed_external',
         },
       })
+    }
+
+    if (document.recipientEmail && document.starter) {
+      const baseUrl = process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'
+      try {
+        await sendSignedConfirmationEmail({
+          recipientEmail: document.recipientEmail,
+          recipientName: `${document.starter.firstName} ${document.starter.lastName}`,
+          documentTitle: document.title,
+          entityName: document.starter.entity?.name || 'Onbekend',
+          signedAt: now,
+          language: document.starter.language,
+          downloadUrl: `${baseUrl}/sign/${token}`,
+        })
+      } catch (emailErr) {
+        console.error('Failed to send signed confirmation email:', emailErr)
+      }
     }
 
     return NextResponse.json({

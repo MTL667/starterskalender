@@ -16,14 +16,18 @@ export async function GET(
 
     const document = await prisma.starterDocument.findFirst({
       where: { id: documentId, starterId: id },
-      select: { teamsDriveId: true, teamsItemId: true, fileName: true, mimeType: true },
+      select: { teamsDriveId: true, teamsItemId: true, signedTeamsItemId: true, status: true, fileName: true, mimeType: true },
     })
 
-    if (!document?.teamsDriveId || !document?.teamsItemId || !isDocsGraphConfigured()) {
+    const itemId = document?.status === 'SIGNED' && document?.signedTeamsItemId
+      ? document.signedTeamsItemId
+      : document?.teamsItemId
+
+    if (!document?.teamsDriveId || !itemId || !isDocsGraphConfigured()) {
       return new NextResponse('PDF niet beschikbaar', { status: 404 })
     }
 
-    const fileBuffer = await downloadDocument(document.teamsDriveId, document.teamsItemId)
+    const fileBuffer = await downloadDocument(document.teamsDriveId, itemId)
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,

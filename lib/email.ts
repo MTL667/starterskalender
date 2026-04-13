@@ -138,10 +138,11 @@ export interface SendEmailInput {
   subject: string
   html: string
   replyTo?: string
+  customArgs?: Record<string, string>
 }
 
 export async function sendEmail(input: SendEmailInput): Promise<void> {
-  const { to, subject, html, replyTo } = input
+  const { to, subject, html, replyTo, customArgs } = input
 
   const recipients = Array.isArray(to) ? to : [to]
 
@@ -150,12 +151,16 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     return
   }
 
-  const msg = {
+  const msg: any = {
     to: recipients,
     from: process.env.SENDGRID_FROM_EMAIL || process.env.MAIL_FROM || 'noreply@example.com',
     replyTo: replyTo || process.env.MAIL_REPLY_TO,
     subject,
     html,
+  }
+
+  if (customArgs) {
+    msg.customArgs = customArgs
   }
 
   try {

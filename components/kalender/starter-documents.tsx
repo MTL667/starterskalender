@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { FileText, Upload, Trash2, CheckCircle2, Clock, Lock, ExternalLink, Loader2, Eye, Mail, Send, PenLine } from 'lucide-react'
+import { FileText, Upload, Trash2, CheckCircle2, Clock, Lock, ExternalLink, Loader2, Eye, Mail, Send, PenLine, History } from 'lucide-react'
 import { PdfFieldPlacer, type SignatureFieldDef } from '@/components/documents/pdf-field-placer'
 
 interface StarterDocument {
@@ -55,6 +55,9 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
   const [previewDoc, setPreviewDoc] = useState<StarterDocument | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [fieldPlacerDoc, setFieldPlacerDoc] = useState<StarterDocument | null>(null)
+  const [auditDoc, setAuditDoc] = useState<StarterDocument | null>(null)
+  const [auditData, setAuditData] = useState<{ document: any; auditEvents: any[] } | null>(null)
+  const [auditLoading, setAuditLoading] = useState(false)
   const [signing, setSigning] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -159,6 +162,22 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
       }
     } catch (err) {
       console.error('Error deleting document:', err)
+    }
+  }
+
+  const handleAudit = async (doc: StarterDocument) => {
+    setAuditDoc(doc)
+    setAuditData(null)
+    setAuditLoading(true)
+    try {
+      const res = await fetch(`/api/starters/${starterId}/documents/${doc.id}/audit`)
+      if (res.ok) {
+        setAuditData(await res.json())
+      }
+    } catch (err) {
+      console.error('Error fetching audit trail:', err)
+    } finally {
+      setAuditLoading(false)
     }
   }
 
@@ -350,6 +369,16 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                     <Eye className="h-3.5 w-3.5" />
                   </Button>
                 )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={() => handleAudit(doc)}
+                  title="Audit trail"
+                >
+                  <History className="h-3.5 w-3.5" />
+                </Button>
                 {doc.status === 'PENDING' && !isLocked(doc) && doc.signingMethod === 'SES' && (
                   <Button
                     type="button"
@@ -525,6 +554,102 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Audit Trail Dialog */}
+      <Dialog open={!!auditDoc} onOpenChange={(open) => { if (!open) setAuditDoc(null) }}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{auditDoc?.title} — Audit Trail</DialogTitle>
+            <DialogDescription>
+              {auditDoc?.fileName} • Status: {auditDoc?.status}
+            </DialogDescription>
+          </DialogHeader>
+
+          {auditLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin mr-2" />
+              Laden...
+            </div>
+          ) : auditData ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Aangemaakt</p>
+                  <p className="font-medium">{new Date(auditData.document.createdAt).toLocaleString('nl-BE')}</p>
+                </div>
+                {auditData.document.emailSentAt && (
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground">E-mail verstuurd</p>
+                    <p className="font-medium">{new Date(auditData.document.emailSentAt).toLocaleString('nl-BE')}</p>
+                  </div>
+                )}
+                {auditData.document.recipientEmail && (
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground">Ontvanger</p>
+                    <p className="font-medium">{auditData.document.recipientEmail}</p>
+                  </div>
+                )}
+                {auditData.document.signedAt && (
+                  <>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground">Ondertekend op</p>
+                      <p className="font-medium">{new Date(auditData.document.signedAt).toLocaleString('nl-BE')}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground">Ondertekend door</p>
+                      <p className="font-medium">{auditData.document.signedByName || '-'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-muted-foreground">IP-adres</p>
+                      <p className="font-mono text-xs">{auditData.document.signedByIp || '-'}</p>
+                    </div>
+                  </>
+                )}
+                {auditData.document.dueDate && (
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground">Deadline</p>
+                    <p className="font-medium">{new Date(auditData.document.dueDate).toLocaleDateString('nl-BE')}</p>
+                  </div>
+                )}
+              </div>
+
+              <hr />
+
+              <div>
+                <h4 className="text-sm font-semibold mb-3">Gebeurtenissen</h4>
+                {auditData.auditEvents.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nog geen events geregistreerd.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {auditData.auditEvents.map((event: any) => (
+                      <div key={event.id} className="flex items-start gap-3 text-sm border-l-2 border-muted pl-3 py-1">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {event.event}
+                            </Badge>
+                            <span className="text-muted-foreground text-xs">
+                              {new Date(event.createdAt).toLocaleString('nl-BE')}
+                            </span>
+                          </div>
+                          {event.actor && (
+                            <p className="text-xs text-muted-foreground mt-0.5">Door: {event.actor}</p>
+                          )}
+                          {event.ip && (
+                            <p className="text-xs text-muted-foreground font-mono">IP: {event.ip}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Kon audit data niet laden.</p>
+          )}
         </DialogContent>
       </Dialog>
 
