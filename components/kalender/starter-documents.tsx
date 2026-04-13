@@ -60,6 +60,8 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
   const [auditLoading, setAuditLoading] = useState(false)
   const [signing, setSigning] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [deleteConfirmDoc, setDeleteConfirmDoc] = useState<StarterDocument | null>(null)
+  const [deleting, setDeleting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [uploadForm, setUploadForm] = useState({
@@ -150,18 +152,23 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
     }
   }
 
-  const handleDelete = async (doc: StarterDocument) => {
+  const handleDeleteConfirmed = async () => {
+    if (!deleteConfirmDoc) return
+    setDeleting(true)
     try {
-      const res = await fetch(`/api/starters/${starterId}/documents/${doc.id}`, {
+      const res = await fetch(`/api/starters/${starterId}/documents/${deleteConfirmDoc.id}`, {
         method: 'DELETE',
       })
 
       if (res.ok) {
+        setDeleteConfirmDoc(null)
         await fetchDocuments()
         onDocumentChange?.()
       }
     } catch (err) {
       console.error('Error deleting document:', err)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -408,13 +415,13 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                     {t('signItsme')}
                   </Button>
                 )}
-                {canEdit && doc.status !== 'SIGNED' && (
+                {canEdit && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                    onClick={() => handleDelete(doc)}
+                    onClick={() => setDeleteConfirmDoc(doc)}
                     title={t('delete')}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -554,6 +561,40 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmDoc} onOpenChange={(open) => { if (!open) setDeleteConfirmDoc(null) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Document verwijderen</DialogTitle>
+            <DialogDescription>
+              Weet u zeker dat u &ldquo;{deleteConfirmDoc?.title}&rdquo; wilt verwijderen?
+              {deleteConfirmDoc?.status === 'SIGNED' && (
+                <span className="block mt-2 font-semibold text-destructive">
+                  Let op: dit document is reeds ondertekend. Het wordt ook verwijderd uit Teams/SharePoint.
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setDeleteConfirmDoc(null)} disabled={deleting}>
+              Annuleren
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirmed}
+              disabled={deleting}
+            >
+              {deleting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Verwijderen
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

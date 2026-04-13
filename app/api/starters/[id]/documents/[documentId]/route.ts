@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
-import { canMutateStarter } from '@/lib/rbac'
+import { canMutateStarter, isHRAdmin } from '@/lib/rbac'
 import { deleteDocument as deleteTeamsDoc, getPreviewUrl, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
+import { logDocumentEvent } from '@/lib/document-audit'
 
 export async function GET(
   request: NextRequest,
@@ -99,8 +100,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!canMutateStarter(user)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!isHRAdmin(user)) {
+      return NextResponse.json({ error: 'Alleen HR Admin kan documenten verwijderen' }, { status: 403 })
     }
 
     const document = await prisma.starterDocument.findFirst({
@@ -111,15 +112,27 @@ export async function DELETE(
       return NextResponse.json({ error: 'Document not found' }, { status: 404 })
     }
 
-    if (document.status === 'SIGNED') {
-      return NextResponse.json({ error: 'Cannot delete a signed document' }, { status: 400 })
-    }
+    await logDocumentEvent(document.id, 'DELETED', {
+      actor: user.id,
+      metadata: {
+        title: document.title,
+        fileName: document.fileName,
+        status: document.status,
+        signedByName: document.signedByName,
+        signedAt: document.signedAt?.toISOString(),
+      },
+    })
 
-    if (document.teamsDriveId && document.teamsItemId && isDocsGraphConfigured()) {
-      try {
-        await deleteTeamsDoc(document.teamsDriveId, document.teamsItemId)
-      } catch (err) {
-        console.error('Error deleting from Teams:', err)
+    if (document.teamsDriveId && isDocsGraphConfigured()) {
+      if (document.teamsItemId) {
+        try { await deleteTeamsDoc(document.teamsDriveId, document.teamsItemId) } catch (err) {
+          console.error('Error deleting original from Teams:', err)
+        }
+      }
+      if (document.signedTeamsItemId) {
+        try { await deleteTeamsDoc(document.teamsDriveId, document.signedTeamsItemId) } catch (err) {
+          console.error('Error deleting signed doc from Teams:', err)
+        }
       }
     }
 

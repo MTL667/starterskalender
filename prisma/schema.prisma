@@ -630,15 +630,15 @@ model StarterDocument {
 
 // Document audit trail
 model DocumentAuditEvent {
-  id            String          @id @default(cuid())
-  documentId    String
-  document      StarterDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  event         String          // CREATED, EMAIL_SENT, EMAIL_OPENED, EMAIL_CLICKED, EMAIL_DELIVERED, EMAIL_BOUNCED, VIEWED, SIGNED, DOWNLOADED
-  actor         String?         // User ID, email, or "system"
+  id            String           @id @default(cuid())
+  documentId    String?
+  document      StarterDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  event         String           // CREATED, EMAIL_SENT, EMAIL_OPENED, EMAIL_CLICKED, EMAIL_DELIVERED, EMAIL_BOUNCED, VIEWED, SIGNED, DOWNLOADED, DELETED
+  actor         String?          // User ID, email, or "system"
   ip            String?
   userAgent     String?
-  metadata      Json?           // Extra data per event type
-  createdAt     DateTime        @default(now())
+  metadata      Json?            // Extra data per event type
+  createdAt     DateTime         @default(now())
 
   @@index([documentId, createdAt])
   @@index([event])

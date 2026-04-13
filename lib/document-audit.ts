@@ -11,6 +11,7 @@ type AuditEvent =
   | 'SIGNED'
   | 'DOWNLOADED'
   | 'FIELDS_PLACED'
+  | 'DELETED'
 
 export async function logDocumentEvent(
   documentId: string,
