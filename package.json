@@ -16,9 +16,13 @@
     "db:seed-templates": "node prisma/seed-email-templates.js",
     "db:seed-tasks": "node prisma/seed-task-templates.js",
     "db:fix-templates": "node prisma/fix-template-types.js",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
     "email:cron": "tsx lib/cron/email-reminder.ts"
   },
   "dependencies": {
