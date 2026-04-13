@@ -38,7 +38,6 @@ interface StarterDocument {
   emailSentAt: string | null
   signingToken: string | null
   signatureFields: any[] | null
-  localFilePath: string | null
 }
 
 interface Props {
@@ -324,7 +323,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
               </div>
 
               <div className="flex items-center gap-1 shrink-0 ml-2">
-                {canEdit && doc.status === 'PENDING' && doc.localFilePath && (
+                {canEdit && doc.status === 'PENDING' && doc.teamsItemId && (
                   <Button
                     type="button"
                     variant="outline"

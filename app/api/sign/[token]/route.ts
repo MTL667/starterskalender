@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getPreviewUrl, isDocsGraphConfigured, uploadDocument } from '@/lib/graph-teams'
+import { getPreviewUrl, isDocsGraphConfigured, uploadDocument, downloadDocument } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
-import { readFile, writeFile, mkdir } from 'fs/promises'
-import { join, dirname, basename } from 'path'
-import { existsSync } from 'fs'
 
 export async function GET(
   request: NextRequest,
@@ -138,103 +135,83 @@ export async function POST(
     const { signatures } = body
     const fields = (document.signatureFields as any[]) || []
 
-    // Embed signatures into PDF if fields exist
-    let signedLocalPath: string | null = null
-    if (document.localFilePath && fields.length > 0 && signatures) {
+    let signedFileName: string | null = null
+
+    if (document.teamsDriveId && document.teamsItemId && fields.length > 0 && signatures && isDocsGraphConfigured()) {
       try {
-        const originalPath = join(process.cwd(), 'data', document.localFilePath)
-        if (existsSync(originalPath)) {
-          const pdfBytes = await readFile(originalPath)
-          const pdfDoc = await PDFDocument.load(pdfBytes)
-          const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica)
-          const pages = pdfDoc.getPages()
+        const pdfBytes = await downloadDocument(document.teamsDriveId, document.teamsItemId)
+        const pdfDoc = await PDFDocument.load(pdfBytes)
+        const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica)
+        const pages = pdfDoc.getPages()
 
-          const dateStr = now.toLocaleDateString('nl-BE', {
-            day: '2-digit', month: '2-digit', year: 'numeric',
+        const dateStr = now.toLocaleDateString('nl-BE', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+        })
+        const timeStr = now.toLocaleTimeString('nl-BE', {
+          hour: '2-digit', minute: '2-digit',
+        })
+
+        for (const field of fields) {
+          const sigDataUrl = signatures[field.id]
+          if (!sigDataUrl) continue
+
+          const page = pages[field.page - 1]
+          if (!page) continue
+
+          const { height: pageHeight } = page.getSize()
+
+          const base64Data = sigDataUrl.split(',')[1]
+          const imgBytes = Buffer.from(base64Data, 'base64')
+          const isPng = sigDataUrl.startsWith('data:image/png')
+          const sigImage = isPng
+            ? await pdfDoc.embedPng(imgBytes)
+            : await pdfDoc.embedJpg(imgBytes)
+
+          const sigDims = sigImage.scale(1)
+          const fitWidth = field.width
+          const fitHeight = field.height - 14
+          const sigScale = Math.min(fitWidth / sigDims.width, fitHeight / sigDims.height)
+
+          const pdfY = pageHeight - field.y - field.height
+
+          page.drawImage(sigImage, {
+            x: field.x + (fitWidth - sigDims.width * sigScale) / 2,
+            y: pdfY + 14 + (fitHeight - sigDims.height * sigScale) / 2,
+            width: sigDims.width * sigScale,
+            height: sigDims.height * sigScale,
           })
-          const timeStr = now.toLocaleTimeString('nl-BE', {
-            hour: '2-digit', minute: '2-digit',
+
+          page.drawText(`${signerName.trim()} — ${dateStr} ${timeStr}`, {
+            x: field.x + 2,
+            y: pdfY + 2,
+            size: 7,
+            font: helvetica,
+            color: rgb(0.3, 0.3, 0.3),
           })
+        }
 
-          for (const field of fields) {
-            const sigDataUrl = signatures[field.id]
-            if (!sigDataUrl) continue
+        const signedPdfBytes = await pdfDoc.save()
+        const origName = (document.fileName || 'document').replace(/\.pdf$/i, '').replace(/-signed$/, '')
+        signedFileName = `${origName}-signed.pdf`
 
-            const page = pages[field.page - 1]
-            if (!page) continue
+        if (document.starter?.entity) {
+          const year = document.starter.startDate
+            ? new Date(document.starter.startDate).getFullYear()
+            : now.getFullYear()
 
-            const { height: pageHeight } = page.getSize()
-
-            // Embed signature image
-            const base64Data = sigDataUrl.split(',')[1]
-            const imgBytes = Buffer.from(base64Data, 'base64')
-            const isPng = sigDataUrl.startsWith('data:image/png')
-            const sigImage = isPng
-              ? await pdfDoc.embedPng(imgBytes)
-              : await pdfDoc.embedJpg(imgBytes)
-
-            const sigDims = sigImage.scale(1)
-            const fitWidth = field.width
-            const fitHeight = field.height - 14
-            const sigScale = Math.min(fitWidth / sigDims.width, fitHeight / sigDims.height)
-
-            const pdfY = pageHeight - field.y - field.height
-
-            page.drawImage(sigImage, {
-              x: field.x + (fitWidth - sigDims.width * sigScale) / 2,
-              y: pdfY + 14 + (fitHeight - sigDims.height * sigScale) / 2,
-              width: sigDims.width * sigScale,
-              height: sigDims.height * sigScale,
-            })
-
-            // Date + name below signature
-            page.drawText(`${signerName.trim()} — ${dateStr} ${timeStr}`, {
-              x: field.x + 2,
-              y: pdfY + 2,
-              size: 7,
-              font: helvetica,
-              color: rgb(0.3, 0.3, 0.3),
-            })
-          }
-
-          const signedPdfBytes = await pdfDoc.save()
-
-          // Save signed PDF locally
-          const dir = dirname(join(process.cwd(), 'data', document.localFilePath))
-          const origName = basename(document.localFilePath, '.pdf')
-            .replace(/-signed$/, '')
-          const signedFileName = `${origName}-signed.pdf`
-          signedLocalPath = document.localFilePath.replace(
-            basename(document.localFilePath),
-            signedFileName
+          const result = await uploadDocument(
+            document.starter.entity.name,
+            year,
+            document.starter.lastName,
+            document.starter.firstName,
+            signedFileName,
+            Buffer.from(signedPdfBytes)
           )
-          await mkdir(dir, { recursive: true })
-          await writeFile(join(process.cwd(), 'data', signedLocalPath), signedPdfBytes)
 
-          // Upload signed PDF to Teams
-          if (isDocsGraphConfigured() && document.starter?.entity) {
-            const year = document.starter.startDate
-              ? new Date(document.starter.startDate).getFullYear()
-              : now.getFullYear()
-
-            try {
-              const result = await uploadDocument(
-                document.starter.entity.name,
-                year,
-                document.starter.lastName,
-                document.starter.firstName,
-                signedFileName,
-                Buffer.from(signedPdfBytes)
-              )
-
-              await prisma.starterDocument.update({
-                where: { id: document.id },
-                data: { signedTeamsItemId: result.itemId },
-              })
-            } catch (teamsErr) {
-              console.error('Failed to upload signed PDF to Teams:', teamsErr)
-            }
-          }
+          await prisma.starterDocument.update({
+            where: { id: document.id },
+            data: { signedTeamsItemId: result.itemId },
+          })
         }
       } catch (embedErr) {
         console.error('Failed to embed signatures in PDF:', embedErr)
@@ -248,9 +225,7 @@ export async function POST(
       signedByName: signerName.trim(),
     }
 
-    if (signedLocalPath) {
-      const signedFileName = basename(signedLocalPath)
-      updateData.localFilePath = signedLocalPath
+    if (signedFileName) {
       updateData.fileName = signedFileName
     }
 

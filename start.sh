@@ -2,7 +2,7 @@
 
 # Start script voor Next.js + Cron jobs
 
-echo "🚀 Starting Starterskalender..."
+echo "🚀 Starting Airport..."
 
 # Fix existing NULL contractSignedOn values before schema sync
 echo "🔧 Migrating existing starters with NULL contractSignedOn..."

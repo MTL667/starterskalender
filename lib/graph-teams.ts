@@ -1,5 +1,5 @@
 import { ConfidentialClientApplication } from "@azure/msal-node";
-import { Client } from "@microsoft/microsoft-graph-client";
+import { Client, ResponseType } from "@microsoft/microsoft-graph-client";
 
 const authority = `https://login.microsoftonline.com/${process.env.AZURE_DOCS_TENANT_ID}`;
 
@@ -99,9 +99,14 @@ export async function uploadDocument(
 export async function downloadDocument(
   driveId: string,
   itemId: string
-): Promise<ReadableStream> {
+): Promise<Buffer> {
   const client = await graphDocs();
-  return client.api(`/drives/${driveId}/items/${itemId}/content`).getStream();
+  const response = await client
+    .api(`/drives/${driveId}/items/${itemId}/content`)
+    .responseType(ResponseType.ARRAYBUFFER)
+    .get();
+
+  return Buffer.from(response);
 }
 
 export async function getPreviewUrl(

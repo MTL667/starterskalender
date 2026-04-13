@@ -583,7 +583,6 @@ model StarterDocument {
   teamsItemId           String?         // SharePoint item ID (origineel document)
   teamsPath             String?         // Pad in Teams mappenstructuur
   signedTeamsItemId     String?         // SharePoint item ID (getekend document)
-  localFilePath         String?         // Lokaal pad naar PDF bestand
   signatureFields       Json?           // [{page, x, y, width, height, label}] — posities van handtekeningvelden
 
   // Signing token voor publieke link

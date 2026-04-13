@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
-import { readFile } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { downloadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 
 export async function GET(
   request: NextRequest,
@@ -18,27 +16,21 @@ export async function GET(
 
     const document = await prisma.starterDocument.findFirst({
       where: { id: documentId, starterId: id },
-      select: { localFilePath: true, fileName: true, mimeType: true },
+      select: { teamsDriveId: true, teamsItemId: true, fileName: true, mimeType: true },
     })
 
-    if (!document?.localFilePath) {
+    if (!document?.teamsDriveId || !document?.teamsItemId || !isDocsGraphConfigured()) {
       return new NextResponse('PDF niet beschikbaar', { status: 404 })
     }
 
-    const fullPath = join(process.cwd(), 'data', document.localFilePath)
-
-    if (!existsSync(fullPath)) {
-      return new NextResponse('Bestand niet gevonden', { status: 404 })
-    }
-
-    const fileBuffer = await readFile(fullPath)
+    const fileBuffer = await downloadDocument(document.teamsDriveId, document.teamsItemId)
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': document.mimeType || 'application/pdf',
         'Content-Disposition': `inline; filename="${document.fileName || 'document.pdf'}"`,
-        'Cache-Control': 'private, max-age=3600',
+        'Cache-Control': 'private, max-age=300',
       },
     })
   } catch (error) {

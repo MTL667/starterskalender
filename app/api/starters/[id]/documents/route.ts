@@ -5,8 +5,6 @@ import { canMutateStarter } from '@/lib/rbac'
 import { uploadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
 import { sendSigningEmail } from '@/lib/email-signing'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 
 export async function GET(
   request: NextRequest,
@@ -90,35 +88,25 @@ export async function POST(
     const nextSortOrder = (starter.documents[0]?.sortOrder ?? -1) + 1
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Lokaal opslaan (altijd, als fallback en voor signing page)
-    const docsDir = join(process.cwd(), 'data', 'documents', id)
-    await mkdir(docsDir, { recursive: true })
-    const localFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-    const localPath = join(docsDir, localFileName)
-    await writeFile(localPath, buffer)
-
-    let teamsDriveId: string | null = null
-    let teamsItemId: string | null = null
-    let teamsPath: string | null = null
-
-    if (isDocsGraphConfigured() && starter.entity) {
-      const year = starter.startDate
-        ? new Date(starter.startDate).getFullYear()
-        : new Date().getFullYear()
-
-      const result = await uploadDocument(
-        starter.entity.name,
-        year,
-        starter.lastName,
-        starter.firstName,
-        file.name,
-        buffer
+    if (!isDocsGraphConfigured() || !starter.entity) {
+      return NextResponse.json(
+        { error: 'Teams/SharePoint is niet geconfigureerd. Configureer AZURE_DOCS_* omgevingsvariabelen.' },
+        { status: 400 }
       )
-
-      teamsDriveId = result.driveId
-      teamsItemId = result.itemId
-      teamsPath = result.path
     }
+
+    const year = starter.startDate
+      ? new Date(starter.startDate).getFullYear()
+      : new Date().getFullYear()
+
+    const result = await uploadDocument(
+      starter.entity.name,
+      year,
+      starter.lastName,
+      starter.firstName,
+      file.name,
+      buffer
+    )
 
     const document = await prisma.starterDocument.create({
       data: {
@@ -131,10 +119,9 @@ export async function POST(
         sortOrder: nextSortOrder,
         prerequisiteId: prerequisiteId || null,
         dueDate: dueDateStr ? new Date(dueDateStr) : null,
-        teamsDriveId,
-        teamsItemId,
-        teamsPath,
-        localFilePath: `documents/${id}/${localFileName}`,
+        teamsDriveId: result.driveId,
+        teamsItemId: result.itemId,
+        teamsPath: result.path,
         recipientEmail: recipientEmail || null,
         uploadedById: user.id,
       },

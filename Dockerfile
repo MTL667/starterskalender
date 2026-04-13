@@ -47,10 +47,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy public assets to root (where standalone expects them)
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
-# Maak uploads + documents folder aan met correcte permissions  
-RUN mkdir -p /app/public/uploads /app/data/documents && \
-    chown -R nextjs:nodejs /app/public/uploads /app/data && \
-    chmod 755 /app/public/uploads /app/data/documents
+# Maak uploads folder aan met correcte permissions  
+RUN mkdir -p /app/public/uploads && \
+    chown -R nextjs:nodejs /app/public/uploads && \
+    chmod 755 /app/public/uploads
 
 # Kopieer package.json voor dependencies info
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
