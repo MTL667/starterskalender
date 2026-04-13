@@ -62,6 +62,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
   const [uploading, setUploading] = useState(false)
   const [deleteConfirmDoc, setDeleteConfirmDoc] = useState<StarterDocument | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [uploadForm, setUploadForm] = useState({
@@ -149,6 +150,23 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
       console.error('Error signing document:', err)
     } finally {
       setSigning(null)
+    }
+  }
+
+  const handleSendEmail = async (doc: StarterDocument) => {
+    setSendingEmail(doc.id)
+    try {
+      const res = await fetch(`/api/starters/${starterId}/documents/${doc.id}/send-email`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        await fetchDocuments()
+        onDocumentChange?.()
+      }
+    } catch (err) {
+      console.error('Error sending email:', err)
+    } finally {
+      setSendingEmail(null)
     }
   }
 
@@ -339,8 +357,8 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                         </>
                       ) : (
                         <>
-                          <Mail className="h-3 w-3" />
-                          {doc.recipientEmail}
+                          <Clock className="h-3 w-3 text-amber-500" />
+                          <span className="text-amber-600">{doc.recipientEmail} — mail nog niet verstuurd</span>
                         </>
                       )}
                     </p>
@@ -362,6 +380,26 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                     {(doc.signatureFields && (doc.signatureFields as any[]).length > 0)
                       ? `${(doc.signatureFields as any[]).length} veld(en)`
                       : t('placeFields')}
+                  </Button>
+                )}
+                {canEdit && doc.status === 'PENDING' && doc.recipientEmail && !doc.emailSentAt && (
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => handleSendEmail(doc)}
+                    disabled={sendingEmail === doc.id}
+                    title={!(doc.signatureFields && (doc.signatureFields as any[]).length > 0)
+                      ? 'Plaats eerst handtekeningvelden'
+                      : 'Signing link versturen'}
+                  >
+                    {sendingEmail === doc.id ? (
+                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                    ) : (
+                      <Send className="h-3 w-3 mr-1" />
+                    )}
+                    Mail versturen
                   </Button>
                 )}
                 {doc.teamsItemId && (

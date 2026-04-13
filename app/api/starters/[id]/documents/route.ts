@@ -4,7 +4,6 @@ import { getCurrentUser } from '@/lib/auth-utils'
 import { canMutateStarter } from '@/lib/rbac'
 import { uploadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
-import { sendSigningEmail } from '@/lib/email-signing'
 import { logDocumentEvent } from '@/lib/document-audit'
 
 export async function GET(
@@ -153,37 +152,6 @@ export async function POST(
       entityId: starter.entityId || '*',
       payload: { starterId: id, action: 'document_added' },
     })
-
-    if (recipientEmail && updated.signingToken) {
-      const baseUrl = process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'
-      const signingUrl = `${baseUrl}/sign/${updated.signingToken}`
-
-      try {
-        await sendSigningEmail({
-          recipientEmail,
-          recipientName: `${starter.firstName} ${starter.lastName}`,
-          signingUrl,
-          documents: [{ title, signingMethod }],
-          entityName: starter.entity?.name || 'Onbekend',
-          senderName: user.name || user.email,
-          dueDate: dueDateStr ? new Date(dueDateStr) : null,
-          language: starter.language,
-          documentId: document.id,
-        })
-
-        await prisma.starterDocument.update({
-          where: { id: document.id },
-          data: { emailSentAt: new Date() },
-        })
-
-        await logDocumentEvent(document.id, 'EMAIL_SENT', {
-          actor: user.id,
-          metadata: { recipientEmail },
-        })
-      } catch (emailErr) {
-        console.error('Failed to send signing email:', emailErr)
-      }
-    }
 
     return NextResponse.json(updated, { status: 201 })
   } catch (error) {
