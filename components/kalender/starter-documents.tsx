@@ -58,7 +58,6 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
   const [auditDoc, setAuditDoc] = useState<StarterDocument | null>(null)
   const [auditData, setAuditData] = useState<{ document: any; auditEvents: any[] } | null>(null)
   const [auditLoading, setAuditLoading] = useState(false)
-  const [signing, setSigning] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [deleteConfirmDoc, setDeleteConfirmDoc] = useState<StarterDocument | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -133,25 +132,6 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
     }
   }
 
-  const handleSign = async (doc: StarterDocument) => {
-    if (doc.prerequisite && doc.prerequisite.status !== 'SIGNED') return
-
-    setSigning(doc.id)
-    try {
-      const res = await fetch(`/api/starters/${starterId}/documents/${doc.id}/sign`, {
-        method: 'POST',
-      })
-
-      if (res.ok) {
-        await fetchDocuments()
-        onDocumentChange?.()
-      }
-    } catch (err) {
-      console.error('Error signing document:', err)
-    } finally {
-      setSigning(null)
-    }
-  }
 
   const handleSendEmail = async (doc: StarterDocument) => {
     setSendingEmail(doc.id)
@@ -424,35 +404,6 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                 >
                   <History className="h-3.5 w-3.5" />
                 </Button>
-                {doc.status === 'PENDING' && !isLocked(doc) && doc.signingMethod === 'SES' && (
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => handleSign(doc)}
-                    disabled={signing === doc.id}
-                  >
-                    {signing === doc.id ? (
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                    )}
-                    {t('sign')}
-                  </Button>
-                )}
-                {doc.status === 'PENDING' && doc.signingMethod === 'QES' && !isLocked(doc) && (
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    className="h-7 text-xs bg-[#FF4612] hover:bg-[#E63E10]"
-                    disabled
-                    title={t('itsmeComingSoon')}
-                  >
-                    {t('signItsme')}
-                  </Button>
-                )}
                 {canEdit && (
                   <Button
                     type="button"
