@@ -39,12 +39,14 @@ export async function GET(
     }
 
     const fileBuffer = await downloadDocument(document.teamsDriveId, itemId)
+    const wantsDownload = request.nextUrl.searchParams.get('download') === '1'
+    const disposition = wantsDownload ? 'attachment' : 'inline'
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': document.mimeType || 'application/pdf',
-        'Content-Disposition': `inline; filename="${document.fileName || 'document.pdf'}"`,
+        'Content-Disposition': `${disposition}; filename="${document.fileName || 'document.pdf'}"`,
         'Cache-Control': 'private, max-age=300',
       },
     })

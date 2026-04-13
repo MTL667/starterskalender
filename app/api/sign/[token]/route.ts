@@ -284,7 +284,7 @@ export async function POST(
           entityName: document.starter.entity?.name || 'Onbekend',
           signedAt: now,
           language: document.starter.language,
-          downloadUrl: `${baseUrl}/sign/${token}`,
+          downloadUrl: `${baseUrl}/api/sign/${token}/pdf?download=1`,
         })
       } catch (emailErr) {
         console.error('Failed to send signed confirmation email:', emailErr)

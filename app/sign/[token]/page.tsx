@@ -228,8 +228,17 @@ export default function SigningPage() {
                 })}
               </p>
             )}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg text-left text-sm text-gray-500">
-              <p>U kunt dit venster nu sluiten. Uw werkgever ontvangt automatisch een bevestiging.</p>
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <a
+                href={`/api/sign/${token}/pdf?download=1`}
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+              >
+                <FileText className="h-5 w-5" />
+                Ondertekend document downloaden
+              </a>
+              <p className="text-sm text-gray-400">
+                U kunt dit venster nu sluiten. Uw werkgever ontvangt automatisch een bevestiging.
+              </p>
             </div>
           </div>
         )}
