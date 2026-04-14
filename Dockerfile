@@ -65,9 +65,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 # Kopieer migrations folder voor database fixes
 COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
 
-# Installeer cron jobs (als root)
-COPY crontab /etc/crontabs/root
-RUN chmod 0644 /etc/crontabs/root
+# Crontab wordt dynamisch gegenereerd in start.sh (met runtime env vars)
 
 # Kopieer start script
 COPY start.sh /app/start.sh

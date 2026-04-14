@@ -1,22 +1,14 @@
-# Starterskalender - Email Notification Cron Jobs
-# All times are in Europe/Brussels timezone (configured via TZ env var)
+# Airport - Email Notification Cron Jobs (TEMPLATE ONLY)
+#
+# NOTE: This file is NOT used at runtime.
+# The actual crontab is generated dynamically in start.sh
+# with the real CRON_SECRET environment variable injected.
+#
+# Schedule overview:
+#   0 8 * * *         Weekly reminder (daily at 08:00)
+#   0 9 1 * *         Monthly summary (1st of month at 09:00)
+#   0 10 1 1,4,7,10 * Quarterly summary (1st of quarter at 10:00)
+#   0 11 1 1 *        Yearly summary (Jan 1st at 11:00)
+#
+# All times follow the TZ environment variable (default: Europe/Brussels)
 # Requires CRON_SECRET environment variable for authentication
-
-# 1. Wekelijkse reminder - elke dag om 08:00
-# Verstuurt reminders voor starters die over 7 dagen beginnen
-0 8 * * * curl -f -H "Authorization: Bearer ${CRON_SECRET}" http://localhost:3000/api/cron/send-weekly-reminders > /proc/1/fd/1 2>&1
-
-# 2. Maandoverzicht - 1e van elke maand om 09:00
-# Overzicht van alle starters van vorige maand
-0 9 1 * * curl -f -H "Authorization: Bearer ${CRON_SECRET}" http://localhost:3000/api/cron/send-monthly-summary > /proc/1/fd/1 2>&1
-
-# 3. Kwartaaloverzicht - 1e van kwartaal om 10:00
-# Overzicht van vorig kwartaal (jan/apr/jul/okt)
-0 10 1 1,4,7,10 * curl -f -H "Authorization: Bearer ${CRON_SECRET}" http://localhost:3000/api/cron/send-quarterly-summary > /proc/1/fd/1 2>&1
-
-# 4. Jaaroverzicht - 1 januari om 11:00
-# Volledig overzicht van vorig jaar
-0 11 1 1 * curl -f -H "Authorization: Bearer ${CRON_SECRET}" http://localhost:3000/api/cron/send-yearly-summary > /proc/1/fd/1 2>&1
-
-# Empty line required at end of crontab
-
