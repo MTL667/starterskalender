@@ -87,6 +87,14 @@ enum DocumentStatus {
   CANCELLED          // Geannuleerd
 }
 
+enum MaterialStatus {
+  PENDING            // Nieuw — actie nodig
+  IN_STOCK           // Op voorraad — klaar om te reserveren
+  ORDERED            // Besteld bij leverancier
+  RECEIVED           // Ontvangen — klaar om te reserveren
+  RESERVED           // Gereserveerd voor de starter (eindstatus)
+}
+
 model User {
   id                      String                   @id @default(cuid())
   email                   String                   @unique
@@ -97,6 +105,7 @@ model User {
   status                  UserStatus               @default(INVITED)
   
   locale                  String                   @default("nl") // UI language: "nl" or "fr"
+  permissions             String[]                 @default([])   // Extra permissions: MATERIAL_MANAGER, etc.
   
   // Azure AD / Entra ID fields
   tenantId                String?                  // Azure AD tenant ID (tid claim)
@@ -292,22 +301,28 @@ model JobRoleMaterial {
 }
 
 model StarterMaterial {
-  id          String    @id @default(cuid())
-  starterId   String
-  starter     Starter   @relation(fields: [starterId], references: [id], onDelete: Cascade)
-  materialId  String
-  material    Material  @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  isProvided  Boolean   @default(false) // Of het materiaal is verstrekt
-  providedAt  DateTime? // Wanneer verstrekt
-  providedBy  String?   // User ID die het heeft verstrekt
-  notes       String?   @db.Text // Extra notities
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                    String          @id @default(cuid())
+  starterId             String
+  starter               Starter         @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  materialId            String
+  material              Material        @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  status                MaterialStatus  @default(PENDING)
+  isProvided            Boolean         @default(false) // Legacy — true wanneer status = RESERVED
+  providedAt            DateTime?
+  providedBy            String?
+  orderedAt             DateTime?
+  expectedDeliveryDate  DateTime?
+  receivedAt            DateTime?
+  reservedAt            DateTime?
+  reservedBy            String?
+  notes                 String?         @db.Text
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
   @@unique([starterId, materialId])
   @@index([starterId])
   @@index([materialId])
-  @@index([isProvided])
+  @@index([status])
 }
 
 // Notificatie voorkeuren per gebruiker per entiteit

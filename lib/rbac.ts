@@ -1,6 +1,8 @@
 import { Role, User, Membership } from '@prisma/client'
 import { prisma } from './prisma'
 
+export type Permission = 'MATERIAL_MANAGER'
+
 export type UserWithMemberships = User & {
   memberships: (Membership & { entity: { id: string; name: string } })[]
 }
@@ -10,6 +12,22 @@ export type UserWithMemberships = User & {
  */
 export function isHRAdmin(user: User): boolean {
   return user.role === 'HR_ADMIN'
+}
+
+/**
+ * Controleert of een gebruiker een specifieke permission heeft
+ * HR_ADMIN heeft impliciet alle permissions
+ */
+export function hasPermission(user: User, permission: Permission): boolean {
+  if (isHRAdmin(user)) return true
+  return (user.permissions ?? []).includes(permission)
+}
+
+/**
+ * Controleert of een gebruiker materiaalbeheerder is
+ */
+export function isMaterialManager(user: User): boolean {
+  return hasPermission(user, 'MATERIAL_MANAGER')
 }
 
 /**

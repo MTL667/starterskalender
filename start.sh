@@ -46,6 +46,9 @@ cat > /etc/crontabs/root << CRONTAB
 # Jaaroverzicht - 1 januari om 11:00
 0 11 1 1 * curl -sf $CRON_AUTH http://localhost:3000/api/cron/send-yearly-summary > /proc/1/fd/1 2>&1
 
+# Materialen leverdatum check - elke werkdag om 08:30
+30 8 * * 1-5 curl -sf $CRON_AUTH http://localhost:3000/api/cron/check-material-deliveries > /proc/1/fd/1 2>&1
+
 CRONTAB
 chmod 0644 /etc/crontabs/root
 

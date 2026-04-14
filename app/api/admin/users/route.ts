@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         email: true,
         name: true,
         role: true,
+        permissions: true,
         createdAt: true,
         lastLoginAt: true,
         memberships: {

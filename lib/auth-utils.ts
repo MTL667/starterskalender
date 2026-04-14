@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from './auth-options'
 import { prisma } from './prisma'
-import { UserWithMemberships } from './rbac'
+import { UserWithMemberships, isMaterialManager } from './rbac'
 
 /**
  * Haalt de huidige gebruiker op met memberships
@@ -108,6 +108,19 @@ export async function hasEntityAccess(
   }
   
   return true
+}
+
+/**
+ * Vereist dat de gebruiker MATERIAL_MANAGER permission heeft
+ */
+export async function requireMaterialManager(): Promise<UserWithMemberships> {
+  const user = await requireAuth()
+  
+  if (!isMaterialManager(user)) {
+    throw new Error('Forbidden: Material manager permission required')
+  }
+  
+  return user
 }
 
 /**

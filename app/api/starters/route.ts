@@ -224,6 +224,31 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Auto-generate materials from job role template
+    if (starter.roleTitle && starter.entityId) {
+      try {
+        const jobRole = await prisma.jobRole.findUnique({
+          where: { entityId_title: { entityId: starter.entityId, title: starter.roleTitle } },
+          include: { materials: { include: { material: true } } },
+        })
+        if (jobRole) {
+          const activeMaterials = jobRole.materials.filter(jrm => jrm.material.isActive)
+          for (const jrm of activeMaterials) {
+            await prisma.starterMaterial.upsert({
+              where: { starterId_materialId: { starterId: starter.id, materialId: jrm.materialId } },
+              update: {},
+              create: { starterId: starter.id, materialId: jrm.materialId, notes: jrm.notes },
+            })
+          }
+          if (activeMaterials.length > 0) {
+            console.log(`📦 Auto-assigned ${activeMaterials.length} materials to starter "${starter.firstName} ${starter.lastName}"`)
+          }
+        }
+      } catch (matError) {
+        console.error('Failed to auto-assign materials:', matError)
+      }
+    }
+
     if (starter.entityId) {
       eventBus.emit({ type: 'starter:created', entityId: starter.entityId, payload: { starterId: starter.id } })
     }

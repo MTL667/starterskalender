@@ -18,9 +18,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2 } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
+import { MaterialStatusStepper } from '@/components/materials/material-status-stepper'
+import { MaterialActionButtons } from '@/components/materials/material-action-buttons'
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
 import { HealthProgressBar } from '@/components/health-badge'
 import { useHealthScores } from '@/lib/use-health-scores'
@@ -602,25 +604,24 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
-  const handleMaterialToggle = async (materialId: string, isProvided: boolean) => {
+  const handleMaterialStatusChange = async (materialId: string, status: string, expectedDeliveryDate?: string) => {
     if (!starter) return
 
     try {
       const res = await fetch(`/api/starters/${starter.id}/materials/${materialId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isProvided }),
+        body: JSON.stringify({ status, expectedDeliveryDate }),
       })
 
       if (res.ok) {
-        // Reload materials
         const materialsRes = await fetch(`/api/starters/${starter.id}/materials`)
         if (materialsRes.ok) {
           setStarterMaterials(await materialsRes.json())
         }
       }
     } catch (error) {
-      console.error('Error toggling material:', error)
+      console.error('Error updating material status:', error)
       alert(t('errorMaterial'))
     }
   }
@@ -743,6 +744,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   }
 
   const isAdmin = (session?.user as any)?.role === 'HR_ADMIN' || (session?.user as any)?.role === 'ADMIN'
+  const userPermissions: string[] = (session?.user as any)?.permissions ?? []
+  const isMaterialMgr = isAdmin || userPermissions.includes('MATERIAL_MANAGER')
 
   const handleRegenerateTasks = async () => {
     if (!starter || regeneratingTasks) return
@@ -1432,52 +1435,48 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       {starterMaterials.map((sm: any) => (
                         <div
                           key={sm.id}
-                          className="flex items-start justify-between p-3 border rounded-lg"
+                          className="flex items-start justify-between p-3 border rounded-lg gap-3"
                         >
-                          <div className="flex items-start gap-3 flex-1">
-                            <Checkbox
-                              id={`material-${sm.materialId}`}
-                              checked={sm.isProvided}
-                              onCheckedChange={(checked) =>
-                                handleMaterialToggle(sm.materialId, checked as boolean)
-                              }
-                              disabled={!canEdit}
-                            />
-                            <div className="flex-1">
-                              <Label
-                                htmlFor={`material-${sm.materialId}`}
-                                className="cursor-pointer font-normal"
-                              >
-                                {sm.material.name}
-                                {sm.material.category && (
-                                  <Badge variant="outline" className="ml-2 text-xs">
-                                    {sm.material.category}
-                                  </Badge>
-                                )}
-                              </Label>
-                              {sm.notes && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {sm.notes}
-                                </p>
-                              )}
-                              {sm.isProvided && sm.providedAt && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {t('materialsProvided')}{' '}
-                                  {new Date(sm.providedAt).toLocaleDateString('nl-BE', {
-                                    dateStyle: 'short',
-                                  })}
-                                </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-sm font-medium">{sm.material.name}</span>
+                              {sm.material.category && (
+                                <Badge variant="outline" className="text-xs">
+                                  {sm.material.category}
+                                </Badge>
                               )}
                             </div>
+                            {sm.notes && (
+                              <p className="text-xs text-muted-foreground mt-1">{sm.notes}</p>
+                            )}
+                            <div className="mt-2">
+                              <MaterialStatusStepper
+                                status={sm.status}
+                                expectedDeliveryDate={sm.expectedDeliveryDate}
+                                orderedAt={sm.orderedAt}
+                                receivedAt={sm.receivedAt}
+                                reservedAt={sm.reservedAt}
+                                compact
+                              />
+                            </div>
+                            {sm.status === 'ORDERED' && sm.expectedDeliveryDate && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Verwacht: {new Date(sm.expectedDeliveryDate).toLocaleDateString('nl-BE', { dateStyle: 'short' })}
+                              </p>
+                            )}
                           </div>
+                          {canEdit && isMaterialMgr && (
+                            <MaterialActionButtons
+                              status={sm.status}
+                              materialId={sm.materialId}
+                              onStatusChange={(status, deliveryDate) =>
+                                handleMaterialStatusChange(sm.materialId, status, deliveryDate)
+                              }
+                            />
+                          )}
                         </div>
                       ))}
                     </div>
-                    {canEdit && (
-                      <p className="text-xs text-muted-foreground mt-3">
-                        {t('materialsCheckbox')}
-                      </p>
-                    )}
                   </>
                 )}
               </div>

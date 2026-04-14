@@ -332,6 +332,7 @@ export const authOptions: NextAuthOptions = {
           token.id = dbUser.id
           token.role = dbUser.role
           token.locale = dbUser.locale
+          token.permissions = dbUser.permissions ?? []
           token.tenantId = dbUser.tenantId ?? undefined
           token.oid = dbUser.oid ?? undefined
           token.memberships = dbUser.memberships.map(m => ({
@@ -358,6 +359,7 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           token.role = dbUser.role
           token.locale = dbUser.locale
+          token.permissions = dbUser.permissions ?? []
           token.memberships = dbUser.memberships.map(m => ({
             entityId: m.entityId,
             entityName: m.entity.name,
@@ -373,6 +375,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id as string
         ;(session.user as any).role = token.role as any
+        ;(session.user as any).permissions = (token.permissions as string[]) || []
         ;(session.user as any).tenantId = token.tenantId as string | undefined
         ;(session.user as any).oid = token.oid as string | undefined
         ;(session.user as any).memberships = (token.memberships as any) || []

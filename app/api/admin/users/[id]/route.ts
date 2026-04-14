@@ -8,6 +8,7 @@ import { isHRAdmin } from '@/lib/rbac'
 const UpdateUserSchema = z.object({
   role: z.enum(['HR_ADMIN', 'ENTITY_EDITOR', 'ENTITY_VIEWER', 'GLOBAL_VIEWER']).optional(),
   name: z.string().optional(),
+  permissions: z.array(z.string()).optional(),
 })
 
 export async function PATCH(
@@ -35,6 +36,7 @@ export async function PATCH(
         email: true,
         name: true,
         role: true,
+        permissions: true,
       },
     })
 

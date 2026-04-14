@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare, Wifi, WifiOff } from 'lucide-react'
+import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare, Wifi, WifiOff, Package } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { LanguageSwitcher } from '@/components/layout/language-switcher'
@@ -107,6 +107,18 @@ export function Navbar() {
                 {t('tasks')}
               </Button>
             </Link>
+
+            {(session?.user?.role === 'HR_ADMIN' || ((session?.user as any)?.permissions ?? []).includes('MATERIAL_MANAGER')) && (
+              <Link href="/materialen">
+                <Button
+                  variant={isActive('/materialen') ? 'default' : 'ghost'}
+                  size="sm"
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  {t('materials') ?? 'Materialen'}
+                </Button>
+              </Link>
+            )}
 
             {session?.user?.role === 'HR_ADMIN' && (
               <Link href="/admin">
