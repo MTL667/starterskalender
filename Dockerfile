@@ -23,8 +23,11 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 
-# Build Next.js with Webpack (more stable in constrained Docker environments)
-RUN node prisma/fix-template-types.js; npx next build --no-turbopack
+# Reduce Turbopack memory usage in Docker
+ENV NEXT_PRIVATE_WORKER_THREADS=1
+
+# Build Next.js
+RUN npm run build
 
 # Stage 3: Runner
 FROM node:20-alpine3.19 AS runner
