@@ -108,14 +108,14 @@ export function Navbar() {
               </Button>
             </Link>
 
-            {(session?.user?.role === 'HR_ADMIN' || ((session?.user as any)?.permissions ?? []).includes('MATERIAL_MANAGER')) && (
+            {((session?.user as any)?.permissions ?? []).includes('MATERIAL_MANAGER') && (
               <Link href="/materialen">
                 <Button
                   variant={isActive('/materialen') ? 'default' : 'ghost'}
                   size="sm"
                 >
                   <Package className="h-4 w-4 mr-2" />
-                  {t('materials') ?? 'Materialen'}
+                  {t('materials')}
                 </Button>
               </Link>
             )}
