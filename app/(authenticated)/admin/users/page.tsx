@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, UserPlus, Trash2, Building2, Search, X, Bell } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ArrowLeft, UserPlus, Trash2, Building2, Search, X, Bell, Package } from 'lucide-react'
 import Link from 'next/link'
 import { UserMembershipsDialog } from '@/components/admin/user-memberships-dialog'
 import { UserNotificationPrefsDialog } from '@/components/admin/user-notification-prefs-dialog'
@@ -19,6 +20,7 @@ interface User {
   email: string
   name: string | null
   role: string
+  permissions: string[]
   createdAt: string
   lastLoginAt: string | null
   memberships: {
@@ -142,6 +144,27 @@ export default function UsersAdminPage() {
     } catch (error) {
       console.error('Error updating role:', error)
       alert(t('errorUpdatingRole'))
+    }
+  }
+
+  const handleTogglePermission = async (userId: string, permission: string, currentPermissions: string[]) => {
+    const hasIt = currentPermissions.includes(permission)
+    const newPermissions = hasIt
+      ? currentPermissions.filter(p => p !== permission)
+      : [...currentPermissions, permission]
+
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions: newPermissions }),
+      })
+
+      if (!res.ok) throw new Error('Failed to update permissions')
+      fetchUsers()
+    } catch (error) {
+      console.error('Error updating permissions:', error)
+      alert('Fout bij bijwerken van permissies')
     }
   }
 
@@ -298,6 +321,12 @@ export default function UsersAdminPage() {
                       <Badge className={getRoleBadgeColor(user.role)}>
                         {getRoleLabel(user.role)}
                       </Badge>
+                      {(user.permissions ?? []).includes('MATERIAL_MANAGER') && (
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Package className="h-3 w-3" />
+                          Materialen
+                        </Badge>
+                      )}
                     </div>
                     {user.memberships.length > 0 && (
                       <div className="mt-2 text-sm text-muted-foreground">
@@ -321,6 +350,16 @@ export default function UsersAdminPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <label className="flex items-center gap-1.5 text-xs cursor-pointer px-2 py-1 rounded border hover:bg-muted/50 transition-colors">
+                      <Checkbox
+                        checked={(user.permissions ?? []).includes('MATERIAL_MANAGER')}
+                        onCheckedChange={() =>
+                          handleTogglePermission(user.id, 'MATERIAL_MANAGER', user.permissions ?? [])
+                        }
+                      />
+                      <Package className="h-3 w-3" />
+                      Materialen
+                    </label>
                     <Button
                       variant="outline"
                       size="sm"
