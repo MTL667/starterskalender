@@ -626,6 +626,20 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
+  const handleMaterialDelete = async (materialId: string) => {
+    if (!starter) return
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/materials/${materialId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) {
+        setStarterMaterials(prev => prev.filter((sm: any) => sm.materialId !== materialId))
+      }
+    } catch (error) {
+      console.error('Error deleting material:', error)
+    }
+  }
+
   const handleAssignMaterials = async () => {
     if (!starter) return
     setAssigningMaterials(true)
@@ -1466,13 +1480,27 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                             )}
                           </div>
                           {canEdit && isMaterialMgr && (
-                            <MaterialActionButtons
-                              status={sm.status}
-                              materialId={sm.materialId}
-                              onStatusChange={(status, deliveryDate) =>
-                                handleMaterialStatusChange(sm.materialId, status, deliveryDate)
-                              }
-                            />
+                            <div className="flex items-center gap-1 shrink-0">
+                              <MaterialActionButtons
+                                status={sm.status}
+                                materialId={sm.materialId}
+                                onStatusChange={(status, deliveryDate) =>
+                                  handleMaterialStatusChange(sm.materialId, status, deliveryDate)
+                                }
+                              />
+                              {sm.status !== 'RESERVED' && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                  title="Verwijderen — niet nodig voor deze starter"
+                                  onClick={() => handleMaterialDelete(sm.materialId)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
                           )}
                         </div>
                       ))}

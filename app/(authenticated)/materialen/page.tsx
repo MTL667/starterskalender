@@ -20,7 +20,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { MaterialStatusStepper, getStatusLabel, getStatusColor } from '@/components/materials/material-status-stepper'
-import { Package, ShoppingCart, Truck, Check, Clock, AlertTriangle, Filter, Loader2 } from 'lucide-react'
+import { Package, ShoppingCart, Truck, Check, Clock, AlertTriangle, Filter, Loader2, Trash2 } from 'lucide-react'
 
 type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED'
 
@@ -128,6 +128,37 @@ export default function MaterialenDashboard() {
       }
     } catch (error) {
       console.error('Error bulk updating:', error)
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  const handleSingleDelete = async (item: StarterMaterialItem) => {
+    try {
+      const res = await fetch(`/api/starters/${item.starterId}/materials/${item.materialId}`, {
+        method: 'DELETE',
+      })
+      if (res.ok) fetchData()
+    } catch (error) {
+      console.error('Error deleting material:', error)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    setBulkLoading(true)
+    try {
+      const res = await fetch('/api/materials/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      })
+      if (res.ok) {
+        setSelectedIds(new Set())
+        fetchData()
+      }
+    } catch (error) {
+      console.error('Error bulk deleting:', error)
     } finally {
       setBulkLoading(false)
     }
@@ -301,6 +332,17 @@ export default function MaterialenDashboard() {
             {bulkLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
             Toepassen
           </Button>
+          <div className="h-4 w-px bg-border" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-xs text-destructive hover:text-destructive"
+            onClick={handleBulkDelete}
+            disabled={bulkLoading}
+          >
+            <Trash2 className="h-3 w-3 mr-1" />
+            Verwijderen
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -403,7 +445,20 @@ export default function MaterialenDashboard() {
                       ) : '—'}
                     </td>
                     <td className="p-3 text-right">
-                      <QuickAction item={item} onUpdate={handleSingleUpdate} />
+                      <div className="flex items-center gap-1 justify-end">
+                        <QuickAction item={item} onUpdate={handleSingleUpdate} />
+                        {item.status !== 'RESERVED' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                            title="Verwijderen"
+                            onClick={() => handleSingleDelete(item)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )

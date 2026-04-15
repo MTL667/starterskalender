@@ -109,3 +109,52 @@ export async function PATCH(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; materialId: string }> }
+) {
+  try {
+    const { id, materialId } = await params
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    if (!isMaterialManager(user)) {
+      return NextResponse.json({ error: 'Forbidden: Material manager permission required' }, { status: 403 })
+    }
+
+    const starterMaterial = await prisma.starterMaterial.findUnique({
+      where: { starterId_materialId: { starterId: id, materialId } },
+      include: {
+        material: true,
+        starter: { select: { firstName: true, lastName: true } },
+      },
+    })
+
+    if (!starterMaterial) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    await prisma.starterMaterial.delete({
+      where: { starterId_materialId: { starterId: id, materialId } },
+    })
+
+    await createAuditLog({
+      actorId: user.id,
+      action: 'DELETE',
+      target: `StarterMaterial:${starterMaterial.id}`,
+      meta: {
+        starter: `${starterMaterial.starter.firstName} ${starterMaterial.starter.lastName}`,
+        material: starterMaterial.material.name,
+        previousStatus: starterMaterial.status,
+      },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Error deleting starter material:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

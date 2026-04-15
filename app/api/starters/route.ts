@@ -224,8 +224,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Auto-generate materials from job role template
-    if (starter.roleTitle && starter.entityId) {
+    // Auto-generate materials from job role template (only for onboarding/migration)
+    if (starter.roleTitle && starter.entityId && data.type !== 'OFFBOARDING') {
       try {
         const jobRole = await prisma.jobRole.findUnique({
           where: { entityId_title: { entityId: starter.entityId, title: starter.roleTitle } },
