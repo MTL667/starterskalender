@@ -102,7 +102,7 @@ export function AirportSimulation() {
     setClouds(initialClouds)
 
     const initialPlanes: Plane[] = Array.from({ length: 2 }, () => {
-      const dir = Math.random() > 0.5 ? 'right' : 'left' as const
+      const dir: Plane['direction'] = Math.random() > 0.5 ? 'right' : 'left'
       return {
         id: planeIdRef.current++,
         x: dir === 'right' ? Math.random() * 40 : 60 + Math.random() * 40,
@@ -110,7 +110,7 @@ export function AirportSimulation() {
         speed: Math.random() * 0.03 + 0.02,
         size: Math.random() * 8 + 12,
         direction: dir,
-        altitude: ['high', 'mid', 'low'][Math.floor(Math.random() * 3)] as Plane['altitude'],
+        altitude: (['high', 'mid', 'low'] as const)[Math.floor(Math.random() * 3)],
         opacity: Math.random() * 0.3 + 0.2,
       }
     })
@@ -120,9 +120,9 @@ export function AirportSimulation() {
   useEffect(() => {
     let lastTime = performance.now()
 
-    const spawnPlane = () => {
-      const dir = Math.random() > 0.5 ? 'right' : 'left' as const
-      const altitude = ['high', 'mid', 'low'][Math.floor(Math.random() * 3)] as Plane['altitude']
+    const spawnPlane = (): Plane => {
+      const dir: Plane['direction'] = Math.random() > 0.5 ? 'right' : 'left'
+      const altitude: Plane['altitude'] = (['high', 'mid', 'low'] as const)[Math.floor(Math.random() * 3)]
       const yRange = altitude === 'high' ? [5, 20] : altitude === 'mid' ? [20, 40] : [40, 55]
       return {
         id: planeIdRef.current++,
