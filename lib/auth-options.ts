@@ -138,7 +138,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 dagen
+    maxAge: 7 * 24 * 60 * 60, // 7 dagen
   },
   useSecureCookies: process.env.NEXTAUTH_URL?.startsWith('https://'),
   cookies: {

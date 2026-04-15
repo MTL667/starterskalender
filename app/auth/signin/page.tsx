@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle, Plane } from 'lucide-react'
+import { AirportSimulation } from '@/components/airport-simulation'
 
 const isDevelopment = process.env.NODE_ENV === 'development'
 
@@ -73,10 +74,14 @@ function SignInForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      <AirportSimulation />
+      <Card className="w-full max-w-md relative z-10 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-white/50 dark:border-slate-700/50 shadow-2xl">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{t('appTitle')}</CardTitle>
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <Plane className="h-6 w-6 text-primary" />
+            <CardTitle className="text-2xl">{t('appTitle')}</CardTitle>
+          </div>
           <CardDescription>
             {t('loginWithOrg')}
           </CardDescription>
@@ -195,7 +200,7 @@ function SignInForm() {
 export default function SignInPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-sky-200 via-blue-100 to-amber-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     }>
