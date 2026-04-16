@@ -13,6 +13,8 @@ import { PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
 import { HealthDot } from '@/components/health-badge'
 import { useHealthScores } from '@/lib/use-health-scores'
 
+type BoardMode = 'arrivals' | 'departures'
+
 interface Starter {
   id: string
   type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
@@ -37,7 +39,17 @@ interface Entity {
   colorHex: string
 }
 
-export function RecentStarters({ year }: { year: number }) {
+interface RecentStartersProps {
+  year: number
+  mode?: BoardMode
+}
+
+const TYPE_FILTER: Record<BoardMode, string[]> = {
+  arrivals: ['ONBOARDING', 'MIGRATION'],
+  departures: ['OFFBOARDING'],
+}
+
+export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps) {
   const t = useTranslations('recentStarters')
   const commonT = useTranslations('common')
   const starterCardT = useTranslations('starterCard')
@@ -49,13 +61,11 @@ export function RecentStarters({ year }: { year: number }) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
 
-  // Check if user can edit starters
   const canEdit = session?.user?.role === 'HR_ADMIN' || session?.user?.role === 'ENTITY_EDITOR'
 
   const starterIds = starters.map(s => s.id)
   const { scores: healthScores } = useHealthScores(starterIds)
 
-  // Check if starter starts today
   const isToday = (startDate: string | null): boolean => {
     if (!startDate) return false
     const today = new Date()
@@ -76,16 +86,15 @@ export function RecentStarters({ year }: { year: number }) {
     return diffInDays >= 1 && diffInDays <= 7
   }
 
-  // Get upcoming starters with complete last day
-  // Shows at least minCount starters, but includes all starters from the last shown date
   const getUpcomingStarters = (allStarters: Starter[], minCount: number = 5): Starter[] => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    const allowedTypes = TYPE_FILTER[mode]
 
-    // Filter and sort upcoming starters
     const upcoming = allStarters
       .filter((s: Starter) => {
         if (!s.startDate || s.isCancelled) return false
+        if (!allowedTypes.includes(s.type || 'ONBOARDING')) return false
         const startDate = new Date(s.startDate)
         return startDate >= today
       })
@@ -97,10 +106,7 @@ export function RecentStarters({ year }: { year: number }) {
       return upcoming
     }
 
-    // Take first minCount starters
     const initial = upcoming.slice(0, minCount)
-    
-    // Get the date of the last starter in initial list
     const lastDate = new Date(initial[initial.length - 1].startDate!)
     lastDate.setHours(0, 0, 0, 0)
 
@@ -109,12 +115,10 @@ export function RecentStarters({ year }: { year: number }) {
       if (!starter.startDate) continue
       const starterDate = new Date(starter.startDate)
       starterDate.setHours(0, 0, 0, 0)
-      
-      // Include if before last date, or on last date
       if (starterDate.getTime() <= lastDate.getTime()) {
         result.push(starter)
       } else {
-        break // We're past the last date
+        break
       }
     }
 
@@ -178,12 +182,20 @@ export function RecentStarters({ year }: { year: number }) {
       })
   }, []) // No dependency on year anymore - always fetch current + next year
 
+  const boardTitle = mode === 'arrivals' ? t('arrivalsTitle') : t('departuresTitle')
+  const boardSubtitle = mode === 'arrivals' ? t('arrivalsSubtitle') : t('departuresSubtitle')
+  const boardEmpty = mode === 'arrivals' ? t('noArrivals') : t('noDepartures')
+  const BoardIcon = mode === 'arrivals' ? PlaneLanding : PlaneTakeoff
+
   if (loading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>{t('title')}</CardTitle>
-          <CardDescription>{t('subtitleYear', { year })}</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <BoardIcon className={`h-5 w-5 ${mode === 'arrivals' ? 'text-green-500' : 'text-red-500'}`} />
+            {boardTitle}
+          </CardTitle>
+          <CardDescription>{boardSubtitle}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
@@ -197,13 +209,17 @@ export function RecentStarters({ year }: { year: number }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('title')}</CardTitle>
-        <CardDescription>{t('subtitle')}</CardDescription>
+        <CardTitle className="flex items-center gap-2">
+          <BoardIcon className={`h-5 w-5 ${mode === 'arrivals' ? 'text-green-500' : 'text-red-500'}`} />
+          {boardTitle}
+        </CardTitle>
+        <CardDescription>{boardSubtitle}</CardDescription>
       </CardHeader>
       <CardContent>
         {starters.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            {t('noUpcoming')}
+            <BoardIcon className={`h-12 w-12 mx-auto mb-3 opacity-30 ${mode === 'arrivals' ? 'text-green-500' : 'text-red-500'}`} />
+            {boardEmpty}
           </div>
         ) : (
           <div className="space-y-4">

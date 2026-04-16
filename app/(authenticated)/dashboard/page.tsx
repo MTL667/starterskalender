@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { YTDStats } from '@/components/dashboard/ytd-stats'
 import { RecentStarters } from '@/components/dashboard/recent-starters'
-import { MyTasks } from '@/components/dashboard/my-tasks'
 import { MonthlyCharts } from '@/components/dashboard/monthly-charts'
 import { EntityMonthlyCharts } from '@/components/dashboard/entity-monthly-charts'
 import Link from 'next/link'
@@ -76,10 +75,10 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* Aankomende Starters & Mijn Taken */}
+      {/* Arrivals & Departures */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <RecentStarters year={currentYear} />
-        <MyTasks />
+        <RecentStarters year={currentYear} mode="arrivals" />
+        <RecentStarters year={currentYear} mode="departures" />
       </div>
 
       {/* YTD Statistics */}
