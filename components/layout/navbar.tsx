@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare, Wifi, WifiOff, Package } from 'lucide-react'
+import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare, Wifi, WifiOff, Package, Menu, X } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { LanguageSwitcher } from '@/components/layout/language-switcher'
@@ -19,9 +19,14 @@ export function Navbar() {
   const sseStatus = useSSEStatus()
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoLoading, setLogoLoading] = useState(true)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const t = useTranslations('navbar')
 
   const isActive = (path: string) => pathname === path
+
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     // Load logo from system settings
@@ -49,10 +54,28 @@ export function Navbar() {
       })
   }, [])
 
+  const navLinks = [
+    { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), show: true },
+    { href: '/kalender', icon: Calendar, label: t('calendar'), show: true },
+    { href: '/starters', icon: Users, label: t('starters'), show: true },
+    { href: '/taken', icon: CheckSquare, label: t('tasks'), show: true },
+    { href: '/materialen', icon: Package, label: t('materials'), show: ((session?.user as any)?.permissions ?? []).includes('MATERIAL_MANAGER') },
+    { href: '/admin', icon: Settings, label: t('admin'), show: session?.user?.role === 'HR_ADMIN' },
+  ]
+
   return (
-    <nav className="border-b bg-background">
+    <nav className="border-b bg-background relative">
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="md:hidden p-1.5"
+            onClick={() => setMobileOpen(prev => !prev)}
+            aria-label="Menu"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
           <Link href="/dashboard" className="flex items-center">
             {logoLoading ? (
               <span className="font-bold text-xl">{t('appTitle')}</span>
@@ -68,69 +91,17 @@ export function Navbar() {
           </Link>
 
           <div className="hidden md:flex space-x-1">
-            <Link href="/dashboard">
-              <Button
-                variant={isActive('/dashboard') ? 'default' : 'ghost'}
-                size="sm"
-              >
-                <LayoutDashboard className="h-4 w-4 mr-2" />
-                {t('dashboard')}
-              </Button>
-            </Link>
-
-            <Link href="/kalender">
-              <Button
-                variant={isActive('/kalender') ? 'default' : 'ghost'}
-                size="sm"
-              >
-                <Calendar className="h-4 w-4 mr-2" />
-                {t('calendar')}
-              </Button>
-            </Link>
-
-            <Link href="/starters">
-              <Button
-                variant={isActive('/starters') ? 'default' : 'ghost'}
-                size="sm"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                {t('starters')}
-              </Button>
-            </Link>
-
-            <Link href="/taken">
-              <Button
-                variant={isActive('/taken') ? 'default' : 'ghost'}
-                size="sm"
-              >
-                <CheckSquare className="h-4 w-4 mr-2" />
-                {t('tasks')}
-              </Button>
-            </Link>
-
-            {((session?.user as any)?.permissions ?? []).includes('MATERIAL_MANAGER') && (
-              <Link href="/materialen">
+            {navLinks.filter(l => l.show).map(link => (
+              <Link key={link.href} href={link.href}>
                 <Button
-                  variant={isActive('/materialen') ? 'default' : 'ghost'}
+                  variant={isActive(link.href) ? 'default' : 'ghost'}
                   size="sm"
                 >
-                  <Package className="h-4 w-4 mr-2" />
-                  {t('materials')}
+                  <link.icon className="h-4 w-4 mr-2" />
+                  {link.label}
                 </Button>
               </Link>
-            )}
-
-            {session?.user?.role === 'HR_ADMIN' && (
-              <Link href="/admin">
-                <Button
-                  variant={isActive('/admin') ? 'default' : 'ghost'}
-                  size="sm"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  {t('admin')}
-                </Button>
-              </Link>
-            )}
+            ))}
           </div>
         </div>
 
@@ -166,6 +137,47 @@ export function Navbar() {
           </Button>
         </div>
       </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t bg-background/95 backdrop-blur-sm absolute left-0 right-0 top-16 z-50 shadow-lg">
+          <div className="container mx-auto px-4 py-3 space-y-1">
+            {navLinks.filter(l => l.show).map(link => (
+              <Link key={link.href} href={link.href} className="block">
+                <Button
+                  variant={isActive(link.href) ? 'default' : 'ghost'}
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  <link.icon className="h-4 w-4 mr-3" />
+                  {link.label}
+                </Button>
+              </Link>
+            ))}
+            <div className="border-t pt-2 mt-2">
+              <Link href="/profiel" className="block">
+                <Button
+                  variant={isActive('/profiel') ? 'default' : 'ghost'}
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  <User className="h-4 w-4 mr-3" />
+                  {t('profile')}
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start text-destructive hover:text-destructive"
+                onClick={() => signOut({ callbackUrl: '/auth/signin' })}
+              >
+                <LogOut className="h-4 w-4 mr-3" />
+                {t('logout')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   )
 }
