@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airport — Pre-Onboarding Portal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #2563eb;
+    --primary-light: #eff6ff;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --green-bg: #dcfce7;
+    --amber: #d97706;
+    --amber-light: #fffbeb;
+    --red: #dc2626;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+    color: white;
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  }
+  .header-inner {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.02em;
+  }
+  .header-logo svg { opacity: 0.9; }
+  .header-lang {
+    font-size: 0.75rem;
+    background: rgba(255,255,255,0.15);
+    padding: 0.25rem 0.75rem;
+    border-radius: 100px;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  /* Boarding Pass */
+  .boarding-pass {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0c2340 100%);
+    border-radius: 16px;
+    color: white;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.25);
+    position: relative;
+  }
+  .boarding-pass::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+  }
+  .bp-top {
+    padding: 1.5rem 1.5rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+  }
+  .bp-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+  }
+  .bp-value {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .bp-name {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .bp-entity {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.7);
+    margin-top: 0.15rem;
+  }
+  .bp-boarding-tag {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+  }
+  .bp-boarding-tag .bp-label { color: rgba(255,255,255,0.6); }
+
+  .bp-divider {
+    border-top: 1px dashed rgba(255,255,255,0.15);
+    margin: 0 1.5rem;
+    position: relative;
+  }
+  .bp-divider::before, .bp-divider::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    width: 24px; height: 24px;
+    background: var(--bg);
+    border-radius: 50%;
+  }
+  .bp-divider::before { left: -2.75rem; }
+  .bp-divider::after { right: -2.75rem; }
+
+  .bp-bottom {
+    padding: 1rem 1.5rem 1.25rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Countdown */
+  .countdown {
+    background: linear-gradient(135deg, var(--green-light), #ecfdf5);
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .countdown-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--green);
+    line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .countdown-label {
+    font-size: 0.85rem;
+    color: var(--green);
+    font-weight: 500;
+    margin-top: 0.25rem;
+  }
+  .countdown-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+
+  /* Progress */
+  .progress-section {
+    margin-bottom: 2rem;
+  }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  .progress-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  .progress-count {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .progress-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), #22c55e);
+    border-radius: 100px;
+    transition: width 1s ease;
+  }
+
+  /* Section cards */
+  .section { margin-bottom: 1.25rem; }
+  .section-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+  .section-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .section-header {
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+  }
+  .section-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .section-info { flex: 1; }
+  .section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .section-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .section-status {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .status-done {
+    background: var(--green-bg);
+    color: var(--green);
+  }
+  .status-pending {
+    background: var(--amber-light);
+    color: var(--amber);
+  }
+  .status-locked {
+    background: #f1f5f9;
+    color: #94a3b8;
+  }
+  .section-body {
+    padding: 0 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Documents list */
+  .doc-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .doc-item:last-child { border-bottom: none; }
+  .doc-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .doc-info { flex: 1; }
+  .doc-name { font-size: 0.85rem; font-weight: 500; }
+  .doc-meta { font-size: 0.7rem; color: var(--muted); }
+  .doc-action {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .doc-sign {
+    background: var(--primary);
+    color: white;
+  }
+  .doc-sign:hover { background: #1d4ed8; }
+  .doc-signed {
+    background: var(--green-bg);
+    color: var(--green);
+    cursor: default;
+  }
+  .doc-locked {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  /* Practical info */
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    padding-top: 1rem;
+  }
+  .info-item {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 0.75rem;
+  }
+  .info-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+    font-weight: 500;
+  }
+  .info-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  /* Team cards */
+  .team-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    padding-top: 1rem;
+  }
+  .team-card {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .team-avatar {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    margin: 0 auto 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: white;
+  }
+  .team-name { font-size: 0.85rem; font-weight: 600; }
+  .team-role { font-size: 0.7rem; color: var(--muted); }
+  .team-badge {
+    display: inline-block;
+    margin-top: 0.35rem;
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  /* Day 1 timeline */
+  .timeline { padding-top: 1rem; }
+  .timeline-item {
+    display: flex;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+    position: relative;
+  }
+  .timeline-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 32px;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .timeline-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+  }
+  .timeline-content { flex: 1; padding-top: 0.25rem; }
+  .timeline-time {
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--primary);
+  }
+  .timeline-title { font-size: 0.85rem; font-weight: 500; }
+  .timeline-desc { font-size: 0.75rem; color: var(--muted); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 2rem 0 3rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+  .footer a { color: var(--primary); text-decoration: none; }
+
+  /* Demo banner */
+  .demo-banner {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    color: #78350f;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+
+  /* Animations */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate { animation: fadeInUp 0.5s ease forwards; opacity: 0; }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+  .delay-5 { animation-delay: 0.5s; }
+  .delay-6 { animation-delay: 0.6s; }
+  .delay-7 { animation-delay: 0.7s; }
+</style>
+</head>
+<body>
+
+<div class="demo-banner">DEMO — Pre-Onboarding Portal Concept</div>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-logo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+      Airport
+    </div>
+    <div class="header-lang">🇳🇱 NL</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Boarding Pass -->
+  <div class="boarding-pass animate delay-1">
+    <div class="bp-top">
+      <div>
+        <div class="bp-label">Passagier</div>
+        <div class="bp-name">Sarah Janssens</div>
+        <div class="bp-entity">Hertbelgium — Medewerker Marketing</div>
+      </div>
+      <div class="bp-boarding-tag">
+        <div class="bp-label">Boarding</div>
+        <div class="bp-value" style="font-family:'JetBrains Mono',monospace; font-size:1.1rem;">12 mei</div>
+      </div>
+    </div>
+    <div class="bp-divider"></div>
+    <div class="bp-bottom">
+      <div>
+        <div class="bp-label">Van</div>
+        <div class="bp-value">Contract</div>
+      </div>
+      <div>
+        <div class="bp-label">Naar</div>
+        <div class="bp-value">Dag 1</div>
+      </div>
+      <div>
+        <div class="bp-label">Gate</div>
+        <div class="bp-value">Marketing</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countdown -->
+  <div class="countdown animate delay-2">
+    <div class="countdown-number" id="countdown">18</div>
+    <div class="countdown-label">dagen tot je eerste dag</div>
+    <div class="countdown-sub">Maandag 12 mei 2026 — Hertbelgium, Antwerpen</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section animate delay-3">
+    <div class="progress-header">
+      <div class="progress-title">Jouw voortgang</div>
+      <div class="progress-count">2 van 5 stappen voltooid</div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width: 40%"></div>
+    </div>
+  </div>
+
+  <!-- 1. Persoonlijke gegevens -->
+  <div class="section animate delay-3">
+    <div class="section-card">
+      <div class="section-header" onclick="toggle('sec-personal')">
+        <div class="section-icon" style="background:#eff6ff;color:#2563eb;">👤</div>
+        <div class="section-info">
+          <div class="section-title">Persoonlijke gegevens</div>
+          <div class="section-desc">Adres, bankgegevens, noodcontact</div>
+        </div>
+        <div class="section-status status-done">✓ Voltooid</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Documenten -->
+  <div class="section animate delay-4">
+    <div class="section-card">
+      <div class="section-header" onclick="toggle('sec-docs')">
+        <div class="section-icon" style="background:#fef3c7;color:#d97706;">📄</div>
+        <div class="section-info">
+          <div class="section-title">Documenten ondertekenen</div>
+          <div class="section-desc">3 van 4 documenten getekend</div>
+        </div>
+        <div class="section-status status-pending">1 resterend</div>
+      </div>
+      <div class="section-body" id="sec-docs">
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#dcfce7;color:#16a34a;">✓</div>
+          <div class="doc-info">
+            <div class="doc-name">Arbeidsovereenkomst</div>
+            <div class="doc-meta">Getekend op 18 apr. 2026</div>
+          </div>
+          <button class="doc-action doc-signed">Getekend</button>
+        </div>
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#dcfce7;color:#16a34a;">✓</div>
+          <div class="doc-info">
+            <div class="doc-name">NDA / Vertrouwelijkheidsclausule</div>
+            <div class="doc-meta">Getekend op 18 apr. 2026</div>
+          </div>
+          <button class="doc-action doc-signed">Getekend</button>
+        </div>
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#dcfce7;color:#16a34a;">✓</div>
+          <div class="doc-info">
+            <div class="doc-name">Bedrijfsreglement</div>
+            <div class="doc-meta">Getekend op 20 apr. 2026</div>
+          </div>
+          <button class="doc-action doc-signed">Getekend</button>
+        </div>
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#eff6ff;color:#2563eb;">📝</div>
+          <div class="doc-info">
+            <div class="doc-name">IT Gebruiksvoorwaarden</div>
+            <div class="doc-meta">Klaar om te tekenen</div>
+          </div>
+          <button class="doc-action doc-sign" onclick="this.textContent='Getekend ✓';this.className='doc-action doc-signed';this.closest('.doc-item').querySelector('.doc-icon').style.background='#dcfce7';this.closest('.doc-item').querySelector('.doc-icon').style.color='#16a34a';this.closest('.doc-item').querySelector('.doc-icon').textContent='✓';this.closest('.doc-item').querySelector('.doc-meta').textContent='Zojuist getekend';">Tekenen →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Praktische info -->
+  <div class="section animate delay-5">
+    <div class="section-card">
+      <div class="section-header" onclick="toggle('sec-info')">
+        <div class="section-icon" style="background:#f0fdf4;color:#16a34a;">📍</div>
+        <div class="section-info">
+          <div class="section-title">Praktische info</div>
+          <div class="section-desc">Locatie, parkeren, dresscode, lunch</div>
+        </div>
+        <div class="section-status status-done">✓ Bekeken</div>
+      </div>
+      <div class="section-body" id="sec-info" style="display:none;">
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Adres</div>
+            <div class="info-value">Noorderlaan 133<br>2030 Antwerpen</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Uur</div>
+            <div class="info-value">08:30 — 17:00<br>Flexibel na inwerk</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Parkeren</div>
+            <div class="info-value">Gratis parking<br>Badge bij receptie</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Dresscode</div>
+            <div class="info-value">Business casual<br>Jeans OK</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Lunch</div>
+            <div class="info-value">Bedrijfsrestaurant<br>€4,50 / maaltijd</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Contact</div>
+            <div class="info-value">HR: Lisa De Smet<br>lisa@hertbelgium.be</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Je team -->
+  <div class="section animate delay-6">
+    <div class="section-card">
+      <div class="section-header" onclick="toggle('sec-team')">
+        <div class="section-icon" style="background:#faf5ff;color:#7c3aed;">👋</div>
+        <div class="section-info">
+          <div class="section-title">Je team</div>
+          <div class="section-desc">De collega's die je opwachten</div>
+        </div>
+        <div class="section-status" style="color:var(--primary);font-size:0.7rem;font-weight:500;">Bekijken →</div>
+      </div>
+      <div class="section-body" id="sec-team" style="display:none;">
+        <div class="team-grid">
+          <div class="team-card">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">KV</div>
+            <div class="team-name">Kevin Van Hoecke</div>
+            <div class="team-role">Marketing Director</div>
+            <div class="team-badge">👋 Jouw buddy</div>
+          </div>
+          <div class="team-card">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#ec4899,#f43f5e);">LD</div>
+            <div class="team-name">Lisa De Smet</div>
+            <div class="team-role">HR Business Partner</div>
+          </div>
+          <div class="team-card">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">TB</div>
+            <div class="team-name">Thomas Broeckaert</div>
+            <div class="team-role">Content Specialist</div>
+          </div>
+          <div class="team-card">
+            <div class="team-avatar" style="background:linear-gradient(135deg,#14b8a6,#0ea5e9);">AM</div>
+            <div class="team-name">Anke Martens</div>
+            <div class="team-role">Design Lead</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Dag 1 planning -->
+  <div class="section animate delay-7">
+    <div class="section-card">
+      <div class="section-header" onclick="toggle('sec-day1')">
+        <div class="section-icon" style="background:#fff7ed;color:#ea580c;">📅</div>
+        <div class="section-info">
+          <div class="section-title">Jouw eerste dag</div>
+          <div class="section-desc">Maandag 12 mei 2026 — planning</div>
+        </div>
+        <div class="section-status" style="color:var(--primary);font-size:0.7rem;font-weight:500;">Bekijken →</div>
+      </div>
+      <div class="section-body" id="sec-day1" style="display:none;">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#eff6ff;color:#2563eb;">☕</div>
+            <div class="timeline-content">
+              <div class="timeline-time">08:30</div>
+              <div class="timeline-title">Welkom & ontbijt</div>
+              <div class="timeline-desc">Receptie — Kevin vangt je op</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#fef3c7;color:#d97706;">🏢</div>
+            <div class="timeline-content">
+              <div class="timeline-time">09:00</div>
+              <div class="timeline-title">Rondleiding kantoor</div>
+              <div class="timeline-desc">Alle afdelingen, keuken, vergaderzalen</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#f0fdf4;color:#16a34a;">💻</div>
+            <div class="timeline-content">
+              <div class="timeline-time">09:45</div>
+              <div class="timeline-title">IT setup & werkplek</div>
+              <div class="timeline-desc">Laptop, accounts, badge, parking</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#faf5ff;color:#7c3aed;">👥</div>
+            <div class="timeline-content">
+              <div class="timeline-time">11:00</div>
+              <div class="timeline-title">Kennismaking team</div>
+              <div class="timeline-desc">Informele introductie met je collega's</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#fff7ed;color:#ea580c;">🍽️</div>
+            <div class="timeline-content">
+              <div class="timeline-time">12:00</div>
+              <div class="timeline-title">Welkomstlunch</div>
+              <div class="timeline-desc">Lunch met het team — op ons!</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#eff6ff;color:#2563eb;">📋</div>
+            <div class="timeline-content">
+              <div class="timeline-time">13:30</div>
+              <div class="timeline-title">Onboarding sessie</div>
+              <div class="timeline-desc">Bedrijfswaarden, tools, processen</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#f0fdf4;color:#16a34a;">🎯</div>
+            <div class="timeline-content">
+              <div class="timeline-time">15:30</div>
+              <div class="timeline-title">Eerste project briefing</div>
+              <div class="timeline-desc">Kennismaking met lopende projecten</div>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-dot" style="background:#dcfce7;color:#16a34a;">✅</div>
+            <div class="timeline-content">
+              <div class="timeline-time">17:00</div>
+              <div class="timeline-title">Einde eerste dag</div>
+              <div class="timeline-desc">Welkom aan boord! 🎉</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Vragen? Contacteer <a href="#">lisa@hertbelgium.be</a><br>
+    Powered by <strong>Airport</strong> — Pre-Onboarding Platform
+  </div>
+
+</div>
+
+<script>
+function toggle(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : (el.style.display ? 'none' : 'block');
+}
+
+// Countdown animation
+let count = 0;
+const target = 18;
+const el = document.getElementById('countdown');
+const interval = setInterval(() => {
+  count++;
+  el.textContent = count;
+  if (count >= target) clearInterval(interval);
+}, 60);
+</script>
+
+</body>
+</html>
