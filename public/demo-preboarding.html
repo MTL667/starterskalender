@@ -181,35 +181,127 @@
     margin-top: 0.5rem;
   }
 
-  /* Progress */
-  .progress-section {
+  /* Runway Progress */
+  .runway-section {
     margin-bottom: 2rem;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
   }
-  .progress-header {
+  .runway-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
   }
-  .progress-title {
+  .runway-title {
     font-size: 0.85rem;
     font-weight: 600;
   }
-  .progress-count {
+  .runway-count {
     font-size: 0.75rem;
     color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
   }
-  .progress-bar {
-    height: 8px;
-    background: var(--border);
-    border-radius: 100px;
+  .runway {
+    position: relative;
+    height: 48px;
+    background: #1e293b;
+    border-radius: 8px;
     overflow: hidden;
+    display: flex;
+    align-items: center;
   }
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--green), #22c55e);
-    border-radius: 100px;
-    transition: width 1s ease;
+  .runway-surface {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 28px,
+      rgba(255,255,255,0.06) 28px,
+      rgba(255,255,255,0.06) 30px
+    );
+  }
+  .runway-centerline {
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    transform: translateY(-50%);
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.25),
+      rgba(255,255,255,0.25) 16px,
+      transparent 16px,
+      transparent 28px
+    );
+  }
+  .runway-stops {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 6px;
+    z-index: 2;
+  }
+  .runway-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    background: #334155;
+    transition: all 0.5s ease;
+    position: relative;
+    z-index: 2;
+  }
+  .runway-dot.passed {
+    background: #22c55e;
+    border-color: #4ade80;
+    box-shadow: 0 0 8px rgba(34,197,94,0.5);
+  }
+  .runway-dot.current {
+    background: #fbbf24;
+    border-color: #fcd34d;
+    box-shadow: 0 0 10px rgba(251,191,36,0.6);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  .runway-plane {
+    position: absolute;
+    z-index: 3;
+    transition: left 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    filter: drop-shadow(0 0 6px rgba(251,191,36,0.4));
+  }
+  .runway-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    padding: 0 2px;
+  }
+  .runway-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-align: center;
+    width: 56px;
+    line-height: 1.3;
+  }
+  .runway-label.active {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .runway-label.done {
+    color: var(--green);
+    font-weight: 500;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 6px rgba(251,191,36,0.4); }
+    50% { box-shadow: 0 0 14px rgba(251,191,36,0.8); }
   }
 
   /* Section cards */
@@ -505,14 +597,32 @@
     <div class="countdown-sub">Maandag 12 mei 2026 — Hertbelgium, Antwerpen</div>
   </div>
 
-  <!-- Progress -->
-  <div class="progress-section animate delay-3">
-    <div class="progress-header">
-      <div class="progress-title">Jouw voortgang</div>
-      <div class="progress-count">2 van 5 stappen voltooid</div>
+  <!-- Runway Progress -->
+  <div class="runway-section animate delay-3">
+    <div class="runway-header">
+      <div class="runway-title">Jouw boarding voortgang</div>
+      <div class="runway-count">2 / 5 gates cleared</div>
     </div>
-    <div class="progress-bar">
-      <div class="progress-fill" style="width: 40%"></div>
+    <div class="runway">
+      <div class="runway-surface"></div>
+      <div class="runway-centerline"></div>
+      <div class="runway-stops">
+        <div class="runway-dot passed"></div>
+        <div class="runway-dot passed"></div>
+        <div class="runway-dot current"></div>
+        <div class="runway-dot"></div>
+        <div class="runway-dot"></div>
+      </div>
+      <svg class="runway-plane" id="plane" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="left: 36%;">
+        <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
+      </svg>
+    </div>
+    <div class="runway-labels">
+      <div class="runway-label done">Gegevens</div>
+      <div class="runway-label done">Documenten</div>
+      <div class="runway-label active">Praktisch</div>
+      <div class="runway-label">Team</div>
+      <div class="runway-label">Dag 1</div>
     </div>
   </div>
 
