@@ -982,12 +982,12 @@
     "departuresTitle": "Departures",
     "departuresSubtitle": "Aankomende vertrekkers",
     "noDepartures": "Geen aankomende departures",
-    "startToday": "✨ Start vandaag",
-    "startSoon": "🔔 Start binnenkort",
-    "departsToday": "Vertrek vandaag",
-    "departsSoon": "Vertrekt binnenkort",
-    "migratesToday": "Migratie vandaag",
-    "migratesSoon": "Migreert binnenkort"
+    "startToday": "✈ Arriving today",
+    "startSoon": "🛬 Arriving soon",
+    "departsToday": "✈ Departing today",
+    "departsSoon": "🛫 Departing soon",
+    "migratesToday": "✈ Transfer today",
+    "migratesSoon": "🔄 Transfer soon"
   },
   "myTasks": {
     "title": "Mijn Openstaande Taken",

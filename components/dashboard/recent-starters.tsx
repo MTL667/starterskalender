@@ -226,18 +226,44 @@ export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps)
             {starters.map(starter => {
               const startingToday = isToday(starter.startDate)
               const within7Days = isWithin7Days(starter.startDate)
-              const isHighlighted = startingToday || within7Days
-              
+              const isDeparture = mode === 'departures'
+              const isMigration = starter.type === 'MIGRATION'
+
+              const todayRowClass = isDeparture
+                ? 'bg-red-50 dark:bg-red-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-red-500 shadow-sm hover:shadow-md hover:bg-red-100 dark:hover:bg-red-900/30'
+                : isMigration
+                  ? 'bg-blue-50 dark:bg-blue-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-blue-500 shadow-sm hover:shadow-md hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                  : 'bg-green-50 dark:bg-green-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-green-500 shadow-sm hover:shadow-md hover:bg-green-100 dark:hover:bg-green-900/30'
+
+              const soonRowClass = isDeparture
+                ? 'bg-orange-50 dark:bg-orange-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-orange-400 shadow-sm hover:shadow-md hover:bg-orange-100 dark:hover:bg-orange-900/30'
+                : 'bg-amber-50 dark:bg-amber-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-amber-500 shadow-sm hover:shadow-md hover:bg-amber-100 dark:hover:bg-amber-900/30'
+
+              const todayBadgeClass = isDeparture
+                ? 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-200 dark:border-red-700'
+                : isMigration
+                  ? 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-700'
+                  : 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700'
+
+              const soonBadgeClass = isDeparture
+                ? 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-700'
+                : 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-200 dark:border-amber-700'
+
+              const todayLabel = isMigration ? t('migratesToday') : isDeparture ? t('departsToday') : t('startToday')
+              const soonLabel = isMigration ? t('migratesSoon') : isDeparture ? t('departsSoon') : t('startSoon')
+
+              const dateColor = startingToday
+                ? isDeparture ? 'font-semibold text-red-700 dark:text-red-400' : 'font-semibold text-green-700 dark:text-green-400'
+                : within7Days
+                  ? isDeparture ? 'font-semibold text-orange-700 dark:text-orange-400' : 'font-semibold text-amber-700 dark:text-amber-400'
+                  : 'text-muted-foreground'
+
               return (
                 <div
                   key={starter.id}
                   onClick={() => handleStarterClick(starter)}
                   className={`flex items-center justify-between border-b pb-3 last:border-0 transition-all cursor-pointer hover:scale-[1.02] ${
-                    startingToday
-                      ? 'bg-green-50 dark:bg-green-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-green-500 shadow-sm hover:shadow-md hover:bg-green-100 dark:hover:bg-green-900/30'
-                      : within7Days 
-                        ? 'bg-amber-50 dark:bg-amber-950/20 -mx-4 px-4 py-3 rounded-lg border-l-4 border-l-amber-500 shadow-sm hover:shadow-md hover:bg-amber-100 dark:hover:bg-amber-900/30' 
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-900/20'
+                    startingToday ? todayRowClass : within7Days ? soonRowClass : 'hover:bg-gray-50 dark:hover:bg-gray-900/20'
                   }`}
                   role="button"
                   tabIndex={0}
@@ -250,9 +276,9 @@ export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps)
                 >
                     <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {starter.type === 'MIGRATION' ? (
+                      {isMigration ? (
                         <ArrowLeftRight className="h-4 w-4 text-blue-500 shrink-0" />
-                      ) : starter.type === 'OFFBOARDING' ? (
+                      ) : isDeparture ? (
                         <PlaneTakeoff className="h-4 w-4 text-red-500 shrink-0" />
                       ) : (
                         <PlaneLanding className="h-4 w-4 text-green-500 shrink-0" />
@@ -267,19 +293,13 @@ export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps)
                         </span>
                       )}
                       {startingToday && (
-                        <Badge variant="outline" className={
-                          starter.type === 'MIGRATION'
-                            ? "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-700"
-                            : starter.type === 'OFFBOARDING' 
-                              ? "bg-red-100 text-red-800 border-red-300 dark:bg-red-900/50 dark:text-red-200 dark:border-red-700"
-                              : "bg-green-100 text-green-800 border-green-300 dark:bg-green-900/50 dark:text-green-200 dark:border-green-700"
-                        }>
-                          {starter.type === 'MIGRATION' ? t('migratesToday') : starter.type === 'OFFBOARDING' ? t('departsToday') : t('startToday')}
+                        <Badge variant="outline" className={todayBadgeClass}>
+                          {todayLabel}
                         </Badge>
                       )}
                       {within7Days && !startingToday && (
-                        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/50 dark:text-amber-200 dark:border-amber-700">
-                          {starter.type === 'MIGRATION' ? t('migratesSoon') : starter.type === 'OFFBOARDING' ? t('departsSoon') : t('startSoon')}
+                        <Badge variant="outline" className={soonBadgeClass}>
+                          {soonLabel}
                         </Badge>
                       )}
                     </div>
@@ -300,13 +320,7 @@ export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps)
                         {starter.entity.name}
                       </Badge>
                     )}
-                    <div className={`text-sm ${
-                      startingToday 
-                        ? 'font-semibold text-green-700 dark:text-green-400' 
-                        : within7Days 
-                          ? 'font-semibold text-amber-700 dark:text-amber-400' 
-                          : 'text-muted-foreground'
-                    }`}>
+                    <div className={`text-sm ${dateColor}`}>
                       {starter.startDate ? format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale }) : '-'}
                     </div>
                   </div>
