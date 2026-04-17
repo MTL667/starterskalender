@@ -20,7 +20,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { MaterialStatusStepper, getStatusLabel, getStatusColor } from '@/components/materials/material-status-stepper'
-import { Package, ShoppingCart, Truck, Check, Clock, AlertTriangle, Filter, Loader2, Trash2 } from 'lucide-react'
+import { Package, ShoppingCart, Truck, Check, Clock, AlertTriangle, Filter, Loader2, Trash2, Undo2 } from 'lucide-react'
 
 type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED'
 
@@ -502,24 +502,46 @@ function QuickAction({ item, onUpdate }: { item: StarterMaterialItem; onUpdate: 
       )
     case 'IN_STOCK':
       return (
-        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RESERVED')}>
-          <Check className="h-3 w-3 mr-1" /> Reserveren
-        </Button>
+        <div className="flex gap-1 justify-end">
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RESERVED')}>
+            <Check className="h-3 w-3 mr-1" /> Reserveren
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Ongedaan maken" onClick={() => onUpdate(item, 'PENDING')}>
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )
     case 'ORDERED':
       return (
-        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RECEIVED')}>
-          <Truck className="h-3 w-3 mr-1" /> Ontvangen
-        </Button>
+        <div className="flex gap-1 justify-end">
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RECEIVED')}>
+            <Truck className="h-3 w-3 mr-1" /> Ontvangen
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Ongedaan maken" onClick={() => onUpdate(item, 'PENDING')}>
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )
     case 'RECEIVED':
       return (
-        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RESERVED')}>
-          <Check className="h-3 w-3 mr-1" /> Reserveren
-        </Button>
+        <div className="flex gap-1 justify-end">
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RESERVED')}>
+            <Check className="h-3 w-3 mr-1" /> Reserveren
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Ongedaan maken" onClick={() => onUpdate(item, 'ORDERED')}>
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )
     case 'RESERVED':
-      return <span className="text-xs text-green-600">✓</span>
+      return (
+        <div className="flex items-center gap-1 justify-end">
+          <span className="text-xs text-green-600">✓</span>
+          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Ongedaan maken" onClick={() => onUpdate(item, 'PENDING')}>
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )
     default:
       return null
   }

@@ -8,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { Package, ShoppingCart, Truck, Check } from 'lucide-react'
+import { Package, ShoppingCart, Truck, Check, Undo2 } from 'lucide-react'
 
 type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED'
 
@@ -79,51 +79,99 @@ export function MaterialActionButtons({ status, onStatusChange }: MaterialAction
 
     case 'IN_STOCK':
       return (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs shrink-0"
-          onClick={() => onStatusChange('RESERVED')}
-        >
-          <Check className="h-3 w-3 mr-1" />
-          Reserveren
-        </Button>
+        <div className="flex gap-1.5 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => onStatusChange('RESERVED')}
+          >
+            <Check className="h-3 w-3 mr-1" />
+            Reserveren
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            title="Ongedaan maken → Actie nodig"
+            onClick={() => onStatusChange('PENDING')}
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )
 
     case 'ORDERED':
       return (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs shrink-0"
-          onClick={() => onStatusChange('RECEIVED')}
-        >
-          <Truck className="h-3 w-3 mr-1" />
-          Ontvangen
-        </Button>
+        <div className="flex gap-1.5 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => onStatusChange('RECEIVED')}
+          >
+            <Truck className="h-3 w-3 mr-1" />
+            Ontvangen
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            title="Ongedaan maken → Actie nodig"
+            onClick={() => onStatusChange('PENDING')}
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )
 
     case 'RECEIVED':
       return (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs shrink-0"
-          onClick={() => onStatusChange('RESERVED')}
-        >
-          <Check className="h-3 w-3 mr-1" />
-          Reserveren
-        </Button>
+        <div className="flex gap-1.5 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => onStatusChange('RESERVED')}
+          >
+            <Check className="h-3 w-3 mr-1" />
+            Reserveren
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            title="Ongedaan maken → Besteld"
+            onClick={() => onStatusChange('ORDERED')}
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )
 
     case 'RESERVED':
       return (
-        <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 shrink-0">
-          <Check className="h-3 w-3" /> Gereserveerd
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+            <Check className="h-3 w-3" /> Gereserveerd
+          </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+            title="Ongedaan maken → Actie nodig"
+            onClick={() => onStatusChange('PENDING')}
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       )
 
     default:
