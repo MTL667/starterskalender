@@ -40,6 +40,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/((?!api/auth|api/cron|api/health|api/system|api/uploads|api/sign|api/webhooks|sign|_next/static|_next/image|favicon.ico|auth/signin|auth/error).*)',
+    '/((?!api/auth|api/cron|api/health|api/system|api/uploads|api/sign|api/webhooks|sign|_next/static|_next/image|favicon.ico|auth/signin|auth/error|demo-).*)',
   ],
 }

@@ -410,6 +410,135 @@
     color: #94a3b8;
     cursor: not-allowed;
   }
+  .doc-upload {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  .doc-upload:hover { background: #dbeafe; }
+
+  /* Review status badges */
+  .review-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 100px;
+    margin-top: 0.15rem;
+  }
+  .review-approved {
+    background: var(--green-bg);
+    color: var(--green);
+  }
+  .review-inreview {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+  .review-rejected {
+    background: #fef2f2;
+    color: #dc2626;
+  }
+  .review-seen {
+    background: #f0fdf4;
+    color: #15803d;
+  }
+  .rejection-reason {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: #991b1b;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    line-height: 1.4;
+  }
+  .doc-reupload {
+    background: #dc2626;
+    color: white;
+    font-size: 0.65rem;
+  }
+  .doc-reupload:hover { background: #b91c1c; }
+
+  /* Upload dropzone */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-top: 0.5rem;
+  }
+  .upload-zone:hover {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  .upload-zone-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    opacity: 0.6;
+  }
+
+  /* Upload animation */
+  @keyframes uploadPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .uploading {
+    animation: uploadPulse 1s ease-in-out infinite;
+    border-color: var(--primary);
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  /* Review stepper (mini flow indicator) */
+  .review-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+  }
+  .review-step {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.6rem;
+    color: var(--muted);
+  }
+  .review-step.active {
+    color: var(--primary);
+    font-weight: 600;
+  }
+  .review-step.done {
+    color: var(--green);
+    font-weight: 500;
+  }
+  .review-step.failed {
+    color: var(--red);
+    font-weight: 600;
+  }
+  .review-step-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .review-step.done .review-step-dot { background: var(--green); }
+  .review-step.active .review-step-dot { background: var(--primary); box-shadow: 0 0 4px rgba(37,99,235,0.4); }
+  .review-step.failed .review-step-dot { background: var(--red); }
+  .review-step-line {
+    width: 12px; height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+  }
+  .review-step.done + .review-step-line { background: var(--green); }
 
   /* Practical info */
   .info-grid {
@@ -603,19 +732,20 @@
   <div class="runway-section animate delay-3">
     <div class="runway-header">
       <div class="runway-title">Jouw boarding voortgang</div>
-      <div class="runway-count">2 / 5 gates cleared</div>
+      <div class="runway-count">3 / 6 gates cleared</div>
     </div>
     <div class="runway">
       <div class="runway-surface"></div>
       <div class="runway-centerline"></div>
       <div class="runway-stops">
-        <div class="runway-dot passed"></div>
-        <div class="runway-dot passed"></div>
-        <div class="runway-dot current"></div>
-        <div class="runway-dot"></div>
-        <div class="runway-dot"></div>
+        <div class="runway-dot passed" title="Gegevens"></div>
+        <div class="runway-dot passed" title="Ondertekenen"></div>
+        <div class="runway-dot passed" title="Uploaden"></div>
+        <div class="runway-dot current" title="Review"></div>
+        <div class="runway-dot" title="Praktisch"></div>
+        <div class="runway-dot" title="Klaar"></div>
       </div>
-      <svg class="runway-plane" id="plane" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="left: 36%;">
+      <svg class="runway-plane" id="plane" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="left: 46%;">
         <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>
       </svg>
     </div>
@@ -652,6 +782,7 @@
           <div class="doc-info">
             <div class="doc-name">Arbeidsovereenkomst</div>
             <div class="doc-meta">Getekend op 18 apr. 2026</div>
+            <div class="review-badge review-seen">👁️ Gezien door HR — Lisa De Smet</div>
           </div>
           <button class="doc-action doc-signed">Getekend</button>
         </div>
@@ -660,6 +791,7 @@
           <div class="doc-info">
             <div class="doc-name">NDA / Vertrouwelijkheidsclausule</div>
             <div class="doc-meta">Getekend op 18 apr. 2026</div>
+            <div class="review-badge review-seen">👁️ Gezien door HR</div>
           </div>
           <button class="doc-action doc-signed">Getekend</button>
         </div>
@@ -677,14 +809,122 @@
             <div class="doc-name">IT Gebruiksvoorwaarden</div>
             <div class="doc-meta">Klaar om te tekenen</div>
           </div>
-          <button class="doc-action doc-sign" onclick="this.textContent='Getekend ✓';this.className='doc-action doc-signed';this.closest('.doc-item').querySelector('.doc-icon').style.background='#dcfce7';this.closest('.doc-item').querySelector('.doc-icon').style.color='#16a34a';this.closest('.doc-item').querySelector('.doc-icon').textContent='✓';this.closest('.doc-item').querySelector('.doc-meta').textContent='Zojuist getekend';">Tekenen →</button>
+          <button class="doc-action doc-sign" onclick="signDoc(this)">Tekenen →</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 3. Praktische info -->
-  <div class="section animate delay-5">
+  <!-- 3. Documenten uploaden & review -->
+  <div class="section animate delay-4" style="animation-delay:0.45s;">
+    <div class="section-card">
+      <div class="section-header" onclick="toggle('sec-upload')">
+        <div class="section-icon" style="background:#faf5ff;color:#7c3aed;">📤</div>
+        <div class="section-info">
+          <div class="section-title">Documenten uploaden</div>
+          <div class="section-desc">2 goedgekeurd — 1 in review — 1 actie nodig</div>
+        </div>
+        <div class="section-status status-pending">1 actie</div>
+      </div>
+      <div class="section-body" id="sec-upload">
+
+        <!-- Goedgekeurd -->
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#dcfce7;color:#16a34a;">✓</div>
+          <div class="doc-info">
+            <div class="doc-name">ID-kopie voorzijde</div>
+            <div class="doc-meta">Geüpload op 19 apr. 2026</div>
+            <div class="review-badge review-approved">✅ Goedgekeurd door HR</div>
+            <div class="review-stepper">
+              <div class="review-step done"><div class="review-step-dot"></div> Upload</div>
+              <div class="review-step-line" style="background:var(--green);"></div>
+              <div class="review-step done"><div class="review-step-dot"></div> Review</div>
+              <div class="review-step-line" style="background:var(--green);"></div>
+              <div class="review-step done"><div class="review-step-dot"></div> Goedgekeurd</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Goedgekeurd -->
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#dcfce7;color:#16a34a;">✓</div>
+          <div class="doc-info">
+            <div class="doc-name">ID-kopie achterzijde</div>
+            <div class="doc-meta">Geüpload op 19 apr. 2026</div>
+            <div class="review-badge review-approved">✅ Goedgekeurd door HR</div>
+            <div class="review-stepper">
+              <div class="review-step done"><div class="review-step-dot"></div> Upload</div>
+              <div class="review-step-line" style="background:var(--green);"></div>
+              <div class="review-step done"><div class="review-step-dot"></div> Review</div>
+              <div class="review-step-line" style="background:var(--green);"></div>
+              <div class="review-step done"><div class="review-step-dot"></div> Goedgekeurd</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- In review -->
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#eff6ff;color:#2563eb;">🔍</div>
+          <div class="doc-info">
+            <div class="doc-name">Bankafschrift</div>
+            <div class="doc-meta">Geüpload op 21 apr. 2026</div>
+            <div class="review-badge review-inreview">🔍 In review door HR</div>
+            <div class="review-stepper">
+              <div class="review-step done"><div class="review-step-dot"></div> Upload</div>
+              <div class="review-step-line" style="background:var(--green);"></div>
+              <div class="review-step active"><div class="review-step-dot"></div> Review</div>
+              <div class="review-step-line"></div>
+              <div class="review-step"><div class="review-step-dot"></div> Resultaat</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Afgekeurd met reden -->
+        <div class="doc-item" style="flex-wrap:wrap;">
+          <div class="doc-icon" style="background:#fef2f2;color:#dc2626;">✗</div>
+          <div class="doc-info" style="flex:1;">
+            <div class="doc-name">Diploma hoger onderwijs</div>
+            <div class="doc-meta">Geüpload op 20 apr. 2026</div>
+            <div class="review-badge review-rejected">❌ Afgekeurd</div>
+            <div class="review-stepper">
+              <div class="review-step done"><div class="review-step-dot"></div> Upload</div>
+              <div class="review-step-line" style="background:var(--green);"></div>
+              <div class="review-step failed"><div class="review-step-dot"></div> Afgekeurd</div>
+              <div class="review-step-line"></div>
+              <div class="review-step"><div class="review-step-dot"></div> Herlaad</div>
+            </div>
+          </div>
+          <button class="doc-action doc-reupload" onclick="simulateReupload(this)" style="align-self:flex-start;margin-top:0.25rem;">Opnieuw uploaden ↑</button>
+          <div class="rejection-reason" style="width:100%;margin-left:calc(32px + 0.75rem);">
+            <span>⚠️</span>
+            <span><strong>Reden:</strong> Document is onleesbaar. Gelieve een hogere resolutie scan of foto te uploaden.</span>
+          </div>
+        </div>
+
+        <!-- Nog te uploaden -->
+        <div class="doc-item">
+          <div class="doc-icon" style="background:#f1f5f9;color:#94a3b8;">📷</div>
+          <div class="doc-info">
+            <div class="doc-name">Pasfoto</div>
+            <div class="doc-meta">Nog niet geüpload</div>
+          </div>
+          <button class="doc-action doc-upload" onclick="simulateUpload(this)">Uploaden ↑</button>
+        </div>
+
+        <!-- Upload dropzone -->
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click();">
+          <div class="upload-zone-icon">☁️</div>
+          <div>Sleep bestanden hierheen of <strong>klik om te uploaden</strong></div>
+          <div style="font-size:0.65rem;color:#94a3b8;margin-top:0.25rem;">PDF, JPG, PNG — max 10MB per bestand</div>
+          <input type="file" id="file-input" style="display:none;" onchange="handleFileSelect(this)">
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Praktische info -->
+  <div class="section animate delay-5" style="animation-delay:0.55s;">
     <div class="section-card">
       <div class="section-header" onclick="toggle('sec-info')">
         <div class="section-icon" style="background:#f0fdf4;color:#16a34a;">📍</div>
@@ -725,8 +965,8 @@
     </div>
   </div>
 
-  <!-- 4. Je team -->
-  <div class="section animate delay-6">
+  <!-- 5. Je team -->
+  <div class="section animate delay-6" style="animation-delay:0.65s;">
     <div class="section-card">
       <div class="section-header" onclick="toggle('sec-team')">
         <div class="section-icon" style="background:#faf5ff;color:#7c3aed;">👋</div>
@@ -764,8 +1004,8 @@
     </div>
   </div>
 
-  <!-- 5. Dag 1 planning -->
-  <div class="section animate delay-7">
+  <!-- 6. Dag 1 planning -->
+  <div class="section animate delay-7" style="animation-delay:0.75s;">
     <div class="section-card">
       <div class="section-header" onclick="toggle('sec-day1')">
         <div class="section-icon" style="background:#fff7ed;color:#ea580c;">📅</div>
@@ -869,6 +1109,114 @@ const interval = setInterval(() => {
   el.textContent = count;
   if (count >= target) clearInterval(interval);
 }, 60);
+
+// Sign document interactively
+function signDoc(btn) {
+  btn.textContent = 'Tekenen...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+  setTimeout(() => {
+    btn.textContent = 'Getekend';
+    btn.className = 'doc-action doc-signed';
+    btn.style.opacity = '1';
+    const item = btn.closest('.doc-item');
+    const icon = item.querySelector('.doc-icon');
+    icon.style.background = '#dcfce7';
+    icon.style.color = '#16a34a';
+    icon.textContent = '✓';
+    item.querySelector('.doc-meta').textContent = 'Zojuist getekend';
+  }, 800);
+}
+
+// Simulate file upload with progress
+function simulateUpload(btn) {
+  const item = btn.closest('.doc-item');
+  const icon = item.querySelector('.doc-icon');
+  const meta = item.querySelector('.doc-meta');
+
+  btn.textContent = 'Uploaden...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+  icon.textContent = '⏳';
+  icon.style.background = '#eff6ff';
+  icon.style.color = '#2563eb';
+  meta.textContent = 'Bezig met uploaden...';
+
+  setTimeout(() => {
+    icon.textContent = '🔍';
+    meta.textContent = 'Geüpload op ' + new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    const badge = document.createElement('div');
+    badge.className = 'review-badge review-inreview';
+    badge.textContent = '🔍 In review door HR';
+    item.querySelector('.doc-info').appendChild(badge);
+
+    const stepper = document.createElement('div');
+    stepper.className = 'review-stepper';
+    stepper.innerHTML = '<div class="review-step done"><div class="review-step-dot"></div> Upload</div><div class="review-step-line" style="background:var(--green);"></div><div class="review-step active"><div class="review-step-dot"></div> Review</div><div class="review-step-line"></div><div class="review-step"><div class="review-step-dot"></div> Resultaat</div>';
+    item.querySelector('.doc-info').appendChild(stepper);
+
+    btn.remove();
+  }, 1200);
+}
+
+// Simulate re-upload for rejected documents
+function simulateReupload(btn) {
+  const item = btn.closest('.doc-item');
+  const icon = item.querySelector('.doc-icon');
+  const meta = item.querySelector('.doc-meta');
+  const badge = item.querySelector('.review-badge');
+  const reason = item.querySelector('.rejection-reason');
+  const stepper = item.querySelector('.review-stepper');
+
+  btn.textContent = 'Uploaden...';
+  btn.style.opacity = '0.6';
+  btn.style.pointerEvents = 'none';
+
+  setTimeout(() => {
+    icon.textContent = '🔍';
+    icon.style.background = '#eff6ff';
+    icon.style.color = '#2563eb';
+    meta.textContent = 'Opnieuw geüpload op ' + new Date().toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    badge.className = 'review-badge review-inreview';
+    badge.textContent = '🔍 In review door HR';
+
+    if (reason) reason.remove();
+    btn.remove();
+
+    if (stepper) {
+      stepper.innerHTML = '<div class="review-step done"><div class="review-step-dot"></div> Herlaad</div><div class="review-step-line" style="background:var(--green);"></div><div class="review-step active"><div class="review-step-dot"></div> Review</div><div class="review-step-line"></div><div class="review-step"><div class="review-step-dot"></div> Resultaat</div>';
+    }
+  }, 1200);
+}
+
+// Handle file input selection (dropzone)
+function handleFileSelect(input) {
+  if (!input.files.length) return;
+  const zone = document.getElementById('upload-zone');
+  const fileName = input.files[0].name;
+
+  zone.classList.add('uploading');
+  zone.innerHTML = '<div class="upload-zone-icon">⏳</div><div>Uploaden: <strong>' + fileName + '</strong></div>';
+
+  setTimeout(() => {
+    zone.classList.remove('uploading');
+    zone.innerHTML = '<div class="upload-zone-icon">✅</div><div><strong>' + fileName + '</strong> geüpload</div><div style="font-size:0.65rem;color:var(--green);margin-top:0.25rem;">In review door HR</div>';
+    zone.style.borderColor = 'var(--green)';
+    zone.style.background = '#f0fdf4';
+    zone.onclick = null;
+
+    setTimeout(() => {
+      zone.innerHTML = '<div class="upload-zone-icon">☁️</div><div>Sleep bestanden hierheen of <strong>klik om te uploaden</strong></div><div style="font-size:0.65rem;color:#94a3b8;margin-top:0.25rem;">PDF, JPG, PNG — max 10MB per bestand</div>';
+      zone.style.borderColor = '';
+      zone.style.background = '';
+      zone.onclick = function() { document.getElementById('file-input').click(); };
+    }, 3000);
+  }, 1500);
+
+  input.value = '';
+}
 </script>
 
 </body>
