@@ -66,14 +66,13 @@ async function resolveDriveId(client: Client): Promise<string> {
   return drive.id;
 }
 
-function buildStarterPath(entityName: string, year: number, starterLastName: string, starterFirstName: string): string {
+function buildStarterPath(entityName: string, starterLastName: string, starterFirstName: string): string {
   const safeName = (s: string) => s.replace(/[<>:"/\\|?*]/g, "_").trim();
-  return `Airport/${safeName(entityName)}/${year}/${safeName(starterLastName)}, ${safeName(starterFirstName)}`;
+  return `${safeName(entityName)}/${safeName(starterLastName)} ${safeName(starterFirstName)}`;
 }
 
 export async function uploadDocument(
   entityName: string,
-  year: number,
   starterLastName: string,
   starterFirstName: string,
   fileName: string,
@@ -81,7 +80,7 @@ export async function uploadDocument(
 ): Promise<{ driveId: string; itemId: string; webUrl: string; path: string }> {
   const client = await graphDocs();
   const driveId = await resolveDriveId(client);
-  const folderPath = buildStarterPath(entityName, year, starterLastName, starterFirstName);
+  const folderPath = buildStarterPath(entityName, starterLastName, starterFirstName);
   const filePath = `${folderPath}/${fileName}`;
 
   const item = await client
@@ -130,13 +129,12 @@ export async function deleteDocument(
 
 export async function listStarterDocuments(
   entityName: string,
-  year: number,
   starterLastName: string,
   starterFirstName: string
 ): Promise<any[]> {
   const client = await graphDocs();
   const driveId = await resolveDriveId(client);
-  const folderPath = buildStarterPath(entityName, year, starterLastName, starterFirstName);
+  const folderPath = buildStarterPath(entityName, starterLastName, starterFirstName);
 
   try {
     const result = await client

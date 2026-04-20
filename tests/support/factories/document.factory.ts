@@ -31,7 +31,7 @@ export function createMockDocument(overrides: Partial<MockDocument> = {}): MockD
     starterId: 'starter-1',
     teamsDriveId: 'drive-123',
     teamsItemId: 'item-456',
-    teamsPath: 'Airport/Aceg/2026/Test, Starter/test-document.pdf',
+    teamsPath: 'Aceg/Test Starter/test-document.pdf',
     signingToken: `token-${counter}-${Date.now()}`,
     signatureFields: null,
     signedAt: null,

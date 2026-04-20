@@ -95,13 +95,8 @@ export async function POST(
       )
     }
 
-    const year = starter.startDate
-      ? new Date(starter.startDate).getFullYear()
-      : new Date().getFullYear()
-
     const result = await uploadDocument(
       starter.entity.name,
-      year,
       starter.lastName,
       starter.firstName,
       file.name,

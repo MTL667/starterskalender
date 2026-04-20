@@ -205,13 +205,8 @@ export async function POST(
         signedFileName = `${origName}-signed.pdf`
 
         if (document.starter?.entity) {
-          const year = document.starter.startDate
-            ? new Date(document.starter.startDate).getFullYear()
-            : now.getFullYear()
-
           const result = await uploadDocument(
             document.starter.entity.name,
-            year,
             document.starter.lastName,
             document.starter.firstName,
             signedFileName,
