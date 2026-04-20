@@ -98,12 +98,3 @@ export async function syncLegacyRoleToAssignments(userId: string): Promise<void>
     })
   }
 }
-
-/**
- * Sync voor een lijst users (bv. bulk-operatie, membership-wijziging).
- */
-export async function syncLegacyRoleToAssignmentsBulk(userIds: string[]): Promise<void> {
-  for (const id of userIds) {
-    await syncLegacyRoleToAssignments(id)
-  }
-}

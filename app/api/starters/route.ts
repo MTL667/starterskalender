@@ -151,13 +151,16 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     console.log('📥 POST /api/starters - received type:', body.type)
-    const data = StarterSchema.parse(body)
-    console.log('✅ Parsed type:', data.type)
+    const parsed = StarterSchema.parse(body)
+    console.log('✅ Parsed type:', parsed.type)
 
-    // RBAC v2: strip protected velden uit input als user ze niet mag schrijven
+    // RBAC v2: strip protected velden uit input als user ze niet mag schrijven.
+    // Vanaf hier gebruiken we enkel `data` (= gefilterde variant) zodat toekomstige
+    // veld-permissies automatisch effect hebben; een bypass via het originele
+    // parsed-object is dan niet meer mogelijk.
     const authz = await getCurrentAuthorizedUser()
-    const { data: safeData, dropped } = filterWritableFields(data, authz, 'starters', {
-      entityId: data.entityId ?? null,
+    const { data, dropped } = filterWritableFields(parsed, authz, 'starters', {
+      entityId: parsed.entityId ?? null,
     })
     if (dropped.length > 0) {
       console.log(`🔒 Dropped protected fields on create: ${dropped.join(', ')}`)
@@ -199,10 +202,9 @@ export async function POST(request: NextRequest) {
         experienceEntity: normalizeString(data.experienceEntity),
         phoneNumber: normalizeString(data.phoneNumber),
         desiredEmail: normalizeString(data.desiredEmail),
-        // Gevoelige velden (enkel meegegeven als user permissie heeft, zie filterWritableFields)
-        salary: safeData.salary ?? null,
-        salaryCurrency: safeData.salaryCurrency ?? (safeData.salary != null ? 'EUR' : null),
-        bankAccount: normalizeString(safeData.bankAccount ?? null),
+        salary: data.salary ?? null,
+        salaryCurrency: data.salaryCurrency ?? (data.salary != null ? 'EUR' : null),
+        bankAccount: normalizeString(data.bankAccount ?? null),
         createdBy: user.id,
       },
       include: {

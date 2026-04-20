@@ -45,7 +45,6 @@ const CATEGORY_LABEL: Record<string, string> = {
 export default function AdminRolesPage() {
   const [roles, setRoles] = useState<Role[]>([])
   const [flash, setFlash] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
-  const [, setPermissions] = useState<Permission[]>([])
   const [permsByCategory, setPermsByCategory] = useState<Record<string, Permission[]>>({})
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail] = useState<Role | null>(null)
@@ -73,7 +72,6 @@ export default function AdminRolesPage() {
       const rolesData = await rolesRes.json()
       const permsData = await permsRes.json()
       setRoles(rolesData.roles)
-      setPermissions(permsData.permissions)
       setPermsByCategory(permsData.byCategory)
       if (!selectedId && rolesData.roles.length > 0) {
         setSelectedId(rolesData.roles[0].id)

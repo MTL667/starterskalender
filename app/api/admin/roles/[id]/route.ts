@@ -62,13 +62,44 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
-    // Safety: last `admin:roles:manage`-assignment mag je niet weghalen van de enige rol die het biedt
-    if (data.permissionKeys && role.isSystem && role.key === 'hr-admin') {
-      if (!data.permissionKeys.includes('admin:roles:manage')) {
-        return NextResponse.json(
-          { error: 'HR Administrator moet `admin:roles:manage` behouden (anti-lockout)' },
-          { status: 400 },
-        )
+    // Anti-lockout: voorkom dat `admin:roles:manage` uit de laatste actieve
+    // route verdwijnt. Werkt voor zowel system- als custom-rollen: als deze
+    // rol het recht momenteel verleent en de edit haalt het weg, moet er
+    // elders nog minstens één andere rol met een actieve toekenning bestaan
+    // die hetzelfde recht biedt.
+    if (data.permissionKeys && !data.permissionKeys.includes('admin:roles:manage')) {
+      const thisGrantsManage = await prisma.rolePermission.findUnique({
+        where: { roleId_permissionKey: { roleId: id, permissionKey: 'admin:roles:manage' } },
+      })
+      if (thisGrantsManage) {
+        // Extra vangnet: de hr-admin system-rol mag `admin:roles:manage` nooit verliezen
+        if (role.isSystem && role.key === 'hr-admin') {
+          return NextResponse.json(
+            { error: 'HR Administrator moet `admin:roles:manage` behouden (anti-lockout)' },
+            { status: 400 },
+          )
+        }
+        const otherGrantingRoleWithActiveAssignment = await prisma.role.findFirst({
+          where: {
+            id: { not: id },
+            permissions: { some: { permissionKey: 'admin:roles:manage' } },
+            assignments: {
+              some: {
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+              },
+            },
+          },
+          select: { id: true },
+        })
+        if (!otherGrantingRoleWithActiveAssignment) {
+          return NextResponse.json(
+            {
+              error:
+                '`admin:roles:manage` zou uit de laatste actieve rol verdwijnen. Wijs het recht eerst aan een andere rol toe.',
+            },
+            { status: 400 },
+          )
+        }
       }
     }
 

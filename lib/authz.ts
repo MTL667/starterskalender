@@ -152,22 +152,6 @@ export async function requirePermission(
 }
 
 /**
- * Variant voor gevallen waar de caller al een user-object geladen heeft.
- * Handig in server-components die `getCurrentAuthorizedUser()` al hebben gedaan.
- */
-export function requirePermissionOn(
-  user: AuthorizedUser | null,
-  permission: string,
-  context?: { entityId?: string | null },
-): AuthorizedUser {
-  if (!user) throw new Error('Unauthorized: Not logged in')
-  if (!can(user, permission, context)) {
-    throw new Error(`Forbidden: missing permission "${permission}"`)
-  }
-  return user
-}
-
-/**
  * Verzamel alle entity-IDs waar de user een specifieke permission heeft.
  * Return:
  *  - `'ALL'`: de user heeft de permission globaal (gebruik géén entity-filter in queries).
@@ -185,22 +169,6 @@ export function visibleEntityIds(
     assignment.entityIds.forEach((id) => collected.add(id))
   }
   return [...collected]
-}
-
-/**
- * Pas een Prisma `where`-clause aan zodat enkel entity-IDs overblijven waar
- * de user `permission` heeft. Gebruikt de `field` sleutel als naam van de
- * entity-kolom (default `entityId`).
- */
-export function scopeWhereByPermission<T extends Record<string, any>>(
-  user: AuthorizedUser | null,
-  permission: string,
-  where: T = {} as T,
-  field: string = 'entityId',
-): T {
-  const scope = visibleEntityIds(user, permission)
-  if (scope === 'ALL') return where
-  return { ...where, [field]: { in: scope } } as T
 }
 
 /**
@@ -323,32 +291,4 @@ export async function getCurrentAuthorizedUser(): Promise<AuthorizedUser | null>
   })
   if (!user) return null
   return toAuthorizedUser(user)
-}
-
-/**
- * Vereist een ingelogde, actieve user. Gooit 401/403 bij ontbreken.
- * Dit vervangt `requireAuth()` uit lib/auth-utils.ts.
- */
-export async function requireAuthorized(): Promise<AuthorizedUser> {
-  const user = await getCurrentAuthorizedUser()
-  if (!user) throw new Error('Unauthorized: Not logged in')
-  if (user.status === 'SUSPENDED') {
-    throw new Error('Forbidden: Your account is suspended')
-  }
-  if (user.roleAssignments.length === 0) {
-    throw new Error(
-      'Forbidden: Your account has no roles assigned. Contact an administrator.',
-    )
-  }
-  return user
-}
-
-// ─── Convenience: admin check ────────────────────────────────────────────────
-
-/**
- * Shorthand voor "heeft admin-privileges" — true als een rol met
- * `bypassEntityScope` + `admin:users:manage` toegekend is.
- */
-export function isAdmin(user: AuthorizedUser | null): boolean {
-  return can(user, 'admin:users:manage')
 }
