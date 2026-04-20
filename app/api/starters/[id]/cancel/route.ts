@@ -96,14 +96,14 @@ export async function POST(
 
     // 1. HR_ADMIN users
     const hrAdmins = await prisma.user.findMany({
-      where: { role: 'HR_ADMIN' },
+      where: { legacyRole: 'HR_ADMIN' },
       select: { email: true, name: true },
     })
     recipients.push(...hrAdmins.map(u => u.email))
 
     // 2. GLOBAL_VIEWER users
     const globalViewers = await prisma.user.findMany({
-      where: { role: 'GLOBAL_VIEWER' },
+      where: { legacyRole: 'GLOBAL_VIEWER' },
       select: { email: true },
     })
     recipients.push(...globalViewers.map(u => u.email))

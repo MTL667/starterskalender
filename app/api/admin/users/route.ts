@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { isHRAdmin } from '@/lib/rbac'
+import { syncLegacyRoleToAssignments } from '@/lib/rbac-sync'
 
 const CreateUserSchema = z.object({
   name: z.string().min(1),
@@ -28,8 +29,8 @@ export async function GET(request: NextRequest) {
         id: true,
         email: true,
         name: true,
-        role: true,
-        permissions: true,
+        legacyRole: true,
+        legacyPermissions: true,
         createdAt: true,
         lastLoginAt: true,
         memberships: {
@@ -41,13 +42,25 @@ export async function GET(request: NextRequest) {
             },
           },
         },
+        roleAssignments: {
+          include: {
+            role: { select: { id: true, key: true, name: true, isSystem: true } },
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     })
 
-    return NextResponse.json(users)
+    // Alias legacyRole/legacyPermissions terug naar role/permissions voor de bestaande UI
+    const response = users.map((u) => ({
+      ...u,
+      role: u.legacyRole,
+      permissions: u.legacyPermissions,
+    }))
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -82,24 +95,32 @@ export async function POST(request: NextRequest) {
         email: data.email,
         name: data.name,
         password: hashedPassword,
-        role: data.role,
+        legacyRole: data.role,
       },
       select: {
         id: true,
         email: true,
         name: true,
-        role: true,
+        legacyRole: true,
       },
     })
+
+    // Sync naar RBAC v2 assignments zodat de nieuwe can()-checks meteen kloppen.
+    await syncLegacyRoleToAssignments(newUser.id)
 
     await createAuditLog({
       actorId: currentUser.id,
       action: 'CREATE',
       target: `User:${newUser.id}`,
-      meta: { email: newUser.email, role: newUser.role },
+      meta: { email: newUser.email, role: newUser.legacyRole },
     })
 
-    return NextResponse.json(newUser)
+    return NextResponse.json({
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      role: newUser.legacyRole,
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Ongeldige invoer', details: error.errors }, { status: 400 })
@@ -108,4 +129,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-

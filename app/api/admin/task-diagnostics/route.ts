@@ -68,7 +68,7 @@ export async function GET(req: Request) {
     // Fetch user count (for stats)
     const userCount = await prisma.user.count({
       where: {
-        role: {
+        legacyRole: {
           not: 'NONE',
         },
       },

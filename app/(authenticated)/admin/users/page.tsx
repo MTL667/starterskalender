@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ArrowLeft, UserPlus, Trash2, Building2, Search, X, Bell, Package } from 'lucide-react'
+import { ArrowLeft, UserPlus, Trash2, Building2, Search, X, Bell, Package, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 import { UserMembershipsDialog } from '@/components/admin/user-memberships-dialog'
 import { UserNotificationPrefsDialog } from '@/components/admin/user-notification-prefs-dialog'
+import { UserRolesDialog } from '@/components/admin/user-roles-dialog'
 
 interface User {
   id: string
@@ -59,6 +60,7 @@ export default function UsersAdminPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [membershipsDialogOpen, setMembershipsDialogOpen] = useState(false)
   const [notifPrefsDialogOpen, setNotifPrefsDialogOpen] = useState(false)
+  const [rolesDialogOpen, setRolesDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [editUser, setEditUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -371,6 +373,17 @@ export default function UsersAdminPage() {
                       <Building2 className="h-4 w-4 mr-2" />
                       {t('entities')}
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedUser(user)
+                        setRolesDialogOpen(true)
+                      }}
+                    >
+                      <KeyRound className="h-4 w-4 mr-2" />
+                      Rollen
+                    </Button>
                     {user.role !== 'NONE' && (
                       <Button
                         variant="outline"
@@ -491,6 +504,20 @@ export default function UsersAdminPage() {
           onClose={() => {
             setNotifPrefsDialogOpen(false)
             setSelectedUser(null)
+          }}
+          userId={selectedUser.id}
+          userName={selectedUser.name || selectedUser.email}
+        />
+      )}
+
+      {/* User Role Assignments Dialog (RBAC v2) */}
+      {selectedUser && (
+        <UserRolesDialog
+          open={rolesDialogOpen}
+          onClose={() => {
+            setRolesDialogOpen(false)
+            setSelectedUser(null)
+            fetchUsers()
           }}
           userId={selectedUser.id}
           userName={selectedUser.name || selectedUser.email}

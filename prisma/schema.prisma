@@ -8,7 +8,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
+// @deprecated — vervangen door het RBAC v2 systeem (Role / Permission / UserRoleAssignment).
+// Blijft 2 weken staan als veiligheidsnet en audit-trail. Verwijderen nadat cutover stabiel is.
+enum LegacyRole {
   HR_ADMIN
   ENTITY_EDITOR
   ENTITY_VIEWER
@@ -114,16 +116,19 @@ model User {
   email            String           @unique
   password         String? // Optional: legacy auth only
   name             String?
-  role             Role             @default(NONE) // New users start as NONE (guest)
+  legacyRole       LegacyRole       @default(NONE) @map("role") // @deprecated — migratiepad, behouden voor fallback na RBAC v2 cutover
   identityProvider IdentityProvider @default(MANUAL)
   status           UserStatus       @default(INVITED)
 
-  locale      String   @default("nl") // UI language: "nl" or "fr"
-  permissions String[] @default([]) // Extra permissions: MATERIAL_MANAGER, etc.
+  locale            String   @default("nl") // UI language: "nl" or "fr"
+  legacyPermissions String[] @default([]) @map("permissions") // @deprecated — vervangen door UserRoleAssignment
 
   // Azure AD / Entra ID fields
   tenantId String? // Azure AD tenant ID (tid claim)
   oid      String? // Azure AD object ID (oid claim)
+
+  // RBAC v2
+  roleAssignments UserRoleAssignment[]
 
   memberships             Membership[]
   notificationPreferences NotificationPreference[]
@@ -168,6 +173,8 @@ model Entity {
   @@index([isActive])
 }
 
+// @deprecated — vervangen door UserRoleAssignment.entityIds in RBAC v2.
+// Blijft 2 weken staan als fallback, daarna droppen.
 model Membership {
   id       String  @id @default(cuid())
   userId   String
@@ -179,6 +186,73 @@ model Membership {
   @@unique([userId, entityId])
   @@index([userId])
   @@index([entityId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RBAC v2 — Granulaire rechten met beheerbare rollen
+// ─────────────────────────────────────────────────────────────────────────────
+// Permission: catalogus van alle permission-keys die in de app gecheckt worden.
+// Keys volgen het patroon "<resource>:<action>[:<field>]" (bv. "starters:read",
+// "starters:read:salary", "admin:roles:manage"). Wordt geseed door de app zelf
+// (lib/authz-registry.ts is de source of truth) — admins kennen ze toe aan
+// rollen, maar maken geen nieuwe keys aan.
+model Permission {
+  key          String  @id
+  description  String?
+  category     String // "starters" | "tasks" | "materials" | "admin" | "users" | "reporting" | …
+  isFieldLevel Boolean @default(false) // UI-hint: toon apart onder "veld-permissies"
+
+  roles RolePermission[]
+
+  @@index([category])
+}
+
+// Role: globaal gedefinieerde rechtengroep. Wordt toegekend aan users via
+// UserRoleAssignment met optionele entity-scope.
+model Role {
+  id                String   @id @default(cuid())
+  key               String   @unique // "hr-admin", "marketing-operator", …
+  name              String // Label voor UI (Nederlands)
+  description       String?
+  isSystem          Boolean  @default(false) // seeded, niet verwijderbaar (permissies wel bewerkbaar)
+  bypassEntityScope Boolean  @default(false) // HR-admin stijl: toekenning geldt voor alle entiteiten, los van entityIds
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  permissions RolePermission[]
+  assignments UserRoleAssignment[]
+}
+
+model RolePermission {
+  roleId        String
+  permissionKey String
+  role          Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission    Permission @relation(fields: [permissionKey], references: [key], onDelete: Cascade)
+
+  @@id([roleId, permissionKey])
+  @@index([permissionKey])
+}
+
+// UserRoleAssignment: toekenning van een rol aan een user met entity-scope.
+// - entityIds: []   → toekenning geldt voor alle entiteiten (globaal)
+// - entityIds: [x]  → toekenning geldt enkel voor entiteit x
+// - bypassEntityScope op rol trumpt deze scope altijd.
+model UserRoleAssignment {
+  id          String    @id @default(cuid())
+  userId      String
+  roleId      String
+  entityIds   String[]  @default([])
+  grantedAt   DateTime  @default(now())
+  grantedById String?
+  expiresAt   DateTime? // fase 2: tijdelijke toegang
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId]) // 1 toekenning per (user, rol); scope in entityIds
+  @@index([userId])
+  @@index([roleId])
+  @@index([expiresAt])
 }
 
 model Starter {
@@ -213,6 +287,12 @@ model Starter {
   experienceSince  DateTime? // Startdatum van ervaring (om duur te berekenen)
   experienceRole   String? // Functie waarin ervaring opgedaan
   experienceEntity String? // Entiteit/bedrijf waar ervaring opgedaan (vrij veld)
+
+  // Gevoelige HR-velden — beschermd via RBAC v2 field-level permissies.
+  // Lezen/schrijven vereist `starters:read:salary` resp. `starters:read:bankaccount`.
+  salary         Decimal? @db.Decimal(10, 2) // Bruto maandsalaris (EUR)
+  salaryCurrency String?  @default("EUR")
+  bankAccount    String? // IBAN / rekeningnummer
 
   createdBy        String? // User ID die het aanmaakte
   createdAt        DateTime          @default(now())
@@ -422,10 +502,10 @@ model TaskTemplate {
   autoAssign   Boolean      @default(true) // Automatisch toewijzen bij nieuwe starter
 
   // Optionele filters - wanneer moet deze template worden toegepast?
-  forEntityIds            String[] // Lege array = alle entiteiten
-  forJobRoleTitles        String[] // Lege array = alle functies (tenzij requireExplicitJobRole = true)
-  requireExplicitJobRole  Boolean  @default(false) // Als true: enkel toepassen bij expliciete match in forJobRoleTitles; lege lijst = geen enkele functie
-  forStarterType          StarterType? // null = beide types, anders alleen voor dit type
+  forEntityIds           String[] // Lege array = alle entiteiten
+  forJobRoleTitles       String[] // Lege array = alle functies (tenzij requireExplicitJobRole = true)
+  requireExplicitJobRole Boolean      @default(false) // Als true: enkel toepassen bij expliciete match in forJobRoleTitles; lege lijst = geen enkele functie
+  forStarterType         StarterType? // null = beide types, anders alleen voor dit type
 
   // Dependencies & scheduling (marketing workflow + generiek)
   dependsOnTemplateIds String[]     @default([]) // AND-gate: concrete dep-templates

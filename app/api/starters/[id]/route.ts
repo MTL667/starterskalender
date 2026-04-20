@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { canMutateStarter } from '@/lib/rbac'
+import { getCurrentAuthorizedUser, sanitizeFields, filterWritableFields } from '@/lib/authz'
 import { calculateWeekNumber, getYearInTimezone } from '@/lib/week-utils'
 import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
@@ -26,6 +27,13 @@ const UpdateStarterSchema = z.object({
   experienceEntity: z.string().nullable().optional(),
   phoneNumber: z.string().nullable().optional(),
   desiredEmail: z.string().email().nullable().optional(),
+  salary: z
+    .union([z.number(), z.string()])
+    .nullable()
+    .optional()
+    .transform((v) => (v === null || v === undefined || v === '' ? null : Number(v))),
+  salaryCurrency: z.string().length(3).nullable().optional(),
+  bankAccount: z.string().nullable().optional(),
 })
 
 // GET - Get single starter
@@ -52,7 +60,10 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    return NextResponse.json(starter)
+    // RBAC v2: strip veld-level beschermde velden op basis van entity-scope
+    const authz = await getCurrentAuthorizedUser()
+    const safe = sanitizeFields(starter, authz, 'starters', { entityId: starter.entityId })
+    return NextResponse.json(safe)
   } catch (error) {
     console.error('Error fetching starter:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -77,13 +88,22 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const data = UpdateStarterSchema.parse(body)
+    const parsed = UpdateStarterSchema.parse(body)
 
     // Check if this is a pending boarding starter being activated
     const existingStarter = await prisma.starter.findUnique({
       where: { id },
-      select: { isPendingBoarding: true, type: true },
+      select: { isPendingBoarding: true, type: true, entityId: true },
     })
+
+    // RBAC v2: strip protected velden uit de update-payload als user geen permissie heeft
+    const authz = await getCurrentAuthorizedUser()
+    const { data, dropped } = filterWritableFields(parsed, authz, 'starters', {
+      entityId: existingStarter?.entityId ?? null,
+    })
+    if (dropped.length > 0) {
+      console.log(`🔒 Dropped protected fields on update of ${id}: ${dropped.join(', ')}`)
+    }
 
     const updateData: any = {}
 
@@ -102,6 +122,9 @@ export async function PATCH(
     if (data.experienceEntity !== undefined) updateData.experienceEntity = normalizeString(data.experienceEntity)
     if (data.phoneNumber !== undefined) updateData.phoneNumber = normalizeString(data.phoneNumber)
     if (data.desiredEmail !== undefined) updateData.desiredEmail = normalizeString(data.desiredEmail)
+    if (data.salary !== undefined) updateData.salary = data.salary ?? null
+    if (data.salaryCurrency !== undefined) updateData.salaryCurrency = data.salaryCurrency ?? null
+    if (data.bankAccount !== undefined) updateData.bankAccount = normalizeString(data.bankAccount)
 
     const isActivatingPending = existingStarter?.isPendingBoarding && data.startDate
 
@@ -215,7 +238,8 @@ export async function PATCH(
       eventBus.emit({ type: 'starter:updated', entityId: starter.entityId, payload: { starterId: starter.id } })
     }
 
-    return NextResponse.json(starter)
+    const safe = sanitizeFields(starter, authz, 'starters', { entityId: starter.entityId })
+    return NextResponse.json(safe)
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })

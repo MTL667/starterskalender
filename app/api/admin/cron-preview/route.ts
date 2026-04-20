@@ -104,7 +104,7 @@ export async function POST(req: Request) {
     // Haal ALLE users op (met memberships en notification preferences)
     const allUsersRaw = await prisma.user.findMany({
       where: {
-        role: { not: 'NONE' },
+        legacyRole: { not: 'NONE' },
       },
       include: {
         notificationPreferences: {
@@ -147,7 +147,7 @@ export async function POST(req: Request) {
       const enabledPrefs = user.notificationPreferences.filter(p => p[notificationType])
       
       let accessibleEntityIds: string[] = []
-      if (user.role === 'HR_ADMIN' || user.role === 'GLOBAL_VIEWER') {
+      if (user.legacyRole === 'HR_ADMIN' || user.legacyRole === 'GLOBAL_VIEWER') {
         accessibleEntityIds = enabledPrefs.map(p => p.entityId)
       } else {
         const preferencesMap = new Set(enabledPrefs.map(p => p.entityId))
