@@ -77,12 +77,21 @@ export const authOptions: NextAuthOptions = {
               data: {
                 email,
                 name: email.split('@')[0],
-                role: 'HR_ADMIN', // Give full access in dev
+                legacyRole: 'HR_ADMIN', // RBAC v2: legacy column, kept for fallback
                 identityProvider: 'MANUAL',
                 status: 'ACTIVE',
                 lastLoginAt: new Date(),
               },
             })
+            // RBAC v2: geef dev-admin ook de nieuwe hr-admin rol (als seed al gelopen heeft)
+            const hrAdminRole = await prisma.role.findUnique({ where: { key: 'hr-admin' } })
+            if (hrAdminRole) {
+              await prisma.userRoleAssignment.upsert({
+                where: { userId_roleId: { userId: user.id, roleId: hrAdminRole.id } },
+                create: { userId: user.id, roleId: hrAdminRole.id, entityIds: [] },
+                update: {},
+              })
+            }
             console.log(`✅ Created dev admin user: ${email}`)
           } else {
             await prisma.user.update({
@@ -267,7 +276,7 @@ export const authOptions: NextAuthOptions = {
             data: {
               email,
               name: user.name || email.split('@')[0],
-              role: 'NONE', // Guest role - no permissions
+              legacyRole: 'NONE', // Guest role - no permissions; RBAC v2 = geen roleAssignments
               tenantId,
               oid,
               lastLoginAt: new Date(),
@@ -320,9 +329,10 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email! },
           include: {
-            memberships: {
+            memberships: { include: { entity: true } },
+            roleAssignments: {
               include: {
-                entity: true,
+                role: { include: { permissions: { select: { permissionKey: true } } } },
               },
             },
           },
@@ -330,9 +340,9 @@ export const authOptions: NextAuthOptions = {
 
         if (dbUser) {
           token.id = dbUser.id
-          token.role = dbUser.role
+          token.role = dbUser.legacyRole // Backwards-compat voor session.user.role
           token.locale = dbUser.locale
-          token.permissions = dbUser.permissions ?? []
+          token.permissions = dbUser.legacyPermissions ?? []
           token.tenantId = dbUser.tenantId ?? undefined
           token.oid = dbUser.oid ?? undefined
           token.memberships = dbUser.memberships.map(m => ({
@@ -340,6 +350,14 @@ export const authOptions: NextAuthOptions = {
             entityName: m.entity.name,
             canEdit: m.canEdit,
           }))
+          // RBAC v2: flat lijst van permission-keys (ongescoped, voor client-side UI hints).
+          // Server-side validation blijft via can() met volledige scope-context.
+          const perms = new Set<string>()
+          for (const ra of dbUser.roleAssignments) {
+            if (ra.expiresAt && ra.expiresAt < new Date()) continue
+            for (const p of ra.role.permissions) perms.add(p.permissionKey)
+          }
+          ;(token as any).perms = [...perms]
         }
       }
 
@@ -348,23 +366,30 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email as string },
           include: {
-            memberships: {
+            memberships: { include: { entity: true } },
+            roleAssignments: {
               include: {
-                entity: true,
+                role: { include: { permissions: { select: { permissionKey: true } } } },
               },
             },
           },
         })
 
         if (dbUser) {
-          token.role = dbUser.role
+          token.role = dbUser.legacyRole
           token.locale = dbUser.locale
-          token.permissions = dbUser.permissions ?? []
+          token.permissions = dbUser.legacyPermissions ?? []
           token.memberships = dbUser.memberships.map(m => ({
             entityId: m.entityId,
             entityName: m.entity.name,
             canEdit: m.canEdit,
           }))
+          const perms = new Set<string>()
+          for (const ra of dbUser.roleAssignments) {
+            if (ra.expiresAt && ra.expiresAt < new Date()) continue
+            for (const p of ra.role.permissions) perms.add(p.permissionKey)
+          }
+          ;(token as any).perms = [...perms]
         }
       }
 
@@ -376,6 +401,7 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id as string
         ;(session.user as any).role = token.role as any
         ;(session.user as any).permissions = (token.permissions as string[]) || []
+        ;(session.user as any).perms = ((token as any).perms as string[]) || []
         ;(session.user as any).tenantId = token.tenantId as string | undefined
         ;(session.user as any).oid = token.oid as string | undefined
         ;(session.user as any).memberships = (token.memberships as any) || []

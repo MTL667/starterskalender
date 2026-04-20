@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client'
+import { LegacyRole } from '@prisma/client'
 import 'next-auth'
 import 'next-auth/jwt'
 
@@ -14,8 +14,9 @@ declare module 'next-auth' {
       id: string
       email: string
       name?: string | null
-      role: Role
-      permissions: string[]
+      role: LegacyRole // @deprecated — backwards-compat alias, blijft populated via legacyRole
+      permissions: string[] // @deprecated — legacyPermissions
+      perms: string[] // RBAC v2: flat lijst van permission-keys
       tenantId?: string
       oid?: string
       memberships: Membership[]
@@ -27,7 +28,7 @@ declare module 'next-auth' {
     id: string
     email: string
     name?: string | null
-    role?: Role
+    role?: LegacyRole
     tenantId?: string
     oid?: string
   }
@@ -36,8 +37,9 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     id: string
-    role?: Role
-    permissions?: string[]
+    role?: LegacyRole // @deprecated
+    permissions?: string[] // @deprecated
+    perms?: string[] // RBAC v2
     tenantId?: string
     oid?: string
     memberships?: Membership[]

@@ -21,7 +21,7 @@ export async function GET() {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const role = user.role
+  const role = user.legacyRole
   const isGlobalAccess = role === 'HR_ADMIN' || role === 'GLOBAL_VIEWER'
 
   let entityIds: string[]

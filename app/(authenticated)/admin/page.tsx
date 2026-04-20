@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope, FileSignature, Grid3X3, BarChart3, PenLine, ListChecks, Network } from 'lucide-react'
+import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope, FileSignature, Grid3X3, BarChart3, PenLine, ListChecks, Network, KeyRound } from 'lucide-react'
 
 export default async function AdminPage() {
   const user = await requireAdmin().catch(() => null)
@@ -32,6 +32,12 @@ export default async function AdminPage() {
       description: t('usersDescription'),
       icon: Users,
       href: '/admin/users',
+    },
+    {
+      title: 'Rollen & permissies',
+      description: 'Rechtengroepen beheren en permissies toewijzen (RBAC v2)',
+      icon: KeyRound,
+      href: '/admin/roles',
     },
     {
       title: t('materials'),

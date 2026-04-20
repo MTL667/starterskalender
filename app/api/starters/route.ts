@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { filterStartersByRBAC, canMutateStarter, isHRAdmin } from '@/lib/rbac'
+import { getCurrentAuthorizedUser, sanitizeFieldsList, filterWritableFields } from '@/lib/authz'
 import { calculateWeekNumber, getYearInTimezone } from '@/lib/week-utils'
 import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
@@ -32,6 +33,14 @@ const StarterSchema = z.object({
   experienceEntity: z.string().nullable().optional(),
   phoneNumber: z.string().nullable().optional(),
   desiredEmail: z.string().email().nullable().optional(),
+  // Gevoelige velden — alleen gebruikt wanneer de user field-permissie heeft.
+  salary: z
+    .union([z.number(), z.string()])
+    .nullable()
+    .optional()
+    .transform((v) => (v === null || v === undefined || v === '' ? null : Number(v))),
+  salaryCurrency: z.string().length(3).nullable().optional(),
+  bankAccount: z.string().nullable().optional(),
 })
 
 // GET - List starters met filtering
@@ -117,7 +126,10 @@ export async function GET(request: NextRequest) {
       orderBy: [{ startDate: 'asc' }, { lastName: 'asc' }],
     })
 
-    return NextResponse.json(starters)
+    // RBAC v2: strip veld-level beschermde velden (salary, bankAccount, …)
+    const authz = await getCurrentAuthorizedUser()
+    const safe = sanitizeFieldsList(starters, authz, 'starters')
+    return NextResponse.json(safe)
   } catch (error) {
     console.error('Error fetching starters:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -141,6 +153,15 @@ export async function POST(request: NextRequest) {
     console.log('📥 POST /api/starters - received type:', body.type)
     const data = StarterSchema.parse(body)
     console.log('✅ Parsed type:', data.type)
+
+    // RBAC v2: strip protected velden uit input als user ze niet mag schrijven
+    const authz = await getCurrentAuthorizedUser()
+    const { data: safeData, dropped } = filterWritableFields(data, authz, 'starters', {
+      entityId: data.entityId ?? null,
+    })
+    if (dropped.length > 0) {
+      console.log(`🔒 Dropped protected fields on create: ${dropped.join(', ')}`)
+    }
 
     const isPending = data.isPendingBoarding || !data.startDate
 
@@ -178,6 +199,10 @@ export async function POST(request: NextRequest) {
         experienceEntity: normalizeString(data.experienceEntity),
         phoneNumber: normalizeString(data.phoneNumber),
         desiredEmail: normalizeString(data.desiredEmail),
+        // Gevoelige velden (enkel meegegeven als user permissie heeft, zie filterWritableFields)
+        salary: safeData.salary ?? null,
+        salaryCurrency: safeData.salaryCurrency ?? (safeData.salary != null ? 'EUR' : null),
+        bankAccount: normalizeString(safeData.bankAccount ?? null),
         createdBy: user.id,
       },
       include: {

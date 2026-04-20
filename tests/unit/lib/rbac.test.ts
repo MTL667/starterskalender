@@ -7,6 +7,7 @@ import {
   canViewEntity,
   filterStartersByRBAC,
   hasAdminRights,
+  type UserWithMemberships,
 } from '@/lib/rbac'
 
 const baseUser = {
@@ -21,16 +22,16 @@ const baseUser = {
   createdAt: new Date(),
   updatedAt: new Date(),
   oid: null,
-}
+} as unknown as UserWithMemberships
 
 const withMemberships = (
   role: 'HR_ADMIN' | 'GLOBAL_VIEWER' | 'ENTITY_EDITOR' | 'ENTITY_VIEWER' | 'NONE',
   memberships: any[] = []
-) => ({
+): UserWithMemberships => ({
   ...baseUser,
   role,
   memberships,
-})
+}) as UserWithMemberships
 
 describe('RBAC - Role Checks', () => {
   it('identifies HR_ADMIN correctly', () => {

@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     // Get all users for assignee dropdown
     const users = await prisma.user.findMany({
       where: {
-        role: {
+        legacyRole: {
           not: 'NONE',
         },
       },
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
         id: true,
         name: true,
         email: true,
-        role: true,
+        legacyRole: true,
         status: true,
       },
       orderBy: {
@@ -51,19 +51,19 @@ export async function GET(req: Request) {
             id: true,
             name: true,
             email: true,
-            role: true,
+            legacyRole: true,
           },
         })
         return {
           ...assignment,
-          assignee,
+          assignee: assignee ? { ...assignee, role: assignee.legacyRole } : null,
         }
       })
     )
 
     return NextResponse.json({
       assignments: assignmentsWithAssignees,
-      users,
+      users: users.map((u) => ({ ...u, role: u.legacyRole })),
     })
   } catch (error) {
     console.error('Error fetching task assignments:', error)
@@ -157,7 +157,7 @@ export async function POST(req: Request) {
         id: true,
         name: true,
         email: true,
-        role: true,
+        legacyRole: true,
       },
     })
 
@@ -178,7 +178,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ...assignment,
-      assignee,
+      assignee: assignee ? { ...assignee, role: assignee.legacyRole } : null,
     }, { status: 201 })
   } catch (error) {
     console.error('❌ Error creating/updating task assignment:', error)

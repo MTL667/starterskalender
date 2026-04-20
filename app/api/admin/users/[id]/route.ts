@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { isHRAdmin } from '@/lib/rbac'
+import { syncLegacyRoleToAssignments } from '@/lib/rbac-sync'
 
 const UpdateUserSchema = z.object({
   role: z.enum(['HR_ADMIN', 'ENTITY_EDITOR', 'ENTITY_VIEWER', 'GLOBAL_VIEWER']).optional(),
@@ -28,26 +29,45 @@ export async function PATCH(
     const body = await request.json()
     const data = UpdateUserSchema.parse(body)
 
-    const user = await prisma.user.update({
+    // Map legacy veld-namen naar de Prisma-kolommen (RBAC v2).
+    const prismaData: Record<string, unknown> = {}
+    if (data.name !== undefined) prismaData.name = data.name
+    if (data.role !== undefined) prismaData.legacyRole = data.role
+    if (data.permissions !== undefined) prismaData.legacyPermissions = data.permissions
+
+    const updated = await prisma.user.update({
       where: { id: id },
-      data,
+      data: prismaData,
       select: {
         id: true,
         email: true,
         name: true,
-        role: true,
-        permissions: true,
+        legacyRole: true,
+        legacyPermissions: true,
       },
     })
+
+    // Sync legacyRole/legacyPermissions naar UserRoleAssignment zodat de nieuwe
+    // `can()`-checks altijd overeenkomen met wat admins hier instellen.
+    if (data.role !== undefined || data.permissions !== undefined) {
+      await syncLegacyRoleToAssignments(id)
+    }
 
     await createAuditLog({
       actorId: currentUser.id,
       action: 'UPDATE',
-      target: `User:${user.id}`,
+      target: `User:${updated.id}`,
       meta: { changes: data },
     })
 
-    return NextResponse.json(user)
+    // Response: alias role/permissions voor backwards-compat met oude UI
+    return NextResponse.json({
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      role: updated.legacyRole,
+      permissions: updated.legacyPermissions,
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Ongeldige invoer', details: error.errors }, { status: 400 })

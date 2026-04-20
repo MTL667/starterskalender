@@ -17,6 +17,11 @@ export type AuditAction =
   | 'ROOM_CREATED'
   | 'ROOM_UPDATED'
   | 'ROOM_DELETED'
+  | 'ROLE_CREATED'
+  | 'ROLE_UPDATED'
+  | 'ROLE_DELETED'
+  | 'ROLE_ASSIGNED'
+  | 'ROLE_UNASSIGNED'
 
 export interface AuditLogInput {
   actorId?: string

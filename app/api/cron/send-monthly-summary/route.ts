@@ -120,7 +120,7 @@ export async function GET(req: Request) {
       // Bepaal welke entiteiten deze user mag zien
       let accessibleEntityIds: string[]
       
-      if (user.role === 'HR_ADMIN' || user.role === 'GLOBAL_VIEWER') {
+      if (user.legacyRole === 'HR_ADMIN' || user.legacyRole === 'GLOBAL_VIEWER') {
         accessibleEntityIds = user.notificationPreferences.map(p => p.entityId)
       } else {
         const preferencesMap = new Set(user.notificationPreferences.map(p => p.entityId))

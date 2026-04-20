@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { isHRAdmin } from '@/lib/rbac'
+import { syncLegacyRoleToAssignments } from '@/lib/rbac-sync'
 
 const MembershipSchema = z.object({
   entityId: z.string(),
@@ -73,6 +74,9 @@ export async function POST(
       },
     })
 
+    // RBAC v2: scope van entity-editor/-viewer toekenningen bijwerken
+    await syncLegacyRoleToAssignments(id)
+
     await createAuditLog({
       actorId: currentUser.id,
       action: 'CREATE',
@@ -115,6 +119,9 @@ export async function DELETE(
     await prisma.membership.delete({
       where: { id: membershipId },
     })
+
+    // RBAC v2: scope van entity-editor/-viewer toekenningen bijwerken
+    await syncLegacyRoleToAssignments(id)
 
     await createAuditLog({
       actorId: currentUser.id,

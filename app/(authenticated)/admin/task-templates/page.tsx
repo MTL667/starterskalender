@@ -516,7 +516,28 @@ export default function TaskTemplatesAdminPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Functies ({form.forJobRoleTitles.length}/{uniqueRoleTitles.length})</Label>
+            <div className="flex items-center justify-between">
+              <Label>Functies ({form.forJobRoleTitles.length}/{uniqueRoleTitles.length})</Label>
+              <div className="flex gap-2 text-xs">
+                <button
+                  type="button"
+                  className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                  disabled={uniqueRoleTitles.length === 0 || form.forJobRoleTitles.length === uniqueRoleTitles.length}
+                  onClick={() => setForm(f => ({ ...f, forJobRoleTitles: [...uniqueRoleTitles] }))}
+                >
+                  Alles selecteren
+                </button>
+                <span className="text-muted-foreground">·</span>
+                <button
+                  type="button"
+                  className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                  disabled={form.forJobRoleTitles.length === 0}
+                  onClick={() => setForm(f => ({ ...f, forJobRoleTitles: [] }))}
+                >
+                  Alles wissen
+                </button>
+              </div>
+            </div>
             <div className="max-h-40 overflow-y-auto border rounded-md p-2 grid grid-cols-2 md:grid-cols-3 gap-1">
               {uniqueRoleTitles.map(title => (
                 <label key={title} className="flex items-center gap-2 text-sm">
@@ -535,7 +556,28 @@ export default function TaskTemplatesAdminPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Entiteiten ({form.forEntityIds.length}/{entities.length})</Label>
+            <div className="flex items-center justify-between">
+              <Label>Entiteiten ({form.forEntityIds.length}/{entities.length})</Label>
+              <div className="flex gap-2 text-xs">
+                <button
+                  type="button"
+                  className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                  disabled={entities.length === 0 || form.forEntityIds.length === entities.length}
+                  onClick={() => setForm(f => ({ ...f, forEntityIds: entities.map(e => e.id) }))}
+                >
+                  Alles selecteren
+                </button>
+                <span className="text-muted-foreground">·</span>
+                <button
+                  type="button"
+                  className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                  disabled={form.forEntityIds.length === 0}
+                  onClick={() => setForm(f => ({ ...f, forEntityIds: [] }))}
+                >
+                  Alles wissen
+                </button>
+              </div>
+            </div>
             <div className="max-h-32 overflow-y-auto border rounded-md p-2 grid grid-cols-2 md:grid-cols-3 gap-1">
               {entities.map(e => (
                 <label key={e.id} className="flex items-center gap-2 text-sm">
@@ -554,7 +596,20 @@ export default function TaskTemplatesAdminPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Dependencies ({form.dependsOnTemplateIds.length})</Label>
+            <div className="flex items-center justify-between">
+              <Label>Dependencies ({form.dependsOnTemplateIds.length})</Label>
+              <button
+                type="button"
+                className="text-xs text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
+                disabled={form.dependsOnTemplateIds.length === 0}
+                onClick={() => setForm(f => ({ ...f, dependsOnTemplateIds: [] }))}
+              >
+                Alles wissen
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Taak blijft geblokkeerd tot <strong>alle</strong> aangevinkte templates voltooid zijn voor dezelfde starter.
+            </p>
             <div className="max-h-40 overflow-y-auto border rounded-md p-2 grid grid-cols-1 md:grid-cols-2 gap-1">
               {templates
                 .filter(t => !editing || t.id !== editing.id)

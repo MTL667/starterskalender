@@ -46,7 +46,7 @@ export async function GET(
     // Bepaal welke entiteiten deze user zou moeten zien
     let accessibleEntityIds: string[]
 
-    if (targetUser.role === 'HR_ADMIN' || targetUser.role === 'GLOBAL_VIEWER') {
+    if (targetUser.legacyRole === 'HR_ADMIN' || targetUser.legacyRole === 'GLOBAL_VIEWER') {
       const allEntities = await prisma.entity.findMany({
         where: { isActive: true },
         select: { id: true },
@@ -149,7 +149,7 @@ export async function PATCH(
     // Bepaal toegankelijke entiteiten
     let accessibleEntityIds: Set<string>
 
-    if (targetUser.role === 'HR_ADMIN' || targetUser.role === 'GLOBAL_VIEWER') {
+    if (targetUser.legacyRole === 'HR_ADMIN' || targetUser.legacyRole === 'GLOBAL_VIEWER') {
       const allEntities = await prisma.entity.findMany({
         where: { isActive: true },
         select: { id: true },

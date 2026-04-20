@@ -55,7 +55,7 @@ export async function GET() {
     // Voor andere users: alleen memberships
     let accessibleEntities: string[]
     
-    if (user.role === 'HR_ADMIN' || user.role === 'GLOBAL_VIEWER') {
+    if (user.legacyRole === 'HR_ADMIN' || user.legacyRole === 'GLOBAL_VIEWER') {
       const allEntities = await prisma.entity.findMany({
         where: { isActive: true },
         select: { id: true },
@@ -165,7 +165,7 @@ export async function PATCH(req: Request) {
     })
 
     // HR_ADMIN en GLOBAL_VIEWER hebben toegang tot alle entiteiten
-    if (!membership && user.role !== 'HR_ADMIN' && user.role !== 'GLOBAL_VIEWER') {
+    if (!membership && user.legacyRole !== 'HR_ADMIN' && user.legacyRole !== 'GLOBAL_VIEWER') {
       return NextResponse.json(
         { error: 'No access to this entity' },
         { status: 403 }
