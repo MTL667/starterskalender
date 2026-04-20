@@ -50,17 +50,12 @@ export default function TakenPage() {
 
   useEffect(() => {
     const taskId = searchParams.get('taskId')
-    if (taskId && tasks.length > 0) {
-      const task = tasks.find(t => t.id === taskId)
-      if (task) {
-        setSelectedTask(task)
-        setDialogOpen(true)
-        router.replace('/taken', { scroll: false })
-      } else {
-        fetchSpecificTask(taskId)
-      }
+    if (taskId) {
+      // Altijd volledige details ophalen (anders mist `dependencies`, `uploads`, etc.)
+      fetchSpecificTask(taskId)
+      router.replace('/taken', { scroll: false })
     }
-  }, [searchParams, tasks])
+  }, [searchParams])
 
   const fetchSpecificTask = async (taskId: string) => {
     try {
@@ -69,7 +64,6 @@ export default function TakenPage() {
         const task = await res.json()
         setSelectedTask(task)
         setDialogOpen(true)
-        router.replace('/taken', { scroll: false })
       }
     } catch (error) {
       console.error('Error fetching specific task:', error)
@@ -185,9 +179,32 @@ export default function TakenPage() {
       }),
   }
 
-  const openTask = (task: Task) => {
+  const openTask = async (task: Task) => {
+    // Direct de lijst-versie tonen (snel), daarna volledige details ophalen
     setSelectedTask(task)
     setDialogOpen(true)
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`)
+      if (res.ok) {
+        const full = await res.json()
+        setSelectedTask(full)
+      }
+    } catch (err) {
+      console.error('Error fetching task details:', err)
+    }
+  }
+
+  const refreshSelectedTask = async () => {
+    if (!selectedTask) return
+    try {
+      const res = await fetch(`/api/tasks/${selectedTask.id}`)
+      if (res.ok) {
+        const full = await res.json()
+        setSelectedTask(full)
+      }
+    } catch (err) {
+      console.error('Error refreshing task:', err)
+    }
   }
 
   return (
@@ -243,6 +260,14 @@ export default function TakenPage() {
                   <SelectItem value="HR_ADMIN">{t('hrAdmin')}</SelectItem>
                   <SelectItem value="FACILITIES">{t('facilities')}</SelectItem>
                   <SelectItem value="MANAGER_ACTION">{t('managerAction')}</SelectItem>
+                  <SelectItem value="MARKETING_PHOTO">{t('marketingPhoto')}</SelectItem>
+                  <SelectItem value="MARKETING_EDIT">{t('marketingEdit')}</SelectItem>
+                  <SelectItem value="MARKETING_UTM">{t('marketingUtm')}</SelectItem>
+                  <SelectItem value="MARKETING_VCARD">{t('marketingVcard')}</SelectItem>
+                  <SelectItem value="MARKETING_VISITEKAARTJE">{t('marketingVisitekaartje')}</SelectItem>
+                  <SelectItem value="MARKETING_BADGE">{t('marketingBadge')}</SelectItem>
+                  <SelectItem value="MARKETING_NFC">{t('marketingNfc')}</SelectItem>
+                  <SelectItem value="MARKETING_SIGNATURE">{t('marketingSignature')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -356,6 +381,7 @@ export default function TakenPage() {
         reassigning={reassigning}
         onComplete={handleCompleteTask}
         onReassign={handleReassign}
+        onTaskChanged={refreshSelectedTask}
       />
     </div>
   )

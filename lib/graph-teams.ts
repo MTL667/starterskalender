@@ -76,12 +76,15 @@ export async function uploadDocument(
   starterLastName: string,
   starterFirstName: string,
   fileName: string,
-  content: Buffer
+  content: Buffer,
+  subFolder?: string
 ): Promise<{ driveId: string; itemId: string; webUrl: string; path: string }> {
   const client = await graphDocs();
   const driveId = await resolveDriveId(client);
+  const safeName = (s: string) => s.replace(/[<>:"/\\|?*]/g, "_").trim();
   const folderPath = buildStarterPath(entityName, starterLastName, starterFirstName);
-  const filePath = `${folderPath}/${fileName}`;
+  const fullFolder = subFolder ? `${folderPath}/${safeName(subFolder)}` : folderPath;
+  const filePath = `${fullFolder}/${fileName}`;
 
   const item = await client
     .api(`/drives/${driveId}/root:/${filePath}:/content`)

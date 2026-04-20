@@ -17,10 +17,10 @@ enum Role {
 }
 
 enum NotificationType {
-  WEEKLY_REMINDER    // 1 week voor opstart
-  MONTHLY_SUMMARY    // Maandelijkse samenvatting
-  QUARTERLY_SUMMARY  // Kwartaal samenvatting
-  YEARLY_SUMMARY     // Jaarlijks overzicht
+  WEEKLY_REMINDER // 1 week voor opstart
+  MONTHLY_SUMMARY // Maandelijkse samenvatting
+  QUARTERLY_SUMMARY // Kwartaal samenvatting
+  YEARLY_SUMMARY // Jaarlijks overzicht
 }
 
 enum IdentityProvider {
@@ -41,19 +41,33 @@ enum BookingStatus {
 }
 
 enum TaskType {
-  IT_SETUP           // IT-gerelateerde taken (email, telefoon, accounts)
-  HR_ADMIN           // HR administratie (contract, badges)
-  FACILITIES         // Facilities (werkplek, parkeerplaats)
-  MANAGER_ACTION     // Manager acties (welkomstgesprek, intro)
-  CUSTOM             // Custom taken
+  IT_SETUP // IT-gerelateerde taken (email, telefoon, accounts)
+  HR_ADMIN // HR administratie (contract, badges)
+  FACILITIES // Facilities (werkplek, parkeerplaats)
+  MANAGER_ACTION // Manager acties (welkomstgesprek, intro)
+  CUSTOM // Custom taken
+  MARKETING_PHOTO // Headshot nemen op startersdag
+  MARKETING_EDIT // Foto's bewerken (3 varianten)
+  MARKETING_UTM // UTM-code aanmaken voor vCard
+  MARKETING_VCARD // vCard aanmaken
+  MARKETING_VISITEKAARTJE // Visitekaartjes bestellen
+  MARKETING_BADGE // Badge bestellen
+  MARKETING_NFC // SIMA NFC badge bestellen
+  MARKETING_SIGNATURE // Emailhandtekening aanmaken (fase 2)
+}
+
+enum ScheduleType {
+  OFFSET_FROM_START // Standaard: dueDate = startDate + daysUntilDue
+  ON_START_DATE // Gepland op startersdag zelf (+ O365 event)
+  AFTER_DEPENDENCIES // Zodra alle dependencies DONE zijn
 }
 
 enum TaskStatus {
-  PENDING            // Nog niet gestart
-  IN_PROGRESS        // Bezig
-  BLOCKED            // Geblokkeerd (wacht op iets/iemand)
-  COMPLETED          // Voltooid
-  CANCELLED          // Geannuleerd
+  PENDING // Nog niet gestart
+  IN_PROGRESS // Bezig
+  BLOCKED // Geblokkeerd (wacht op iets/iemand)
+  COMPLETED // Voltooid
+  CANCELLED // Geannuleerd
 }
 
 enum TaskPriority {
@@ -64,67 +78,67 @@ enum TaskPriority {
 }
 
 enum NotificationChannelType {
-  IN_APP             // In-app notificatie (bell icon)
-  EMAIL              // Email notificatie
-  BOTH               // Beide
+  IN_APP // In-app notificatie (bell icon)
+  EMAIL // Email notificatie
+  BOTH // Beide
 }
 
 enum StarterType {
-  ONBOARDING         // Nieuwe medewerker (instroom)
-  OFFBOARDING        // Vertrekkende medewerker (uitstroom)
-  MIGRATION          // Interne mutatie tussen entiteiten
+  ONBOARDING // Nieuwe medewerker (instroom)
+  OFFBOARDING // Vertrekkende medewerker (uitstroom)
+  MIGRATION // Interne mutatie tussen entiteiten
 }
 
 enum SigningMethod {
-  SES                // Simple Electronic Signature (click-to-sign)
-  QES                // Qualified Electronic Signature (Itsme)
+  SES // Simple Electronic Signature (click-to-sign)
+  QES // Qualified Electronic Signature (Itsme)
 }
 
 enum DocumentStatus {
-  PENDING            // Wacht op ondertekening
-  SIGNED             // Ondertekend
-  EXPIRED            // Verlopen (deadline overschreden)
-  CANCELLED          // Geannuleerd
+  PENDING // Wacht op ondertekening
+  SIGNED // Ondertekend
+  EXPIRED // Verlopen (deadline overschreden)
+  CANCELLED // Geannuleerd
 }
 
 enum MaterialStatus {
-  PENDING            // Nieuw — actie nodig
-  IN_STOCK           // Op voorraad — klaar om te reserveren
-  ORDERED            // Besteld bij leverancier
-  RECEIVED           // Ontvangen — klaar om te reserveren
-  RESERVED           // Gereserveerd voor de starter (eindstatus)
+  PENDING // Nieuw — actie nodig
+  IN_STOCK // Op voorraad — klaar om te reserveren
+  ORDERED // Besteld bij leverancier
+  RECEIVED // Ontvangen — klaar om te reserveren
+  RESERVED // Gereserveerd voor de starter (eindstatus)
 }
 
 model User {
-  id                      String                   @id @default(cuid())
-  email                   String                   @unique
-  password                String?                  // Optional: legacy auth only
-  name                    String?
-  role                    Role                     @default(NONE) // New users start as NONE (guest)
-  identityProvider        IdentityProvider         @default(MANUAL)
-  status                  UserStatus               @default(INVITED)
-  
-  locale                  String                   @default("nl") // UI language: "nl" or "fr"
-  permissions             String[]                 @default([])   // Extra permissions: MATERIAL_MANAGER, etc.
-  
+  id               String           @id @default(cuid())
+  email            String           @unique
+  password         String? // Optional: legacy auth only
+  name             String?
+  role             Role             @default(NONE) // New users start as NONE (guest)
+  identityProvider IdentityProvider @default(MANUAL)
+  status           UserStatus       @default(INVITED)
+
+  locale      String   @default("nl") // UI language: "nl" or "fr"
+  permissions String[] @default([]) // Extra permissions: MATERIAL_MANAGER, etc.
+
   // Azure AD / Entra ID fields
-  tenantId                String?                  // Azure AD tenant ID (tid claim)
-  oid                     String?                  // Azure AD object ID (oid claim)
-  
+  tenantId String? // Azure AD tenant ID (tid claim)
+  oid      String? // Azure AD object ID (oid claim)
+
   memberships             Membership[]
   notificationPreferences NotificationPreference[]
-  twoFASecret             String?                  // TOTP secret voor 2FA
+  twoFASecret             String? // TOTP secret voor 2FA
   twoFAEnabled            Boolean                  @default(false)
   bookings                Booking[]
   assignedTasks           Task[]                   @relation("TaskAssignee") // Taken toegewezen aan deze user
-  createdTasks            Task[]                   @relation("TaskCreator")  // Taken aangemaakt door deze user
+  createdTasks            Task[]                   @relation("TaskCreator") // Taken aangemaakt door deze user
   completedTasks          Task[]                   @relation("TaskCompleter") // Taken voltooid door deze user
   taskAssignments         TaskAssignment[]         @relation("TaskAssignmentUser") // Task assignments voor deze user
-  notifications           Notification[]           // In-app notificaties voor deze user
+  notifications           Notification[] // In-app notificaties voor deze user
   auditLogs               AuditLog[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
-  lastLoginAt             DateTime?                // Tijdstip van laatste succesvolle login
+  lastLoginAt             DateTime? // Tijdstip van laatste succesvolle login
 
   @@index([email])
   @@index([tenantId])
@@ -136,18 +150,18 @@ model User {
 model Entity {
   id                      String                   @id @default(cuid())
   name                    String                   @unique
-  colorHex                String                   // Kleur voor badges/kaartjes
+  colorHex                String // Kleur voor badges/kaartjes
   isActive                Boolean                  @default(true)
-  notifyEmails            String[]                 // Array van e-mailadressen voor reminders (legacy)
+  notifyEmails            String[] // Array van e-mailadressen voor reminders (legacy)
   memberships             Membership[]
-  starters                Starter[]  @relation("StarterEntity")
-  migrationsFrom          Starter[]  @relation("StarterFromEntity")
+  starters                Starter[]                @relation("StarterEntity")
+  migrationsFrom          Starter[]                @relation("StarterFromEntity")
   jobRoles                JobRole[]
   blockedPeriods          BlockedPeriod[]
   notificationPreferences NotificationPreference[]
-  tasks                   Task[]                   // Taken gekoppeld aan deze entiteit
-  taskAssignments         TaskAssignment[]         // Taak verantwoordelijken voor deze entiteit
-  signatureTemplate       SignatureTemplate?       // Email signature template voor deze entiteit
+  tasks                   Task[] // Taken gekoppeld aan deze entiteit
+  taskAssignments         TaskAssignment[] // Taak verantwoordelijken voor deze entiteit
+  signatureTemplate       SignatureTemplate? // Email signature template voor deze entiteit
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -171,40 +185,40 @@ model Starter {
   id                String      @id @default(cuid())
   type              StarterType @default(ONBOARDING)
   entityId          String?
-  entity            Entity?   @relation("StarterEntity", fields: [entityId], references: [id], onDelete: SetNull)
-  fromEntityId      String?                          // Bron-entiteit (bij migratie)
-  fromEntity        Entity?   @relation("StarterFromEntity", fields: [fromEntityId], references: [id], onDelete: SetNull)
-  fromRoleTitle     String?                          // Bron-functie (bij migratie)
+  entity            Entity?     @relation("StarterEntity", fields: [entityId], references: [id], onDelete: SetNull)
+  fromEntityId      String? // Bron-entiteit (bij migratie)
+  fromEntity        Entity?     @relation("StarterFromEntity", fields: [fromEntityId], references: [id], onDelete: SetNull)
+  fromRoleTitle     String? // Bron-functie (bij migratie)
   firstName         String
   lastName          String
-  language          String    @default("NL")
+  language          String      @default("NL")
   region            String?
   roleTitle         String?
-  via               String?   // Via (dropdown)
-  notes             String?   @db.Text // Extra info
-  phoneNumber       String?   // Telefoonnummer (optioneel, kan later toegevoegd)
-  desiredEmail      String?   // Gewenst mailadres
-  contractSignedOn  DateTime? @default(now()) // Datum waarop contract getekend is (tijdelijk nullable voor migratie)
+  via               String? // Via (dropdown)
+  notes             String?     @db.Text // Extra info
+  phoneNumber       String? // Telefoonnummer (optioneel, kan later toegevoegd)
+  desiredEmail      String? // Gewenst mailadres
+  contractSignedOn  DateTime?   @default(now()) // Datum waarop contract getekend is (tijdelijk nullable voor migratie)
   startDate         DateTime? // Startdatum (onboarding) of vertrekdatum (offboarding) - null bij pending boarding
-  weekNumber        Int?      // Weeknummer (afgeleid, Monday-first)
-  year              Int?      // Jaar - null bij pending boarding
-  isPendingBoarding Boolean   @default(false) // Startdatum nog niet gekend
-  isCancelled       Boolean   @default(false) // Of de starter is geannuleerd
+  weekNumber        Int? // Weeknummer (afgeleid, Monday-first)
+  year              Int? // Jaar - null bij pending boarding
+  isPendingBoarding Boolean     @default(false) // Startdatum nog niet gekend
+  isCancelled       Boolean     @default(false) // Of de starter is geannuleerd
   cancelledAt       DateTime? // Wanneer geannuleerd
-  cancelledBy       String?   // User ID die annuleerde
-  cancelReason      String?   @db.Text // Reden van annulering
-  
+  cancelledBy       String? // User ID die annuleerde
+  cancelReason      String?     @db.Text // Reden van annulering
+
   // Ervaring velden (relevant voor onboarding)
   hasExperience    Boolean   @default(false) // Heeft de starter relevante werkervaring?
   experienceSince  DateTime? // Startdatum van ervaring (om duur te berekenen)
-  experienceRole   String?   // Functie waarin ervaring opgedaan
-  experienceEntity String?   // Entiteit/bedrijf waar ervaring opgedaan (vrij veld)
-  
-  createdBy        String?           // User ID die het aanmaakte
+  experienceRole   String? // Functie waarin ervaring opgedaan
+  experienceEntity String? // Entiteit/bedrijf waar ervaring opgedaan (vrij veld)
+
+  createdBy        String? // User ID die het aanmaakte
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   starterMaterials StarterMaterial[] // Materiaal toegewezen aan deze starter
-  tasks            Task[]            // Taken gekoppeld aan deze starter
+  tasks            Task[] // Taken gekoppeld aan deze starter
   documents        StarterDocument[] // Documenten voor ondertekening
 
   @@index([type])
@@ -217,17 +231,17 @@ model Starter {
 }
 
 model JobRole {
-  id             String          @id @default(cuid())
+  id             String            @id @default(cuid())
   entityId       String
-  entity         Entity          @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  title          String             // Functietitel (bv. "Senior Developer")
-  description    String?            @db.Text // Optionele beschrijving
-  isActive       Boolean            @default(true)
-  order          Int                @default(0) // Sorteervolgorde
+  entity         Entity            @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  title          String // Functietitel (bv. "Senior Developer")
+  description    String?           @db.Text // Optionele beschrijving
+  isActive       Boolean           @default(true)
+  order          Int               @default(0) // Sorteervolgorde
   blockedPeriods BlockedPeriod[]
-  materials      JobRoleMaterial[]  // Materiaal gekoppeld aan deze functie
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  materials      JobRoleMaterial[] // Materiaal gekoppeld aan deze functie
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   @@unique([entityId, title])
   @@index([entityId, isActive])
@@ -235,18 +249,18 @@ model JobRole {
 }
 
 model BlockedPeriod {
-  id          String   @id @default(cuid())
-  entityId    String
-  entity      Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  jobRoleId   String?  // Optioneel: specifieke functie blokkeren (null = alle functies)
-  jobRole     JobRole? @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
-  startDate   DateTime // Begin van geblokkeerde periode
-  endDate     DateTime // Einde van geblokkeerde periode
-  reason      String?  @db.Text // Reden voor blokkade
-  isActive    Boolean  @default(true)
-  createdBy   String?  // User ID die blokkade aanmaakte
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  entityId  String
+  entity    Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  jobRoleId String? // Optioneel: specifieke functie blokkeren (null = alle functies)
+  jobRole   JobRole? @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
+  startDate DateTime // Begin van geblokkeerde periode
+  endDate   DateTime // Einde van geblokkeerde periode
+  reason    String?  @db.Text // Reden voor blokkade
+  isActive  Boolean  @default(true)
+  createdBy String? // User ID die blokkade aanmaakte
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([entityId, isActive])
   @@index([jobRoleId, isActive])
@@ -254,31 +268,31 @@ model BlockedPeriod {
 }
 
 model AllowedTenant {
-  id          String   @id @default(cuid())
-  tenantId    String   @unique // Azure AD Tenant ID
-  tenantName  String   // Organisatie naam voor display
-  domain      String?  // Primary domain (optioneel, bijv. "company.com")
-  isActive    Boolean  @default(true)
-  notes       String?  @db.Text // Admin notities
-  createdBy   String?  // User ID die het toevoegde
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  tenantId   String   @unique // Azure AD Tenant ID
+  tenantName String // Organisatie naam voor display
+  domain     String? // Primary domain (optioneel, bijv. "company.com")
+  isActive   Boolean  @default(true)
+  notes      String?  @db.Text // Admin notities
+  createdBy  String? // User ID die het toevoegde
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([tenantId, isActive])
   @@index([isActive])
 }
 
 model Material {
-  id          String            @id @default(cuid())
-  name        String            @unique // Materiaalnaam (bv. "Laptop", "Telefoon", "Badge")
-  description String?           @db.Text // Optionele beschrijving
-  category    String?           // Categorie (bv. "Hardware", "Software", "Toegang")
-  isActive    Boolean           @default(true)
-  order       Int               @default(0) // Sorteervolgorde
-  jobRoles    JobRoleMaterial[] // Functies die dit materiaal nodig hebben
+  id               String            @id @default(cuid())
+  name             String            @unique // Materiaalnaam (bv. "Laptop", "Telefoon", "Badge")
+  description      String?           @db.Text // Optionele beschrijving
+  category         String? // Categorie (bv. "Hardware", "Software", "Toegang")
+  isActive         Boolean           @default(true)
+  order            Int               @default(0) // Sorteervolgorde
+  jobRoles         JobRoleMaterial[] // Functies die dit materiaal nodig hebben
   starterMaterials StarterMaterial[] // Starters aan wie dit materiaal is toegewezen
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@index([isActive])
   @@index([category, isActive])
@@ -286,14 +300,14 @@ model Material {
 }
 
 model JobRoleMaterial {
-  id        String   @id @default(cuid())
-  jobRoleId String
-  jobRole   JobRole  @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  jobRoleId  String
+  jobRole    JobRole  @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
   materialId String
-  material  Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
   isRequired Boolean  @default(true) // Of het materiaal verplicht is voor deze functie
-  notes     String?  @db.Text // Extra notities (bv. "Alleen voor senior niveau")
-  createdAt DateTime @default(now())
+  notes      String?  @db.Text // Extra notities (bv. "Alleen voor senior niveau")
+  createdAt  DateTime @default(now())
 
   @@unique([jobRoleId, materialId])
   @@index([jobRoleId])
@@ -301,23 +315,23 @@ model JobRoleMaterial {
 }
 
 model StarterMaterial {
-  id                    String          @id @default(cuid())
-  starterId             String
-  starter               Starter         @relation(fields: [starterId], references: [id], onDelete: Cascade)
-  materialId            String
-  material              Material        @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  status                MaterialStatus  @default(PENDING)
-  isProvided            Boolean         @default(false) // Legacy — true wanneer status = RESERVED
-  providedAt            DateTime?
-  providedBy            String?
-  orderedAt             DateTime?
-  expectedDeliveryDate  DateTime?
-  receivedAt            DateTime?
-  reservedAt            DateTime?
-  reservedBy            String?
-  notes                 String?         @db.Text
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  id                   String         @id @default(cuid())
+  starterId            String
+  starter              Starter        @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  materialId           String
+  material             Material       @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  status               MaterialStatus @default(PENDING)
+  isProvided           Boolean        @default(false) // Legacy — true wanneer status = RESERVED
+  providedAt           DateTime?
+  providedBy           String?
+  orderedAt            DateTime?
+  expectedDeliveryDate DateTime?
+  receivedAt           DateTime?
+  reservedAt           DateTime?
+  reservedBy           String?
+  notes                String?        @db.Text
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
   @@unique([starterId, materialId])
   @@index([starterId])
@@ -327,20 +341,20 @@ model StarterMaterial {
 
 // Notificatie voorkeuren per gebruiker per entiteit
 model NotificationPreference {
-  id               String           @id @default(cuid())
-  userId           String
-  entityId         String
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  entity           Entity           @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  
+  id       String @id @default(cuid())
+  userId   String
+  entityId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entity   Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
   // Notificatie toggles per type
-  weeklyReminder   Boolean          @default(true)  // 1 week voor opstart
-  monthlySummary   Boolean          @default(true)  // Maandelijkse samenvatting
-  quarterlySummary Boolean          @default(true)  // Kwartaal samenvatting
-  yearlySummary    Boolean          @default(true)  // Jaarlijks overzicht
-  
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  weeklyReminder   Boolean @default(true) // 1 week voor opstart
+  monthlySummary   Boolean @default(true) // Maandelijkse samenvatting
+  quarterlySummary Boolean @default(true) // Kwartaal samenvatting
+  yearlySummary    Boolean @default(true) // Jaarlijks overzicht
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, entityId])
   @@index([userId])
@@ -349,19 +363,19 @@ model NotificationPreference {
 
 // Email templates voor notificaties
 model EmailTemplate {
-  id          String           @id @default(cuid())
-  type        NotificationType @unique // WEEKLY_REMINDER, MONTHLY_SUMMARY, etc.
-  subject     String           // Email onderwerp (met variabelen)
-  body        String           @db.Text // Email body HTML (met variabelen)
-  isActive    Boolean          @default(true)
-  
+  id       String           @id @default(cuid())
+  type     NotificationType @unique // WEEKLY_REMINDER, MONTHLY_SUMMARY, etc.
+  subject  String // Email onderwerp (met variabelen)
+  body     String           @db.Text // Email body HTML (met variabelen)
+  isActive Boolean          @default(true)
+
   // Beschrijving van beschikbare variabelen
-  description String?          @db.Text
-  
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  createdBy   String?          // User ID die template aanmaakte
-  updatedBy   String?          // User ID die template laatst wijzigde
+  description String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // User ID die template aanmaakte
+  updatedBy String? // User ID die template laatst wijzigde
 
   @@index([type])
   @@index([isActive])
@@ -383,13 +397,13 @@ model AuditLog {
 
 // System settings voor branding en configuratie
 model SystemSettings {
-  id        String   @id @default(cuid())
-  key       String   @unique // bv. "logo_url", "company_name"
-  value     String?  @db.Text
-  
+  id    String  @id @default(cuid())
+  key   String  @unique // bv. "logo_url", "company_name"
+  value String? @db.Text
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  updatedBy String?  // User ID die instelling laatst wijzigde
+  updatedBy String? // User ID die instelling laatst wijzigde
 
   @@index([key])
 }
@@ -398,23 +412,31 @@ model SystemSettings {
 
 // Task Templates - Voor automatische taak creatie
 model TaskTemplate {
-  id                String                   @id @default(cuid())
-  type              TaskType                 // Type taak
-  title             String                   // Taak titel (met variabelen: {{starterName}}, {{entityName}})
-  description       String?                  @db.Text // Beschrijving (met variabelen)
-  priority          TaskPriority             @default(MEDIUM)
-  daysUntilDue      Int                      @default(7) // Aantal dagen vanaf startDate tot deadline
-  isActive          Boolean                  @default(true)
-  autoAssign        Boolean                  @default(true) // Automatisch toewijzen bij nieuwe starter
-  
+  id           String       @id @default(cuid())
+  type         TaskType // Type taak
+  title        String // Taak titel (met variabelen: {{starterName}}, {{entityName}})
+  description  String?      @db.Text // Beschrijving (met variabelen)
+  priority     TaskPriority @default(MEDIUM)
+  daysUntilDue Int          @default(7) // Aantal dagen vanaf startDate tot deadline
+  isActive     Boolean      @default(true)
+  autoAssign   Boolean      @default(true) // Automatisch toewijzen bij nieuwe starter
+
   // Optionele filters - wanneer moet deze template worden toegepast?
-  forEntityIds      String[]                 // Lege array = alle entiteiten
-  forJobRoleTitles  String[]                 // Lege array = alle functies
-  forStarterType    StarterType?             // null = beide types, anders alleen voor dit type
-  
-  createdAt         DateTime                 @default(now())
-  updatedAt         DateTime                 @updatedAt
-  createdBy         String?                  // User ID
+  forEntityIds            String[] // Lege array = alle entiteiten
+  forJobRoleTitles        String[] // Lege array = alle functies (tenzij requireExplicitJobRole = true)
+  requireExplicitJobRole  Boolean  @default(false) // Als true: enkel toepassen bij expliciete match in forJobRoleTitles; lege lijst = geen enkele functie
+  forStarterType          StarterType? // null = beide types, anders alleen voor dit type
+
+  // Dependencies & scheduling (marketing workflow + generiek)
+  dependsOnTemplateIds String[]     @default([]) // AND-gate: concrete dep-templates
+  scheduleType         ScheduleType @default(OFFSET_FROM_START)
+  addToCalendar        Boolean      @default(false) // O365 event aanmaken voor assignee
+  uploadFolder         String? // submap in SharePoint (bv. "marketing")
+  expectedOutputs      Json? // bv. ["forms-photo","linkedin","signature"]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // User ID
 
   @@index([type, isActive])
   @@index([autoAssign, isActive])
@@ -423,48 +445,57 @@ model TaskTemplate {
 
 // Taken
 model Task {
-  id              String          @id @default(cuid())
-  type            TaskType        // Type taak
-  title           String          // Taak titel
-  description     String?         @db.Text // Beschrijving
-  status          TaskStatus      @default(PENDING)
-  priority        TaskPriority    @default(MEDIUM)
-  
+  id          String       @id @default(cuid())
+  type        TaskType // Type taak
+  title       String // Taak titel
+  description String?      @db.Text // Beschrijving
+  status      TaskStatus   @default(PENDING)
+  priority    TaskPriority @default(MEDIUM)
+
   // Koppelingen
-  starterId       String?         // Optioneel gekoppeld aan starter
-  starter         Starter?        @relation(fields: [starterId], references: [id], onDelete: Cascade)
-  entityId        String?         // Optioneel gekoppeld aan entiteit
-  entity          Entity?         @relation(fields: [entityId], references: [id], onDelete: SetNull)
-  
+  starterId String? // Optioneel gekoppeld aan starter
+  starter   Starter? @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  entityId  String? // Optioneel gekoppeld aan entiteit
+  entity    Entity?  @relation(fields: [entityId], references: [id], onDelete: SetNull)
+
   // Toewijzing
-  assignedToId    String?         // User ID van verantwoordelijke
-  assignedTo      User?           @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  assignedAt      DateTime?       // Wanneer toegewezen
-  
+  assignedToId String? // User ID van verantwoordelijke
+  assignedTo   User?     @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  assignedAt   DateTime? // Wanneer toegewezen
+
   // Deadlines
-  dueDate         DateTime?       // Deadline
-  
+  dueDate DateTime? // Deadline
+
   // Voltooiing
   completedAt     DateTime?
   completedById   String?
-  completedBy     User?           @relation("TaskCompleter", fields: [completedById], references: [id], onDelete: SetNull)
-  completionNotes String?         @db.Text // Notities bij voltooiing
-  
+  completedBy     User?     @relation("TaskCompleter", fields: [completedById], references: [id], onDelete: SetNull)
+  completionNotes String?   @db.Text // Notities bij voltooiing
+
   // Blokkering
-  blockedReason   String?         @db.Text // Waarom geblokkeerd
-  
+  blockedReason String? @db.Text // Waarom geblokkeerd
+
   // Metadata
-  createdById     String?
-  createdBy       User?           @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  
+  createdById String?
+  createdBy   User?    @relation("TaskCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Template tracking
-  templateId      String?         // Als aangemaakt vanuit template
+  templateId String? // Als aangemaakt vanuit template
+
+  // Dependencies & scheduling
+  dependsOnTaskIds String[]  @default([]) // AND-gate: concrete Task IDs
+  scheduledFor     DateTime? // Voor ON_START_DATE taken (tijdstip event)
+  o365EventId      String? // MS Graph event reference (bij addToCalendar)
+
+  // Marketing uploads (foto-varianten, emailhandtekening, etc.)
+  uploads         StarterTaskUpload[]
+  reassignHistory TaskReassignment[]
 
   // Document koppeling
-  document        StarterDocument?
-  
+  document StarterDocument?
+
   @@index([status, assignedToId])
   @@index([starterId, status])
   @@index([entityId, status])
@@ -475,47 +506,78 @@ model Task {
 
 // Taak verantwoordelijken per entiteit en taak type
 model TaskAssignment {
-  id            String     @id @default(cuid())
-  entityId      String?    // null = global default voor alle entiteiten
-  entity        Entity?    @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  taskType      TaskType   // Type taak
-  assignedToId  String     // User ID van verantwoordelijke
-  assignedTo    User       @relation("TaskAssignmentUser", fields: [assignedToId], references: [id], onDelete: Cascade)
-  
+  id           String   @id @default(cuid())
+  entityId     String? // null = global default voor alle entiteiten
+  entity       Entity?  @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  taskType     TaskType // Type taak
+  assignedToId String // User ID van verantwoordelijke
+  assignedTo   User     @relation("TaskAssignmentUser", fields: [assignedToId], references: [id], onDelete: Cascade)
+
   // Notificatie instellingen
   notifyChannel NotificationChannelType @default(BOTH)
-  
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  createdBy     String?    // User ID die assignment aanmaakte
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // User ID die assignment aanmaakte
 
   @@unique([entityId, taskType]) // Per entiteit+type slechts 1 verantwoordelijke
   @@index([entityId, taskType])
   @@index([assignedToId])
 }
 
+// Uploads per taak (foto-varianten, handtekening, etc.) — opgeslagen in SharePoint
+model StarterTaskUpload {
+  id             String   @id @default(cuid())
+  taskId         String
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fileName       String
+  sharePointPath String // Volledig pad in SharePoint
+  mimeType       String?
+  sizeBytes      Int?
+  variant        String? // bv. "forms-photo", "linkedin", "signature", "headshot-raw"
+  uploadedById   String?
+  uploadedAt     DateTime @default(now())
+
+  @@index([taskId])
+  @@index([variant])
+}
+
+// Log van taak-hertoewijzingen
+model TaskReassignment {
+  id             String   @id @default(cuid())
+  taskId         String
+  task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fromUserId     String?
+  toUserId       String?
+  reassignedById String?
+  reason         String?  @db.Text
+  reassignedAt   DateTime @default(now())
+
+  @@index([taskId, reassignedAt])
+}
+
 // In-app notificaties
 model Notification {
-  id          String    @id @default(cuid())
-  userId      String    // Ontvanger
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  type        String    // TASK_ASSIGNED, TASK_DUE_SOON, TASK_COMPLETED, etc.
-  title       String    // Notificatie titel
-  message     String    @db.Text // Notificatie bericht
-  
+  id     String @id @default(cuid())
+  userId String // Ontvanger
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type    String // TASK_ASSIGNED, TASK_DUE_SOON, TASK_COMPLETED, etc.
+  title   String // Notificatie titel
+  message String @db.Text // Notificatie bericht
+
   // Koppelingen (optioneel)
-  taskId      String?   // Gekoppeld aan taak
-  starterId   String?   // Gekoppeld aan starter
-  
+  taskId    String? // Gekoppeld aan taak
+  starterId String? // Gekoppeld aan starter
+
   // Link naar relevante pagina
-  linkUrl     String?   // bv. "/taken/abc123"
-  
+  linkUrl String? // bv. "/taken/abc123"
+
   // Status
-  isRead      Boolean   @default(false)
-  readAt      DateTime?
-  
-  createdAt   DateTime  @default(now())
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
@@ -524,39 +586,39 @@ model Notification {
 
 // Room booking models
 model Room {
-  id               String       @id @default(cuid())
-  name             String
-  capacity         Int
-  location         String?
-  msResourceEmail  String?       // Microsoft resource mailbox email (bijv. room-1@domain)
-  hourlyRateCents  Int          @default(0) // Voor verhuur
-  active           Boolean      @default(true)
-  bookings         Booking[]
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  id              String    @id @default(cuid())
+  name            String
+  capacity        Int
+  location        String?
+  msResourceEmail String? // Microsoft resource mailbox email (bijv. room-1@domain)
+  hourlyRateCents Int       @default(0) // Voor verhuur
+  active          Boolean   @default(true)
+  bookings        Booking[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@index([active])
   @@index([msResourceEmail])
 }
 
 model Booking {
-  id           String        @id @default(cuid())
-  roomId       String
-  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  userId       String?
-  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  roomId        String
+  room          Room          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
   externalEmail String?
-  title        String
-  description  String?
-  start        DateTime
-  end          DateTime
-  status       BookingStatus @default(PENDING)
-  msEventId    String?       // Graph event id in resource mailbox
-  msICalUid    String?       // Voor idempotentie
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  createdBy    String?       // User ID die het aanmaakte
-  updatedBy    String?       // User ID die laatst wijzigde
+  title         String
+  description   String?
+  start         DateTime
+  end           DateTime
+  status        BookingStatus @default(PENDING)
+  msEventId     String? // Graph event id in resource mailbox
+  msICalUid     String? // Voor idempotentie
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  createdBy     String? // User ID die het aanmaakte
+  updatedBy     String? // User ID die laatst wijzigde
 
   @@index([roomId, start, end])
   @@index([userId])
@@ -568,14 +630,14 @@ model Booking {
 model EmailLog {
   id              String           @id @default(cuid())
   type            NotificationType // WEEKLY_REMINDER, MONTHLY_SUMMARY, etc.
-  recipient       String           // Email adres van ontvanger
-  recipientUserId String?          // User ID als bekend
-  subject         String           // Email onderwerp
-  startersCount   Int?             // Aantal starters in email (indien van toepassing)
-  entities        String[]         // Entiteit namen (indien van toepassing)
+  recipient       String // Email adres van ontvanger
+  recipientUserId String? // User ID als bekend
+  subject         String // Email onderwerp
+  startersCount   Int? // Aantal starters in email (indien van toepassing)
+  entities        String[] // Entiteit namen (indien van toepassing)
   status          String           @default("SENT") // SENT, FAILED, BOUNCED
   errorMessage    String?          @db.Text // Foutmelding indien gefaald
-  metadata        Json?            // Extra metadata (bijv. task IDs, starter IDs)
+  metadata        Json? // Extra metadata (bijv. task IDs, starter IDs)
   sentAt          DateTime         @default(now())
 
   @@index([type, sentAt])
@@ -586,56 +648,56 @@ model EmailLog {
 
 // Document ondertekening
 model StarterDocument {
-  id                    String          @id @default(cuid())
-  starterId             String
-  starter               Starter         @relation(fields: [starterId], references: [id], onDelete: Cascade)
-  title                 String          // Document naam (bv. "Arbeidscontract")
-  signingMethod         SigningMethod   @default(SES)
-  status                DocumentStatus  @default(PENDING)
+  id            String         @id @default(cuid())
+  starterId     String
+  starter       Starter        @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  title         String // Document naam (bv. "Arbeidscontract")
+  signingMethod SigningMethod  @default(SES)
+  status        DocumentStatus @default(PENDING)
 
   // Teams/SharePoint opslag
-  teamsDriveId          String?         // SharePoint drive ID
-  teamsItemId           String?         // SharePoint item ID (origineel document)
-  teamsPath             String?         // Pad in Teams mappenstructuur
-  signedTeamsItemId     String?         // SharePoint item ID (getekend document)
-  signatureFields       Json?           // [{page, x, y, width, height, label}] — posities van handtekeningvelden
+  teamsDriveId      String? // SharePoint drive ID
+  teamsItemId       String? // SharePoint item ID (origineel document)
+  teamsPath         String? // Pad in Teams mappenstructuur
+  signedTeamsItemId String? // SharePoint item ID (getekend document)
+  signatureFields   Json? // [{page, x, y, width, height, label}] — posities van handtekeningvelden
 
   // Signing token voor publieke link
-  signingToken          String?         @unique @default(cuid())
+  signingToken String? @unique @default(cuid())
 
   // Ondertekening details
-  signedAt              DateTime?
-  signedByIp            String?
-  signedByName          String?         // Naam van ondertekenaar
+  signedAt     DateTime?
+  signedByIp   String?
+  signedByName String? // Naam van ondertekenaar
 
   // Itsme QES details (Phase 5B)
-  itsmeSignatureId      String?         // Itsme transactie ID
-  itsmeCertificateInfo  String?         @db.Text // Certificaat informatie
+  itsmeSignatureId     String? // Itsme transactie ID
+  itsmeCertificateInfo String? @db.Text // Certificaat informatie
 
   // Volgorde en afhankelijkheden
-  sortOrder             Int             @default(0)
-  prerequisiteId        String?         // Document dat eerst getekend moet worden
-  prerequisite          StarterDocument? @relation("DocumentChain", fields: [prerequisiteId], references: [id], onDelete: SetNull)
-  dependents            StarterDocument[] @relation("DocumentChain")
+  sortOrder      Int               @default(0)
+  prerequisiteId String? // Document dat eerst getekend moet worden
+  prerequisite   StarterDocument?  @relation("DocumentChain", fields: [prerequisiteId], references: [id], onDelete: SetNull)
+  dependents     StarterDocument[] @relation("DocumentChain")
 
   // Deadline
-  dueDate               DateTime?
+  dueDate DateTime?
 
   // Gekoppelde taak
-  taskId                String?         @unique
-  task                  Task?           @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  taskId String? @unique
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   // Metadata
-  fileName              String?         // Originele bestandsnaam
-  fileSize              Int?            // Bestandsgrootte in bytes
-  mimeType              String          @default("application/pdf")
-  recipientEmail        String?         // E-mail van de ondertekenaar
-  emailSentAt           DateTime?       // Wanneer signing-link e-mail verstuurd is
-  uploadedById          String?         // User ID die document uploadde
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  fileName       String? // Originele bestandsnaam
+  fileSize       Int? // Bestandsgrootte in bytes
+  mimeType       String    @default("application/pdf")
+  recipientEmail String? // E-mail van de ondertekenaar
+  emailSentAt    DateTime? // Wanneer signing-link e-mail verstuurd is
+  uploadedById   String? // User ID die document uploadde
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  auditEvents           DocumentAuditEvent[]
+  auditEvents DocumentAuditEvent[]
 
   @@index([starterId, status])
   @@index([starterId, sortOrder])
@@ -645,15 +707,15 @@ model StarterDocument {
 
 // Document audit trail
 model DocumentAuditEvent {
-  id            String           @id @default(cuid())
-  documentId    String?
-  document      StarterDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
-  event         String           // CREATED, EMAIL_SENT, EMAIL_OPENED, EMAIL_CLICKED, EMAIL_DELIVERED, EMAIL_BOUNCED, VIEWED, SIGNED, DOWNLOADED, DELETED
-  actor         String?          // User ID, email, or "system"
-  ip            String?
-  userAgent     String?
-  metadata      Json?            // Extra data per event type
-  createdAt     DateTime         @default(now())
+  id         String           @id @default(cuid())
+  documentId String?
+  document   StarterDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  event      String // CREATED, EMAIL_SENT, EMAIL_OPENED, EMAIL_CLICKED, EMAIL_DELIVERED, EMAIL_BOUNCED, VIEWED, SIGNED, DOWNLOADED, DELETED
+  actor      String? // User ID, email, or "system"
+  ip         String?
+  userAgent  String?
+  metadata   Json? // Extra data per event type
+  createdAt  DateTime         @default(now())
 
   @@index([documentId, createdAt])
   @@index([event])
@@ -664,14 +726,13 @@ model SignatureTemplate {
   id           String   @id @default(cuid())
   entityId     String   @unique // Eén template per entiteit
   entity       Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  name         String   // Naam van de template (bijv. "ACEG Standard")
+  name         String // Naam van de template (bijv. "ACEG Standard")
   htmlTemplate String   @db.Text // De HTML template met placeholders
   isActive     Boolean  @default(true) // Of de template actief is
-  createdBy    String   // User ID die de template heeft aangemaakt
+  createdBy    String // User ID die de template heeft aangemaakt
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@index([entityId])
   @@index([isActive])
 }
-

@@ -20,10 +20,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, ExternalLink } from 'lucide-react'
+import { CheckCircle2, ExternalLink, Calendar as CalendarIcon } from 'lucide-react'
 import type { Task } from '@/lib/types'
 import { TaskStatusIcon } from './task-status-icon'
 import { getPriorityColor, priorityKeys, statusKeys, taskTypeKeys } from './task-helpers'
+import { TaskDependencies } from './task-dependencies'
+import { TaskUploads } from './task-uploads'
+import { TaskReassignHistory } from './task-reassign-history'
+import { UserCombobox } from '@/components/ui/user-combobox'
 
 interface TaskDetailDialogProps {
   task: Task | null
@@ -35,6 +39,7 @@ interface TaskDetailDialogProps {
   reassigning: boolean
   onComplete: (taskId: string) => void
   onReassign: (taskId: string, newAssigneeId: string) => void
+  onTaskChanged?: () => void
 }
 
 export function TaskDetailDialog({
@@ -47,6 +52,7 @@ export function TaskDetailDialog({
   reassigning,
   onComplete,
   onReassign,
+  onTaskChanged,
 }: TaskDetailDialogProps) {
   const t = useTranslations('tasks')
   const tc = useTranslations('common')
@@ -133,25 +139,14 @@ export function TaskDetailDialog({
             <Label>{t('assignedTo')}</Label>
             {isAdmin && task.status !== 'COMPLETED' ? (
               <div className="mt-1">
-                <Select
-                  value={task.assignedTo?.id || '__unassigned__'}
-                  onValueChange={(value) => onReassign(task.id, value === '__unassigned__' ? '' : value)}
+                <UserCombobox
+                  users={users}
+                  value={task.assignedTo?.id || ''}
+                  onChange={(id) => onReassign(task.id, id)}
+                  placeholder={t('selectUser')}
+                  emptyLabel={t('unassigned')}
                   disabled={reassigning}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('selectUser')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__unassigned__">
-                      <span className="text-muted-foreground">{t('unassigned')}</span>
-                    </SelectItem>
-                    {users.map(user => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name || user.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
             ) : (
               <p className="text-sm mt-1">
@@ -163,6 +158,24 @@ export function TaskDetailDialog({
             )}
           </div>
 
+          {task.scheduledFor && (
+            <div>
+              <Label>{t('scheduledFor')}</Label>
+              <p className="text-sm mt-1 flex items-center gap-1.5">
+                <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                {new Date(task.scheduledFor).toLocaleString('nl-BE', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+                {task.template?.addToCalendar && (
+                  <Badge variant="outline" className="ml-1 text-[10px]">
+                    {t('addToCalendar')}
+                  </Badge>
+                )}
+              </p>
+            </div>
+          )}
+
           {task.dueDate && (
             <div>
               <Label>{t('deadline')}</Label>
@@ -171,6 +184,25 @@ export function TaskDetailDialog({
               </p>
             </div>
           )}
+
+          <TaskDependencies dependencies={task.dependencies} />
+
+          {(task.uploads && task.uploads.length > 0) ||
+          (task.template?.expectedOutputs && task.template.expectedOutputs.length > 0) ||
+          task.template?.uploadFolder ? (
+            <TaskUploads
+              taskId={task.id}
+              uploads={task.uploads}
+              expectedOutputs={task.template?.expectedOutputs}
+              canUpload={
+                task.status !== 'COMPLETED' &&
+                (isAdmin || task.assignedTo?.id === currentUserId)
+              }
+              onUploaded={onTaskChanged}
+            />
+          ) : null}
+
+          <TaskReassignHistory history={task.reassignHistory} users={users} />
 
           {task.completedBy && (
             <div>

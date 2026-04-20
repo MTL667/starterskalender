@@ -4,6 +4,14 @@ export const taskTypeKeys: Record<string, string> = {
   FACILITIES: 'facilities',
   MANAGER_ACTION: 'managerAction',
   CUSTOM: 'custom',
+  MARKETING_PHOTO: 'marketingPhoto',
+  MARKETING_EDIT: 'marketingEdit',
+  MARKETING_UTM: 'marketingUtm',
+  MARKETING_VCARD: 'marketingVcard',
+  MARKETING_VISITEKAARTJE: 'marketingVisitekaartje',
+  MARKETING_BADGE: 'marketingBadge',
+  MARKETING_NFC: 'marketingNfc',
+  MARKETING_SIGNATURE: 'marketingSignature',
 }
 
 export const priorityKeys: Record<string, string> = {

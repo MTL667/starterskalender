@@ -15,8 +15,23 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Info, Save, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { UserCombobox } from '@/components/ui/user-combobox'
 
-const TASK_TYPES = ['IT_SETUP', 'HR_ADMIN', 'FACILITIES', 'MANAGER_ACTION', 'CUSTOM'] as const
+const TASK_TYPES = [
+  'IT_SETUP',
+  'HR_ADMIN',
+  'FACILITIES',
+  'MANAGER_ACTION',
+  'CUSTOM',
+  'MARKETING_PHOTO',
+  'MARKETING_EDIT',
+  'MARKETING_UTM',
+  'MARKETING_VCARD',
+  'MARKETING_VISITEKAARTJE',
+  'MARKETING_BADGE',
+  'MARKETING_NFC',
+  'MARKETING_SIGNATURE',
+] as const
 const NOTIFY_CHANNELS = ['IN_APP', 'EMAIL', 'BOTH'] as const
 
 export default function TaskAssignmentsPage() {
@@ -29,6 +44,14 @@ export default function TaskAssignmentsPage() {
     FACILITIES: tt('facilities'),
     MANAGER_ACTION: tt('managerAction'),
     CUSTOM: tt('custom'),
+    MARKETING_PHOTO: tt('marketingPhoto'),
+    MARKETING_EDIT: tt('marketingEdit'),
+    MARKETING_UTM: tt('marketingUtm'),
+    MARKETING_VCARD: tt('marketingVcard'),
+    MARKETING_VISITEKAARTJE: tt('marketingVisitekaartje'),
+    MARKETING_BADGE: tt('marketingBadge'),
+    MARKETING_NFC: tt('marketingNfc'),
+    MARKETING_SIGNATURE: tt('marketingSignature'),
   }
   const notifyChannelLabels: Record<string, string> = {
     IN_APP: t('inAppOnly'),
@@ -225,29 +248,13 @@ export default function TaskAssignmentsPage() {
 
             <div>
               <Label>{t('responsible')}</Label>
-              <Select value={selectedUser} onValueChange={setSelectedUser}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t('selectUser')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {users.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground">
-                      {t('noUsersFound')}
-                    </div>
-                  ) : (
-                    users.map((user: any) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.name || user.email}
-                        {user.status !== 'ACTIVE' && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            ({user.status})
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <UserCombobox
+                users={users}
+                value={selectedUser}
+                onChange={setSelectedUser}
+                placeholder={t('selectUser')}
+                emptyLabel={t('noUsersFound')}
+              />
             </div>
 
             <div>

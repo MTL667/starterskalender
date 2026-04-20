@@ -15,6 +15,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed-templates": "node prisma/seed-email-templates.js",
     "db:seed-tasks": "node prisma/seed-task-templates.js",
+    "db:seed-marketing": "node prisma/seed-marketing-templates.js",
     "db:fix-templates": "node prisma/fix-template-types.js",
     "test": "vitest run",
     "test:watch": "vitest",

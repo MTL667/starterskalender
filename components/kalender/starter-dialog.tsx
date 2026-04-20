@@ -761,21 +761,35 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const userPermissions: string[] = (session?.user as any)?.permissions ?? []
   const isMaterialMgr = isAdmin || userPermissions.includes('MATERIAL_MANAGER')
 
-  const handleRegenerateTasks = async () => {
+  const handleRegenerateTasks = async (mode: 'append' | 'reset' = 'append') => {
     if (!starter || regeneratingTasks) return
+    if (mode === 'reset' && !confirm(t('regenerateTasksConfirmReset'))) return
     setRegeneratingTasks(true)
     try {
       const res = await fetch(`/api/starters/${starter.id}/regenerate-tasks`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
       })
       if (res.ok) {
         const result = await res.json()
-        console.log(`Regenerated tasks: deleted ${result.deleted}, created ${result.created}`)
+        if (mode === 'append') {
+          if (result.created === 0) {
+            alert(t('regenerateTasksNoneMissing'))
+          } else {
+            alert(t('regenerateTasksAppended', { count: result.created }))
+          }
+        } else {
+          alert(t('regenerateTasksResetDone', { count: result.created, deleted: result.deleted }))
+        }
         const tasksRes = await fetch(`/api/tasks?starterId=${starter.id}`)
         if (tasksRes.ok) {
           const newTasks = await tasksRes.json()
           setTasks(newTasks)
         }
+      } else {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'Error regenerating tasks')
       }
     } catch (error) {
       console.error('Error regenerating tasks:', error)
@@ -1511,27 +1525,45 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             )}
 
             {/* Taken sectie (alleen bij edit) */}
-            {isEdit && tasks.length > 0 && (
+            {isEdit && (tasks.length > 0 || isAdmin) && (
               <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                   <Label className="text-base font-semibold">
                     {t('tasksTitle', { count: tasks.length })}
                   </Label>
-                  {isAdmin && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={handleRegenerateTasks}
-                      disabled={regeneratingTasks}
-                    >
-                      <RefreshCw className={`h-3 w-3 mr-1.5 ${regeneratingTasks ? 'animate-spin' : ''}`} />
-                      {t('regenerateTasks')}
-                    </Button>
+                  {isAdmin && !starter?.isCancelled && (
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-7"
+                        onClick={() => handleRegenerateTasks('append')}
+                        disabled={regeneratingTasks}
+                      >
+                        <RefreshCw className={`h-3 w-3 mr-1.5 ${regeneratingTasks ? 'animate-spin' : ''}`} />
+                        {t('regenerateTasks')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-7 text-destructive hover:text-destructive"
+                        onClick={() => handleRegenerateTasks('reset')}
+                        disabled={regeneratingTasks}
+                        title={t('regenerateTasksReset')}
+                      >
+                        <RefreshCw className={`h-3 w-3 ${regeneratingTasks ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <div className="space-y-2">
+                  {tasks.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">
+                      {t('noTasksYet')}
+                    </p>
+                  )}
                   {tasks.slice(0, 5).map((task: any) => (
                     <div
                       key={task.id}

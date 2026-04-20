@@ -69,12 +69,50 @@ export async function GET(
             email: true,
           },
         },
+        uploads: {
+          orderBy: { uploadedAt: 'desc' },
+        },
+        reassignHistory: {
+          orderBy: { reassignedAt: 'desc' },
+        },
       },
     })
 
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
+
+    // Haal template + dependencies (concrete taken) op voor visualisatie
+    let template: any = null
+    let dependencies: any[] = []
+    if (task.templateId) {
+      template = await prisma.taskTemplate.findUnique({
+        where: { id: task.templateId },
+        select: {
+          id: true,
+          dependsOnTemplateIds: true,
+          scheduleType: true,
+          addToCalendar: true,
+          uploadFolder: true,
+          expectedOutputs: true,
+        },
+      })
+    }
+    if (task.dependsOnTaskIds && task.dependsOnTaskIds.length > 0) {
+      dependencies = await prisma.task.findMany({
+        where: { id: { in: task.dependsOnTaskIds } },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          type: true,
+          assignedTo: { select: { id: true, name: true, email: true } },
+          completedAt: true,
+        },
+      })
+    }
+
+    const taskWithMeta = { ...task, template, dependencies }
 
     // Permissions check
     if (!isAdmin) {
@@ -88,7 +126,7 @@ export async function GET(
       }
     }
 
-    return NextResponse.json(task)
+    return NextResponse.json(taskWithMeta)
   } catch (error) {
     console.error('Error fetching task:', error)
     return NextResponse.json(
@@ -142,11 +180,12 @@ export async function PATCH(
       assignedToId,
       dueDate,
       blockedReason,
+      reassignReason,
     } = body
 
     // Build update data
     const updateData: any = {}
-    
+
     if (title !== undefined) updateData.title = title
     if (description !== undefined) updateData.description = description
     if (status !== undefined) updateData.status = status
@@ -155,7 +194,8 @@ export async function PATCH(
     if (blockedReason !== undefined) updateData.blockedReason = blockedReason
 
     // Als assignedToId verandert
-    if (assignedToId !== undefined && assignedToId !== task.assignedToId) {
+    const assigneeChanged = assignedToId !== undefined && assignedToId !== task.assignedToId
+    if (assigneeChanged) {
       updateData.assignedToId = assignedToId
       updateData.assignedAt = assignedToId ? new Date() : null
     }
@@ -207,14 +247,30 @@ export async function PATCH(
       eventBus.emit({ type: 'task:updated', entityId: updatedTask.entityId, payload: { taskId: updatedTask.id } })
     }
 
-    // Send email to new assignee on reassignment
-    if (updateData.assignedToId && updateData.assignedToId !== task.assignedToId) {
+    // Log reassignment en stuur email
+    if (assigneeChanged) {
       try {
-        const reassignerName = user.name || user.email || 'Een beheerder'
-        await sendTaskReassignmentEmail(updatedTask, reassignerName)
-        console.log(`📧 Reassignment email sent for task ${updatedTask.id} to ${updatedTask.assignedTo?.email}`)
-      } catch (emailError) {
-        console.error('Failed to send reassignment email:', emailError)
+        await prisma.taskReassignment.create({
+          data: {
+            taskId: updatedTask.id,
+            fromUserId: task.assignedToId,
+            toUserId: assignedToId,
+            reassignedById: user.id,
+            reason: reassignReason || null,
+          },
+        })
+      } catch (logErr) {
+        console.error('Failed to log task reassignment:', logErr)
+      }
+
+      if (updateData.assignedToId) {
+        try {
+          const reassignerName = user.name || user.email || 'Een beheerder'
+          await sendTaskReassignmentEmail(updatedTask, reassignerName)
+          console.log(`📧 Reassignment email sent for task ${updatedTask.id} to ${updatedTask.assignedTo?.email}`)
+        } catch (emailError) {
+          console.error('Failed to send reassignment email:', emailError)
+        }
       }
     }
 

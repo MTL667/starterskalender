@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { eventBus } from '@/lib/events'
+import { unblockDependentTasks } from '@/lib/task-automation'
 
 // POST /api/tasks/[id]/complete - Markeer taak als voltooid
 export async function POST(
@@ -121,6 +122,16 @@ export async function POST(
 
     if (updatedTask.entityId) {
       eventBus.emit({ type: 'task:completed', entityId: updatedTask.entityId, payload: { taskId: updatedTask.id } })
+    }
+
+    // Unblock eventuele taken die op deze taak wachtten (AND-gate)
+    try {
+      const unblocked = await unblockDependentTasks(updatedTask.id)
+      if (unblocked.length > 0) {
+        console.log(`▶️  Unblocked ${unblocked.length} dependent task(s) after completing ${updatedTask.id}`)
+      }
+    } catch (err) {
+      console.error('Error unblocking dependent tasks:', err)
     }
 
     // Maak notificatie aan voor de aanmaker (als verschillend van voltooier)

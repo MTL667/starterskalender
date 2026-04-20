@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
-import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope, FileSignature, Grid3X3, BarChart3, PenLine } from 'lucide-react'
+import { Building2, Users, Settings, Mail, FileText, Briefcase, Ban, Shield, Package, MailOpen, Palette, Clock, CheckSquare, Stethoscope, FileSignature, Grid3X3, BarChart3, PenLine, ListChecks, Network } from 'lucide-react'
 
 export default async function AdminPage() {
   const user = await requireAdmin().catch(() => null)
@@ -50,6 +50,18 @@ export default async function AdminPage() {
       description: t('taskAssignmentsDescription'),
       icon: CheckSquare,
       href: '/admin/task-assignments',
+    },
+    {
+      title: 'Task Templates',
+      description: 'Automatische taken, dependencies, scheduling en uploads beheren',
+      icon: ListChecks,
+      href: '/admin/task-templates',
+    },
+    {
+      title: 'Template × Functie matrix',
+      description: 'Per functie aanvinken welke automatische taken lopen',
+      icon: Network,
+      href: '/admin/task-template-matrix',
     },
     {
       title: t('signatureTemplates'),

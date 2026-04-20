@@ -46,6 +46,46 @@ export interface TaskAssignee {
   email: string
 }
 
+export interface TaskDependency {
+  id: string
+  title: string
+  type: string
+  status: string
+  assignedTo?: TaskAssignee | null
+  completedAt?: string | null
+}
+
+export interface StarterTaskUpload {
+  id: string
+  taskId: string
+  fileName: string
+  sharePointPath: string
+  mimeType?: string | null
+  sizeBytes?: number | null
+  variant?: string | null
+  uploadedAt: string
+  uploadedById?: string | null
+}
+
+export interface TaskReassignmentEntry {
+  id: string
+  taskId: string
+  fromUserId?: string | null
+  toUserId?: string | null
+  reassignedById?: string | null
+  reason?: string | null
+  reassignedAt: string
+}
+
+export interface TaskTemplateMeta {
+  id: string
+  dependsOnTemplateIds: string[]
+  scheduleType: string
+  addToCalendar: boolean
+  uploadFolder?: string | null
+  expectedOutputs?: string[] | null
+}
+
 export interface Task {
   id: string
   type: string
@@ -54,6 +94,7 @@ export interface Task {
   status: string
   priority: string
   dueDate?: string
+  scheduledFor?: string | null
   completedAt?: string
   assignedAt?: string
   starter?: TaskStarter
@@ -62,4 +103,9 @@ export interface Task {
   completedBy?: TaskAssignee
   blockedReason?: string
   completionNotes?: string
+  dependsOnTaskIds?: string[]
+  dependencies?: TaskDependency[]
+  template?: TaskTemplateMeta | null
+  uploads?: StarterTaskUpload[]
+  reassignHistory?: TaskReassignmentEntry[]
 }
