@@ -90,6 +90,8 @@ export async function POST(
     const fileName = `${prefix}-${cleanOriginal}`
 
     let sharePointPath = `local://${task.id}/${fileName}` // fallback als Graph niet configured
+    let teamsDriveId: string | null = null
+    let teamsItemId: string | null = null
     if (isDocsGraphConfigured()) {
       try {
         const uploaded = await uploadDocument(
@@ -101,6 +103,8 @@ export async function POST(
           uploadFolder || undefined
         )
         sharePointPath = uploaded.path
+        teamsDriveId = uploaded.driveId
+        teamsItemId = uploaded.itemId
       } catch (err) {
         console.error('SharePoint upload failed:', err)
         return NextResponse.json(
@@ -117,12 +121,24 @@ export async function POST(
         taskId: task.id,
         fileName,
         sharePointPath,
+        teamsDriveId,
+        teamsItemId,
         mimeType,
         sizeBytes: buffer.length,
         variant,
         uploadedById: user.id,
       },
     })
+
+    // Profielfoto auto-koppelen: headshot-raw wordt de profielfoto van de starter.
+    // Laatste upload wint — zo kan een foutieve foto overschreven worden door
+    // opnieuw te uploaden met dezelfde variant.
+    if (variant === 'headshot-raw' && teamsDriveId && teamsItemId) {
+      await prisma.starter.update({
+        where: { id: task.starter.id },
+        data: { photoUploadId: upload.id },
+      })
+    }
 
     await prisma.auditLog.create({
       data: {

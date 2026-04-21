@@ -26,6 +26,7 @@ import { MaterialActionButtons } from '@/components/materials/material-action-bu
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
 import { HealthProgressBar } from '@/components/health-badge'
 import { useHealthScores } from '@/lib/use-health-scores'
+import { StarterAvatar } from '@/components/kalender/starter-avatar'
 
 interface Starter {
   id: string
@@ -49,10 +50,13 @@ interface Starter {
   experienceEntity?: string | null
   phoneNumber?: string | null
   desiredEmail?: string | null
+  photoUploadId?: string | null
   fromEntityId?: string | null
   fromRoleTitle?: string | null
   entity?: {
     id: string
+    name?: string
+    colorHex?: string
   } | null
   fromEntity?: {
     id: string
@@ -831,6 +835,29 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             }
           </DialogDescription>
         </DialogHeader>
+
+        {isEdit && starter && (
+          <div className="flex items-center gap-4 pb-2">
+            <StarterAvatar
+              starterId={starter.id}
+              firstName={starter.firstName}
+              lastName={starter.lastName}
+              hasPhoto={!!starter.photoUploadId}
+              entityColor={starter.entity?.colorHex ?? null}
+            />
+            <div className="min-w-0">
+              <div className="text-lg font-semibold leading-tight truncate">
+                {starter.firstName} {starter.lastName}
+              </div>
+              {starter.roleTitle && (
+                <div className="text-sm text-muted-foreground truncate">
+                  {starter.roleTitle}
+                  {starter.entity?.name && ` · ${starter.entity.name}`}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {isEdit && healthScore && !starter?.isCancelled && (
           <div className="border rounded-lg p-4 bg-muted/30">

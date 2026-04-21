@@ -294,6 +294,12 @@ model Starter {
   salaryCurrency String?  @default("EUR")
   bankAccount    String? // IBAN / rekeningnummer
 
+  // Profielfoto — verwijst naar een StarterTaskUpload (meestal variant="headshot-raw").
+  // Auto-gekoppeld na upload; via GET /api/starters/:id/photo wordt de binary
+  // on-demand uit SharePoint gehaald (geen duplicatie van bestandsdata).
+  photoUploadId String?            @unique
+  photoUpload   StarterTaskUpload? @relation("StarterProfilePhoto", fields: [photoUploadId], references: [id], onDelete: SetNull)
+
   createdBy        String? // User ID die het aanmaakte
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -612,11 +618,16 @@ model StarterTaskUpload {
   task           Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   fileName       String
   sharePointPath String // Volledig pad in SharePoint
+  teamsDriveId   String? // Graph API driveId — nodig om binary on-demand op te halen
+  teamsItemId    String? // Graph API itemId — idem
   mimeType       String?
   sizeBytes      Int?
   variant        String? // bv. "forms-photo", "linkedin", "signature", "headshot-raw"
   uploadedById   String?
   uploadedAt     DateTime @default(now())
+
+  // Back-relation: wanneer deze upload de starter-profielfoto is.
+  profilePhotoForStarter Starter? @relation("StarterProfilePhoto")
 
   @@index([taskId])
   @@index([variant])
