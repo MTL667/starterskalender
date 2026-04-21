@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-utils'
+import { requireAuth } from '@/lib/auth-utils'
+import { can, toAuthorizedUser } from '@/lib/authz'
 import { getItemByPath, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { createAuditLog } from '@/lib/audit'
 
@@ -9,21 +10,30 @@ import { createAuditLog } from '@/lib/audit'
 // profielfoto en backfillt ontbrekende Graph `driveId`/`itemId` op de upload.
 //
 // Bedoeld voor starters waarvan de headshot al vóór de profielfoto-feature is
-// geüpload en dus nog niet automatisch gelinkt is. Admin-only.
+// geüpload en dus nog niet automatisch gelinkt is. Vereist `starters:photo:manage`
+// permissie, entity-scoped.
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const user = await requireAdmin()
+    const user = await requireAuth()
     const { id } = await params
 
     const starter = await prisma.starter.findUnique({
       where: { id },
-      select: { id: true, firstName: true, lastName: true },
+      select: { id: true, firstName: true, lastName: true, entityId: true },
     })
     if (!starter) {
       return NextResponse.json({ error: 'Starter not found' }, { status: 404 })
+    }
+
+    const authUser = toAuthorizedUser(user)
+    if (!can(authUser, 'starters:photo:manage', { entityId: starter.entityId ?? undefined })) {
+      return NextResponse.json(
+        { error: 'Forbidden: permissie starters:photo:manage vereist voor deze entiteit' },
+        { status: 403 },
+      )
     }
 
     // Zoek de meest recente headshot-raw upload die aan een task van deze

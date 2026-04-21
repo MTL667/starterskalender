@@ -31,6 +31,7 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   { key: 'starters:export', category: 'starters', description: 'Starters-data exporteren' },
   { key: 'starters:read:salary', category: 'starters', description: 'Salarisveld zien en bewerken', isFieldLevel: true },
   { key: 'starters:read:bankaccount', category: 'starters', description: 'Bankrekening zien en bewerken', isFieldLevel: true },
+  { key: 'starters:photo:manage', category: 'starters', description: 'Profielfoto van starter (her)koppelen aan geüploade headshot' },
 
   // ── Tasks ─────────────────────────────────────────────────────────────────
   { key: 'tasks:read', category: 'tasks', description: 'Alle taken bekijken' },

@@ -770,7 +770,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
   const isAdmin = (session?.user as any)?.role === 'HR_ADMIN' || (session?.user as any)?.role === 'ADMIN'
   const userPermissions: string[] = (session?.user as any)?.permissions ?? []
+  const userPerms: string[] = (session?.user as any)?.perms ?? []
   const isMaterialMgr = isAdmin || userPermissions.includes('MATERIAL_MANAGER')
+  const canManagePhoto = isAdmin || userPerms.includes('starters:photo:manage')
 
   const handleRegenerateTasks = async (mode: 'append' | 'reset' = 'append') => {
     if (!starter || regeneratingTasks) return
@@ -886,7 +888,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 </div>
               )}
             </div>
-            {isAdmin && (
+            {canManagePhoto && (
               <Button
                 type="button"
                 size="sm"
