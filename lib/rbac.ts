@@ -114,7 +114,7 @@ export function getAccessibleEntityIds(user: UserWithMemberships): string[] {
  * Delegatie naar `can('starters:update', { entityId })` indien roleAssignments beschikbaar.
  */
 export function canEditEntity(user: UserWithMemberships, entityId: string): boolean {
-  if (user.roleAssignments) {
+  if (user.roleAssignments && user.roleAssignments.length > 0) {
     return can(asAuthUserSync(user), 'starters:update', { entityId })
   }
   if (isHRAdmin(user)) return true
@@ -126,7 +126,7 @@ export function canEditEntity(user: UserWithMemberships, entityId: string): bool
  * Controleert of een gebruiker een specifieke entiteit kan bekijken.
  */
 export function canViewEntity(user: UserWithMemberships, entityId: string): boolean {
-  if (user.roleAssignments) {
+  if (user.roleAssignments && user.roleAssignments.length > 0) {
     return can(asAuthUserSync(user), 'starters:read', { entityId })
   }
   if (isHRAdmin(user) || isGlobalViewer(user)) return true
@@ -155,7 +155,7 @@ export function filterStartersByRBAC(
   user: UserWithMemberships,
   where: any = {},
 ): any {
-  if (user.roleAssignments) {
+  if (user.roleAssignments && user.roleAssignments.length > 0) {
     const scope = visibleEntityIds(asAuthUserSync(user), 'starters:read')
     if (scope === 'ALL') return where
     return { ...where, entityId: { in: scope } }
