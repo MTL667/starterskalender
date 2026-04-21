@@ -20,6 +20,20 @@ fi
 echo "🗄️  Syncing database schema..."
 su-exec nextjs:nodejs node node_modules/.bin/prisma db push --accept-data-loss
 
+# RBAC v2 — seed permissions + system roles (altijd runnen, is idempotent en moet
+# in sync blijven met lib/authz-registry.ts)
+echo "🔐 Seeding RBAC v2 permissions and system roles..."
+su-exec nextjs:nodejs node ./node_modules/tsx/dist/cli.mjs prisma/seed-rbac.ts || echo "⚠️  RBAC seed failed (continuing...)"
+
+# RBAC v2 — backfill legacy roles naar UserRoleAssignment.
+# Zet RUN_RBAC_V2_BACKFILL=true in de productie-env bij de eerste deploy van
+# RBAC v2. Daarna kan je de env var weghalen of op false zetten; het script
+# is idempotent maar het scheelt logvolume.
+if [ "$RUN_RBAC_V2_BACKFILL" = "true" ]; then
+  echo "🔄 Running RBAC v2 backfill (legacy roles → UserRoleAssignment)..."
+  su-exec nextjs:nodejs node ./node_modules/tsx/dist/cli.mjs prisma/backfill-rbac.ts || echo "⚠️  RBAC backfill failed (continuing...)"
+fi
+
 # Generate crontab with actual environment variables
 echo "📅 Generating crontab with runtime env vars..."
 CRON_AUTH=""
