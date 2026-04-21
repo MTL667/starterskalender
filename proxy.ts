@@ -10,8 +10,13 @@ export default withAuth(
       return NextResponse.next()
     }
 
-    if (token?.role === 'NONE') {
-      console.log(`🚫 Blocking NONE user from: ${path}`)
+    // Blokkeer alleen als er GEEN toegang is via legacyRole EN geen RBAC v2
+    // roleAssignments (zichtbaar als token.perms, gevuld in jwt callback).
+    const perms = ((token as any)?.perms as string[] | undefined) ?? []
+    const hasLegacyAccess = token?.role && token.role !== 'NONE'
+    const hasRbacV2Access = perms.length > 0
+    if (!hasLegacyAccess && !hasRbacV2Access) {
+      console.log(`🚫 Blocking guest user (no role) from: ${path}`)
       return NextResponse.redirect(new URL('/auth/welcome', req.url))
     }
 
