@@ -7,8 +7,12 @@ const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: ['localhost:3000'],
+      bodySizeLimit: '100mb',
     },
   },
+  // Next.js 16 default is 10MB — verhogen zodat foto/bestand uploads niet
+  // afgekapt worden voordat ze de API route bereiken.
+  middlewareClientMaxBodySize: '100mb',
   // Enable standalone output for Docker
   output: 'standalone',
   // Keep heavy packages out of the server bundle
