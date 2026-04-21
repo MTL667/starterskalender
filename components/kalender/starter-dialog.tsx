@@ -130,6 +130,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [regeneratingTasks, setRegeneratingTasks] = useState(false)
   const [pendingConfirmOpen, setPendingConfirmOpen] = useState(false)
   const [assigningMaterials, setAssigningMaterials] = useState(false)
+  const [refreshingPhoto, setRefreshingPhoto] = useState(false)
+  const [photoCacheBuster, setPhotoCacheBuster] = useState<number>(() => Date.now())
+  // Override lokaal na een succesvolle refresh: als `starter.photoUploadId`
+  // (uit de prop) nog niet gezet was, willen we toch direct de foto tonen.
+  const [photoLinkedOverride, setPhotoLinkedOverride] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     firstName: '',
@@ -240,6 +245,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     } else {
       setStarterMaterials([])
     }
+    setPhotoLinkedOverride(false)
+    setPhotoCacheBuster(Date.now())
   }, [starter?.id])
 
   // Laad taken voor bestaande starter
@@ -802,6 +809,28 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
+  const handleRefreshPhoto = async () => {
+    if (!starter || refreshingPhoto) return
+    setRefreshingPhoto(true)
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/photo/refresh`, {
+        method: 'POST',
+      })
+      if (res.ok) {
+        setPhotoCacheBuster(Date.now())
+        setPhotoLinkedOverride(true)
+      } else {
+        const err = await res.json().catch(() => ({}))
+        alert(err.error || 'Kon foto niet vernieuwen')
+      }
+    } catch (error) {
+      console.error('Error refreshing photo:', error)
+      alert('Kon foto niet vernieuwen')
+    } finally {
+      setRefreshingPhoto(false)
+    }
+  }
+
   // Check of alle velden voor signature generatie ingevuld zijn en template bestaat
   const canGenerateSignature = !!(
     hasSignatureTemplate &&
@@ -842,10 +871,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               starterId={starter.id}
               firstName={starter.firstName}
               lastName={starter.lastName}
-              hasPhoto={!!starter.photoUploadId}
+              hasPhoto={!!starter.photoUploadId || photoLinkedOverride}
               entityColor={starter.entity?.colorHex ?? null}
+              cacheBuster={photoCacheBuster}
             />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="text-lg font-semibold leading-tight truncate">
                 {starter.firstName} {starter.lastName}
               </div>
@@ -856,6 +886,21 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 </div>
               )}
             </div>
+            {isAdmin && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleRefreshPhoto}
+                disabled={refreshingPhoto}
+                title="Link de meest recente 'headshot-raw' upload als profielfoto"
+              >
+                <RefreshCw
+                  className={`h-3 w-3 mr-1.5 ${refreshingPhoto ? 'animate-spin' : ''}`}
+                />
+                Foto herladen
+              </Button>
+            )}
           </div>
         )}
 

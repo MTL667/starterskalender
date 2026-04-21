@@ -98,6 +98,23 @@ export async function uploadDocument(
   };
 }
 
+// Haalt item-metadata op aan de hand van een volledig pad (bv. opgeslagen in
+// StarterTaskUpload.sharePointPath). Nuttig om `driveId`/`itemId` te backfillen
+// voor uploads die v\u00f3\u00f3r die kolommen werden opgeslagen.
+export async function getItemByPath(
+  filePath: string
+): Promise<{ driveId: string; itemId: string; webUrl: string } | null> {
+  const client = await graphDocs();
+  const driveId = await resolveDriveId(client);
+  try {
+    const item = await client.api(`/drives/${driveId}/root:/${filePath}`).get();
+    return { driveId, itemId: item.id, webUrl: item.webUrl };
+  } catch (err: any) {
+    if (err.statusCode === 404) return null;
+    throw err;
+  }
+}
+
 export async function downloadDocument(
   driveId: string,
   itemId: string

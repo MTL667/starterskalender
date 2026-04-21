@@ -11,6 +11,8 @@ interface StarterAvatarProps {
   entityColor?: string | null
   className?: string
   size?: 'sm' | 'md' | 'lg'
+  // Bump om browser-cache te omzeilen na een refresh/upload.
+  cacheBuster?: string | number
 }
 
 const SIZES = {
@@ -43,10 +45,14 @@ export function StarterAvatar({
   entityColor,
   className,
   size = 'lg',
+  cacheBuster,
 }: StarterAvatarProps) {
   const [imgFailed, setImgFailed] = useState(false)
   const showImage = hasPhoto && !imgFailed
   const initials = getInitials(firstName, lastName)
+  const src = cacheBuster
+    ? `/api/starters/${starterId}/photo?v=${cacheBuster}`
+    : `/api/starters/${starterId}/photo`
 
   return (
     <div
@@ -67,7 +73,7 @@ export function StarterAvatar({
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/api/starters/${starterId}/photo`}
+          src={src}
           alt={`${firstName} ${lastName}`}
           className="h-full w-full object-cover"
           onError={() => setImgFailed(true)}
