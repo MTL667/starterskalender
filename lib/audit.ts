@@ -23,6 +23,7 @@ export type AuditAction =
   | 'ROLE_ASSIGNED'
   | 'ROLE_UNASSIGNED'
   | 'STARTER_PHOTO_REFRESH'
+  | 'STARTER_PHOTO_PICK'
 
 export interface AuditLogInput {
   actorId?: string
