@@ -294,11 +294,17 @@ model Starter {
   salaryCurrency String?  @default("EUR")
   bankAccount    String? // IBAN / rekeningnummer
 
-  // Profielfoto — verwijst naar een StarterTaskUpload (meestal variant="headshot-raw").
-  // Auto-gekoppeld na upload; via GET /api/starters/:id/photo wordt de binary
-  // on-demand uit SharePoint gehaald (geen duplicatie van bestandsdata).
-  photoUploadId String?            @unique
-  photoUpload   StarterTaskUpload? @relation("StarterProfilePhoto", fields: [photoUploadId], references: [id], onDelete: SetNull)
+  // Profielfoto — kan via een task upload gekoppeld worden (photoUploadId),
+  // of direct naar een bestand in de SharePoint-map verwijzen (photoDriveId/photoItemId).
+  // Bij het handmatig kiezen van een foto uit de SharePoint-map wordt photoUploadId
+  // gecleared en worden de directe velden gezet. De GET /photo endpoint prefereert
+  // de directe velden boven de upload relatie.
+  photoUploadId  String?            @unique
+  photoUpload    StarterTaskUpload? @relation("StarterProfilePhoto", fields: [photoUploadId], references: [id], onDelete: SetNull)
+  photoDriveId   String?
+  photoItemId    String?
+  photoFileName  String?
+  photoMimeType  String?
 
   createdBy        String? // User ID die het aanmaakte
   createdAt        DateTime          @default(now())

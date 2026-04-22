@@ -1,19 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-utils'
 import { can, toAuthorizedUser } from '@/lib/authz'
-import { getItemByPath, isDocsGraphConfigured } from '@/lib/graph-teams'
+import { getItemByPath, getItemById, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { createAuditLog } from '@/lib/audit'
 
 // POST /api/starters/[id]/photo/refresh
-// Koppelt de meest recente `headshot-raw` upload van deze starter als de
-// profielfoto en backfillt ontbrekende Graph `driveId`/`itemId` op de upload.
 //
-// Bedoeld voor starters waarvan de headshot al vóór de profielfoto-feature is
-// geüpload en dus nog niet automatisch gelinkt is. Vereist `starters:photo:manage`
-// permissie, entity-scoped.
+// Twee modi:
+// 1. Zonder body → koppelt de meest recente `headshot-raw` upload van deze starter
+//    als profielfoto (originele "auto"-gedrag).
+// 2. Met body `{ driveId, itemId }` → koppelt een specifiek bestand uit SharePoint
+//    als profielfoto (handmatig gekozen uit de starter-map). Dit werkt ook voor
+//    bestanden die niet via een task upload zijn aangemaakt.
+//
+// Vereist `starters:photo:manage` permissie, entity-scoped.
+
+const BodySchema = z
+  .object({
+    driveId: z.string().min(1).optional(),
+    itemId: z.string().min(1).optional(),
+  })
+  .optional()
+
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -36,8 +48,70 @@ export async function POST(
       )
     }
 
-    // Zoek de meest recente headshot-raw upload die aan een task van deze
-    // starter hangt. We filteren op variant EN op task.starterId.
+    // Parse optionele body (fout bij invalid JSON/body → body blijft undefined).
+    let body: z.infer<typeof BodySchema> = undefined
+    try {
+      const raw = await request.json()
+      body = BodySchema.parse(raw)
+    } catch {
+      body = undefined
+    }
+
+    // --- Modus 2: specifiek bestand gekozen uit SharePoint-map ---
+    if (body?.driveId && body?.itemId) {
+      if (!isDocsGraphConfigured()) {
+        return NextResponse.json(
+          { error: 'Graph is niet geconfigureerd' },
+          { status: 503 },
+        )
+      }
+
+      const item = await getItemById(body.driveId, body.itemId)
+      if (!item) {
+        return NextResponse.json(
+          { error: 'Bestand niet gevonden in SharePoint' },
+          { status: 404 },
+        )
+      }
+
+      if (!item.mimeType.startsWith('image/')) {
+        return NextResponse.json(
+          { error: 'Geselecteerd bestand is geen afbeelding' },
+          { status: 400 },
+        )
+      }
+
+      await prisma.starter.update({
+        where: { id },
+        data: {
+          photoUploadId: null,
+          photoDriveId: body.driveId,
+          photoItemId: body.itemId,
+          photoFileName: item.name,
+          photoMimeType: item.mimeType,
+        },
+      })
+
+      await createAuditLog({
+        actorId: user.id,
+        action: 'STARTER_PHOTO_PICK',
+        target: `Starter:${id}`,
+        meta: {
+          starterId: id,
+          driveId: body.driveId,
+          itemId: body.itemId,
+          fileName: item.name,
+        },
+      })
+
+      return NextResponse.json({
+        ok: true,
+        mode: 'pick',
+        fileName: item.name,
+      })
+    }
+
+    // --- Modus 1: auto-link meest recente headshot-raw upload ---
     const upload = await prisma.starterTaskUpload.findFirst({
       where: {
         variant: 'headshot-raw',
@@ -53,8 +127,6 @@ export async function POST(
       )
     }
 
-    // Backfill driveId/itemId als die ontbreken. De kolommen bestaan pas sinds
-    // de profielfoto-feature; oudere uploads hebben alleen een pad.
     let teamsDriveId = upload.teamsDriveId
     let teamsItemId = upload.teamsItemId
     if ((!teamsDriveId || !teamsItemId) && isDocsGraphConfigured()) {
@@ -94,7 +166,13 @@ export async function POST(
 
     await prisma.starter.update({
       where: { id },
-      data: { photoUploadId: upload.id },
+      data: {
+        photoUploadId: upload.id,
+        photoDriveId: null,
+        photoItemId: null,
+        photoFileName: null,
+        photoMimeType: null,
+      },
     })
 
     await createAuditLog({
@@ -106,6 +184,7 @@ export async function POST(
 
     return NextResponse.json({
       ok: true,
+      mode: 'auto',
       uploadId: upload.id,
       uploadedAt: upload.uploadedAt,
       fileName: upload.fileName,

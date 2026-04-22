@@ -166,3 +166,94 @@ export async function listStarterDocuments(
     throw err;
   }
 }
+
+// Platte lijst van alle afbeeldingen in de starter-map + directe submappen.
+// Gebruikt voor de "profielfoto kiezen" flow — headshots worden normaal onder
+// /marketing/ opgeslagen maar kunnen ook handmatig op andere plekken staan.
+export type StarterImage = {
+  driveId: string;
+  itemId: string;
+  fileName: string;
+  folder: string; // relatief pad tov de starter-map ("" voor root, "marketing" voor submap)
+  mimeType: string;
+  sizeBytes: number;
+  lastModified: string;
+  webUrl: string;
+};
+
+export async function listStarterImages(
+  entityName: string,
+  starterLastName: string,
+  starterFirstName: string
+): Promise<StarterImage[]> {
+  const client = await graphDocs();
+  const driveId = await resolveDriveId(client);
+  const folderPath = buildStarterPath(entityName, starterLastName, starterFirstName);
+
+  const images: StarterImage[] = [];
+
+  const mapItem = (item: any, folder: string): StarterImage | null => {
+    if (item.folder) return null;
+    const mimeType = item.file?.mimeType || "";
+    if (!mimeType.startsWith("image/")) return null;
+    return {
+      driveId,
+      itemId: item.id,
+      fileName: item.name,
+      folder,
+      mimeType,
+      sizeBytes: item.size || 0,
+      lastModified: item.lastModifiedDateTime || item.createdDateTime || "",
+      webUrl: item.webUrl || "",
+    };
+  };
+
+  const listChildren = async (path: string): Promise<any[]> => {
+    try {
+      const result = await client
+        .api(`/drives/${driveId}/root:/${path}:/children`)
+        .get();
+      return result.value || [];
+    } catch (err: any) {
+      if (err.statusCode === 404) return [];
+      throw err;
+    }
+  };
+
+  const rootChildren = await listChildren(folderPath);
+  for (const child of rootChildren) {
+    const mapped = mapItem(child, "");
+    if (mapped) images.push(mapped);
+  }
+
+  const subfolders = rootChildren.filter((c) => c.folder);
+  for (const sub of subfolders) {
+    const subChildren = await listChildren(`${folderPath}/${sub.name}`);
+    for (const child of subChildren) {
+      const mapped = mapItem(child, sub.name);
+      if (mapped) images.push(mapped);
+    }
+  }
+
+  images.sort((a, b) => (b.lastModified || "").localeCompare(a.lastModified || ""));
+  return images;
+}
+
+export async function getItemById(
+  driveId: string,
+  itemId: string
+): Promise<{ name: string; mimeType: string; size: number; webUrl: string } | null> {
+  const client = await graphDocs();
+  try {
+    const item = await client.api(`/drives/${driveId}/items/${itemId}`).get();
+    return {
+      name: item.name,
+      mimeType: item.file?.mimeType || "application/octet-stream",
+      size: item.size || 0,
+      webUrl: item.webUrl || "",
+    };
+  } catch (err: any) {
+    if (err.statusCode === 404) return null;
+    throw err;
+  }
+}

@@ -27,6 +27,7 @@ import { SignatureGeneratorDialog } from '@/components/signature-generator-dialo
 import { HealthProgressBar } from '@/components/health-badge'
 import { useHealthScores } from '@/lib/use-health-scores'
 import { StarterAvatar } from '@/components/kalender/starter-avatar'
+import { PhotoPickerDialog } from '@/components/kalender/photo-picker-dialog'
 
 interface Starter {
   id: string
@@ -51,6 +52,8 @@ interface Starter {
   phoneNumber?: string | null
   desiredEmail?: string | null
   photoUploadId?: string | null
+  photoDriveId?: string | null
+  photoItemId?: string | null
   fromEntityId?: string | null
   fromRoleTitle?: string | null
   entity?: {
@@ -130,7 +133,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [regeneratingTasks, setRegeneratingTasks] = useState(false)
   const [pendingConfirmOpen, setPendingConfirmOpen] = useState(false)
   const [assigningMaterials, setAssigningMaterials] = useState(false)
-  const [refreshingPhoto, setRefreshingPhoto] = useState(false)
+  const [photoPickerOpen, setPhotoPickerOpen] = useState(false)
   const [photoCacheBuster, setPhotoCacheBuster] = useState<number>(() => Date.now())
   // Override lokaal na een succesvolle refresh: als `starter.photoUploadId`
   // (uit de prop) nog niet gezet was, willen we toch direct de foto tonen.
@@ -811,26 +814,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
-  const handleRefreshPhoto = async () => {
-    if (!starter || refreshingPhoto) return
-    setRefreshingPhoto(true)
-    try {
-      const res = await fetch(`/api/starters/${starter.id}/photo/refresh`, {
-        method: 'POST',
-      })
-      if (res.ok) {
-        setPhotoCacheBuster(Date.now())
-        setPhotoLinkedOverride(true)
-      } else {
-        const err = await res.json().catch(() => ({}))
-        alert(err.error || 'Kon foto niet vernieuwen')
-      }
-    } catch (error) {
-      console.error('Error refreshing photo:', error)
-      alert('Kon foto niet vernieuwen')
-    } finally {
-      setRefreshingPhoto(false)
-    }
+  const handlePhotoPicked = () => {
+    setPhotoCacheBuster(Date.now())
+    setPhotoLinkedOverride(true)
   }
 
   // Check of alle velden voor signature generatie ingevuld zijn en template bestaat
@@ -873,7 +859,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               starterId={starter.id}
               firstName={starter.firstName}
               lastName={starter.lastName}
-              hasPhoto={!!starter.photoUploadId || photoLinkedOverride}
+              hasPhoto={!!starter.photoUploadId || !!starter.photoItemId || photoLinkedOverride}
               entityColor={starter.entity?.colorHex ?? null}
               cacheBuster={photoCacheBuster}
             />
@@ -893,14 +879,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={handleRefreshPhoto}
-                disabled={refreshingPhoto}
-                title="Link de meest recente 'headshot-raw' upload als profielfoto"
+                onClick={() => setPhotoPickerOpen(true)}
+                title="Kies een profielfoto uit de SharePoint-map van deze starter"
               >
-                <RefreshCw
-                  className={`h-3 w-3 mr-1.5 ${refreshingPhoto ? 'animate-spin' : ''}`}
-                />
-                Foto herladen
+                <RefreshCw className="h-3 w-3 mr-1.5" />
+                Foto kiezen
               </Button>
             )}
           </div>
@@ -1762,6 +1745,16 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         </form>
       </DialogContent>
     </Dialog>
+
+    {isEdit && starter && canManagePhoto && (
+      <PhotoPickerDialog
+        open={photoPickerOpen}
+        onOpenChange={setPhotoPickerOpen}
+        starterId={starter.id}
+        currentItemId={starter.photoItemId ?? null}
+        onPicked={handlePhotoPicked}
+      />
+    )}
 
     {/* Signature Generator Dialog */}
     {canGenerateSignature && (

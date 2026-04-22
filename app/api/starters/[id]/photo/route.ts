@@ -7,8 +7,14 @@ import { downloadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 // GET /api/starters/[id]/photo
 // Proxy voor de profielfoto van een starter. De binary leeft in SharePoint;
 // wij halen hem on-demand op via Graph en serveren hem als image/*.
-// Caching: private, 5 minuten — foto's wijzigen zelden maar een nieuwe upload
-// moet zonder hard-refresh zichtbaar worden.
+//
+// Bronnen (in volgorde van prioriteit):
+//   1. Directe velden op Starter (photoDriveId/photoItemId) — gezet via de
+//      "foto kiezen" flow wanneer een specifiek bestand uit de map wordt gekozen.
+//   2. `photoUpload` relatie naar StarterTaskUpload — gezet via auto-link bij
+//      headshot-raw upload of via de legacy refresh-knop.
+//
+// Caching: private, 5 minuten.
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -24,6 +30,10 @@ export async function GET(
       where: { id },
       select: {
         entityId: true,
+        photoDriveId: true,
+        photoItemId: true,
+        photoFileName: true,
+        photoMimeType: true,
         photoUpload: {
           select: {
             teamsDriveId: true,
@@ -35,27 +45,42 @@ export async function GET(
       },
     })
 
-    if (!starter?.photoUpload) {
-      return new NextResponse('No photo', { status: 404 })
+    if (!starter) {
+      return new NextResponse('Starter not found', { status: 404 })
     }
 
-    // Toegangscheck: je moet de starter mogen bekijken om z'n foto te zien.
     if (starter.entityId && !canViewEntity(user, starter.entityId)) {
       return new NextResponse('Forbidden', { status: 403 })
     }
 
-    const { teamsDriveId, teamsItemId, mimeType, fileName } = starter.photoUpload
-    if (!teamsDriveId || !teamsItemId || !isDocsGraphConfigured()) {
-      return new NextResponse('Photo binary not available', { status: 404 })
+    let driveId: string | null = null
+    let itemId: string | null = null
+    let mimeType = 'image/jpeg'
+    let fileName = 'photo.jpg'
+
+    if (starter.photoDriveId && starter.photoItemId) {
+      driveId = starter.photoDriveId
+      itemId = starter.photoItemId
+      mimeType = starter.photoMimeType || mimeType
+      fileName = starter.photoFileName || fileName
+    } else if (starter.photoUpload?.teamsDriveId && starter.photoUpload?.teamsItemId) {
+      driveId = starter.photoUpload.teamsDriveId
+      itemId = starter.photoUpload.teamsItemId
+      mimeType = starter.photoUpload.mimeType || mimeType
+      fileName = starter.photoUpload.fileName || fileName
     }
 
-    const buffer = await downloadDocument(teamsDriveId, teamsItemId)
+    if (!driveId || !itemId || !isDocsGraphConfigured()) {
+      return new NextResponse('No photo', { status: 404 })
+    }
+
+    const buffer = await downloadDocument(driveId, itemId)
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
-        'Content-Type': mimeType || 'image/jpeg',
-        'Content-Disposition': `inline; filename="${fileName || 'photo.jpg'}"`,
+        'Content-Type': mimeType,
+        'Content-Disposition': `inline; filename="${fileName}"`,
         'Cache-Control': 'private, max-age=300',
       },
     })
