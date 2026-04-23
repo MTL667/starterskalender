@@ -3,26 +3,39 @@ import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-utils'
 import { can, toAuthorizedUser } from '@/lib/authz'
-import { getItemByPath, getItemById, isDocsGraphConfigured } from '@/lib/graph-teams'
+import {
+  getItemByPath,
+  isDocsGraphConfigured,
+  isSafeImageMimeType,
+  listStarterImages,
+} from '@/lib/graph-teams'
 import { createAuditLog } from '@/lib/audit'
 
 // POST /api/starters/[id]/photo/refresh
 //
 // Twee modi:
-// 1. Zonder body → koppelt de meest recente `headshot-raw` upload van deze starter
-//    als profielfoto (originele "auto"-gedrag).
-// 2. Met body `{ driveId, itemId }` → koppelt een specifiek bestand uit SharePoint
-//    als profielfoto (handmatig gekozen uit de starter-map). Dit werkt ook voor
-//    bestanden die niet via een task upload zijn aangemaakt.
+// 1. Zonder body → koppelt de meest recente `headshot-raw` upload van deze
+//    starter als profielfoto (originele "auto"-gedrag).
+// 2. Met body `{ driveId, itemId }` → koppelt een specifiek bestand uit
+//    SharePoint als profielfoto (handmatig gekozen uit de starter-map). Het
+//    bestand MOET in de SharePoint-map van deze starter staan.
 //
 // Vereist `starters:photo:manage` permissie, entity-scoped.
 
-const BodySchema = z
-  .object({
-    driveId: z.string().min(1).optional(),
-    itemId: z.string().min(1).optional(),
-  })
-  .optional()
+const BodySchema = z.object({
+  driveId: z.string().min(1),
+  itemId: z.string().min(1),
+})
+
+type GraphLikeError = { statusCode?: number; message?: string }
+
+function graphStatusToHttp(err: GraphLikeError): number {
+  const s = err?.statusCode
+  if (s === 401 || s === 403) return 502 // upstream auth falen ≠ client forbidden
+  if (s === 404) return 404
+  if (typeof s === 'number' && s >= 400 && s < 600) return 502
+  return 500
+}
 
 export async function POST(
   request: NextRequest,
@@ -34,7 +47,16 @@ export async function POST(
 
     const starter = await prisma.starter.findUnique({
       where: { id },
-      select: { id: true, firstName: true, lastName: true, entityId: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        entityId: true,
+        entity: { select: { name: true } },
+        photoUploadId: true,
+        photoDriveId: true,
+        photoItemId: true,
+      },
     })
     if (!starter) {
       return NextResponse.json({ error: 'Starter not found' }, { status: 404 })
@@ -48,17 +70,39 @@ export async function POST(
       )
     }
 
-    // Parse optionele body (fout bij invalid JSON/body → body blijft undefined).
-    let body: z.infer<typeof BodySchema> = undefined
-    try {
-      const raw = await request.json()
-      body = BodySchema.parse(raw)
-    } catch {
-      body = undefined
+    // --- Body parsing ---
+    // Drie gevallen:
+    //   a) Geen body / lege body → auto-mode
+    //   b) Valide `{driveId, itemId}` → pick-mode
+    //   c) Body aanwezig maar incompleet/onjuist → 400 (GEEN stille fallback)
+    let pickBody: { driveId: string; itemId: string } | null = null
+
+    const contentLength = Number(request.headers.get('content-length') || '0')
+    let rawBody: unknown = undefined
+    if (contentLength > 0) {
+      try {
+        rawBody = await request.json()
+      } catch {
+        return NextResponse.json(
+          { error: 'Ongeldige JSON body' },
+          { status: 400 },
+        )
+      }
+    }
+
+    if (rawBody !== undefined && rawBody !== null && Object.keys(rawBody as object).length > 0) {
+      const parsed = BodySchema.safeParse(rawBody)
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: 'Body vereist zowel driveId als itemId' },
+          { status: 400 },
+        )
+      }
+      pickBody = parsed.data
     }
 
     // --- Modus 2: specifiek bestand gekozen uit SharePoint-map ---
-    if (body?.driveId && body?.itemId) {
+    if (pickBody) {
       if (!isDocsGraphConfigured()) {
         return NextResponse.json(
           { error: 'Graph is niet geconfigureerd' },
@@ -66,17 +110,51 @@ export async function POST(
         )
       }
 
-      const item = await getItemById(body.driveId, body.itemId)
-      if (!item) {
+      if (!starter.entity?.name) {
         return NextResponse.json(
-          { error: 'Bestand niet gevonden in SharePoint' },
-          { status: 404 },
+          { error: 'Starter heeft geen entity gekoppeld' },
+          { status: 400 },
         )
       }
 
-      if (!item.mimeType.startsWith('image/')) {
+      // Ownership check: het gekozen bestand moet écht in de SharePoint-map
+      // van deze starter staan. Zonder deze check kan iemand met photo:manage
+      // rechten op starter A een willekeurig bestand in de tenant drive als
+      // foto linken (cross-starter file-pick).
+      let candidates
+      try {
+        candidates = await listStarterImages(
+          starter.entity.name,
+          starter.lastName,
+          starter.firstName,
+        )
+      } catch (err) {
+        const e = err as GraphLikeError
+        console.error('Error listing starter images for ownership check:', e?.message)
         return NextResponse.json(
-          { error: 'Geselecteerd bestand is geen afbeelding' },
+          { error: 'SharePoint niet bereikbaar' },
+          { status: graphStatusToHttp(e) },
+        )
+      }
+
+      const match = candidates.find(
+        (img) => img.driveId === pickBody.driveId && img.itemId === pickBody.itemId,
+      )
+      if (!match) {
+        return NextResponse.json(
+          {
+            error:
+              'Geselecteerd bestand hoort niet bij deze starter of is geen geldige afbeelding',
+          },
+          { status: 403 },
+        )
+      }
+
+      // `listStarterImages` filtert al op veilige image mime types, maar we
+      // verifiëren nogmaals — defense-in-depth.
+      if (!isSafeImageMimeType(match.mimeType)) {
+        return NextResponse.json(
+          { error: 'Geselecteerd bestand is geen ondersteund afbeeldingsformaat' },
           { status: 400 },
         )
       }
@@ -85,10 +163,10 @@ export async function POST(
         where: { id },
         data: {
           photoUploadId: null,
-          photoDriveId: body.driveId,
-          photoItemId: body.itemId,
-          photoFileName: item.name,
-          photoMimeType: item.mimeType,
+          photoDriveId: match.driveId,
+          photoItemId: match.itemId,
+          photoFileName: match.fileName,
+          photoMimeType: match.mimeType,
         },
       })
 
@@ -98,16 +176,23 @@ export async function POST(
         target: `Starter:${id}`,
         meta: {
           starterId: id,
-          driveId: body.driveId,
-          itemId: body.itemId,
-          fileName: item.name,
+          entityId: starter.entityId,
+          driveId: match.driveId,
+          itemId: match.itemId,
+          fileName: match.fileName,
+          folder: match.folder,
+          previous: {
+            photoUploadId: starter.photoUploadId,
+            photoDriveId: starter.photoDriveId,
+            photoItemId: starter.photoItemId,
+          },
         },
       })
 
       return NextResponse.json({
         ok: true,
         mode: 'pick',
-        fileName: item.name,
+        fileName: match.fileName,
       })
     }
 
@@ -139,13 +224,20 @@ export async function POST(
           { status: 400 },
         )
       }
-      const item = await getItemByPath(upload.sharePointPath)
+      let item
+      try {
+        item = await getItemByPath(upload.sharePointPath)
+      } catch (err) {
+        const e = err as GraphLikeError
+        console.error('Error resolving upload path in Graph:', e?.message)
+        return NextResponse.json(
+          { error: 'SharePoint niet bereikbaar' },
+          { status: graphStatusToHttp(e) },
+        )
+      }
       if (!item) {
         return NextResponse.json(
-          {
-            error:
-              'Bestand niet gevonden in SharePoint op pad ' + upload.sharePointPath,
-          },
+          { error: 'Bestand niet gevonden in SharePoint' },
           { status: 404 },
         )
       }
@@ -179,7 +271,17 @@ export async function POST(
       actorId: user.id,
       action: 'STARTER_PHOTO_REFRESH',
       target: `Starter:${id}`,
-      meta: { starterId: id, uploadId: upload.id, sharePointPath: upload.sharePointPath },
+      meta: {
+        starterId: id,
+        entityId: starter.entityId,
+        uploadId: upload.id,
+        sharePointPath: upload.sharePointPath,
+        previous: {
+          photoUploadId: starter.photoUploadId,
+          photoDriveId: starter.photoDriveId,
+          photoItemId: starter.photoItemId,
+        },
+      },
     })
 
     return NextResponse.json({
@@ -193,10 +295,9 @@ export async function POST(
     if (error?.message?.includes('Forbidden') || error?.message?.includes('Unauthorized')) {
       return NextResponse.json({ error: error.message }, { status: 403 })
     }
-    console.error('Error refreshing starter photo:', error)
-    return NextResponse.json(
-      { error: 'Failed to refresh photo', details: error?.message },
-      { status: 500 },
-    )
+    console.error('Error refreshing starter photo:', error?.message)
+    // Geen `details` in de response: error-berichten van Graph/Prisma bevatten
+    // soms tenant/drive-ids of interne paden die niet naar de client moeten lekken.
+    return NextResponse.json({ error: 'Failed to refresh photo' }, { status: 500 })
   }
 }

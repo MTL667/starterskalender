@@ -52,21 +52,30 @@ export async function GET(
       )
     }
 
-    const images = await listStarterImages(
-      starter.entity.name,
-      starter.lastName,
-      starter.firstName,
-    )
+    let images
+    try {
+      images = await listStarterImages(
+        starter.entity.name,
+        starter.lastName,
+        starter.firstName,
+      )
+    } catch (err: any) {
+      const s = err?.statusCode
+      const upstream = typeof s === 'number' && s >= 400 && s < 600
+      console.error('Error listing photo candidates:', err?.message)
+      return NextResponse.json(
+        { error: upstream ? 'SharePoint niet bereikbaar' : 'Failed to list candidates' },
+        { status: upstream ? 502 : 500 },
+      )
+    }
 
     return NextResponse.json({ images })
   } catch (error: any) {
     if (error?.message?.includes('Forbidden') || error?.message?.includes('Unauthorized')) {
       return NextResponse.json({ error: error.message }, { status: 403 })
     }
-    console.error('Error listing photo candidates:', error)
-    return NextResponse.json(
-      { error: 'Failed to list candidates', details: error?.message },
-      { status: 500 },
-    )
+    console.error('Error listing photo candidates:', error?.message)
+    // Geen `details` in response — voorkomt lekken van interne paden/ids.
+    return NextResponse.json({ error: 'Failed to list candidates' }, { status: 500 })
   }
 }

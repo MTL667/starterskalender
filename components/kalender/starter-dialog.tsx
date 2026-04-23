@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { MaterialStatusStepper } from '@/components/materials/material-status-stepper'
@@ -859,7 +859,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               starterId={starter.id}
               firstName={starter.firstName}
               lastName={starter.lastName}
-              hasPhoto={!!starter.photoUploadId || !!starter.photoItemId || photoLinkedOverride}
+              hasPhoto={
+                !!starter.photoUploadId ||
+                (!!starter.photoDriveId && !!starter.photoItemId) ||
+                photoLinkedOverride
+              }
               entityColor={starter.entity?.colorHex ?? null}
               cacheBuster={photoCacheBuster}
             />
@@ -882,7 +886,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 onClick={() => setPhotoPickerOpen(true)}
                 title="Kies een profielfoto uit de SharePoint-map van deze starter"
               >
-                <RefreshCw className="h-3 w-3 mr-1.5" />
+                <ImageIcon className="h-3 w-3 mr-1.5" />
                 Foto kiezen
               </Button>
             )}

@@ -179,11 +179,7 @@ export function PhotoPickerDialog({
                               {img.folder}
                             </span>
                           )}
-                          <span>
-                            {img.lastModified
-                              ? format(new Date(img.lastModified), 'dd-MM-yyyy HH:mm')
-                              : ''}
-                          </span>
+                          <span>{formatLastModified(img.lastModified)}</span>
                           <span>{formatSize(img.sizeBytes)}</span>
                         </div>
                       </div>
@@ -223,6 +219,13 @@ export function PhotoPickerDialog({
       </DialogContent>
     </Dialog>
   )
+}
+
+function formatLastModified(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return format(d, 'dd-MM-yyyy HH:mm')
 }
 
 function formatSize(bytes: number): string {

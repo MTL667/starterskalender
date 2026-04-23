@@ -66,9 +66,39 @@ async function resolveDriveId(client: Client): Promise<string> {
   return drive.id;
 }
 
+function safeName(s: string): string {
+  // Strip path-unsafe chars AND parent-dir traversal sequences. Trim whitespace.
+  return s.replace(/[<>:"/\\|?*]/g, "_").replace(/\.{2,}/g, "_").trim();
+}
+
 function buildStarterPath(entityName: string, starterLastName: string, starterFirstName: string): string {
-  const safeName = (s: string) => s.replace(/[<>:"/\\|?*]/g, "_").trim();
   return `${safeName(entityName)}/${safeName(starterLastName)} ${safeName(starterFirstName)}`;
+}
+
+// Graph accepteert Unicode in paden maar we encoden de onderdelen om te voorkomen
+// dat karakters als `#`, `?`, `:` of spaties de API-URL breken.
+function encodePathSegments(path: string): string {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+// Alleen deze mime types serveren we als profielfoto. SVG en HTML-achtige types
+// zijn bewust uitgesloten: een inline `<script>` in SVG zou stored XSS geven
+// omdat de photo proxy op same-origin draait.
+const SAFE_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/bmp",
+  "image/tiff",
+]);
+
+export function isSafeImageMimeType(mime: string | null | undefined): boolean {
+  if (!mime) return false;
+  return SAFE_IMAGE_MIME_TYPES.has(mime.toLowerCase());
 }
 
 export async function uploadDocument(
@@ -87,7 +117,7 @@ export async function uploadDocument(
   const filePath = `${fullFolder}/${fileName}`;
 
   const item = await client
-    .api(`/drives/${driveId}/root:/${filePath}:/content`)
+    .api(`/drives/${driveId}/root:/${encodePathSegments(filePath)}:/content`)
     .putStream(content);
 
   return {
@@ -107,7 +137,9 @@ export async function getItemByPath(
   const client = await graphDocs();
   const driveId = await resolveDriveId(client);
   try {
-    const item = await client.api(`/drives/${driveId}/root:/${filePath}`).get();
+    const item = await client
+      .api(`/drives/${driveId}/root:/${encodePathSegments(filePath)}`)
+      .get();
     return { driveId, itemId: item.id, webUrl: item.webUrl };
   } catch (err: any) {
     if (err.statusCode === 404) return null;
@@ -147,6 +179,17 @@ export async function deleteDocument(
   await client.api(`/drives/${driveId}/items/${itemId}`).delete();
 }
 
+async function fetchAllPages(client: Client, initialPath: string): Promise<any[]> {
+  const items: any[] = [];
+  let page: any = await client.api(initialPath).get();
+  items.push(...(page?.value || []));
+  while (page?.["@odata.nextLink"]) {
+    page = await client.api(page["@odata.nextLink"]).get();
+    items.push(...(page?.value || []));
+  }
+  return items;
+}
+
 export async function listStarterDocuments(
   entityName: string,
   starterLastName: string,
@@ -157,10 +200,10 @@ export async function listStarterDocuments(
   const folderPath = buildStarterPath(entityName, starterLastName, starterFirstName);
 
   try {
-    const result = await client
-      .api(`/drives/${driveId}/root:/${folderPath}:/children`)
-      .get();
-    return result.value || [];
+    return await fetchAllPages(
+      client,
+      `/drives/${driveId}/root:/${encodePathSegments(folderPath)}:/children`,
+    );
   } catch (err: any) {
     if (err.statusCode === 404) return [];
     throw err;
@@ -190,12 +233,12 @@ export async function listStarterImages(
   const driveId = await resolveDriveId(client);
   const folderPath = buildStarterPath(entityName, starterLastName, starterFirstName);
 
-  const images: StarterImage[] = [];
-
   const mapItem = (item: any, folder: string): StarterImage | null => {
     if (item.folder) return null;
     const mimeType = item.file?.mimeType || "";
-    if (!mimeType.startsWith("image/")) return null;
+    // Alleen veilige image types — SVG en andere potentieel uitvoerbare formats
+    // worden bewust overgeslagen om stored XSS te voorkomen.
+    if (!isSafeImageMimeType(mimeType)) return null;
     return {
       driveId,
       itemId: item.id,
@@ -210,10 +253,10 @@ export async function listStarterImages(
 
   const listChildren = async (path: string): Promise<any[]> => {
     try {
-      const result = await client
-        .api(`/drives/${driveId}/root:/${path}:/children`)
-        .get();
-      return result.value || [];
+      return await fetchAllPages(
+        client,
+        `/drives/${driveId}/root:/${encodePathSegments(path)}:/children`,
+      );
     } catch (err: any) {
       if (err.statusCode === 404) return [];
       throw err;
@@ -221,16 +264,26 @@ export async function listStarterImages(
   };
 
   const rootChildren = await listChildren(folderPath);
+
+  const images: StarterImage[] = []
   for (const child of rootChildren) {
     const mapped = mapItem(child, "");
     if (mapped) images.push(mapped);
   }
 
+  // Submappen parallel ophalen — voorheen serieel (N+1 round-trips).
   const subfolders = rootChildren.filter((c) => c.folder);
-  for (const sub of subfolders) {
-    const subChildren = await listChildren(`${folderPath}/${sub.name}`);
-    for (const child of subChildren) {
-      const mapped = mapItem(child, sub.name);
+  const subResults = await Promise.all(
+    subfolders.map((sub) =>
+      listChildren(`${folderPath}/${sub.name}`).then((children) => ({
+        name: sub.name as string,
+        children,
+      })),
+    ),
+  );
+  for (const { name, children } of subResults) {
+    for (const child of children) {
+      const mapped = mapItem(child, name);
       if (mapped) images.push(mapped);
     }
   }

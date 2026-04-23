@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { canViewEntity } from '@/lib/rbac'
-import { downloadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
+import { downloadDocument, isDocsGraphConfigured, isSafeImageMimeType } from '@/lib/graph-teams'
+
+// Sanitize de bestandsnaam voor de Content-Disposition header: filter CR/LF/quotes
+// en exotische karakters die headers kunnen injecteren. Valt terug op een
+// RFC 5987 filename* parameter voor Unicode-correctheid.
+function sanitizeFileName(name: string): string {
+  return name.replace(/[\r\n"\\]/g, '_').slice(0, 200)
+}
 
 // GET /api/starters/[id]/photo
 // Proxy voor de profielfoto van een starter. De binary leeft in SharePoint;
@@ -74,13 +81,20 @@ export async function GET(
       return new NextResponse('No photo', { status: 404 })
     }
 
+    // Veiligheidsnet: alleen veilige image mimes serveren, ook als de DB
+    // per ongeluk iets anders bevat (bv. oudere data of manueel geëditeerd).
+    const safeMime = isSafeImageMimeType(mimeType) ? mimeType : 'image/jpeg'
+    const safeFileName = sanitizeFileName(fileName)
+    const encodedName = encodeURIComponent(safeFileName)
+
     const buffer = await downloadDocument(driveId, itemId)
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
-        'Content-Type': mimeType,
-        'Content-Disposition': `inline; filename="${fileName}"`,
+        'Content-Type': safeMime,
+        'Content-Disposition': `inline; filename="${safeFileName}"; filename*=UTF-8''${encodedName}`,
+        'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'private, max-age=300',
       },
     })
