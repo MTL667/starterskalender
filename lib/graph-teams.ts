@@ -98,8 +98,29 @@ const SAFE_IMAGE_MIME_TYPES = new Set([
 
 export function isSafeImageMimeType(mime: string | null | undefined): boolean {
   if (!mime) return false;
-  return SAFE_IMAGE_MIME_TYPES.has(mime.toLowerCase());
+  // Graph retourneert soms parameters (`image/jpeg; charset=binary`); strip ze.
+  const bare = mime.split(";")[0].trim().toLowerCase();
+  return SAFE_IMAGE_MIME_TYPES.has(bare);
 }
+
+// Centrale mapping voor Graph/SDK-fouten naar HTTP statuscodes. Gebruikt door
+// alle photo-gerelateerde API routes zodat clients consistente status codes
+// zien ongeacht welke endpoint ze raken.
+export type GraphLikeError = { statusCode?: number; code?: string; message?: string };
+
+export function graphErrorToStatus(err: GraphLikeError): number {
+  const s = err?.statusCode;
+  if (s === 404) return 404;
+  if (s === 401 || s === 403) return 502; // upstream auth failure ≠ client forbidden
+  if (typeof s === "number" && s >= 400 && s < 600) return 502;
+  return 500;
+}
+
+// Plafond voor `@odata.nextLink` pagination om OOM / unbounded fetches te
+// voorkomen. Bij folders met honderden pagina's willen we liever een
+// gecontroleerde 502 dan een crashend proces.
+const MAX_PAGINATION_PAGES = 50;
+const MAX_PAGINATION_ITEMS = 10_000;
 
 export async function uploadDocument(
   entityName: string,
@@ -183,9 +204,23 @@ async function fetchAllPages(client: Client, initialPath: string): Promise<any[]
   const items: any[] = [];
   let page: any = await client.api(initialPath).get();
   items.push(...(page?.value || []));
+
+  let pageCount = 1;
+  let lastLink: string | undefined;
   while (page?.["@odata.nextLink"]) {
-    page = await client.api(page["@odata.nextLink"]).get();
+    const nextLink: string = page["@odata.nextLink"];
+    // Bescherming tegen self-referential nextLink loops of runaway pagination.
+    if (nextLink === lastLink) break;
+    if (pageCount >= MAX_PAGINATION_PAGES || items.length >= MAX_PAGINATION_ITEMS) {
+      console.warn(
+        `Graph pagination cap bereikt (pages=${pageCount}, items=${items.length}); resterende resultaten worden genegeerd.`,
+      );
+      break;
+    }
+    lastLink = nextLink;
+    page = await client.api(nextLink).get();
     items.push(...(page?.value || []));
+    pageCount++;
   }
   return items;
 }
@@ -272,8 +307,9 @@ export async function listStarterImages(
   }
 
   // Submappen parallel ophalen — voorheen serieel (N+1 round-trips).
+  // `allSettled` zodat één falende submap niet de hele lijst blokkeert.
   const subfolders = rootChildren.filter((c) => c.folder);
-  const subResults = await Promise.all(
+  const subResults = await Promise.allSettled(
     subfolders.map((sub) =>
       listChildren(`${folderPath}/${sub.name}`).then((children) => ({
         name: sub.name as string,
@@ -281,10 +317,17 @@ export async function listStarterImages(
       })),
     ),
   );
-  for (const { name, children } of subResults) {
-    for (const child of children) {
-      const mapped = mapItem(child, name);
-      if (mapped) images.push(mapped);
+  for (const result of subResults) {
+    if (result.status === "fulfilled") {
+      for (const child of result.value.children) {
+        const mapped = mapItem(child, result.value.name);
+        if (mapped) images.push(mapped);
+      }
+    } else {
+      console.warn(
+        `Graph subfolder listing mislukt, wordt overgeslagen:`,
+        (result.reason as GraphLikeError)?.message,
+      );
     }
   }
 

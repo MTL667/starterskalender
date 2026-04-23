@@ -5,9 +5,11 @@ import { requireAuth } from '@/lib/auth-utils'
 import { can, toAuthorizedUser } from '@/lib/authz'
 import {
   getItemByPath,
+  graphErrorToStatus,
   isDocsGraphConfigured,
   isSafeImageMimeType,
   listStarterImages,
+  type GraphLikeError,
 } from '@/lib/graph-teams'
 import { createAuditLog } from '@/lib/audit'
 
@@ -27,14 +29,36 @@ const BodySchema = z.object({
   itemId: z.string().min(1),
 })
 
-type GraphLikeError = { statusCode?: number; message?: string }
-
-function graphStatusToHttp(err: GraphLikeError): number {
-  const s = err?.statusCode
-  if (s === 401 || s === 403) return 502 // upstream auth falen ≠ client forbidden
-  if (s === 404) return 404
-  if (typeof s === 'number' && s >= 400 && s < 600) return 502
-  return 500
+// Leest de request body als JSON en retourneert:
+//   - `null` als er geen body is (Content-Length 0 OF lege string)
+//   - het geparsde object als het body een plain object is
+//   - gooit een Error met `code = 'INVALID_BODY'` als parsing faalt of als de
+//     body geen plain object is (arrays, primitives, null)
+//
+// We vertrouwen `Content-Length` NIET — chunked transfers of HTTP/2 requests
+// zetten die header niet. We lezen altijd eerst de raw text en beslissen op
+// basis daarvan of er data is.
+async function readJsonBody(request: NextRequest): Promise<Record<string, unknown> | null> {
+  const text = await request.text()
+  if (!text || text.trim() === '') return null
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    const err: any = new Error('Invalid JSON body')
+    err.code = 'INVALID_BODY'
+    throw err
+  }
+  if (
+    parsed === null ||
+    typeof parsed !== 'object' ||
+    Array.isArray(parsed)
+  ) {
+    const err: any = new Error('Body must be a JSON object')
+    err.code = 'INVALID_BODY'
+    throw err
+  }
+  return parsed as Record<string, unknown>
 }
 
 export async function POST(
@@ -77,20 +101,22 @@ export async function POST(
     //   c) Body aanwezig maar incompleet/onjuist → 400 (GEEN stille fallback)
     let pickBody: { driveId: string; itemId: string } | null = null
 
-    const contentLength = Number(request.headers.get('content-length') || '0')
-    let rawBody: unknown = undefined
-    if (contentLength > 0) {
-      try {
-        rawBody = await request.json()
-      } catch {
+    let rawBody: Record<string, unknown> | null
+    try {
+      rawBody = await readJsonBody(request)
+    } catch (e: any) {
+      if (e?.code === 'INVALID_BODY') {
         return NextResponse.json(
-          { error: 'Ongeldige JSON body' },
+          { error: 'Ongeldige request body: verwacht JSON object of leeg' },
           { status: 400 },
         )
       }
+      throw e
     }
 
-    if (rawBody !== undefined && rawBody !== null && Object.keys(rawBody as object).length > 0) {
+    // Lege object `{}` is ook expliciet ongeldig voor pick-mode. De client moet
+    // óf helemaal geen body sturen (= auto-mode), óf een volledige `{driveId, itemId}`.
+    if (rawBody !== null && Object.keys(rawBody).length > 0) {
       const parsed = BodySchema.safeParse(rawBody)
       if (!parsed.success) {
         return NextResponse.json(
@@ -99,6 +125,12 @@ export async function POST(
         )
       }
       pickBody = parsed.data
+    } else if (rawBody !== null) {
+      // Leeg object `{}` → behandel als expliciete fout, niet als stille auto-fallback.
+      return NextResponse.json(
+        { error: 'Body is leeg. Laat weg voor auto-mode, of stuur { driveId, itemId }' },
+        { status: 400 },
+      )
     }
 
     // --- Modus 2: specifiek bestand gekozen uit SharePoint-map ---
@@ -133,7 +165,7 @@ export async function POST(
         console.error('Error listing starter images for ownership check:', e?.message)
         return NextResponse.json(
           { error: 'SharePoint niet bereikbaar' },
-          { status: graphStatusToHttp(e) },
+          { status: graphErrorToStatus(e) },
         )
       }
 
@@ -232,7 +264,7 @@ export async function POST(
         console.error('Error resolving upload path in Graph:', e?.message)
         return NextResponse.json(
           { error: 'SharePoint niet bereikbaar' },
-          { status: graphStatusToHttp(e) },
+          { status: graphErrorToStatus(e) },
         )
       }
       if (!item) {

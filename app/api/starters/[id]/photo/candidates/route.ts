@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-utils'
 import { can, toAuthorizedUser } from '@/lib/authz'
-import { listStarterImages, isDocsGraphConfigured } from '@/lib/graph-teams'
+import { listStarterImages, isDocsGraphConfigured, graphErrorToStatus, type GraphLikeError } from '@/lib/graph-teams'
 
 // GET /api/starters/[id]/photo/candidates
 // Lijst van alle afbeeldingen in de SharePoint-map van deze starter (root + submappen).
@@ -59,13 +59,18 @@ export async function GET(
         starter.lastName,
         starter.firstName,
       )
-    } catch (err: any) {
-      const s = err?.statusCode
-      const upstream = typeof s === 'number' && s >= 400 && s < 600
-      console.error('Error listing photo candidates:', err?.message)
+    } catch (err) {
+      const e = err as GraphLikeError
+      const status = graphErrorToStatus(e)
+      console.error('Error listing photo candidates:', e?.message)
       return NextResponse.json(
-        { error: upstream ? 'SharePoint niet bereikbaar' : 'Failed to list candidates' },
-        { status: upstream ? 502 : 500 },
+        {
+          error:
+            status === 500
+              ? 'Failed to list candidates'
+              : 'SharePoint niet bereikbaar',
+        },
+        { status },
       )
     }
 

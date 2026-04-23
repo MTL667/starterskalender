@@ -4,11 +4,29 @@ import { getCurrentUser } from '@/lib/auth-utils'
 import { canViewEntity } from '@/lib/rbac'
 import { downloadDocument, isDocsGraphConfigured, isSafeImageMimeType } from '@/lib/graph-teams'
 
-// Sanitize de bestandsnaam voor de Content-Disposition header: filter CR/LF/quotes
-// en exotische karakters die headers kunnen injecteren. Valt terug op een
-// RFC 5987 filename* parameter voor Unicode-correctheid.
+// Sanitize de bestandsnaam voor de Content-Disposition header:
+//   - filter ALLE C0 controls (\x00-\x1F) + DEL (\x7F) → header injection
+//   - filter `"` en `\` → breken de quoted-string syntax
+//   - filter U+2028/U+2029 → LINE SEPARATOR / PARAGRAPH SEPARATOR (JS breakers)
+//   - zorg dat we op een code-point grens splitsen (geen halve surrogate pair)
 function sanitizeFileName(name: string): string {
-  return name.replace(/[\r\n"\\]/g, '_').slice(0, 200)
+  const stripped = name
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\x00-\x1F\x7F"\\\u2028\u2029]/g, '_')
+  // `Array.from` itereert op code points, dus surrogate pairs blijven intact.
+  const codePoints = Array.from(stripped)
+  if (codePoints.length <= 200) return stripped
+  return codePoints.slice(0, 200).join('')
+}
+
+// RFC 5987 encoding voor de `filename*` parameter. `encodeURIComponent` laat
+// `'`, `(`, `)`, `*`, `!` ongeencoded door; die zijn niet toegestaan in
+// `attr-char` per RFC 8187. We escapen ze alsnog naar hun percent-vorm.
+function rfc5987Encode(value: string): string {
+  return encodeURIComponent(value).replace(
+    /['()*!]/g,
+    (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase(),
+  )
 }
 
 // GET /api/starters/[id]/photo
@@ -83,9 +101,19 @@ export async function GET(
 
     // Veiligheidsnet: alleen veilige image mimes serveren, ook als de DB
     // per ongeluk iets anders bevat (bv. oudere data of manueel geëditeerd).
-    const safeMime = isSafeImageMimeType(mimeType) ? mimeType : 'image/jpeg'
+    let safeMime: string
+    if (isSafeImageMimeType(mimeType)) {
+      safeMime = mimeType
+    } else {
+      // Log operationeel signaal voor ops: een row met onveilig mime type is
+      // waarschijnlijk historisch verkeerde data of ongewenste import.
+      console.warn(
+        `Starter ${id} heeft onveilig/ongeldig photo mime "${mimeType}"; serveer als image/jpeg fallback.`,
+      )
+      safeMime = 'image/jpeg'
+    }
     const safeFileName = sanitizeFileName(fileName)
-    const encodedName = encodeURIComponent(safeFileName)
+    const encodedName = rfc5987Encode(safeFileName)
 
     const buffer = await downloadDocument(driveId, itemId)
 
