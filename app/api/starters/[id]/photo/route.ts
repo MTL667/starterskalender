@@ -4,11 +4,11 @@ import { getCurrentUser } from '@/lib/auth-utils'
 import { canViewEntity } from '@/lib/rbac'
 import { downloadDocument, isDocsGraphConfigured, isSafeImageMimeType } from '@/lib/graph-teams'
 
-// Sanitize de bestandsnaam voor de Content-Disposition header:
+// Sanitize de bestandsnaam (unicode variant, voor `filename*=UTF-8''...`):
 //   - filter ALLE C0 controls (\x00-\x1F) + DEL (\x7F) → header injection
 //   - filter `"` en `\` → breken de quoted-string syntax
 //   - filter U+2028/U+2029 → LINE SEPARATOR / PARAGRAPH SEPARATOR (JS breakers)
-//   - zorg dat we op een code-point grens splitsen (geen halve surrogate pair)
+//   - splits op code-point grens (geen halve surrogate pair)
 function sanitizeFileName(name: string): string {
   const stripped = name
     // eslint-disable-next-line no-control-regex
@@ -19,6 +19,14 @@ function sanitizeFileName(name: string): string {
   return codePoints.slice(0, 200).join('')
 }
 
+// Strikte ASCII-versie voor de legacy `filename="..."` parameter. RFC 7230
+// staat alleen VCHAR (0x21-0x7E, excl. `"` en `\`) toe in header values.
+// Niet-ASCII unicode gaat naar `_` zodat de header byte-safe blijft; de
+// volledige unicode naam leeft in `filename*=UTF-8''...`.
+function toAsciiFileName(name: string): string {
+  return name.replace(/[^\x20-\x7E]/g, '_')
+}
+
 // RFC 5987 encoding voor de `filename*` parameter. `encodeURIComponent` laat
 // `'`, `(`, `)`, `*`, `!` ongeencoded door; die zijn niet toegestaan in
 // `attr-char` per RFC 8187. We escapen ze alsnog naar hun percent-vorm.
@@ -27,6 +35,21 @@ function rfc5987Encode(value: string): string {
     /['()*!]/g,
     (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase(),
   )
+}
+
+// Sanitize user/DB-supplied strings voordat we ze loggen: CR/LF en andere
+// controls vervangen door hun escape-sequence, en max 120 chars zodat
+// log-lijnen niet geforged of opgeblazen kunnen worden.
+function safeLogValue(value: unknown): string {
+  const s = typeof value === 'string' ? value : String(value)
+  const truncated = s.length > 120 ? s.slice(0, 120) + '…' : s
+  // eslint-disable-next-line no-control-regex
+  return truncated.replace(/[\x00-\x1F\x7F]/g, (c) => {
+    if (c === '\n') return '\\n'
+    if (c === '\r') return '\\r'
+    if (c === '\t') return '\\t'
+    return '\\x' + c.charCodeAt(0).toString(16).padStart(2, '0')
+  })
 }
 
 // GET /api/starters/[id]/photo
@@ -107,12 +130,22 @@ export async function GET(
     } else {
       // Log operationeel signaal voor ops: een row met onveilig mime type is
       // waarschijnlijk historisch verkeerde data of ongewenste import.
+      // Sanitize de user/DB-supplied mime voordat we hem loggen — voorkomt
+      // log-forging door CR/LF injection in kwaadaardig ingevoerde waarden.
       console.warn(
-        `Starter ${id} heeft onveilig/ongeldig photo mime "${mimeType}"; serveer als image/jpeg fallback.`,
+        `Starter ${id} heeft onveilig/ongeldig photo mime "${safeLogValue(mimeType)}"; serveer als image/jpeg fallback.`,
       )
       safeMime = 'image/jpeg'
     }
+
+    // Content-Type vereist een *bare* media-type zonder parameters (Graph
+    // retourneert soms `image/jpeg; charset=binary`). De parameters strippen
+    // we — de bytes zijn binary, charset is irrelevant en kan sommige browsers
+    // in de war sturen.
+    const bareMime = safeMime.split(';')[0].trim()
+
     const safeFileName = sanitizeFileName(fileName)
+    const asciiFileName = toAsciiFileName(safeFileName)
     const encodedName = rfc5987Encode(safeFileName)
 
     const buffer = await downloadDocument(driveId, itemId)
@@ -120,8 +153,10 @@ export async function GET(
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
-        'Content-Type': safeMime,
-        'Content-Disposition': `inline; filename="${safeFileName}"; filename*=UTF-8''${encodedName}`,
+        'Content-Type': bareMime,
+        // Legacy `filename=` moet ASCII-only zijn voor RFC 7230 conformance;
+        // `filename*` levert de volledige unicode naam voor moderne clients.
+        'Content-Disposition': `inline; filename="${asciiFileName}"; filename*=UTF-8''${encodedName}`,
         'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'private, max-age=300',
       },

@@ -111,6 +111,10 @@ export type GraphLikeError = { statusCode?: number; code?: string; message?: str
 export function graphErrorToStatus(err: GraphLikeError): number {
   const s = err?.statusCode;
   if (s === 404) return 404;
+  // 429 (throttling) propageren we door — de client krijgt zo de juiste hint
+  // dat het later opnieuw geprobeerd mag worden. Graph retourneert een
+  // Retry-After header; we geven de status 1-op-1 door.
+  if (s === 429) return 429;
   if (s === 401 || s === 403) return 502; // upstream auth failure ≠ client forbidden
   if (typeof s === "number" && s >= 400 && s < 600) return 502;
   return 500;
@@ -206,18 +210,25 @@ async function fetchAllPages(client: Client, initialPath: string): Promise<any[]
   items.push(...(page?.value || []));
 
   let pageCount = 1;
-  let lastLink: string | undefined;
+  // `Set` i.p.v. alleen `lastLink` zodat we multi-hop cycles (A→B→A of
+  // A→B→C→A) ook detecteren. Graph retourneert in theorie nooit cycles,
+  // maar in DoS- of proxy-misconfiguratie-scenario's kan dat wél gebeuren.
+  const seenLinks = new Set<string>();
   while (page?.["@odata.nextLink"]) {
     const nextLink: string = page["@odata.nextLink"];
-    // Bescherming tegen self-referential nextLink loops of runaway pagination.
-    if (nextLink === lastLink) break;
+    if (seenLinks.has(nextLink)) {
+      console.warn(
+        `Graph pagination cycle gedetecteerd (pages=${pageCount}); break om oneindige loop te voorkomen.`,
+      );
+      break;
+    }
     if (pageCount >= MAX_PAGINATION_PAGES || items.length >= MAX_PAGINATION_ITEMS) {
       console.warn(
         `Graph pagination cap bereikt (pages=${pageCount}, items=${items.length}); resterende resultaten worden genegeerd.`,
       );
       break;
     }
-    lastLink = nextLink;
+    seenLinks.add(nextLink);
     page = await client.api(nextLink).get();
     items.push(...(page?.value || []));
     pageCount++;
@@ -324,10 +335,23 @@ export async function listStarterImages(
         if (mapped) images.push(mapped);
       }
     } else {
-      console.warn(
-        `Graph subfolder listing mislukt, wordt overgeslagen:`,
-        (result.reason as GraphLikeError)?.message,
-      );
+      // `result.reason` kan álles zijn (Error, string, undefined, throw van
+      // niet-Error primitief). Normaliseer naar een leesbaar bericht in plaats
+      // van blind `.message` te lezen (wat `undefined` zou loggen).
+      const reason = result.reason as unknown;
+      const reasonMsg =
+        reason instanceof Error
+          ? reason.message
+          : typeof reason === "string"
+            ? reason
+            : (() => {
+                try {
+                  return JSON.stringify(reason);
+                } catch {
+                  return String(reason);
+                }
+              })();
+      console.warn(`Graph subfolder listing mislukt, wordt overgeslagen: ${reasonMsg}`);
     }
   }
 
@@ -352,4 +376,98 @@ export async function getItemById(
     if (err.statusCode === 404) return null;
     throw err;
   }
+}
+
+// Directe ownership-check voor een Graph item: verifieert dat `(driveId, itemId)`
+// daadwerkelijk in de SharePoint-map van de opgegeven starter staat. Robuuster
+// dan een lookup via `listStarterImages` omdat die bij partiële fouten
+// (submap-failure) legitieme items kan wegfilteren.
+//
+// Controleert in volgorde:
+//   1. De client-opgegeven driveId matcht de geresolveerde site-drive.
+//   2. Het item bestaat en leeft in diezelfde drive.
+//   3. `parentReference.path` (genormaliseerd) begint met de starter-folder.
+export type OwnershipFailure = "not_found" | "wrong_drive" | "outside_folder" | "is_folder";
+
+export async function verifyItemInStarterFolder(
+  driveId: string,
+  itemId: string,
+  entityName: string,
+  starterLastName: string,
+  starterFirstName: string
+): Promise<
+  | {
+      ok: true;
+      item: {
+        fileName: string;
+        mimeType: string;
+        size: number;
+        webUrl: string;
+        folder: string;
+      };
+    }
+  | { ok: false; reason: OwnershipFailure }
+> {
+  const client = await graphDocs();
+  const expectedDriveId = await resolveDriveId(client);
+
+  if (driveId !== expectedDriveId) {
+    return { ok: false, reason: "wrong_drive" };
+  }
+
+  const starterFolder = buildStarterPath(entityName, starterLastName, starterFirstName);
+
+  let item: any;
+  try {
+    item = await client
+      .api(`/drives/${driveId}/items/${itemId}`)
+      .select("id,name,size,webUrl,file,folder,parentReference")
+      .get();
+  } catch (err: any) {
+    if (err?.statusCode === 404) return { ok: false, reason: "not_found" };
+    throw err;
+  }
+
+  if (item.folder) {
+    return { ok: false, reason: "is_folder" };
+  }
+
+  const parentRef = item.parentReference;
+  if (!parentRef || parentRef.driveId !== expectedDriveId) {
+    return { ok: false, reason: "wrong_drive" };
+  }
+
+  // `parentReference.path` ziet eruit als `/drives/{id}/root:/A/B/C`. We knippen
+  // alles vóór (en inclusief) `root:` weg en decoderen percent-encoded chars.
+  const rawPath = typeof parentRef.path === "string" ? parentRef.path : "";
+  const rootMarker = rawPath.indexOf("root:");
+  if (rootMarker === -1) return { ok: false, reason: "outside_folder" };
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rawPath.slice(rootMarker + "root:".length));
+  } catch {
+    return { ok: false, reason: "outside_folder" };
+  }
+  const normalized = decoded.replace(/^\/+/, "").replace(/\/+$/, "");
+
+  if (normalized !== starterFolder && !normalized.startsWith(starterFolder + "/")) {
+    return { ok: false, reason: "outside_folder" };
+  }
+
+  // Relatieve folder tov starter-root ("" = root, "marketing" = submap).
+  const folderRel =
+    normalized === starterFolder
+      ? ""
+      : normalized.slice(starterFolder.length + 1);
+
+  return {
+    ok: true,
+    item: {
+      fileName: item.name,
+      mimeType: item.file?.mimeType || "application/octet-stream",
+      size: item.size || 0,
+      webUrl: item.webUrl || "",
+      folder: folderRel,
+    },
+  };
 }

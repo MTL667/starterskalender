@@ -63,15 +63,18 @@ export async function GET(
       const e = err as GraphLikeError
       const status = graphErrorToStatus(e)
       console.error('Error listing photo candidates:', e?.message)
-      return NextResponse.json(
-        {
-          error:
-            status === 500
-              ? 'Failed to list candidates'
-              : 'SharePoint niet bereikbaar',
-        },
-        { status },
-      )
+      // Status-specifiek bericht zodat de UI "map bestaat niet" kan onderscheiden
+      // van een transport-fout. Voorheen werd 404 verpakt als "SharePoint niet
+      // bereikbaar" — verwarrend voor zowel ops als eindgebruiker.
+      const errorMessage =
+        status === 404
+          ? 'SharePoint-map voor deze starter niet gevonden'
+          : status === 429
+            ? 'Microsoft Graph throttlt: probeer later opnieuw'
+            : status === 502 || status === 503
+              ? 'SharePoint niet bereikbaar'
+              : 'Failed to list candidates'
+      return NextResponse.json({ error: errorMessage }, { status })
     }
 
     return NextResponse.json({ images })

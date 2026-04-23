@@ -8,7 +8,7 @@ import {
   graphErrorToStatus,
   isDocsGraphConfigured,
   isSafeImageMimeType,
-  listStarterImages,
+  verifyItemInStarterFolder,
   type GraphLikeError,
 } from '@/lib/graph-teams'
 import { createAuditLog } from '@/lib/audit'
@@ -29,34 +29,59 @@ const BodySchema = z.object({
   itemId: z.string().min(1),
 })
 
+// Harde cap op de request body — deze endpoint verwacht alleen `{driveId,
+// itemId}` (paar honderd bytes). Alles boven deze drempel wijzen we af om
+// geheugen-uitputting via grote POST-bodies te voorkomen.
+const MAX_BODY_BYTES = 16 * 1024
+
+function makeBodyError(code: 'INVALID_BODY' | 'BODY_TOO_LARGE', message: string) {
+  const err: any = new Error(message)
+  err.code = code
+  return err
+}
+
 // Leest de request body als JSON en retourneert:
 //   - `null` als er geen body is (Content-Length 0 OF lege string)
 //   - het geparsde object als het body een plain object is
-//   - gooit een Error met `code = 'INVALID_BODY'` als parsing faalt of als de
-//     body geen plain object is (arrays, primitives, null)
+//   - gooit `BODY_TOO_LARGE` als de body boven `MAX_BODY_BYTES` uitkomt
+//   - gooit `INVALID_BODY` bij parse-fouten of niet-object payloads
 //
-// We vertrouwen `Content-Length` NIET — chunked transfers of HTTP/2 requests
-// zetten die header niet. We lezen altijd eerst de raw text en beslissen op
-// basis daarvan of er data is.
+// We vertrouwen `Content-Length` alleen als *vroege* reject — als de header
+// aanwezig is en al boven de cap zit, weigeren we meteen. Maar de werkelijke
+// bytes worden alsnog via `request.text()` gevalideerd, want Content-Length
+// kan liegen of ontbreken bij chunked/HTTP2 requests.
 async function readJsonBody(request: NextRequest): Promise<Record<string, unknown> | null> {
-  const text = await request.text()
+  const cl = request.headers.get('content-length')
+  if (cl) {
+    const n = Number(cl)
+    if (Number.isFinite(n) && n > MAX_BODY_BYTES) {
+      throw makeBodyError('BODY_TOO_LARGE', 'Request body overschrijdt limiet')
+    }
+  }
+
+  let text: string
+  try {
+    text = await request.text()
+  } catch {
+    // `request.text()` kan zelf falen (bijv. bij abort, stream-errors of
+    // malformed encoding). Wrap als INVALID_BODY zodat de caller een 400
+    // teruggeeft i.p.v. een opaak 500.
+    throw makeBodyError('INVALID_BODY', 'Kon request body niet lezen')
+  }
+
+  if (text.length > MAX_BODY_BYTES) {
+    throw makeBodyError('BODY_TOO_LARGE', 'Request body overschrijdt limiet')
+  }
+
   if (!text || text.trim() === '') return null
   let parsed: unknown
   try {
     parsed = JSON.parse(text)
   } catch {
-    const err: any = new Error('Invalid JSON body')
-    err.code = 'INVALID_BODY'
-    throw err
+    throw makeBodyError('INVALID_BODY', 'Invalid JSON body')
   }
-  if (
-    parsed === null ||
-    typeof parsed !== 'object' ||
-    Array.isArray(parsed)
-  ) {
-    const err: any = new Error('Body must be a JSON object')
-    err.code = 'INVALID_BODY'
-    throw err
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw makeBodyError('INVALID_BODY', 'Body must be a JSON object')
   }
   return parsed as Record<string, unknown>
 }
@@ -105,6 +130,12 @@ export async function POST(
     try {
       rawBody = await readJsonBody(request)
     } catch (e: any) {
+      if (e?.code === 'BODY_TOO_LARGE') {
+        return NextResponse.json(
+          { error: 'Request body is te groot' },
+          { status: 413 },
+        )
+      }
       if (e?.code === 'INVALID_BODY') {
         return NextResponse.json(
           { error: 'Ongeldige request body: verwacht JSON object of leeg' },
@@ -150,29 +181,37 @@ export async function POST(
       }
 
       // Ownership check: het gekozen bestand moet écht in de SharePoint-map
-      // van deze starter staan. Zonder deze check kan iemand met photo:manage
-      // rechten op starter A een willekeurig bestand in de tenant drive als
-      // foto linken (cross-starter file-pick).
-      let candidates
+      // van deze starter staan. We gebruiken `verifyItemInStarterFolder` i.p.v.
+      // `listStarterImages` omdat die laatste bij een falende submap-fetch
+      // legitieme items kan wegfilteren (allSettled → subfolder kan silently
+      // leeg zijn). Ownership verifiëren we via `parentReference.path`, dat is
+      // autoritair en onafhankelijk van listing-successen.
+      let ownership
       try {
-        candidates = await listStarterImages(
+        ownership = await verifyItemInStarterFolder(
+          pickBody.driveId,
+          pickBody.itemId,
           starter.entity.name,
           starter.lastName,
           starter.firstName,
         )
       } catch (err) {
         const e = err as GraphLikeError
-        console.error('Error listing starter images for ownership check:', e?.message)
+        console.error('Error verifying photo ownership:', e?.message)
         return NextResponse.json(
           { error: 'SharePoint niet bereikbaar' },
           { status: graphErrorToStatus(e) },
         )
       }
 
-      const match = candidates.find(
-        (img) => img.driveId === pickBody.driveId && img.itemId === pickBody.itemId,
-      )
-      if (!match) {
+      if (!ownership.ok) {
+        // We onthullen bewust niet *welke* reden (not_found / outside_folder /
+        // wrong_drive) — dat zou een oracle worden voor het enumereren van
+        // items in andere starter-mappen. Log het intern wel zodat ops het kan
+        // onderzoeken bij legitieme fouten.
+        console.warn(
+          `Photo pick ownership rejected for starter ${id}: reason=${ownership.reason}`,
+        )
         return NextResponse.json(
           {
             error:
@@ -182,8 +221,7 @@ export async function POST(
         )
       }
 
-      // `listStarterImages` filtert al op veilige image mime types, maar we
-      // verifiëren nogmaals — defense-in-depth.
+      const match = ownership.item
       if (!isSafeImageMimeType(match.mimeType)) {
         return NextResponse.json(
           { error: 'Geselecteerd bestand is geen ondersteund afbeeldingsformaat' },
@@ -195,8 +233,8 @@ export async function POST(
         where: { id },
         data: {
           photoUploadId: null,
-          photoDriveId: match.driveId,
-          photoItemId: match.itemId,
+          photoDriveId: pickBody.driveId,
+          photoItemId: pickBody.itemId,
           photoFileName: match.fileName,
           photoMimeType: match.mimeType,
         },
@@ -209,8 +247,8 @@ export async function POST(
         meta: {
           starterId: id,
           entityId: starter.entityId,
-          driveId: match.driveId,
-          itemId: match.itemId,
+          driveId: pickBody.driveId,
+          itemId: pickBody.itemId,
           fileName: match.fileName,
           folder: match.folder,
           previous: {
