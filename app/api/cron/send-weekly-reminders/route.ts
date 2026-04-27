@@ -87,6 +87,17 @@ export async function GET(req: Request) {
     })
 
     if (upcomingStarters.length === 0) {
+      // Heartbeat-log zodat de health-check weet dat de cron wél gedraaid
+      // heeft, ook als er geen starters waren om over te mailen.
+      await prisma.emailLog.create({
+        data: {
+          type: 'WEEKLY_REMINDER',
+          recipient: 'system',
+          subject: 'No starters starting in 7 days',
+          status: 'SENT',
+          startersCount: 0,
+        },
+      })
       return NextResponse.json({
         message: 'No starters starting in 7 days',
         sent: 0,
