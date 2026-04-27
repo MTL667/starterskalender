@@ -26,6 +26,11 @@ export async function GET(req: Request) {
   if (authError) return authError
 
   try {
+    // Detect of de vorige succesvolle run te lang geleden was (>25u bij een
+    // dagelijkse schedule). Als dat zo is, stuur een in-app notificatie naar
+    // alle admins zodat operationele stilval zichtbaar is.
+    await notifyIfCronWasStale()
+
     // Check voor recipient filtering (optioneel - voor manuele triggers)
     const { searchParams } = new URL(req.url)
     const recipientsParam = searchParams.get('recipients')
@@ -234,6 +239,65 @@ export async function GET(req: Request) {
       },
       { status: 500 }
     )
+  }
+}
+
+const STALE_THRESHOLD_HOURS = 25
+
+async function notifyIfCronWasStale() {
+  try {
+    const lastSent = await prisma.emailLog.findFirst({
+      where: { type: 'WEEKLY_REMINDER', status: 'SENT' },
+      orderBy: { sentAt: 'desc' },
+      select: { sentAt: true },
+    })
+
+    if (!lastSent) return
+
+    const hoursAgo = (Date.now() - lastSent.sentAt.getTime()) / 3_600_000
+    if (hoursAgo <= STALE_THRESHOLD_HOURS) return
+
+    const hoursRounded = Math.round(hoursAgo)
+
+    // Stuur naar alle users met admin-rechten (bypassEntityScope system roles)
+    const admins = await prisma.user.findMany({
+      where: {
+        status: 'ACTIVE',
+        roleAssignments: {
+          some: {
+            role: { bypassEntityScope: true },
+          },
+        },
+      },
+      select: { id: true },
+    })
+
+    if (admins.length === 0) return
+
+    // Voorkom spam: check of er al een recente CRON_STALE notificatie is (<24u)
+    const recentNotif = await prisma.notification.findFirst({
+      where: {
+        type: 'CRON_STALE',
+        createdAt: { gte: new Date(Date.now() - 24 * 3_600_000) },
+      },
+    })
+    if (recentNotif) return
+
+    await prisma.notification.createMany({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        type: 'CRON_STALE',
+        title: 'Wekelijkse reminder cron was uitgevallen',
+        message: `De wekelijkse reminder cron had ${hoursRounded}u niet gedraaid. Hij is zojuist weer opgestart. Controleer of de container-cron correct draait.`,
+        linkUrl: '/admin',
+      })),
+    })
+
+    console.warn(
+      `⚠️ Cron staleness detected: weekly reminder was ${hoursRounded}h overdue. Notified ${admins.length} admins.`,
+    )
+  } catch (error) {
+    console.error('Failed to check cron staleness:', error)
   }
 }
 
