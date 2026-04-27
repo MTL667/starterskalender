@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// Cron-specifieke health drempels per type (in uren).
-// Als de laatste succesvolle run ouder is dan dit → status "stale".
+// Alleen de dagelijkse weekly-reminder monitoren — die is de canary voor
+// crond: als die stilvalt, weten we dat de hele cron daemon niet draait.
+// Monthly/quarterly/yearly hebben te lange intervallen om nuttig te monitoren.
 const STALENESS_THRESHOLDS: Record<string, number> = {
-  WEEKLY_REMINDER: 25,     // dagelijks om 08:00 → 25u marge
-  MONTHLY_SUMMARY: 32 * 24, // maandelijks → 32 dagen
-  QUARTERLY_SUMMARY: 95 * 24,
-  YEARLY_SUMMARY: 370 * 24,
+  WEEKLY_REMINDER: 25, // dagelijks om 08:00 → 25u marge
 }
 
 type CronStatus = {
