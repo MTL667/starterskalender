@@ -56,7 +56,10 @@ export async function GET() {
       })
     }
 
-    const overallHealthy = results.every((r) => r.status === 'ok')
+    // "never_ran" is niet per se ongezond — maandelijkse/kwartaal/jaarlijkse crons
+    // hebben misschien simpelweg nog niet hoeven draaien. Alleen "stale" (= eerder
+    // wél gedraaid maar nu te lang geleden) is een echt probleem.
+    const overallHealthy = results.every((r) => r.status !== 'stale')
 
     return NextResponse.json(
       {
