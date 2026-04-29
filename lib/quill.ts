@@ -29,6 +29,16 @@ export function isQuillConfigured(): boolean {
   )
 }
 
+export type QuillSignatureType = 'ITSME' | 'BELGIAN_EID' | 'SMS_OTP'
+
+export function getDefaultSignatureTypes(): QuillSignatureType[] {
+  const env = process.env.QUILL_SIGNATURE_TYPES
+  if (env) {
+    return env.split(',').map((s) => s.trim()).filter(Boolean) as QuillSignatureType[]
+  }
+  return ['ITSME']
+}
+
 // ---------------------------------------------------------------------------
 // Token caching — client_credentials JWT with 5 min TTL
 // ---------------------------------------------------------------------------
@@ -154,8 +164,6 @@ export async function createGuestUser(
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
-
-export type QuillSignatureType = 'ITSME' | 'BELGIAN_EID' | 'SMS_OTP'
 
 interface CreateDocumentOptions {
   name: string

@@ -72,6 +72,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
     prerequisiteId: 'none',
     dueDate: '',
     recipientEmail: '',
+    signaturePlaceholder: '{{HANDTEKENING}}',
   })
 
   const fetchDocuments = async () => {
@@ -114,6 +115,9 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
       if (uploadForm.recipientEmail) {
         formData.append('recipientEmail', uploadForm.recipientEmail)
       }
+      if (uploadForm.signingMethod === 'QES' && uploadForm.signaturePlaceholder.trim()) {
+        formData.append('signaturePlaceholder', uploadForm.signaturePlaceholder.trim())
+      }
 
       const res = await fetch(`/api/starters/${starterId}/documents`, {
         method: 'POST',
@@ -122,7 +126,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
 
       if (res.ok) {
         setUploadOpen(false)
-        setUploadForm({ title: '', signingMethod: 'SES', prerequisiteId: 'none', dueDate: '', recipientEmail: '' })
+        setUploadForm({ title: '', signingMethod: 'SES', prerequisiteId: 'none', dueDate: '', recipientEmail: '', signaturePlaceholder: '{{HANDTEKENING}}' })
         if (fileInputRef.current) fileInputRef.current.value = ''
         await fetchDocuments()
         onDocumentChange?.()
@@ -522,6 +526,21 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                 </SelectContent>
               </Select>
             </div>
+
+            {uploadForm.signingMethod === 'QES' && (
+              <div>
+                <Label htmlFor="doc-placeholder">Handtekening placeholder</Label>
+                <Input
+                  id="doc-placeholder"
+                  value={uploadForm.signaturePlaceholder}
+                  onChange={e => setUploadForm({ ...uploadForm, signaturePlaceholder: e.target.value })}
+                  placeholder="{{HANDTEKENING}}"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tekst in de PDF waar de handtekening geplaatst wordt. Laat leeg voor standaardpositie (linksonder).
+                </p>
+              </div>
+            )}
 
             {documents.length > 0 && (
               <div>

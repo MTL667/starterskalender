@@ -7,6 +7,7 @@ import { eventBus } from '@/lib/events'
 import { logDocumentEvent } from '@/lib/document-audit'
 import {
   isQuillConfigured,
+  getDefaultSignatureTypes,
   createGuestUser,
   createDocument as createQuillDocument,
   uploadDocumentBinary,
@@ -86,6 +87,7 @@ export async function POST(
     const prerequisiteId = formData.get('prerequisiteId') as string | null
     const dueDateStr = formData.get('dueDate') as string | null
     const recipientEmail = formData.get('recipientEmail') as string | null
+    const signaturePlaceholder = formData.get('signaturePlaceholder') as string | null
 
     if (!file || !title) {
       return NextResponse.json({ error: 'File and title are required' }, { status: 400 })
@@ -181,7 +183,8 @@ export async function POST(
           name: title,
           webhookUrl,
           signerUserId: guestUser.id,
-          signatureTypes: ['ITSME'],
+          signatureTypes: getDefaultSignatureTypes(),
+          ...(signaturePlaceholder ? { signaturePlaceholder } : {}),
         })
 
         await uploadDocumentBinary(quillDoc.documentId, buffer)
