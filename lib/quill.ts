@@ -221,7 +221,9 @@ export async function uploadDocumentBinary(
   const url = `${apiUrl}/api/rest/v2/documents/${quillDocumentId}/upload-binary`
 
   const bytes = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer)
-  const blob = new Blob([bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)], { type: 'application/pdf' })
+  const ab = new ArrayBuffer(bytes.byteLength)
+  new Uint8Array(ab).set(bytes)
+  const blob = new Blob([ab], { type: 'application/pdf' })
 
   const res = await fetch(url, {
     method: 'POST',
@@ -242,7 +244,7 @@ export async function uploadDocumentBinary(
         Authorization: `Bearer ${newToken}`,
         'Content-Type': 'application/pdf',
       },
-      body: new Blob([bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)], { type: 'application/pdf' }),
+      body: new Blob([ab], { type: 'application/pdf' }),
     })
     if (!retry.ok) {
       const body = await retry.text()
