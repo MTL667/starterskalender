@@ -217,40 +217,29 @@ export async function uploadDocumentBinary(
   pdfBuffer: Buffer | Uint8Array,
 ): Promise<void> {
   const { apiUrl } = getConfig()
-  const token = await getToken()
-  const url = `${apiUrl}/api/rest/v2/documents/${quillDocumentId}/upload-binary`
+  const url = `${apiUrl}/api/rest/v2/documents/${quillDocumentId}/upload-multipart`
 
   const bytes = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer)
-  const ab = new ArrayBuffer(bytes.byteLength)
-  new Uint8Array(ab).set(bytes)
-  const blob = new Blob([ab], { type: 'application/pdf' })
+  const blob = new Blob([bytes], { type: 'application/pdf' }) as any
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/pdf',
-    },
-    body: blob,
-  })
+  const doUpload = async (token: string) => {
+    const form = new FormData()
+    form.append('file', blob, 'document.pdf')
+    return fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+    })
+  }
+
+  let token = await getToken()
+  let res = await doUpload(token)
 
   if (res.status === 401) {
     cachedToken = null
     tokenExpiresAt = 0
-    const newToken = await getToken()
-    const retry = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${newToken}`,
-        'Content-Type': 'application/pdf',
-      },
-      body: new Blob([ab], { type: 'application/pdf' }),
-    })
-    if (!retry.ok) {
-      const body = await retry.text()
-      throw new QuillApiError(retry.status, body, `/documents/${quillDocumentId}/upload-binary`)
-    }
-    return
+    token = await getToken()
+    res = await doUpload(token)
   }
 
   if (!res.ok) {
@@ -258,7 +247,7 @@ export async function uploadDocumentBinary(
     throw new QuillApiError(
       res.status,
       body,
-      `/documents/${quillDocumentId}/upload-binary`,
+      `/documents/${quillDocumentId}/upload-multipart`,
     )
   }
 }
