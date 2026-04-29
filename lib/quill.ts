@@ -289,7 +289,7 @@ export async function getSigningUrl(
   quillUserId: number,
 ): Promise<string> {
   const data = await quillJson<SigningUrlResponse>(
-    '/api/rest/v2/urls/create',
+    '/api/rest/v2/urls/user-signing',
     {
       method: 'POST',
       body: JSON.stringify({

@@ -112,6 +112,41 @@ export async function POST(request: NextRequest) {
         await logDocumentEvent(document.id, 'QES_WAITING', {
           metadata: { quillDocId, verifiedState },
         })
+        if (!document.quillSigningUrl && document.quillUserId) {
+          const doc = document
+          ;(async () => {
+            try {
+              const signingUrl = await getSigningUrl(quillDocId, doc.quillUserId!)
+              await prisma.starterDocument.update({
+                where: { id: doc.id },
+                data: { quillSigningUrl: signingUrl, quillState: 'WAITING_FOR_SIGNATURES' },
+              })
+
+              if (doc.recipientEmail && doc.starter && !doc.emailSentAt) {
+                await sendSigningEmail({
+                  recipientEmail: doc.recipientEmail,
+                  recipientName: `${doc.starter.firstName} ${doc.starter.lastName}`,
+                  signingUrl,
+                  documents: [{ title: doc.title, signingMethod: 'QES' }],
+                  entityName: doc.starter.entity?.name || 'Onbekend',
+                  senderName: 'Starterskalender',
+                  dueDate: doc.dueDate,
+                  language: doc.starter.language,
+                  documentId: doc.id,
+                })
+                await prisma.starterDocument.update({
+                  where: { id: doc.id },
+                  data: { emailSentAt: new Date() },
+                })
+                await logDocumentEvent(doc.id, 'EMAIL_SENT', {
+                  metadata: { recipientEmail: doc.recipientEmail, auto: true, via: 'webhook-waiting' },
+                })
+              }
+            } catch (err) {
+              console.error(`[Quill webhook] Failed to get signing URL for doc ${quillDocId}:`, err)
+            }
+          })()
+        }
         break
 
       case 'NEW_SIGNATURE':
@@ -151,6 +186,7 @@ export async function POST(request: NextRequest) {
         break
 
       case 'DOCUMENT_PAGE_PREVIEWS_READY':
+      case 'DOCUMENT_DELETED':
         break
 
       default:
