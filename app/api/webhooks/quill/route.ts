@@ -118,6 +118,17 @@ export async function POST(request: NextRequest) {
         await handleExpired(document, quillDocId)
         break
 
+      case 'DOCUMENT_PREPARING_FAILED':
+        console.error(`[Quill webhook] Document preparation failed for doc ${quillDocId}`)
+        await prisma.starterDocument.update({
+          where: { id: document.id },
+          data: { quillState: 'PREPARING_FAILED' },
+        })
+        await logDocumentEvent(document.id, 'QES_PREPARING', {
+          metadata: { quillDocId, verifiedState, error: 'PREPARING_FAILED' },
+        })
+        break
+
       default:
         console.log(`[Quill webhook] Unhandled event type: ${type}`)
     }

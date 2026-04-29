@@ -72,7 +72,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
     prerequisiteId: 'none',
     dueDate: '',
     recipientEmail: '',
-    signaturePlaceholder: '{{HANDTEKENING}}',
+    signaturePlaceholder: '',
   })
 
   const fetchDocuments = async () => {
@@ -126,7 +126,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
 
       if (res.ok) {
         setUploadOpen(false)
-        setUploadForm({ title: '', signingMethod: 'SES', prerequisiteId: 'none', dueDate: '', recipientEmail: '', signaturePlaceholder: '{{HANDTEKENING}}' })
+        setUploadForm({ title: '', signingMethod: 'SES', prerequisiteId: 'none', dueDate: '', recipientEmail: '', signaturePlaceholder: '' })
         if (fileInputRef.current) fileInputRef.current.value = ''
         await fetchDocuments()
         onDocumentChange?.()
@@ -537,7 +537,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                   placeholder="{{HANDTEKENING}}"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Tekst in de PDF waar de handtekening geplaatst wordt. Laat leeg voor standaardpositie (linksonder).
+                  Optioneel: exacte tekst in de PDF waar de handtekening moet komen (bijv. &quot;{'{{HANDTEKENING}}'}&quot;). Laat leeg voor standaardpositie (linksonder pagina 1).
                 </p>
               </div>
             )}
