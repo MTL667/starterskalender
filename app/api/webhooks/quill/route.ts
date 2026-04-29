@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
   try {
     const verified = await getDocumentStatus(quillDocId)
     const verifiedState = verified.state
+    console.log(`[Quill webhook] Verified doc ${quillDocId}: state=${verifiedState}`, JSON.stringify(verified).slice(0, 300))
 
     await prisma.starterDocument.update({
       where: { id: document.id },
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
         break
 
       case 'DOCUMENT_FULLY_SIGNED':
-        if (verifiedState !== 'DOCUMENT_FULLY_SIGNED') {
+        if (verifiedState && verifiedState !== 'DOCUMENT_FULLY_SIGNED') {
           console.warn(`[Quill webhook] FULLY_SIGNED event but verified state is ${verifiedState}, skipping`)
           break
         }

@@ -325,7 +325,9 @@ export interface QuillDocumentStatus {
 export async function getDocumentStatus(
   quillDocumentId: number,
 ): Promise<QuillDocumentStatus> {
-  return quillJson(`/api/rest/v2/documents/${quillDocumentId}`)
+  const raw = await quillJson<any>(`/api/rest/v2/documents/${quillDocumentId}`)
+  const state = raw.state || raw.status || raw.documentInfo?.state
+  return { ...raw, state }
 }
 
 export async function downloadSignedDocument(
