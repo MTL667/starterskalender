@@ -42,7 +42,8 @@ export async function GET(
       }
     }
 
-    return NextResponse.json({ ...document, previewUrl })
+    const { quillSigningUrl: _sensitive, ...safeDoc } = document
+    return NextResponse.json({ ...safeDoc, previewUrl })
   } catch (error) {
     console.error('Error fetching document:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -79,7 +80,8 @@ export async function PATCH(
         where: { id: documentId },
         data: { signatureFields: body.signatureFields },
       })
-      return NextResponse.json(updated)
+      const { quillSigningUrl: _sensitive, ...safeUpdated } = updated
+      return NextResponse.json(safeUpdated)
     }
 
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

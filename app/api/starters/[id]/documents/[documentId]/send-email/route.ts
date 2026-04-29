@@ -41,12 +41,22 @@ export async function POST(
       return NextResponse.json({ error: 'Geen ontvanger e-mail ingesteld' }, { status: 400 })
     }
 
-    if (!document.signingToken) {
-      return NextResponse.json({ error: 'Geen signing token beschikbaar' }, { status: 400 })
+    let signingUrl: string
+    if (document.signingMethod === 'QES') {
+      if (!document.quillSigningUrl) {
+        return NextResponse.json(
+          { error: 'Quill signing URL nog niet beschikbaar — document wordt verwerkt' },
+          { status: 400 },
+        )
+      }
+      signingUrl = document.quillSigningUrl
+    } else {
+      if (!document.signingToken) {
+        return NextResponse.json({ error: 'Geen signing token beschikbaar' }, { status: 400 })
+      }
+      const baseUrl = process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'
+      signingUrl = `${baseUrl}/sign/${document.signingToken}`
     }
-
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'
-    const signingUrl = `${baseUrl}/sign/${document.signingToken}`
 
     await sendSigningEmail({
       recipientEmail: document.recipientEmail,

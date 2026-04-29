@@ -31,11 +31,12 @@ The core problem: managing dozens of starters per month across multiple entities
 
 ### What Makes This Special
 
-The combination of three capabilities in a single platform tailored to multi-entity organizations:
+The combination of four capabilities in a single platform tailored to multi-entity organizations:
 
 1. **Unified calendar view** across all entities with week/month/year/custom perspectives, showing onboarding, offboarding, and migration events with entity-specific color coding and type-based visual distinction.
 2. **Automatic task orchestration** — task templates generate role-specific and entity-specific action items (IT setup, HR admin, facilities, manager actions) with assignment, deadlines, and notification channels the moment a starter is registered.
 3. **Proactive stakeholder communication** — weekly, monthly, quarterly, and yearly email digests automatically notify relevant users based on their entity memberships and notification preferences, distinguishing between starters, leavers, and internal transfers.
+4. **Digital document signing** — HR uploads contracts and documents for digital signing by starters. The system supports two methods: a simple electronic signature (SES) for internal confirmations, and a qualified electronic signature (QES) via itsme/eID (powered by Quill by Dioss) for legally binding documents — with automatic archival of signed PDFs to SharePoint.
 
 The core insight: generic HR systems are not built for the operational complexity of multi-entity organizations where each entity has its own job roles, material requirements, blocked periods, and responsible stakeholders. Starterskalender provides entity-aware automation that scales with organizational complexity.
 
@@ -78,6 +79,9 @@ The core insight: generic HR systems are not built for the operational complexit
 | Parallel Excel files | Multiple per entity | 0 |
 | HR admin lifecycle time investment | Multiple FTEs | -1 FTE |
 | Stakeholder notification coverage | Ad hoc / manual | 100% automated |
+| Contract signing turnaround | Days (print, sign, scan) | <24 hours |
+| Forgotten documents per month | Unknown | 0 |
+| Legally binding signatures | Manual via paper | 100% digital via itsme/eID |
 
 ## User Journeys
 
@@ -175,6 +179,54 @@ The core insight: generic HR systems are not built for the operational complexit
 
 ---
 
+### Journey 7: Sophie — Document Signing (SES Flow)
+
+**Who she is:** Same Sophie from Journey 1 — HR Business Partner coordinating starters across 6 entities.
+
+**Opening Scene:** Sophie has just registered Jan as a new Software Developer at entity "HQ". Alongside the 12 generated tasks, Jan needs to sign an employment contract and an NDA before his start date.
+
+**Rising Action:** Sophie opens Jan's starter detail page and navigates to the Documents section. She uploads the employment contract PDF, enters the document title "Arbeidscontract", selects "Interne bevestiging (SES)" as the signing method, and enters Jan's email address. After uploading, she opens the PDF field placer and positions the signature box at the bottom of the last page. She repeats for the NDA, setting the employment contract as a prerequisite — Jan must sign the contract before the NDA becomes available.
+
+**Climax:** Sophie clicks "Mail versturen". Jan receives a branded email with a clear call-to-action. He clicks the link, sees the document with the signature field, enters his name, and signs. The system embeds the signature in the PDF, uploads the signed version to SharePoint, marks the linked task as completed, and sends Jan a confirmation email with a download link.
+
+**Resolution:** Sophie sees both documents turn green in the progress bar. The linked tasks are completed automatically. The signed PDFs are archived in Jan's SharePoint folder. She didn't need to print, scan, or chase a single document.
+
+**Reveals requirements for:** PDF upload, signature field placement, SES signing page, signing email with branded template, signed PDF archival to SharePoint, document prerequisite chains, linked task completion, confirmation email.
+
+---
+
+### Journey 8: Sophie — Legally Binding Signature (QES Flow)
+
+**Who she is:** Same Sophie — but now she needs a legally binding signature for a confidentiality agreement with a contractor.
+
+**Opening Scene:** The legal department requires that the confidentiality agreement for external contractor Lisa is signed via a qualified electronic signature (QES) to be legally equivalent to a handwritten signature.
+
+**Rising Action:** Sophie uploads the confidentiality agreement PDF, selects "Itsme (gekwalificeerd)" as the signing method, and enters Lisa's email. The system uploads the PDF to SharePoint, creates a guest user in Quill, creates the document in Quill with a webhook URL, uploads the binary, and obtains a signing URL — all behind the scenes. Sophie sees a "Wacht op handtekening" badge on the document.
+
+**Climax:** Sophie clicks "Mail versturen". Lisa receives the email through Starterskalender's SendGrid, not Quill — maintaining consistent branding. Lisa clicks the link, which takes her to the Quill signing interface. She authenticates via the itsme app on her phone and signs. Quill sends a webhook to Starterskalender. The system verifies the event, downloads the signed PDF from Quill, uploads it to SharePoint, marks the document as signed, completes the linked task, and sends Lisa a confirmation email.
+
+**Resolution:** The signed document carries the legal weight of a handwritten signature under eIDAS regulation. Sophie can see the complete audit trail: creation, email sent, itsme signature, SharePoint archival. No paper, no scanning, no courier.
+
+**Reveals requirements for:** QES signing method selection, Quill API integration (guest user, document, binary upload, send, signing URL), webhook processing, signed PDF download and archival, Quill status tracking, hybrid signing method per document.
+
+---
+
+### Journey 9: Jan — Signing a Document (Starter Perspective)
+
+**Who he is:** Jan (28) is starting as a Software Developer at entity "HQ" next month. He has never used Starterskalender — he is an external signer.
+
+**Opening Scene:** Jan receives an email from Starterskalender on behalf of Sophie's organization. The email has a professional design, lists the document "Arbeidscontract", and contains a prominent "Documenten bekijken en ondertekenen" button.
+
+**Rising Action (SES):** Jan clicks the button. He sees the employment contract PDF rendered in the browser with a signature field. He types his full name, clicks "Ondertekenen", and confirms. The page shows a success message.
+
+**Rising Action (QES):** For the NDA, Jan receives a second email. This time, the button takes him to the Quill signing interface. He sees the document and a prompt to sign via itsme. He opens the itsme app, confirms his identity, and the signature is applied.
+
+**Resolution:** Jan receives two confirmation emails — one per signed document — each with a download link to the signed PDF. He never needed an account in Starterskalender. The entire process took 5 minutes on his phone.
+
+**Reveals requirements for:** Public signing page (no authentication), email template with signing link, QES redirect to Quill, confirmation email with download link, mobile-friendly signing experience.
+
+---
+
 ### Journey Requirements Summary
 
 | Capability Area | Journeys |
@@ -192,6 +244,11 @@ The core insight: generic HR systems are not built for the operational complexit
 | ERP integration (growth) | Tom |
 | Error recovery & cascading updates | Edge Case |
 | Separation of technical vs HR admin | Tom, Sophie |
+| Document upload & signing (SES) | Sophie (J7), Jan (J9) |
+| Qualified electronic signature (QES/itsme) | Sophie (J8), Jan (J9) |
+| Document prerequisite chains | Sophie (J7) |
+| Signed PDF archival to SharePoint | Sophie (J7, J8), System |
+| Signing audit trail | Sophie (J7, J8) |
 
 ## Domain-Specific Requirements
 
@@ -206,6 +263,14 @@ The core insight: generic HR systems are not built for the operational complexit
 - **Strict entity scoping**: Entity Editors can only view AND modify data for entities they are explicitly assigned to. No cross-entity data leakage is permitted — this applies to starters, tasks, materials, calendar views, and statistics.
 - **Role-based data separation**: The future Super Admin role has full technical/configuration access but zero visibility into HR-content data (individual starter details, task progress, personal information). HR Admins have full HR data access but limited technical configuration capabilities.
 - **Audit trail integrity**: All audit logs must be immutable and retained according to ISO requirements. Logs must capture: actor identity, timestamp, action type, affected entity, before/after state.
+
+### Digital Signing & eIDAS Compliance
+
+- **eIDAS Regulation (EU 910/2014):** The system supports two levels of electronic signature as defined by eIDAS. Simple Electronic Signatures (SES) serve as internal digital confirmations without specific legal standing. Qualified Electronic Signatures (QES) via itsme/eID carry the legal equivalence of handwritten signatures. HR selects the appropriate level per document.
+- **Quill integration (Dioss Smart Solutions):** QES signing is delegated to the Quill platform, a certified eSignature service. The integration uses Quill's API V2 for document lifecycle management, guest user creation, and signing URL generation. Quill's own email notifications are suppressed — all communication to signers flows through the platform's SendGrid setup for consistent branding.
+- **Signed document archival:** Both original and signed PDF documents are stored in the starter's SharePoint folder. Signed documents include an embedded signature (SES) or a Quill-certified signature (QES). The Quill Evidence Report (sealed audit proof) can be downloaded for legal proceedings.
+- **Signing token security:** Public signing links (SES) use cryptographically random tokens. QES signing URLs contain Quill-generated guest keys. Both are treated as sensitive data and are not exposed in logs or error messages.
+- **Document retention:** Signed documents are retained in SharePoint according to organizational retention policy. Quill retains documents according to the company's Quill document settings (configurable retention period).
 
 ### Integration Requirements
 
@@ -222,6 +287,9 @@ The core insight: generic HR systems are not built for the operational complexit
 | Audit log gaps | ISO non-compliance | Immutable logging on all write operations, regular audit log reviews |
 | ERP integration data leakage | Sensitive data in wrong system | Entity-specific integration configs, data mapping validation per integration |
 | User agreement not signed | Unauthorized data access | System-level gate: block elevated access until agreement is confirmed |
+| Quill API unavailability | QES documents cannot be signed | Graceful degradation: document uploaded to SharePoint regardless; Quill setup retried via webhook |
+| Signing token/URL leakage | Unauthorized document access | Cryptographically random tokens; URLs treated as sensitive; not logged in plain text |
+| Expired QES signing links | Starter cannot sign | Quill webhooks update status to EXPIRED; HR notified to re-send |
 
 ## Innovation & Novel Patterns
 
@@ -236,6 +304,8 @@ Starterskalender excels through execution of proven patterns applied to a specif
 3. **Bi-directional Onboarding**: Extending the platform from an HR-only tool to include the new employee as a participant — self-service onboarding progress tracking, document uploads, and direct communication with responsible stakeholders.
 
 4. **Entity Performance Benchmarking**: Measurable onboarding quality scores per entity (on-time task completion rate, material coverage, lead times) creating accountability and healthy competition between entities.
+
+5. **Hybrid Signing Strategy**: The platform supports both simple electronic signatures (SES) for internal confirmations and qualified electronic signatures (QES) via itsme/eID for legally binding documents. HR chooses per document (and later per template with override), enabling organizations to use the right level of legal assurance for each document type — without external signing portals or separate workflows. All signing emails flow through the platform's own branding, not the QES provider's.
 
 ### Market Context & Competitive Landscape
 
@@ -316,14 +386,16 @@ Cross-browser testing should cover all major rendering engines: Blink (Chrome/Ed
 - Starter/leaver/migration registration with entity scoping
 - Calendar view (week/month/year/custom) with entity and type filtering
 - Automatic task generation based on templates, job roles, and entities
-- Material provisioning per job role with tracking
-- Role-based access control (5 tiers) with Azure AD SSO
-- Automated email notifications (weekly, monthly, quarterly, yearly)
+- Material provisioning per job role with multi-status tracking (pending, in stock, ordered, received, reserved)
+- Role-based access control (5 tiers + granular permissions) with Azure AD SSO
+- Automated email notifications (weekly, monthly, quarterly, yearly) with cron health monitoring
 - Statistics dashboard
 - Multi-language support (NL/FR)
 - Blocked periods management per entity
 - Audit logging for ISO compliance
 - Admin panel for entities, users, job roles, materials, email templates
+- Document signing (SES): PDF upload to SharePoint, signature field placement, public signing page, signed PDF archival, prerequisite document chains, signing email via SendGrid, confirmation email with download link
+- Document signing (QES): Quill by Dioss integration for itsme/eID qualified signatures, webhook-based document lifecycle, automatic signed PDF download and SharePoint archival
 
 ### Phase 2: Growth — Prioritized Roadmap
 
@@ -509,6 +581,25 @@ Cross-browser testing should cover all major rendering engines: Blink (Chrome/Ed
 - **FR58:** All user-facing content is available in Dutch and French
 - **FR59:** System supports adding additional languages without architectural changes
 
+### Document Signing
+
+- **FR60:** HR Admin can upload PDF documents per starter for digital signing, with document title, recipient email, optional deadline, and optional prerequisite document
+- **FR61:** HR Admin can select signing method per document: SES (internal digital confirmation) or QES (qualified electronic signature via itsme/eID)
+- **FR62:** HR Admin can place signature field locations on PDF documents using a visual field placer before sending
+- **FR63:** HR Admin can define prerequisite chains between documents — a dependent document becomes signable only after its prerequisite is signed
+- **FR64:** System stores uploaded PDF documents in the starter's SharePoint folder via Microsoft Graph API
+- **FR65:** HR Admin can send a signing invitation email to the recipient via SendGrid, containing a signing link and document summary
+- **FR66:** Starters can view and sign SES documents via a public signing page accessible without authentication, using a cryptographically random token
+- **FR67:** For SES documents, the system embeds the signature in the PDF using pdf-lib, uploads the signed version to SharePoint, and stores the signed item reference
+- **FR68:** For QES documents, the system creates a Quill guest user (with notifications suppressed), creates a Quill document, uploads the PDF binary, and obtains a signing URL — all within the upload flow
+- **FR69:** For QES documents, the signing email contains the Quill signing URL instead of the internal signing page link
+- **FR70:** Starters sign QES documents via the Quill signing interface using itsme or eID authentication
+- **FR71:** System receives Quill webhook events (DOCUMENT_FULLY_SIGNED, SIGNATURE_DECLINED, DOCUMENT_EXPIRE) and updates document status accordingly
+- **FR72:** Upon QES signing completion, the system downloads the signed PDF from Quill, uploads it to SharePoint, marks the document as signed, and completes the linked task
+- **FR73:** System sends a confirmation email to the signer after successful signing (both SES and QES), including a download link for the signed document
+- **FR74:** HR Admin can view a complete audit trail per document with timestamped events: created, email sent, email delivered/opened/clicked/bounced, viewed, signed, and QES-specific events (preparing, waiting, signed, declined, expired)
+- **FR75:** Document signing progress is visible per starter with a progress bar showing signed vs. total documents
+
 ## Non-Functional Requirements
 
 ### Performance
@@ -552,3 +643,12 @@ Cross-browser testing should cover all major rendering engines: Blink (Chrome/Ed
 - **NFR25:** Integration failures are logged with sufficient detail for troubleshooting without exposing sensitive data
 - **NFR26:** External system unavailability does not block core application functionality (starter registration, task management)
 - **NFR27:** Azure AD SSO unavailability is handled gracefully with clear user messaging
+
+### Document Signing
+
+- **NFR28:** SES signing tokens are cryptographically random (cuid) and unique — each token grants access to exactly one document without authentication
+- **NFR29:** Quill signing URLs are treated as sensitive data with equivalent protection to signing tokens — not logged in plain text, not exposed in API error responses
+- **NFR30:** Quill API unavailability does not block document upload to SharePoint — QES setup is retried via the DOCUMENT_PREPARING webhook when Quill becomes available
+- **NFR31:** Quill webhook processing responds with 2xx within 3 seconds to prevent Quill retry storms (Quill retries up to 5x with exponential backoff)
+- **NFR32:** Quill webhook events are verified by fetching authoritative document state from the Quill API before processing — no blind trust of webhook payloads (spoof protection per Quill recommendation)
+- **NFR33:** PDF content served via the application enforces authorization checks and sets X-Content-Type-Options: nosniff, Content-Disposition headers with sanitized filenames, and MIME type allowlisting for image/PDF content

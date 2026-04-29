@@ -12,6 +12,13 @@ type AuditEvent =
   | 'DOWNLOADED'
   | 'FIELDS_PLACED'
   | 'DELETED'
+  | 'QES_SENT_TO_QUILL'
+  | 'QES_PREPARING'
+  | 'QES_WAITING'
+  | 'QES_SIGNED'
+  | 'QES_DECLINED'
+  | 'QES_EXPIRED'
+  | 'QES_NEW_SIGNATURE'
 
 export async function logDocumentEvent(
   documentId: string,

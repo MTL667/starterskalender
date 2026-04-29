@@ -5,6 +5,15 @@ import { canMutateStarter } from '@/lib/rbac'
 import { uploadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { eventBus } from '@/lib/events'
 import { logDocumentEvent } from '@/lib/document-audit'
+import {
+  isQuillConfigured,
+  createGuestUser,
+  createDocument as createQuillDocument,
+  uploadDocumentBinary,
+  sendDocument as sendQuillDocument,
+  getSigningUrl,
+  getDocumentStatus,
+} from '@/lib/quill'
 
 export async function GET(
   request: NextRequest,
@@ -35,7 +44,8 @@ export async function GET(
       },
     })
 
-    return NextResponse.json(documents)
+    const sanitized = documents.map(({ quillSigningUrl: _sensitive, ...doc }) => doc)
+    return NextResponse.json(sanitized)
   } catch (error) {
     console.error('Error fetching documents:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -83,6 +93,21 @@ export async function POST(
 
     if (file.type !== 'application/pdf') {
       return NextResponse.json({ error: 'Only PDF files are supported' }, { status: 400 })
+    }
+
+    if (signingMethod === 'QES') {
+      if (!isQuillConfigured()) {
+        return NextResponse.json(
+          { error: 'QES ondertekening vereist Quill configuratie (QUILL_API_URL, QUILL_CLIENT_ID, QUILL_API_KEY)' },
+          { status: 400 },
+        )
+      }
+      if (!recipientEmail?.trim()) {
+        return NextResponse.json(
+          { error: 'E-mailadres van ontvanger is verplicht voor QES ondertekening' },
+          { status: 400 },
+        )
+      }
     }
 
     const nextSortOrder = (starter.documents[0]?.sortOrder ?? -1) + 1
@@ -135,12 +160,78 @@ export async function POST(
       },
     })
 
-    const updated = await prisma.starterDocument.update({
+    let updated = await prisma.starterDocument.update({
       where: { id: document.id },
       data: { taskId: task.id },
     })
 
     await logDocumentEvent(document.id, 'CREATED', { actor: user.id })
+
+    if (signingMethod === 'QES' && isQuillConfigured() && recipientEmail) {
+      try {
+        const webhookUrl = `${process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'}/api/webhooks/quill`
+
+        const guestUser = await createGuestUser(
+          recipientEmail,
+          starter.firstName,
+          starter.lastName,
+        )
+
+        const quillDoc = await createQuillDocument({
+          name: title,
+          webhookUrl,
+          signerUserId: guestUser.id,
+          signatureTypes: ['ITSME'],
+        })
+
+        await uploadDocumentBinary(quillDoc.documentId, buffer)
+
+        // Poll for PREPARING state (Quill needs a moment to process the PDF)
+        let ready = false
+        for (let i = 0; i < 6; i++) {
+          await new Promise((r) => setTimeout(r, 1000))
+          const status = await getDocumentStatus(quillDoc.documentId)
+          if (status.state === 'PREPARING' || status.state === 'WAITING_FOR_SIGNATURES') {
+            ready = true
+            break
+          }
+          if (status.state === 'PREPARING_FAILED') {
+            throw new Error(`Quill document processing failed: ${status.creationError}`)
+          }
+        }
+
+        let quillSigningUrl: string | null = null
+        if (ready) {
+          await sendQuillDocument(quillDoc.documentId)
+          quillSigningUrl = await getSigningUrl(quillDoc.documentId, guestUser.id)
+        }
+
+        updated = await prisma.starterDocument.update({
+          where: { id: document.id },
+          data: {
+            quillDocumentId: quillDoc.documentId,
+            quillUserId: guestUser.id,
+            quillSigningUrl,
+            quillState: ready ? 'WAITING_FOR_SIGNATURES' : 'CREATED',
+          },
+        })
+
+        await logDocumentEvent(document.id, 'QES_SENT_TO_QUILL', {
+          actor: user.id,
+          metadata: {
+            quillDocumentId: quillDoc.documentId,
+            quillUserId: guestUser.id,
+            ready,
+          },
+        })
+      } catch (quillErr) {
+        console.error('Failed to set up Quill QES document:', quillErr)
+        updated = await prisma.starterDocument.update({
+          where: { id: document.id },
+          data: { quillState: 'SETUP_FAILED' },
+        })
+      }
+    }
 
     eventBus.emit({
       type: 'starter:updated',
@@ -148,7 +239,8 @@ export async function POST(
       payload: { starterId: id, action: 'document_added' },
     })
 
-    return NextResponse.json(updated, { status: 201 })
+    const { quillSigningUrl: _sensitive, ...safeResponse } = updated
+    return NextResponse.json(safeResponse, { status: 201 })
   } catch (error) {
     console.error('Error uploading document:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

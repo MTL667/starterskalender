@@ -42,8 +42,8 @@ export async function POST(
 
     if (document.signingMethod === 'QES') {
       return NextResponse.json(
-        { error: 'QES signing via Itsme is not yet available' },
-        { status: 501 }
+        { error: 'QES documenten worden ondertekend via itsme/eID — gebruik de signing link uit de e-mail' },
+        { status: 400 },
       )
     }
 

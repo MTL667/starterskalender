@@ -767,9 +767,11 @@ model StarterDocument {
   signedByIp   String?
   signedByName String? // Naam van ondertekenaar
 
-  // Itsme QES details (Phase 5B)
-  itsmeSignatureId     String? // Itsme transactie ID
-  itsmeCertificateInfo String? @db.Text // Certificaat informatie
+  // Quill QES integration (itsme/eID via Dioss Quill)
+  quillDocumentId Int? // Quill's internal document ID
+  quillUserId     Int? // Quill guest user ID for the signer
+  quillSigningUrl String? // Cached signing URL from Quill
+  quillState      String? // Last known Quill state (WAITING_FOR_SIGNATURES, etc.)
 
   // Volgorde en afhankelijkheden
   sortOrder      Int               @default(0)

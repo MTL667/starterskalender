@@ -38,6 +38,8 @@ interface StarterDocument {
   emailSentAt: string | null
   signingToken: string | null
   signatureFields: any[] | null
+  quillState: string | null
+  quillDocumentId: number | null
 }
 
 interface Props {
@@ -205,12 +207,32 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
   const isLocked = (doc: StarterDocument) =>
     doc.prerequisite && doc.prerequisite.status !== 'SIGNED'
 
+  const QUILL_STATE_LABELS: Record<string, string> = {
+    CREATED: 'Wordt verwerkt',
+    PREPARING: 'Wordt voorbereid',
+    PREPARING_FAILED: 'Voorbereiding mislukt',
+    SETUP_FAILED: 'Instelling mislukt',
+    WAITING_FOR_SIGNATURES: 'Wacht op handtekening',
+    DOCUMENT_FULLY_SIGNED: 'Ondertekend',
+    SIGNED_PDF_UPLOAD_FAILED: 'Opslag mislukt',
+    SIGNATURE_DECLINED: 'Geweigerd',
+    DOCUMENT_DECLINED: 'Geweigerd',
+    DOCUMENT_EXPIRE: 'Verlopen',
+  }
+
   const statusBadge = (doc: StarterDocument) => {
     if (doc.status === 'SIGNED') {
       return (
         <Badge className="bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700">
           <CheckCircle2 className="h-3 w-3 mr-1" />
           {t('signed')}
+        </Badge>
+      )
+    }
+    if (doc.status === 'CANCELLED') {
+      return (
+        <Badge variant="destructive">
+          Geweigerd
         </Badge>
       )
     }
@@ -233,6 +255,30 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
       <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:bg-amber-900/30">
         <Clock className="h-3 w-3 mr-1" />
         {t('pending')}
+      </Badge>
+    )
+  }
+
+  const quillStatusBadge = (doc: StarterDocument) => {
+    if (doc.signingMethod !== 'QES' || !doc.quillState) return null
+    if (doc.status === 'SIGNED') return null
+
+    const label = QUILL_STATE_LABELS[doc.quillState] || doc.quillState
+    const isError = doc.quillState === 'PREPARING_FAILED' || doc.quillState === 'SETUP_FAILED' || doc.quillState === 'SIGNED_PDF_UPLOAD_FAILED'
+    const isWaiting = doc.quillState === 'WAITING_FOR_SIGNATURES'
+
+    return (
+      <Badge
+        variant="outline"
+        className={`text-xs ${
+          isError
+            ? 'text-red-600 border-red-300 bg-red-50 dark:text-red-400 dark:border-red-700 dark:bg-red-900/30'
+            : isWaiting
+              ? 'text-blue-600 border-blue-300 bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:bg-blue-900/30'
+              : 'text-gray-600 border-gray-300'
+        }`}
+      >
+        {label}
       </Badge>
     )
   }
@@ -317,6 +363,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                     <Badge variant="outline" className="text-xs">
                       {doc.signingMethod === 'QES' ? 'Itsme' : t('simpleSign')}
                     </Badge>
+                    {quillStatusBadge(doc)}
                   </div>
                   {doc.signedAt && (
                     <p className="text-xs text-muted-foreground mt-1">
@@ -347,7 +394,7 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
               </div>
 
               <div className="flex items-center gap-1 shrink-0 ml-2">
-                {canEdit && doc.status === 'PENDING' && doc.teamsItemId && (
+                {canEdit && doc.status === 'PENDING' && doc.teamsItemId && doc.signingMethod !== 'QES' && (
                   <Button
                     type="button"
                     variant="outline"
@@ -369,10 +416,19 @@ export function StarterDocuments({ starterId, canEdit, onDocumentChange }: Props
                     size="sm"
                     className="h-7 text-xs"
                     onClick={() => handleSendEmail(doc)}
-                    disabled={sendingEmail === doc.id}
-                    title={!(doc.signatureFields && (doc.signatureFields as any[]).length > 0)
-                      ? 'Plaats eerst handtekeningvelden'
-                      : 'Signing link versturen'}
+                    disabled={
+                      sendingEmail === doc.id ||
+                      (doc.signingMethod === 'QES' && doc.quillState !== 'WAITING_FOR_SIGNATURES')
+                    }
+                    title={
+                      doc.signingMethod === 'QES'
+                        ? doc.quillState !== 'WAITING_FOR_SIGNATURES'
+                          ? 'Quill verwerkt het document nog...'
+                          : 'Signing link versturen via itsme/eID'
+                        : !(doc.signatureFields && (doc.signatureFields as any[]).length > 0)
+                          ? 'Plaats eerst handtekeningvelden'
+                          : 'Signing link versturen'
+                    }
                   >
                     {sendingEmail === doc.id ? (
                       <Loader2 className="h-3 w-3 mr-1 animate-spin" />
