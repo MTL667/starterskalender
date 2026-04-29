@@ -15,6 +15,7 @@ import {
   getSigningUrl,
   getDocumentStatus,
 } from '@/lib/quill'
+import { sendSigningEmail } from '@/lib/email-signing'
 
 export async function GET(
   request: NextRequest,
@@ -187,12 +188,22 @@ export async function POST(
           ...(signaturePlaceholder ? { signaturePlaceholder } : {}),
         })
 
+        // Store Quill IDs immediately so webhooks can find this document
+        updated = await prisma.starterDocument.update({
+          where: { id: document.id },
+          data: {
+            quillDocumentId: quillDoc.documentId,
+            quillUserId: guestUser.id,
+            quillState: 'CREATED',
+          },
+        })
+
         await uploadDocumentBinary(quillDoc.documentId, buffer)
 
         // Poll for PREPARING state (Quill needs a moment to process the PDF)
         let ready = false
-        for (let i = 0; i < 6; i++) {
-          await new Promise((r) => setTimeout(r, 1000))
+        for (let i = 0; i < 10; i++) {
+          await new Promise((r) => setTimeout(r, 1500))
           const status = await getDocumentStatus(quillDoc.documentId)
           if (status.state === 'PREPARING' || status.state === 'WAITING_FOR_SIGNATURES') {
             ready = true
@@ -203,21 +214,43 @@ export async function POST(
           }
         }
 
-        let quillSigningUrl: string | null = null
         if (ready) {
           await sendQuillDocument(quillDoc.documentId)
-          quillSigningUrl = await getSigningUrl(quillDoc.documentId, guestUser.id)
-        }
+          const quillSigningUrl = await getSigningUrl(quillDoc.documentId, guestUser.id)
 
-        updated = await prisma.starterDocument.update({
-          where: { id: document.id },
-          data: {
-            quillDocumentId: quillDoc.documentId,
-            quillUserId: guestUser.id,
-            quillSigningUrl,
-            quillState: ready ? 'WAITING_FOR_SIGNATURES' : 'CREATED',
-          },
-        })
+          updated = await prisma.starterDocument.update({
+            where: { id: document.id },
+            data: {
+              quillSigningUrl,
+              quillState: 'WAITING_FOR_SIGNATURES',
+            },
+          })
+
+          // Auto-send signing email for QES
+          try {
+            await sendSigningEmail({
+              recipientEmail,
+              recipientName: `${starter.firstName} ${starter.lastName}`,
+              signingUrl: quillSigningUrl,
+              documents: [{ title, signingMethod: 'QES' }],
+              entityName: starter.entity?.name || 'Onbekend',
+              senderName: user.name || user.email,
+              dueDate: dueDateStr ? new Date(dueDateStr) : null,
+              language: starter.language,
+              documentId: document.id,
+            })
+            await prisma.starterDocument.update({
+              where: { id: document.id },
+              data: { emailSentAt: new Date() },
+            })
+            await logDocumentEvent(document.id, 'EMAIL_SENT', {
+              actor: user.id,
+              metadata: { recipientEmail, auto: true },
+            })
+          } catch (emailErr) {
+            console.error('Failed to auto-send QES signing email:', emailErr)
+          }
+        }
 
         await logDocumentEvent(document.id, 'QES_SENT_TO_QUILL', {
           actor: user.id,

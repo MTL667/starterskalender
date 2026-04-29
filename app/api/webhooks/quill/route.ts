@@ -9,7 +9,7 @@ import {
 } from '@/lib/quill'
 import { uploadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 import { logDocumentEvent } from '@/lib/document-audit'
-import { sendSignedConfirmationEmail } from '@/lib/email-signing'
+import { sendSignedConfirmationEmail, sendSigningEmail } from '@/lib/email-signing'
 import { eventBus } from '@/lib/events'
 
 /**
@@ -66,20 +66,41 @@ export async function POST(request: NextRequest) {
           metadata: { quillDocId, verifiedState },
         })
         if (!document.quillSigningUrl && document.quillUserId) {
-          const docId = document.id
+          const doc = document
           const userId = document.quillUserId
           ;(async () => {
             try {
               await sendQuillDocument(quillDocId)
               const signingUrl = await getSigningUrl(quillDocId, userId)
               await prisma.starterDocument.update({
-                where: { id: docId },
+                where: { id: doc.id },
                 data: { quillSigningUrl: signingUrl, quillState: 'WAITING_FOR_SIGNATURES' },
               })
+
+              if (doc.recipientEmail && doc.starter && !doc.emailSentAt) {
+                await sendSigningEmail({
+                  recipientEmail: doc.recipientEmail,
+                  recipientName: `${doc.starter.firstName} ${doc.starter.lastName}`,
+                  signingUrl,
+                  documents: [{ title: doc.title, signingMethod: 'QES' }],
+                  entityName: doc.starter.entity?.name || 'Onbekend',
+                  senderName: 'Starterskalender',
+                  dueDate: doc.dueDate,
+                  language: doc.starter.language,
+                  documentId: doc.id,
+                })
+                await prisma.starterDocument.update({
+                  where: { id: doc.id },
+                  data: { emailSentAt: new Date() },
+                })
+                await logDocumentEvent(doc.id, 'EMAIL_SENT', {
+                  metadata: { recipientEmail: doc.recipientEmail, auto: true, via: 'webhook' },
+                })
+              }
             } catch (sendErr) {
               console.error(`[Quill webhook] Failed to send document ${quillDocId}:`, sendErr)
               await prisma.starterDocument.update({
-                where: { id: docId },
+                where: { id: doc.id },
                 data: { quillState: 'SETUP_FAILED' },
               }).catch(() => {})
             }
@@ -127,6 +148,9 @@ export async function POST(request: NextRequest) {
         await logDocumentEvent(document.id, 'QES_PREPARING', {
           metadata: { quillDocId, verifiedState, error: 'PREPARING_FAILED' },
         })
+        break
+
+      case 'DOCUMENT_PAGE_PREVIEWS_READY':
         break
 
       default:
