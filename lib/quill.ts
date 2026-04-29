@@ -216,15 +216,40 @@ export async function uploadDocumentBinary(
   quillDocumentId: number,
   pdfBuffer: Buffer | Uint8Array,
 ): Promise<void> {
-  const res = await quillFetch(
-    `/api/rest/v2/documents/${quillDocumentId}/upload-binary`,
-    {
+  const { apiUrl } = getConfig()
+  const token = await getToken()
+  const url = `${apiUrl}/api/rest/v2/documents/${quillDocumentId}/upload-binary`
+
+  const blob = new Blob([pdfBuffer], { type: 'application/pdf' })
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/pdf',
+    },
+    body: blob,
+  })
+
+  if (res.status === 401) {
+    cachedToken = null
+    tokenExpiresAt = 0
+    const newToken = await getToken()
+    const retry = await fetch(url, {
       method: 'POST',
-      body: pdfBuffer,
-      rawBody: true,
-      headers: { 'Content-Type': 'application/pdf' },
-    } as any,
-  )
+      headers: {
+        Authorization: `Bearer ${newToken}`,
+        'Content-Type': 'application/pdf',
+      },
+      body: new Blob([pdfBuffer], { type: 'application/pdf' }),
+    })
+    if (!retry.ok) {
+      const body = await retry.text()
+      throw new QuillApiError(retry.status, body, `/documents/${quillDocumentId}/upload-binary`)
+    }
+    return
+  }
+
   if (!res.ok) {
     const body = await res.text()
     throw new QuillApiError(
