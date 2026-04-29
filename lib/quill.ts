@@ -219,8 +219,10 @@ export async function uploadDocumentBinary(
   const { apiUrl } = getConfig()
   const url = `${apiUrl}/api/rest/v2/documents/${quillDocumentId}/upload-multipart`
 
-  const bytes = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer)
-  const blob = new Blob([bytes], { type: 'application/pdf' }) as any
+  const buf = Buffer.isBuffer(pdfBuffer) ? pdfBuffer : Buffer.from(pdfBuffer)
+  const ab = new ArrayBuffer(buf.byteLength)
+  new Uint8Array(ab).set(buf)
+  const blob = new Blob([ab], { type: 'application/pdf' })
 
   const doUpload = async (token: string) => {
     const form = new FormData()
