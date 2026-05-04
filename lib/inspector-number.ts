@@ -127,7 +127,7 @@ export async function bulkImportInspectorNumbers(
       continue
     }
 
-    const starter = await prisma.starter.findFirst({
+    const matches = await prisma.starter.findMany({
       where: {
         entityId,
         firstName: { equals: firstName, mode: 'insensitive' },
@@ -136,10 +136,17 @@ export async function bulkImportInspectorNumbers(
       select: { id: true, inspectorNumber: true },
     })
 
-    if (!starter) {
+    if (matches.length === 0) {
       results.push({ row: i + 1, success: false, error: `Starter "${firstName} ${lastName}" niet gevonden` })
       continue
     }
+
+    if (matches.length > 1) {
+      results.push({ row: i + 1, success: false, error: `Meerdere starters gevonden met naam "${firstName} ${lastName}" — kan niet automatisch toewijzen` })
+      continue
+    }
+
+    const starter = matches[0]
 
     if (starter.inspectorNumber !== null) {
       results.push({ row: i + 1, success: false, error: `Starter heeft al nummer ${starter.inspectorNumber}` })

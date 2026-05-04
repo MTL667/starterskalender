@@ -38,11 +38,14 @@ export async function POST(
       return NextResponse.json({ error: 'Maximaal 1000 rijen per import' }, { status: 400 })
     }
 
-    const parsed = rows.map((row: any) => ({
-      firstName: String(row.firstName || '').trim(),
-      lastName: String(row.lastName || '').trim(),
-      inspectorNumber: parseInt(row.inspectorNumber),
-    }))
+    const parsed = rows.map((row: any) => {
+      const raw = String(row.inspectorNumber ?? '').trim()
+      return {
+        firstName: String(row.firstName || '').trim(),
+        lastName: String(row.lastName || '').trim(),
+        inspectorNumber: /^\d+$/.test(raw) ? Number(raw) : NaN,
+      }
+    })
 
     const invalid = parsed.filter(
       (r) => !r.firstName || !r.lastName || !Number.isInteger(r.inspectorNumber),

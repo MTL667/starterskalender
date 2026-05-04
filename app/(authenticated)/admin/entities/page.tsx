@@ -129,14 +129,34 @@ export default function EntitiesAdminPage() {
     setImportResult(null)
 
     try {
-      const text = await file.text()
+      const text = (await file.text()).replace(/^\uFEFF/, '').replace(/\r/g, '')
       const lines = text.trim().split('\n')
       if (lines.length < 2) {
         setImportResult({ error: 'CSV moet minstens een header en één rij bevatten' })
         return
       }
 
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''))
+      const parseCSVLine = (line: string): string[] => {
+        const result: string[] = []
+        let current = ''
+        let inQuotes = false
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i]
+          if (inQuotes) {
+            if (ch === '"' && line[i + 1] === '"') { current += '"'; i++ }
+            else if (ch === '"') { inQuotes = false }
+            else { current += ch }
+          } else {
+            if (ch === '"') { inQuotes = true }
+            else if (ch === ',' || ch === ';') { result.push(current.trim()); current = '' }
+            else { current += ch }
+          }
+        }
+        result.push(current.trim())
+        return result
+      }
+
+      const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase())
       const fnIdx = headers.findIndex(h => h === 'firstname' || h === 'voornaam')
       const lnIdx = headers.findIndex(h => h === 'lastname' || h === 'achternaam')
       const numIdx = headers.findIndex(h => h === 'inspectornumber' || h === 'inspecteurnummer' || h === 'nummer')
@@ -147,11 +167,12 @@ export default function EntitiesAdminPage() {
       }
 
       const rows = lines.slice(1).filter(l => l.trim()).map(line => {
-        const cols = line.split(',').map(c => c.trim().replace(/"/g, ''))
+        const cols = parseCSVLine(line)
+        const raw = (cols[numIdx] || '').trim()
         return {
-          firstName: cols[fnIdx],
-          lastName: cols[lnIdx],
-          inspectorNumber: parseInt(cols[numIdx]),
+          firstName: cols[fnIdx] || '',
+          lastName: cols[lnIdx] || '',
+          inspectorNumber: /^\d+$/.test(raw) ? Number(raw) : NaN,
         }
       })
 

@@ -106,8 +106,7 @@ export async function PATCH(
       console.log(`🔒 Dropped protected fields on update of ${id}: ${dropped.join(', ')}`)
     }
 
-    // Inspector number validation: requires permission, unique within entity
-    if (data.inspectorNumber !== undefined && data.inspectorNumber !== null) {
+    if (data.inspectorNumber !== undefined) {
       const { can } = await import('@/lib/authz')
       if (!can(authz, 'starters:write:inspectornumber')) {
         return NextResponse.json(
@@ -115,7 +114,7 @@ export async function PATCH(
           { status: 403 },
         )
       }
-      if (existingStarter?.entityId) {
+      if (data.inspectorNumber !== null && existingStarter?.entityId) {
         const { validateInspectorNumber } = await import('@/lib/inspector-number')
         const validationError = await validateInspectorNumber(existingStarter.entityId, data.inspectorNumber, id)
         if (validationError) {
@@ -176,7 +175,7 @@ export async function PATCH(
         name: `${starter.firstName} ${starter.lastName}`,
         changes: Object.keys(updateData),
         ...(isActivatingPending ? { activatedFromPending: true } : {}),
-        ...(data.inspectorNumber ? { inspectorNumber: data.inspectorNumber, inspectorNumberMethod: 'manual' } : {}),
+        ...(data.inspectorNumber !== undefined ? { inspectorNumber: data.inspectorNumber, inspectorNumberMethod: data.inspectorNumber === null ? 'cleared' : 'manual' } : {}),
       },
     })
 
