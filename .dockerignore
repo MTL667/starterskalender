@@ -22,3 +22,9 @@ Rooms/
 
 # Exclude local data
 data/
+_bmad*/
+_bmad-output/
+_tmp/
+.cursor/
+docs/
+agent-transcripts/

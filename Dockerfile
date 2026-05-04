@@ -21,10 +21,11 @@ COPY . .
 
 # Environment variabelen voor build
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS="--max-old-space-size=8192"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Reduce Turbopack memory usage in Docker
 ENV NEXT_PRIVATE_WORKER_THREADS=1
+ENV NEXT_PRIVATE_WORKERS=2
 
 # Build Next.js
 RUN npm run build
