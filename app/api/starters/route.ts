@@ -280,9 +280,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Auto-assign inspector number if the role requires it
+    // Auto-assign inspector number if the role requires it (not for offboarding)
     let inspectorNumberAssigned = false
-    if (starter.entityId && starter.roleTitle) {
+    if (starter.entityId && starter.roleTitle && starter.type !== 'OFFBOARDING') {
       try {
         const { roleRequiresInspectorNumber, assignInspectorNumber } = await import('@/lib/inspector-number')
         const needsNumber = await roleRequiresInspectorNumber(starter.entityId, starter.roleTitle)
