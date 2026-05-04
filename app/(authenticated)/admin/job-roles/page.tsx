@@ -18,6 +18,7 @@ interface Entity {
   id: string
   name: string
   colorHex: string
+  inspectorNumberEnabled?: boolean
 }
 
 interface JobRole {
@@ -27,10 +28,12 @@ interface JobRole {
   description?: string | null
   isActive: boolean
   order: number
+  requiresInspectorNumber: boolean
   entity: {
     id: string
     name: string
     colorHex: string
+    inspectorNumberEnabled?: boolean
   }
   _count?: {
     materials: number
@@ -54,6 +57,7 @@ export default function JobRolesPage() {
     description: '',
     isActive: true,
     order: 0,
+    requiresInspectorNumber: false,
   })
 
   useEffect(() => {
@@ -84,6 +88,7 @@ export default function JobRolesPage() {
       description: '',
       isActive: true,
       order: 0,
+      requiresInspectorNumber: false,
     })
     setDialogOpen(true)
   }
@@ -96,6 +101,7 @@ export default function JobRolesPage() {
       description: role.description || '',
       isActive: role.isActive,
       order: role.order,
+      requiresInspectorNumber: role.requiresInspectorNumber,
     })
     setDialogOpen(true)
   }
@@ -235,6 +241,11 @@ export default function JobRolesPage() {
                               {!role.isActive && (
                                 <Badge variant="secondary">{tc('inactive')}</Badge>
                               )}
+                              {role.requiresInspectorNumber && (
+                                <Badge variant="outline" className="text-blue-600 border-blue-300 bg-blue-50">
+                                  #
+                                </Badge>
+                              )}
                               {role.isActive && role._count && role._count.materials === 0 && (
                                 <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 gap-1">
                                   <AlertTriangle className="h-3 w-3" />
@@ -354,6 +365,21 @@ export default function JobRolesPage() {
               />
               <Label htmlFor="isActive">Actief</Label>
             </div>
+            {(() => {
+              const ent = entities.find(e => e.id === formData.entityId)
+              return ent?.inspectorNumberEnabled ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="requiresInspectorNumber"
+                    checked={formData.requiresInspectorNumber}
+                    onChange={(e) => setFormData({ ...formData, requiresInspectorNumber: e.target.checked })}
+                    className="rounded"
+                  />
+                  <Label htmlFor="requiresInspectorNumber">Vereist inspecteurnummer</Label>
+                </div>
+              ) : null
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>

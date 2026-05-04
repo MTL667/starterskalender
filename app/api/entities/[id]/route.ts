@@ -9,6 +9,9 @@ const UpdateEntitySchema = z.object({
   colorHex: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   notifyEmails: z.array(z.string().email()).optional(),
   isActive: z.boolean().optional(),
+  inspectorNumberEnabled: z.boolean().optional(),
+  inspectorNumberStart: z.number().int().positive().optional(),
+  inspectorNumberLabel: z.string().min(1).optional(),
 })
 
 // PATCH - Update entity (admin only)

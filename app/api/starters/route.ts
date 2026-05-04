@@ -83,12 +83,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
+      const searchNum = parseInt(search)
       andConditions.push({
         OR: [
           { firstName: { contains: search, mode: 'insensitive' } },
           { lastName: { contains: search, mode: 'insensitive' } },
           { roleTitle: { contains: search, mode: 'insensitive' } },
           { region: { contains: search, mode: 'insensitive' } },
+          ...(Number.isInteger(searchNum) ? [{ inspectorNumber: searchNum }] : []),
         ],
       })
     }
@@ -113,6 +115,8 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             colorHex: true,
+            inspectorNumberEnabled: true,
+            inspectorNumberLabel: true,
           },
         },
         fromEntity: {
@@ -273,6 +277,20 @@ export async function POST(request: NextRequest) {
         }
       } catch (matError) {
         console.error('Failed to auto-assign materials:', matError)
+      }
+    }
+
+    // Auto-assign inspector number if the role requires it
+    if (starter.entityId && starter.roleTitle) {
+      try {
+        const { roleRequiresInspectorNumber, assignInspectorNumber } = await import('@/lib/inspector-number')
+        const needsNumber = await roleRequiresInspectorNumber(starter.entityId, starter.roleTitle)
+        if (needsNumber) {
+          const inspectorNumber = await assignInspectorNumber(starter.id, starter.entityId, user.id)
+          console.log(`🔢 Auto-assigned inspector number ${inspectorNumber} to ${starter.firstName} ${starter.lastName}`)
+        }
+      } catch (err) {
+        console.error('Failed to auto-assign inspector number:', err)
       }
     }
 

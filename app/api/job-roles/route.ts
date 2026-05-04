@@ -11,6 +11,7 @@ const JobRoleSchema = z.object({
   description: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
   order: z.number().int().default(0),
+  requiresInspectorNumber: z.boolean().default(false),
 })
 
 // GET - List job roles (optioneel gefilterd op entityId)
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
         description: data.description || null,
         isActive: data.isActive,
         order: data.order,
+        requiresInspectorNumber: data.requiresInspectorNumber,
       },
       include: {
         entity: true,

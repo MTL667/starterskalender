@@ -27,6 +27,7 @@ const UpdateStarterSchema = z.object({
   experienceEntity: z.string().nullable().optional(),
   phoneNumber: z.string().nullable().optional(),
   desiredEmail: z.string().email().nullable().optional(),
+  inspectorNumber: z.number().int().positive().nullable().optional(),
   salary: z
     .union([z.number(), z.string()])
     .nullable()
@@ -105,6 +106,27 @@ export async function PATCH(
       console.log(`🔒 Dropped protected fields on update of ${id}: ${dropped.join(', ')}`)
     }
 
+    // Inspector number validation: immutable once set, unique within entity
+    if (data.inspectorNumber !== undefined && data.inspectorNumber !== null) {
+      if (existingStarter?.entityId) {
+        const current = await prisma.starter.findUnique({
+          where: { id },
+          select: { inspectorNumber: true },
+        })
+        if (current?.inspectorNumber !== null) {
+          return NextResponse.json(
+            { error: 'Inspecteurnummer kan niet gewijzigd worden na toekenning' },
+            { status: 400 },
+          )
+        }
+        const { validateInspectorNumber } = await import('@/lib/inspector-number')
+        const validationError = await validateInspectorNumber(existingStarter.entityId, data.inspectorNumber, id)
+        if (validationError) {
+          return NextResponse.json({ error: validationError }, { status: 400 })
+        }
+      }
+    }
+
     const updateData: any = {}
 
     if (data.firstName !== undefined) updateData.firstName = normalizeString(data.firstName)
@@ -125,6 +147,7 @@ export async function PATCH(
     if (data.salary !== undefined) updateData.salary = data.salary ?? null
     if (data.salaryCurrency !== undefined) updateData.salaryCurrency = data.salaryCurrency ?? null
     if (data.bankAccount !== undefined) updateData.bankAccount = normalizeString(data.bankAccount)
+    if (data.inspectorNumber !== undefined) updateData.inspectorNumber = data.inspectorNumber
 
     const isActivatingPending = existingStarter?.isPendingBoarding && data.startDate
 
@@ -156,6 +179,7 @@ export async function PATCH(
         name: `${starter.firstName} ${starter.lastName}`,
         changes: Object.keys(updateData),
         ...(isActivatingPending ? { activatedFromPending: true } : {}),
+        ...(data.inspectorNumber ? { inspectorNumber: data.inspectorNumber, inspectorNumberMethod: 'manual' } : {}),
       },
     })
 

@@ -314,6 +314,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       [t('exportStartDate')]: s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
       [t('exportWeek')]: s.weekNumber || '',
       [t('exportEntity')]: s.entity?.name || '',
+      Inspecteurnummer: (s as any).inspectorNumber || '',
     }))
 
     const headers = Object.keys(csvData[0] || {})

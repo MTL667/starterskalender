@@ -28,6 +28,7 @@ export interface Starter {
   experienceEntity?: string | null
   phoneNumber?: string | null
   desiredEmail?: string | null
+  inspectorNumber?: number | null
   entity?: EntityRef | null
 }
 

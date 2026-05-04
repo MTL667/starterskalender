@@ -51,6 +51,7 @@ interface Starter {
   experienceEntity?: string | null
   phoneNumber?: string | null
   desiredEmail?: string | null
+  inspectorNumber?: number | null
   photoUploadId?: string | null
   photoDriveId?: string | null
   photoItemId?: string | null
@@ -60,6 +61,8 @@ interface Starter {
     id: string
     name?: string
     colorHex?: string
+    inspectorNumberEnabled?: boolean
+    inspectorNumberLabel?: string
   } | null
   fromEntity?: {
     id: string
@@ -1169,6 +1172,15 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 />
               </div>
             </div>
+
+            {isEdit && starter?.inspectorNumber != null && (
+              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {starter.entity?.inspectorNumberLabel || 'Inspecteurnummer'}
+                </span>
+                <span className="font-mono text-lg font-semibold">{starter.inspectorNumber}</span>
+              </div>
+            )}
 
             <div className={`grid gap-4 ${formData.type === 'ONBOARDING' ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {formData.type === 'ONBOARDING' && (

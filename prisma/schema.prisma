@@ -167,8 +167,14 @@ model Entity {
   tasks                   Task[] // Taken gekoppeld aan deze entiteit
   taskAssignments         TaskAssignment[] // Taak verantwoordelijken voor deze entiteit
   signatureTemplate       SignatureTemplate? // Email signature template voor deze entiteit
-  createdAt               DateTime                 @default(now())
-  updatedAt               DateTime                 @updatedAt
+
+  // Inspecteurnummer configuratie
+  inspectorNumberEnabled Boolean @default(false)
+  inspectorNumberStart   Int     @default(1)
+  inspectorNumberLabel   String  @default("Inspecteurnummer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([isActive])
 }
@@ -306,6 +312,9 @@ model Starter {
   photoFileName  String?
   photoMimeType  String?
 
+  // Inspecteurnummer — per entiteit opeenvolgend, definitief na toekenning
+  inspectorNumber Int?
+
   createdBy        String? // User ID die het aanmaakte
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
@@ -313,6 +322,7 @@ model Starter {
   tasks            Task[] // Taken gekoppeld aan deze starter
   documents        StarterDocument[] // Documenten voor ondertekening
 
+  @@unique([entityId, inspectorNumber])
   @@index([type])
   @@index([year, startDate])
   @@index([entityId, year])
@@ -323,17 +333,18 @@ model Starter {
 }
 
 model JobRole {
-  id             String            @id @default(cuid())
-  entityId       String
-  entity         Entity            @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  title          String // Functietitel (bv. "Senior Developer")
-  description    String?           @db.Text // Optionele beschrijving
-  isActive       Boolean           @default(true)
-  order          Int               @default(0) // Sorteervolgorde
-  blockedPeriods BlockedPeriod[]
-  materials      JobRoleMaterial[] // Materiaal gekoppeld aan deze functie
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  id                      String            @id @default(cuid())
+  entityId                String
+  entity                  Entity            @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  title                   String // Functietitel (bv. "Senior Developer")
+  description             String?           @db.Text // Optionele beschrijving
+  isActive                Boolean           @default(true)
+  order                   Int               @default(0) // Sorteervolgorde
+  requiresInspectorNumber Boolean           @default(false)
+  blockedPeriods          BlockedPeriod[]
+  materials               JobRoleMaterial[] // Materiaal gekoppeld aan deze functie
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
 
   @@unique([entityId, title])
   @@index([entityId, isActive])

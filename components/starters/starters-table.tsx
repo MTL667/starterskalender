@@ -152,7 +152,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         return (
           `${starter.firstName} ${starter.lastName}`.toLowerCase().includes(query) ||
           starter.roleTitle?.toLowerCase().includes(query) ||
-          starter.region?.toLowerCase().includes(query)
+          starter.region?.toLowerCase().includes(query) ||
+          starter.inspectorNumber?.toString().includes(query)
         )
       }
 
@@ -250,6 +251,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         Startdatum: s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
         Week: s.weekNumber || '',
         Entiteit: s.entity?.name || '',
+        Inspecteurnummer: s.inspectorNumber || '',
       }
     })
 
@@ -356,6 +358,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         [t('columnStartDate')]: s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
         [t('columnWeek')]: s.weekNumber || '',
         [t('columnEntity')]: s.entity?.name || '',
+        Inspecteurnummer: s.inspectorNumber || '',
       }
     })
 
@@ -373,6 +376,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       { wch: 15 }, // Startdatum
       { wch: 10 }, // Week
       { wch: 20 }, // Entiteit
+      { wch: 18 }, // Inspecteurnummer
     ]
 
     // Create workbook

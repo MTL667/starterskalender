@@ -10,6 +10,7 @@ const UpdateJobRoleSchema = z.object({
   description: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
   order: z.number().int().optional(),
+  requiresInspectorNumber: z.boolean().optional(),
 })
 
 // PATCH - Update job role (alleen HR_ADMIN)
@@ -34,6 +35,7 @@ export async function PATCH(
         ...(data.description !== undefined && { description: data.description }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
         ...(data.order !== undefined && { order: data.order }),
+        ...(data.requiresInspectorNumber !== undefined && { requiresInspectorNumber: data.requiresInspectorNumber }),
       },
       include: {
         entity: true,

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Plus, Pencil, ArrowLeft } from 'lucide-react'
+import { Plus, Pencil, ArrowLeft, Upload } from 'lucide-react'
 import Link from 'next/link'
 
 interface Entity {
@@ -17,6 +17,9 @@ interface Entity {
   colorHex: string
   notifyEmails: string[]
   isActive: boolean
+  inspectorNumberEnabled: boolean
+  inspectorNumberStart: number
+  inspectorNumberLabel: string
 }
 
 export default function EntitiesAdminPage() {
@@ -25,11 +28,18 @@ export default function EntitiesAdminPage() {
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [importDialogOpen, setImportDialogOpen] = useState(false)
+  const [importEntityId, setImportEntityId] = useState<string>('')
+  const [importResult, setImportResult] = useState<any>(null)
+  const [importing, setImporting] = useState(false)
   const [selectedEntity, setSelectedEntity] = useState<Entity | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     colorHex: '#3b82f6',
     notifyEmails: '',
+    inspectorNumberEnabled: false,
+    inspectorNumberStart: 1,
+    inspectorNumberLabel: 'Inspecteurnummer',
   })
 
   useEffect(() => {
@@ -54,6 +64,9 @@ export default function EntitiesAdminPage() {
       name: entity.name,
       colorHex: entity.colorHex,
       notifyEmails: entity.notifyEmails.join(', '),
+      inspectorNumberEnabled: entity.inspectorNumberEnabled,
+      inspectorNumberStart: entity.inspectorNumberStart,
+      inspectorNumberLabel: entity.inspectorNumberLabel,
     })
     setDialogOpen(true)
   }
@@ -64,6 +77,9 @@ export default function EntitiesAdminPage() {
       name: '',
       colorHex: '#3b82f6',
       notifyEmails: '',
+      inspectorNumberEnabled: false,
+      inspectorNumberStart: 1,
+      inspectorNumberLabel: 'Inspecteurnummer',
     })
     setDialogOpen(true)
   }
@@ -76,10 +92,13 @@ export default function EntitiesAdminPage() {
       .map(e => e.trim())
       .filter(e => e)
 
-    const data = {
+    const data: any = {
       name: formData.name,
       colorHex: formData.colorHex,
       notifyEmails: emails,
+      inspectorNumberEnabled: formData.inspectorNumberEnabled,
+      inspectorNumberStart: formData.inspectorNumberStart,
+      inspectorNumberLabel: formData.inspectorNumberLabel,
     }
 
     try {
@@ -99,6 +118,56 @@ export default function EntitiesAdminPage() {
     } catch (error) {
       console.error('Error saving entity:', error)
       alert(tc('errorSaving'))
+    }
+  }
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !importEntityId) return
+
+    setImporting(true)
+    setImportResult(null)
+
+    try {
+      const text = await file.text()
+      const lines = text.trim().split('\n')
+      if (lines.length < 2) {
+        setImportResult({ error: 'CSV moet minstens een header en één rij bevatten' })
+        return
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g, ''))
+      const fnIdx = headers.findIndex(h => h === 'firstname' || h === 'voornaam')
+      const lnIdx = headers.findIndex(h => h === 'lastname' || h === 'achternaam')
+      const numIdx = headers.findIndex(h => h === 'inspectornumber' || h === 'inspecteurnummer' || h === 'nummer')
+
+      if (fnIdx === -1 || lnIdx === -1 || numIdx === -1) {
+        setImportResult({ error: 'CSV headers moeten firstName/voornaam, lastName/achternaam en inspectorNumber/inspecteurnummer/nummer bevatten' })
+        return
+      }
+
+      const rows = lines.slice(1).filter(l => l.trim()).map(line => {
+        const cols = line.split(',').map(c => c.trim().replace(/"/g, ''))
+        return {
+          firstName: cols[fnIdx],
+          lastName: cols[lnIdx],
+          inspectorNumber: parseInt(cols[numIdx]),
+        }
+      })
+
+      const res = await fetch(`/api/entities/${importEntityId}/import-inspector-numbers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows }),
+      })
+
+      const result = await res.json()
+      setImportResult(result)
+    } catch (err) {
+      setImportResult({ error: 'Fout bij verwerken van bestand' })
+    } finally {
+      setImporting(false)
+      e.target.value = ''
     }
   }
 
@@ -153,10 +222,26 @@ export default function EntitiesAdminPage() {
                       )}
                     </div>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(entity)}>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    {tc('edit')}
-                  </Button>
+                  <div className="flex gap-2">
+                    {entity.inspectorNumberEnabled && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setImportEntityId(entity.id)
+                          setImportResult(null)
+                          setImportDialogOpen(true)
+                        }}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Import
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => handleEdit(entity)}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      {tc('edit')}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -218,6 +303,45 @@ export default function EntitiesAdminPage() {
                   {t('multipleEmails')}
                 </p>
               </div>
+
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="inspectorNumberEnabled"
+                    checked={formData.inspectorNumberEnabled}
+                    onChange={(e) => setFormData({ ...formData, inspectorNumberEnabled: e.target.checked })}
+                    className="rounded"
+                  />
+                  <Label htmlFor="inspectorNumberEnabled">Inspecteurnummer activeren</Label>
+                </div>
+                {formData.inspectorNumberEnabled && (
+                  <div className="space-y-3 pl-6">
+                    <div>
+                      <Label htmlFor="inspectorNumberLabel">Label</Label>
+                      <Input
+                        id="inspectorNumberLabel"
+                        value={formData.inspectorNumberLabel}
+                        onChange={(e) => setFormData({ ...formData, inspectorNumberLabel: e.target.value })}
+                        placeholder="Inspecteurnummer"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="inspectorNumberStart">Startnummer</Label>
+                      <Input
+                        id="inspectorNumberStart"
+                        type="number"
+                        min={1}
+                        value={formData.inspectorNumberStart}
+                        onChange={(e) => setFormData({ ...formData, inspectorNumberStart: parseInt(e.target.value) || 1 })}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Nummers worden automatisch opeenvolgend toegekend vanaf dit startnummer.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <DialogFooter className="mt-6">
@@ -229,6 +353,54 @@ export default function EntitiesAdminPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Inspecteurnummers importeren</DialogTitle>
+            <DialogDescription>
+              Upload een CSV-bestand met kolommen: voornaam, achternaam, nummer
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium mb-1">CSV formaat:</p>
+              <code className="block bg-muted p-2 rounded text-xs">
+                voornaam,achternaam,nummer<br />
+                Jan,Janssens,1001<br />
+                Piet,Pieters,1002
+              </code>
+            </div>
+            <Input
+              type="file"
+              accept=".csv"
+              onChange={handleImportCSV}
+              disabled={importing}
+            />
+            {importing && <p className="text-sm text-muted-foreground">Importeren...</p>}
+            {importResult && !importResult.error && (
+              <div className="text-sm space-y-1">
+                <p className="text-green-600 font-medium">{importResult.imported} van {importResult.total} geïmporteerd</p>
+                {importResult.errors?.length > 0 && (
+                  <div className="text-red-600 max-h-40 overflow-y-auto">
+                    {importResult.errors.map((e: any) => (
+                      <p key={e.row}>Rij {e.row}: {e.error}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {importResult?.error && (
+              <p className="text-sm text-red-600">{importResult.error}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImportDialogOpen(false)}>
+              Sluiten
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
