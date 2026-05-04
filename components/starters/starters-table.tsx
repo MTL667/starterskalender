@@ -304,11 +304,12 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
         s.startDate ? new Date(s.startDate).toLocaleDateString('nl-BE') : 'Pending',
         s.weekNumber?.toString() || '',
         s.entity?.name || '',
+        s.inspectorNumber?.toString() || '',
       ]
     })
 
     autoTable(doc, {
-      head: [[t('columnFirstName'), t('columnLastName'), t('columnEmail'), t('columnPhone'), t('columnLanguage'), t('columnRole'), t('columnRegion'), t('columnExperience'), t('columnStartDate'), t('columnWeek'), t('columnEntity')]],
+      head: [[t('columnFirstName'), t('columnLastName'), t('columnEmail'), t('columnPhone'), t('columnLanguage'), t('columnRole'), t('columnRegion'), t('columnExperience'), t('columnStartDate'), t('columnWeek'), t('columnEntity'), '#']],
       body: tableData,
       startY: 35,
       styles: { fontSize: 7 },
@@ -552,6 +553,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                   >
                     {t('columnName')} {getSortIcon('name')}
                   </th>
+                  <th className="pb-3 font-medium">#</th>
                   <th className="pb-3 font-medium">{t('columnLanguage')}</th>
                   <th 
                     className="pb-3 font-medium cursor-pointer hover:text-foreground transition-colors group"
@@ -600,6 +602,9 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                       </span>
                     </td>
                     <td className="py-3 font-medium">{starter.firstName} {starter.lastName}</td>
+                    <td className="py-3 text-sm font-mono text-muted-foreground">
+                      {starter.inspectorNumber || ''}
+                    </td>
                     <td className="py-3 text-sm">
                       <span title={starter.language === 'NL' ? t('languageNL') : t('languageFR')}>
                         {starter.language === 'NL' ? '🇳🇱' : '🇫🇷'} {starter.language || 'NL'}
