@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { canMutateStarter } from '@/lib/rbac'
+import { getCurrentAuthorizedUser, can } from '@/lib/authz'
 import { assignInspectorNumber } from '@/lib/inspector-number'
 
 export async function POST(
@@ -18,6 +19,11 @@ export async function POST(
     const canMutate = await canMutateStarter(user, id)
     if (!canMutate) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const authUser = await getCurrentAuthorizedUser()
+    if (!can(authUser, 'starters:write:inspectornumber')) {
+      return NextResponse.json({ error: 'Geen rechten om inspecteurnummer toe te kennen' }, { status: 403 })
     }
 
     const starter = await prisma.starter.findUnique({

@@ -106,8 +106,15 @@ export async function PATCH(
       console.log(`🔒 Dropped protected fields on update of ${id}: ${dropped.join(', ')}`)
     }
 
-    // Inspector number validation: immutable once set, unique within entity
+    // Inspector number validation: requires permission, immutable once set, unique within entity
     if (data.inspectorNumber !== undefined && data.inspectorNumber !== null) {
+      const { can } = await import('@/lib/authz')
+      if (!can(authz, 'starters:write:inspectornumber')) {
+        return NextResponse.json(
+          { error: 'Geen rechten om inspecteurnummer te wijzigen' },
+          { status: 403 },
+        )
+      }
       if (existingStarter?.entityId) {
         const current = await prisma.starter.findUnique({
           where: { id },

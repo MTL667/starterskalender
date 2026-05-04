@@ -780,6 +780,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const userPerms: string[] = (session?.user as any)?.perms ?? []
   const isMaterialMgr = isAdmin || userPermissions.includes('MATERIAL_MANAGER')
   const canManagePhoto = isAdmin || userPerms.includes('starters:photo:manage')
+  const canEditInspectorNumber = isAdmin || userPerms.includes('starters:write:inspectornumber')
 
   const handleRegenerateTasks = async (mode: 'append' | 'reset' = 'append') => {
     if (!starter || regeneratingTasks) return
@@ -1182,7 +1183,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 <span className="font-mono text-lg font-semibold">{starter.inspectorNumber}</span>
               </div>
             )}
-            {isEdit && starter?.inspectorNumber == null && starter?.type !== 'OFFBOARDING' && starter?.entity?.inspectorNumberEnabled && (() => {
+            {isEdit && canEditInspectorNumber && starter?.inspectorNumber == null && starter?.type !== 'OFFBOARDING' && starter?.entity?.inspectorNumberEnabled && (() => {
               const currentRole = jobRoles.find(r => r.title === starter?.roleTitle)
               if (!currentRole?.requiresInspectorNumber) return null
               return (
