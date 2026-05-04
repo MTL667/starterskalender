@@ -1162,6 +1162,8 @@
     "orange": "Aandacht nodig",
     "red": "Achterstand",
     "overallHealth": "Onboarding voortgang",
+    "offboardingHealth": "Offboarding voortgang",
+    "migrationHealth": "Migratie voortgang",
     "tasks": "Taken",
     "materials": "Materialen",
     "documents": "Documenten",

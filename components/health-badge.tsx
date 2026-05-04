@@ -52,7 +52,7 @@ export function HealthBadge({ score }: { score: StarterHealthScore }) {
   )
 }
 
-export function HealthProgressBar({ score }: { score: StarterHealthScore }) {
+export function HealthProgressBar({ score, starterType }: { score: StarterHealthScore; starterType?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION' }) {
   const t = useTranslations('health')
 
   const categories = [
@@ -65,7 +65,9 @@ export function HealthProgressBar({ score }: { score: StarterHealthScore }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">{t('overallHealth')}</span>
+        <span className="text-sm font-medium">
+          {starterType === 'OFFBOARDING' ? t('offboardingHealth') : starterType === 'MIGRATION' ? t('migrationHealth') : t('overallHealth')}
+        </span>
         <HealthBadge score={score} />
       </div>
 

@@ -898,7 +898,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
         {isEdit && healthScore && !starter?.isCancelled && (
           <div className="border rounded-lg p-4 bg-muted/30">
-            <HealthProgressBar score={healthScore} />
+            <HealthProgressBar score={healthScore} starterType={starter?.type} />
           </div>
         )}
 

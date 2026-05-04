@@ -1161,6 +1161,8 @@
     "orange": "Attention requise",
     "red": "En retard",
     "overallHealth": "Progression onboarding",
+    "offboardingHealth": "Progression offboarding",
+    "migrationHealth": "Progression migration",
     "tasks": "Tâches",
     "materials": "Matériaux",
     "documents": "Documents",
