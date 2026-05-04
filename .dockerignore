@@ -20,8 +20,9 @@ Dockerfile*
 # Exclude other apps
 Rooms/
 
-# Exclude local data
+# Exclude local/runtime data
 data/
+.cron-env
 _bmad*/
 _bmad-output/
 _tmp/

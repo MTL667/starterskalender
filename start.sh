@@ -42,25 +42,28 @@ else
   echo "  ⚠️  CRON_SECRET is not set — cron endpoints are unprotected!"
 fi
 
+# Write cron env to file (BusyBox crond does NOT support VAR=value in crontab)
+echo "CRON_SECRET=${CRON_SECRET:-}" > /app/.cron-env
+chmod 600 /app/.cron-env
+
 cat > /etc/crontabs/root << CRONTAB
 # Airport - Automated Email Cron Jobs (generated at startup)
 # Timezone: ${TZ:-UTC}
-CRON_SECRET=${CRON_SECRET:-}
 
 # Wekelijkse reminder - elke dag om 08:00
-0 8 * * * /app/cron-curl.sh /api/cron/send-weekly-reminders > /proc/1/fd/1 2>&1
+0 8 * * * . /app/.cron-env; /app/cron-curl.sh /api/cron/send-weekly-reminders > /proc/1/fd/1 2>&1
 
 # Maandoverzicht - 1e van elke maand om 09:00
-0 9 1 * * /app/cron-curl.sh /api/cron/send-monthly-summary > /proc/1/fd/1 2>&1
+0 9 1 * * . /app/.cron-env; /app/cron-curl.sh /api/cron/send-monthly-summary > /proc/1/fd/1 2>&1
 
 # Kwartaaloverzicht - 1e van kwartaal om 10:00 (jan/apr/jul/okt)
-0 10 1 1,4,7,10 * /app/cron-curl.sh /api/cron/send-quarterly-summary > /proc/1/fd/1 2>&1
+0 10 1 1,4,7,10 * . /app/.cron-env; /app/cron-curl.sh /api/cron/send-quarterly-summary > /proc/1/fd/1 2>&1
 
 # Jaaroverzicht - 1 januari om 11:00
-0 11 1 1 * /app/cron-curl.sh /api/cron/send-yearly-summary > /proc/1/fd/1 2>&1
+0 11 1 1 * . /app/.cron-env; /app/cron-curl.sh /api/cron/send-yearly-summary > /proc/1/fd/1 2>&1
 
 # Materialen leverdatum check - elke werkdag om 08:30
-30 8 * * 1-5 /app/cron-curl.sh /api/cron/check-material-deliveries > /proc/1/fd/1 2>&1
+30 8 * * 1-5 . /app/.cron-env; /app/cron-curl.sh /api/cron/check-material-deliveries > /proc/1/fd/1 2>&1
 
 CRONTAB
 chmod 0644 /etc/crontabs/root
