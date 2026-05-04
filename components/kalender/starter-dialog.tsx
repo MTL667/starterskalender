@@ -82,6 +82,7 @@ interface JobRole {
   title: string
   entityId: string
   isActive: boolean
+  requiresInspectorNumber?: boolean
 }
 
 interface Employee {
@@ -1181,6 +1182,72 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 <span className="font-mono text-lg font-semibold">{starter.inspectorNumber}</span>
               </div>
             )}
+            {isEdit && starter?.inspectorNumber == null && starter?.entity?.inspectorNumberEnabled && (() => {
+              const currentRole = jobRoles.find(r => r.title === starter?.roleTitle)
+              if (!currentRole?.requiresInspectorNumber) return null
+              return (
+                <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg space-y-2">
+                  <Label htmlFor="inspectorNumber" className="text-sm font-medium">
+                    {starter.entity?.inspectorNumberLabel || 'Inspecteurnummer'}
+                    <span className="text-xs text-muted-foreground ml-2">(nog niet toegekend)</span>
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="inspectorNumber"
+                      type="number"
+                      min={1}
+                      placeholder="Voer nummer in of laat automatisch toekennen"
+                      className="font-mono"
+                      onChange={(e) => {
+                        const val = e.target.value ? parseInt(e.target.value) : null
+                        setFormData({ ...formData, inspectorNumber: val } as any)
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={loading}
+                      onClick={async () => {
+                        if (!starter?.id || !starter?.entity?.id) return
+                        setLoading(true)
+                        try {
+                          const manualNum = (formData as any).inspectorNumber
+                          if (manualNum) {
+                            const res = await fetch(`/api/starters/${starter.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ inspectorNumber: manualNum }),
+                            })
+                            if (!res.ok) {
+                              const err = await res.json()
+                              alert(err.error || 'Fout bij opslaan')
+                              return
+                            }
+                          } else {
+                            const res = await fetch(`/api/starters/${starter.id}/assign-inspector-number`, {
+                              method: 'POST',
+                            })
+                            if (!res.ok) {
+                              const err = await res.json()
+                              alert(err.error || 'Fout bij toekennen')
+                              return
+                            }
+                          }
+                          onClose(true)
+                        } catch {
+                          alert('Fout bij toekennen inspecteurnummer')
+                        } finally {
+                          setLoading(false)
+                        }
+                      }}
+                    >
+                      {loading ? 'Bezig...' : (formData as any).inspectorNumber ? 'Opslaan' : 'Auto toekennen'}
+                    </Button>
+                  </div>
+                </div>
+              )
+            })()}
 
             <div className={`grid gap-4 ${formData.type === 'ONBOARDING' ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {formData.type === 'ONBOARDING' && (

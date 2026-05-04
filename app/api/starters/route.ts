@@ -281,12 +281,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Auto-assign inspector number if the role requires it
+    let inspectorNumberAssigned = false
     if (starter.entityId && starter.roleTitle) {
       try {
         const { roleRequiresInspectorNumber, assignInspectorNumber } = await import('@/lib/inspector-number')
         const needsNumber = await roleRequiresInspectorNumber(starter.entityId, starter.roleTitle)
         if (needsNumber) {
           const inspectorNumber = await assignInspectorNumber(starter.id, starter.entityId, user.id)
+          inspectorNumberAssigned = true
           console.log(`🔢 Auto-assigned inspector number ${inspectorNumber} to ${starter.firstName} ${starter.lastName}`)
         }
       } catch (err) {
@@ -298,7 +300,12 @@ export async function POST(request: NextRequest) {
       eventBus.emit({ type: 'starter:created', entityId: starter.entityId, payload: { starterId: starter.id } })
     }
 
-    return NextResponse.json(starter, { status: 201 })
+    // Refetch if inspector number was assigned (so the response includes it)
+    const response = inspectorNumberAssigned
+      ? await prisma.starter.findUnique({ where: { id: starter.id }, include: { entity: { select: { id: true, name: true, colorHex: true, inspectorNumberEnabled: true, inspectorNumberLabel: true } }, fromEntity: { select: { id: true, name: true, colorHex: true } } } })
+      : starter
+
+    return NextResponse.json(response, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })
