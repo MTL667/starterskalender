@@ -8,7 +8,7 @@ import {
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
 import { verifyCronAuth } from '@/lib/cron-auth'
-import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity } from '@/lib/cron-email-helpers'
+import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity, tt, type EmailLocale } from '@/lib/cron-email-helpers'
 
 /**
  * Cron Job: Kwartaal overzicht
@@ -159,24 +159,25 @@ export async function GET(req: Request) {
       }
 
       try {
+        const locale = (user.locale || 'nl') as EmailLocale
         const startersByEntity = groupByEntity(userStarters)
-        const startersListHtml = renderAllEntities(userStarters)
+        const startersListHtml = renderAllEntities(userStarters, locale)
         const counts = countByType(userStarters)
-        const subjectParts = buildSubjectParts(counts)
-        const summaryHtml = renderSummaryBlocks(counts)
+        const subjectParts = buildSubjectParts(counts, locale)
+        const summaryHtml = renderSummaryBlocks(counts, locale)
         const entityNames = Object.keys(startersByEntity).join(', ')
 
-        const subject = `📈 Kwartaaloverzicht Q${quarter} ${year} - ${subjectParts}`
+        const subject = `📈 ${tt('quarterlyOverview', locale)} Q${quarter} ${year} - ${subjectParts}`
         const html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1f2937;">📈 Kwartaaloverzicht Q${quarter} ${year}</h2>
-            <p style="color: #4b5563; line-height: 1.6;">Hallo ${user.name || user.email},</p>
+            <h2 style="color: #1f2937;">📈 ${tt('quarterlyOverview', locale)} Q${quarter} ${year}</h2>
+            <p style="color: #4b5563; line-height: 1.6;">${tt('hello', locale)} ${user.name || user.email},</p>
             ${summaryHtml}
             ${startersListHtml}
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
             <p style="color: #9ca3af; font-size: 12px;">
-              Kwartaaloverzicht voor ${entityNames}.<br/>
-              Wijzig je voorkeuren in je profielinstellingen.
+              ${tt('quarterlyPrefNote', locale)} ${entityNames}.<br/>
+              ${tt('monthlyPrefNote', locale)}
             </p>
           </div>
         `

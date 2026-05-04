@@ -21,6 +21,7 @@ interface User {
   email: string
   name: string | null
   role: string
+  locale: string
   permissions: string[]
   createdAt: string
   lastLoginAt: string | null
@@ -146,6 +147,20 @@ export default function UsersAdminPage() {
     } catch (error) {
       console.error('Error updating role:', error)
       alert(t('errorUpdatingRole'))
+    }
+  }
+
+  const handleUpdateLocale = async (userId: string, newLocale: string) => {
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale: newLocale }),
+      })
+      if (!res.ok) throw new Error('Failed to update locale')
+      fetchUsers()
+    } catch (error) {
+      console.error('Error updating locale:', error)
     }
   }
 
@@ -337,6 +352,15 @@ export default function UsersAdminPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-[52px] font-medium text-xs"
+                      onClick={() => handleUpdateLocale(user.id, user.locale === 'fr' ? 'nl' : 'fr')}
+                      title={user.locale === 'fr' ? 'Taal: Frans → Nederlands' : 'Langue: Néerlandais → Français'}
+                    >
+                      {user.locale === 'fr' ? '🇫🇷 FR' : '🇳🇱 NL'}
+                    </Button>
                     <Select
                       value={user.role}
                       onValueChange={(value) => handleUpdateRole(user.id, value)}

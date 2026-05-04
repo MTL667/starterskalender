@@ -11,12 +11,15 @@ import { LanguageSwitcher } from '@/components/layout/language-switcher'
 import { useSSEStatus } from '@/components/providers/sse-provider'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
+import { useRouter } from 'next/navigation'
 
 export function Navbar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { data: session } = useSession()
   const sseStatus = useSSEStatus()
+  const currentLocale = useLocale()
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoLoading, setLogoLoading] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -27,6 +30,14 @@ export function Navbar() {
   useEffect(() => {
     setMobileOpen(false)
   }, [pathname])
+
+  useEffect(() => {
+    const userLocale = (session?.user as any)?.locale
+    if (userLocale && userLocale !== currentLocale) {
+      document.cookie = `NEXT_LOCALE=${userLocale};path=/;max-age=31536000`
+      router.refresh()
+    }
+  }, [(session?.user as any)?.locale])
 
   useEffect(() => {
     // Load logo from system settings

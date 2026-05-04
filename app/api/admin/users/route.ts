@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         id: true,
         email: true,
         name: true,
+        locale: true,
         legacyRole: true,
         legacyPermissions: true,
         createdAt: true,

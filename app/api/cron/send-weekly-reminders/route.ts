@@ -8,7 +8,7 @@ import {
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
 import { verifyCronAuth } from '@/lib/cron-auth'
-import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity } from '@/lib/cron-email-helpers'
+import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity, tt, type EmailLocale } from '@/lib/cron-email-helpers'
 
 /**
  * Cron Job: Wekelijkse reminder - 1 week voor startdatum
@@ -158,21 +158,22 @@ export async function GET(req: Request) {
       }
 
       try {
+        const locale = (user.locale || 'nl') as EmailLocale
         const startersByEntity = groupByEntity(userStarters)
-        const startersListHtml = renderAllEntities(userStarters)
+        const startersListHtml = renderAllEntities(userStarters, locale)
         const counts = countByType(userStarters)
-        const subjectParts = buildSubjectParts(counts)
-        const summaryHtml = renderSummaryBlocks(counts)
+        const subjectParts = buildSubjectParts(counts, locale)
+        const summaryHtml = renderSummaryBlocks(counts, locale)
 
-        const subject = `🔔 ${subjectParts} volgende week`
+        const subject = `🔔 ${subjectParts} ${tt('nextWeek', locale)}`
         const html = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">` +
-          `<h2 style="color: #1f2937;">👋 Hallo ${user.name || user.email},</h2>` +
-          `<p style="color: #4b5563; line-height: 1.6;">Dit is een herinnering voor volgende week:</p>` +
+          `<h2 style="color: #1f2937;">👋 ${tt('hello', locale)} ${user.name || user.email},</h2>` +
+          `<p style="color: #4b5563; line-height: 1.6;">${tt('nextWeekReminder', locale)}</p>` +
           summaryHtml +
           startersListHtml +
-          `<p style="color: #4b5563; line-height: 1.6;">Zorg ervoor dat alle voorbereidingen getroffen zijn!</p>` +
+          `<p style="color: #4b5563; line-height: 1.6;">${tt('ensurePrep', locale)}</p>` +
           `<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">` +
-          `<p style="color: #9ca3af; font-size: 12px;">Je ontvangt deze email omdat je geabonneerd bent op wekelijkse reminders.<br/>Wijzig je voorkeuren in je profielinstellingen.</p>` +
+          `<p style="color: #9ca3af; font-size: 12px;">${tt('emailPrefNote', locale).replace('\n', '<br/>')}</p>` +
           `</div>`
 
         await sendEmail({

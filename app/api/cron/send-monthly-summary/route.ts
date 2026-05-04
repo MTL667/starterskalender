@@ -8,7 +8,7 @@ import {
 } from '@/lib/email-template-engine'
 import { logAudit } from '@/lib/audit'
 import { verifyCronAuth } from '@/lib/cron-auth'
-import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity } from '@/lib/cron-email-helpers'
+import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity, tt, getDateLocale, type EmailLocale } from '@/lib/cron-email-helpers'
 
 /**
  * Cron Job: Maandelijks overzicht
@@ -143,26 +143,27 @@ export async function GET(req: Request) {
       }
 
       try {
+        const locale = (user.locale || 'nl') as EmailLocale
         const startersByEntity = groupByEntity(userStarters)
-        const startersListHtml = renderAllEntities(userStarters)
+        const startersListHtml = renderAllEntities(userStarters, locale)
         const counts = countByType(userStarters)
-        const subjectParts = buildSubjectParts(counts)
-        const summaryHtml = renderSummaryBlocks(counts)
+        const subjectParts = buildSubjectParts(counts, locale)
+        const summaryHtml = renderSummaryBlocks(counts, locale)
 
-        const monthName = new Date(year, month - 1, 1).toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })
+        const monthName = new Date(year, month - 1, 1).toLocaleDateString(getDateLocale(locale), { month: 'long', year: 'numeric' })
         const entityNames = Object.keys(startersByEntity).join(', ')
 
-        const subject = `📊 Maandoverzicht ${monthName} - ${subjectParts}`
+        const subject = `📊 ${tt('monthlyOverview', locale)} ${monthName} - ${subjectParts}`
         const html = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1f2937;">📊 Maandoverzicht ${monthName}</h2>
-            <p style="color: #4b5563; line-height: 1.6;">Hallo ${user.name || user.email},</p>
+            <h2 style="color: #1f2937;">📊 ${tt('monthlyOverview', locale)} ${monthName}</h2>
+            <p style="color: #4b5563; line-height: 1.6;">${tt('hello', locale)} ${user.name || user.email},</p>
             ${summaryHtml}
             ${startersListHtml}
             <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
             <p style="color: #9ca3af; font-size: 12px;">
-              Maandelijks overzicht voor ${entityNames}.<br/>
-              Wijzig je voorkeuren in je profielinstellingen.
+              ${tt('monthlyNote', locale)} ${entityNames}.<br/>
+              ${tt('monthlyPrefNote', locale)}
             </p>
           </div>
         `

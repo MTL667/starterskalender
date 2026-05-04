@@ -400,6 +400,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id as string
         ;(session.user as any).role = token.role as any
+        ;(session.user as any).locale = (token.locale as string) || 'nl'
         ;(session.user as any).permissions = (token.permissions as string[]) || []
         ;(session.user as any).perms = ((token as any).perms as string[]) || []
         ;(session.user as any).tenantId = token.tenantId as string | undefined

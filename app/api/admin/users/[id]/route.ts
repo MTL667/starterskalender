@@ -10,6 +10,7 @@ const UpdateUserSchema = z.object({
   role: z.enum(['HR_ADMIN', 'ENTITY_EDITOR', 'ENTITY_VIEWER', 'GLOBAL_VIEWER']).optional(),
   name: z.string().optional(),
   permissions: z.array(z.string()).optional(),
+  locale: z.enum(['nl', 'fr']).optional(),
 })
 
 export async function PATCH(
@@ -34,6 +35,7 @@ export async function PATCH(
     if (data.name !== undefined) prismaData.name = data.name
     if (data.role !== undefined) prismaData.legacyRole = data.role
     if (data.permissions !== undefined) prismaData.legacyPermissions = data.permissions
+    if (data.locale !== undefined) prismaData.locale = data.locale
 
     const updated = await prisma.user.update({
       where: { id: id },
