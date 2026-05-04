@@ -1180,7 +1180,69 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 <span className="text-sm font-medium text-muted-foreground">
                   {starter.entity?.inspectorNumberLabel || 'Inspecteurnummer'}
                 </span>
-                <span className="font-mono text-lg font-semibold">{starter.inspectorNumber}</span>
+                {(formData as any)._editingInspectorNumber ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      type="number"
+                      min={1}
+                      defaultValue={starter.inspectorNumber}
+                      className="font-mono w-32"
+                      onChange={(e) => setFormData({ ...formData, inspectorNumber: parseInt(e.target.value) || null } as any)}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={loading}
+                      onClick={async () => {
+                        const num = (formData as any).inspectorNumber
+                        if (!num || !starter?.id) return
+                        setLoading(true)
+                        try {
+                          const res = await fetch(`/api/starters/${starter.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ inspectorNumber: num }),
+                          })
+                          if (!res.ok) {
+                            const err = await res.json()
+                            alert(err.error || 'Fout bij opslaan')
+                            return
+                          }
+                          onClose(true)
+                        } catch {
+                          alert('Fout bij opslaan')
+                        } finally {
+                          setLoading(false)
+                        }
+                      }}
+                    >
+                      {loading ? 'Bezig...' : 'Opslaan'}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setFormData({ ...formData, _editingInspectorNumber: undefined, inspectorNumber: undefined } as any)}
+                    >
+                      Annuleren
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <span className="font-mono text-lg font-semibold">{starter.inspectorNumber}</span>
+                    {canEditInspectorNumber && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-muted-foreground"
+                        onClick={() => setFormData({ ...formData, _editingInspectorNumber: true } as any)}
+                      >
+                        <PenLine className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </>
+                )}
               </div>
             )}
             {isEdit && canEditInspectorNumber && starter?.inspectorNumber == null && starter?.type !== 'OFFBOARDING' && starter?.entity?.inspectorNumberEnabled && (() => {
