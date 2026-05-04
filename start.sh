@@ -34,11 +34,9 @@ if [ "$RUN_RBAC_V2_BACKFILL" = "true" ]; then
   su-exec nextjs:nodejs node ./node_modules/tsx/dist/cli.mjs prisma/backfill-rbac.ts || echo "⚠️  RBAC backfill failed (continuing...)"
 fi
 
-# Generate crontab with actual environment variables
-echo "📅 Generating crontab with runtime env vars..."
-CRON_AUTH=""
+# Setup cron jobs with wrapper script (avoids quoting issues in BusyBox crontab)
+echo "📅 Setting up cron jobs..."
 if [ -n "$CRON_SECRET" ]; then
-  CRON_AUTH="-H \"Authorization: Bearer $CRON_SECRET\""
   echo "  ✅ CRON_SECRET is set"
 else
   echo "  ⚠️  CRON_SECRET is not set — cron endpoints are unprotected!"
@@ -47,21 +45,22 @@ fi
 cat > /etc/crontabs/root << CRONTAB
 # Airport - Automated Email Cron Jobs (generated at startup)
 # Timezone: ${TZ:-UTC}
+CRON_SECRET=${CRON_SECRET:-}
 
 # Wekelijkse reminder - elke dag om 08:00
-0 8 * * * curl -sf $CRON_AUTH http://localhost:3000/api/cron/send-weekly-reminders > /proc/1/fd/1 2>&1
+0 8 * * * /app/cron-curl.sh /api/cron/send-weekly-reminders > /proc/1/fd/1 2>&1
 
 # Maandoverzicht - 1e van elke maand om 09:00
-0 9 1 * * curl -sf $CRON_AUTH http://localhost:3000/api/cron/send-monthly-summary > /proc/1/fd/1 2>&1
+0 9 1 * * /app/cron-curl.sh /api/cron/send-monthly-summary > /proc/1/fd/1 2>&1
 
 # Kwartaaloverzicht - 1e van kwartaal om 10:00 (jan/apr/jul/okt)
-0 10 1 1,4,7,10 * curl -sf $CRON_AUTH http://localhost:3000/api/cron/send-quarterly-summary > /proc/1/fd/1 2>&1
+0 10 1 1,4,7,10 * /app/cron-curl.sh /api/cron/send-quarterly-summary > /proc/1/fd/1 2>&1
 
 # Jaaroverzicht - 1 januari om 11:00
-0 11 1 1 * curl -sf $CRON_AUTH http://localhost:3000/api/cron/send-yearly-summary > /proc/1/fd/1 2>&1
+0 11 1 1 * /app/cron-curl.sh /api/cron/send-yearly-summary > /proc/1/fd/1 2>&1
 
 # Materialen leverdatum check - elke werkdag om 08:30
-30 8 * * 1-5 curl -sf $CRON_AUTH http://localhost:3000/api/cron/check-material-deliveries > /proc/1/fd/1 2>&1
+30 8 * * 1-5 /app/cron-curl.sh /api/cron/check-material-deliveries > /proc/1/fd/1 2>&1
 
 CRONTAB
 chmod 0644 /etc/crontabs/root
@@ -69,6 +68,7 @@ chmod 0644 /etc/crontabs/root
 # Start crond in de achtergrond (als root)
 echo "📅 Starting cron daemon..."
 crond -b -l 2
+echo "  ✅ crond started ($(cat /etc/crontabs/root | grep -c 'cron-curl') jobs registered)"
 
 # Wacht even voor crond is gestart
 sleep 2

@@ -82,9 +82,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/migrations ./migrations
 
 # Crontab wordt dynamisch gegenereerd in start.sh (met runtime env vars)
 
-# Kopieer start script
+# Kopieer start script en cron wrapper
 COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh && chown nextjs:nodejs /app/start.sh
+COPY cron-curl.sh /app/cron-curl.sh
+RUN chmod +x /app/start.sh /app/cron-curl.sh
 
 EXPOSE 3000
 
