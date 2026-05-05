@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
         description: body.description || null,
         priority: body.priority || 'MEDIUM',
         daysUntilDue: body.daysUntilDue ?? 7,
+        delayAfterDependency: Math.max(0, Math.floor(Number(body.delayAfterDependency) || 0)),
         isActive: body.isActive ?? true,
         autoAssign: body.autoAssign ?? true,
         forEntityIds: Array.isArray(body.forEntityIds) ? body.forEntityIds : [],

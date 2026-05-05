@@ -1646,10 +1646,15 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             {isEdit && (
               <div className="border-t pt-4">
                 <Label className="text-base font-semibold mb-3 block">
-                  {t('materialsTitle')}
+                  {formData.type === 'OFFBOARDING' ? t('materialsReturnTitle') : t('materialsTitle')}
                 </Label>
 
                 {starterMaterials.length === 0 ? (
+                  formData.type === 'OFFBOARDING' ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('noMaterialsOffboarding')}
+                  </p>
+                  ) : (
                   <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
                     <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                     <div className="flex-1">
@@ -1678,6 +1683,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       )}
                     </div>
                   </div>
+                  )
                 ) : (
                   <>
                     <div className="space-y-2">

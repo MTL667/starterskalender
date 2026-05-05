@@ -89,6 +89,16 @@ export async function unblockDependentTasks(completedTaskId: string) {
 
   if (candidates.length === 0) return []
 
+  // Batch-fetch templates voor delay-berekening
+  const templateIds = [...new Set(candidates.map(c => c.templateId).filter(Boolean))] as string[]
+  const templates = templateIds.length > 0
+    ? await prisma.taskTemplate.findMany({
+        where: { id: { in: templateIds } },
+        select: { id: true, delayAfterDependency: true, daysUntilDue: true },
+      })
+    : []
+  const templateMap = new Map(templates.map(t => [t.id, t]))
+
   const unblocked: any[] = []
 
   for (const candidate of candidates) {
@@ -102,13 +112,28 @@ export async function unblockDependentTasks(completedTaskId: string) {
       deps.every(d => d.status === 'COMPLETED')
     if (!allDone) continue
 
+    // Bereken vertraagde datums als template een delay heeft
+    const tpl = candidate.templateId ? templateMap.get(candidate.templateId) : null
+    const delay = tpl?.delayAfterDependency || 0
+    const updateData: any = {
+      status: 'PENDING',
+      blockedReason: null,
+    }
+    if (delay > 0) {
+      const scheduledFor = new Date()
+      scheduledFor.setDate(scheduledFor.getDate() + delay)
+      scheduledFor.setHours(9, 0, 0, 0)
+      updateData.scheduledFor = scheduledFor
+      const dueDate = new Date(scheduledFor)
+      dueDate.setDate(dueDate.getDate() + (tpl?.daysUntilDue || 7))
+      dueDate.setHours(17, 0, 0, 0)
+      updateData.dueDate = dueDate
+    }
+
     // Unblock
     const updated = await prisma.task.update({
       where: { id: candidate.id },
-      data: {
-        status: 'PENDING',
-        blockedReason: null,
-      },
+      data: updateData,
       include: {
         assignedTo: { select: { id: true, name: true, email: true } },
         entity: { select: { id: true, name: true } },
@@ -328,6 +353,8 @@ export async function createAutomaticTasks(
           dueDate = new Date(startDate)
           dueDate.setHours(17, 0, 0, 0)
         } else if (template.scheduleType === 'AFTER_DEPENDENCIES') {
+          // Fallback-deadline t.o.v. startdatum; bij unblock worden datums
+          // herberekend met delayAfterDependency
           dueDate = new Date(startDate)
           dueDate.setDate(dueDate.getDate() + (template.daysUntilDue || 7))
         } else {
@@ -356,6 +383,16 @@ export async function createAutomaticTasks(
       const blockedReason = hasBlockingDeps
         ? 'Wacht op afronding van afhankelijke taken'
         : null
+
+      // Als deps al completed zijn en er een delay is, bereken vertraagde datums
+      if (allDepsCompleted && template.scheduleType === 'AFTER_DEPENDENCIES' && (template.delayAfterDependency || 0) > 0) {
+        scheduledFor = new Date()
+        scheduledFor.setDate(scheduledFor.getDate() + template.delayAfterDependency)
+        scheduledFor.setHours(9, 0, 0, 0)
+        dueDate = new Date(scheduledFor)
+        dueDate.setDate(dueDate.getDate() + (template.daysUntilDue || 7))
+        dueDate.setHours(17, 0, 0, 0)
+      }
 
       // Variabelen voor template
       const variables = {
@@ -762,6 +799,11 @@ export async function recalculateTaskDates(
         dueDate.setDate(dueDate.getDate() + daysUntilDue)
       }
     } else if (scheduleType === 'AFTER_DEPENDENCIES') {
+      const delay = template.delayAfterDependency || 0
+      if (delay > 0 && task.status === 'PENDING') {
+        // Taken met delay die al unblocked zijn: datums niet overschrijven
+        continue
+      }
       if (newStartDate) {
         dueDate = new Date(newStartDate)
         dueDate.setDate(dueDate.getDate() + (daysUntilDue || 7))

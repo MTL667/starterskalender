@@ -31,6 +31,7 @@ const ALLOWED_FIELDS: Array<keyof any> = [
   'description',
   'priority',
   'daysUntilDue',
+  'delayAfterDependency',
   'isActive',
   'autoAssign',
   'forEntityIds',
@@ -62,6 +63,10 @@ export async function PATCH(
       data.dependsOnTemplateIds = data.dependsOnTemplateIds.filter(
         (x: string) => x && x !== id
       )
+    }
+
+    if ('delayAfterDependency' in data) {
+      data.delayAfterDependency = Math.max(0, Math.floor(Number(data.delayAfterDependency) || 0))
     }
 
     const template = await prisma.taskTemplate.update({

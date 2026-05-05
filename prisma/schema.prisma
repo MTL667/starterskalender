@@ -536,6 +536,7 @@ model TaskTemplate {
   // Dependencies & scheduling (marketing workflow + generiek)
   dependsOnTemplateIds String[]     @default([]) // AND-gate: concrete dep-templates
   scheduleType         ScheduleType @default(OFFSET_FROM_START)
+  delayAfterDependency Int          @default(0) // Dagen vertraging na afronding dependencies
   addToCalendar        Boolean      @default(false) // O365 event aanmaken voor assignee
   uploadFolder         String? // submap in SharePoint (bv. "marketing")
   expectedOutputs      Json? // bv. ["forms-photo","linkedin","signature"]

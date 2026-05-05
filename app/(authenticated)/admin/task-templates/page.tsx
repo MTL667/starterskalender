@@ -34,6 +34,7 @@ type TaskTemplate = {
   description: string | null
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   daysUntilDue: number
+  delayAfterDependency: number
   isActive: boolean
   autoAssign: boolean
   forEntityIds: string[]
@@ -88,6 +89,7 @@ type FormState = {
   description: string
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
   daysUntilDue: number
+  delayAfterDependency: number
   isActive: boolean
   autoAssign: boolean
   forEntityIds: string[]
@@ -107,6 +109,7 @@ const emptyForm: FormState = {
   description: '',
   priority: 'MEDIUM',
   daysUntilDue: 7,
+  delayAfterDependency: 0,
   isActive: true,
   autoAssign: true,
   forEntityIds: [],
@@ -186,6 +189,7 @@ export default function TaskTemplatesAdminPage() {
       description: tpl.description || '',
       priority: tpl.priority,
       daysUntilDue: tpl.daysUntilDue,
+      delayAfterDependency: tpl.delayAfterDependency ?? 0,
       isActive: tpl.isActive,
       autoAssign: tpl.autoAssign,
       forEntityIds: tpl.forEntityIds || [],
@@ -358,7 +362,7 @@ export default function TaskTemplatesAdminPage() {
                       <Calendar className="h-3 w-3" />
                       {tpl.scheduleType === 'OFFSET_FROM_START' && `${tpl.daysUntilDue >= 0 ? '+' : ''}${tpl.daysUntilDue}d ${tpl.forStarterType === 'OFFBOARDING' ? 'uitdienst' : 'start'}`}
                       {tpl.scheduleType === 'ON_START_DATE' && (tpl.forStarterType === 'OFFBOARDING' ? 'Op uitdienstdatum' : 'Op startdatum')}
-                      {tpl.scheduleType === 'AFTER_DEPENDENCIES' && 'Na dependencies'}
+                      {tpl.scheduleType === 'AFTER_DEPENDENCIES' && `Na dependencies${tpl.delayAfterDependency > 0 ? ` +${tpl.delayAfterDependency}d` : ''}`}
                       {tpl.scheduleType === 'OFFSET_FROM_MATERIAL_RETURN' && `${tpl.daysUntilDue >= 0 ? '+' : ''}${tpl.daysUntilDue}d inlevering`}
                       {tpl.scheduleType === 'ON_MATERIAL_RETURN' && 'Op inleverdatum'}
                     </span>
@@ -475,7 +479,11 @@ export default function TaskTemplatesAdminPage() {
             </div>
             <div className="space-y-2">
               <Label>Scheduling</Label>
-              <Select value={form.scheduleType} onValueChange={(v: any) => setForm(f => ({ ...f, scheduleType: v }))}>
+              <Select value={form.scheduleType} onValueChange={(v: any) => setForm(f => ({
+                ...f,
+                scheduleType: v,
+                delayAfterDependency: v === 'AFTER_DEPENDENCIES' ? f.delayAfterDependency : 0,
+              }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {getScheduleTypes(form.forStarterType).map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
@@ -483,13 +491,33 @@ export default function TaskTemplatesAdminPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Dagen tot deadline</Label>
+              <Label>
+                {form.scheduleType === 'OFFSET_FROM_MATERIAL_RETURN'
+                  ? 'Dagen t.o.v. inleverdatum materiaal'
+                  : form.scheduleType === 'OFFSET_FROM_START'
+                    ? `Dagen t.o.v. ${form.forStarterType === 'OFFBOARDING' ? 'uitdienstdatum' : 'startdatum'}`
+                    : 'Dagen tot deadline'}
+              </Label>
               <Input
                 type="number"
                 value={form.daysUntilDue}
                 onChange={(e) => setForm(f => ({ ...f, daysUntilDue: parseInt(e.target.value || '0', 10) }))}
               />
             </div>
+            {form.scheduleType === 'AFTER_DEPENDENCIES' && (
+            <div className="space-y-2">
+              <Label>Vertraging na dependencies (dagen)</Label>
+              <Input
+                type="number"
+                value={form.delayAfterDependency}
+                onChange={(e) => setForm(f => ({ ...f, delayAfterDependency: parseInt(e.target.value || '0', 10) }))}
+                min={0}
+              />
+              <p className="text-xs text-muted-foreground">
+                0 = direct beschikbaar na afronding dependencies
+              </p>
+            </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
