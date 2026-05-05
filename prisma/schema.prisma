@@ -280,7 +280,7 @@ model Starter {
   desiredEmail      String? // Gewenst mailadres
   contractSignedOn  DateTime?   @default(now()) // Datum waarop contract getekend is (tijdelijk nullable voor migratie)
   startDate          DateTime? // Startdatum (onboarding) of vertrekdatum (offboarding) - null bij pending boarding
-  materialReturnDate DateTime? // Deadline materiaal inleveren (offboarding) — kan afwijken van vertrekdatum
+  materialReturnDate DateTime? // Datum materiaal inleveren (offboarding) — kan afwijken van vertrekdatum
   weekNumber         Int? // Weeknummer (afgeleid, Monday-first)
   year               Int? // Jaar - null bij pending boarding
   isPendingBoarding  Boolean     @default(false) // Startdatum nog niet gekend

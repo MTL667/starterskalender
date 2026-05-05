@@ -24,6 +24,7 @@ interface Starter {
   roleTitle?: string | null
   contractSignedOn?: string | null
   startDate: string | null
+  materialReturnDate?: string | null
   isPendingBoarding?: boolean
   isCancelled?: boolean
   entity?: {
@@ -320,8 +321,15 @@ export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps)
                         {starter.entity.name}
                       </Badge>
                     )}
-                    <div className={`text-sm ${dateColor}`}>
-                      {starter.startDate ? format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale }) : '-'}
+                    <div className="text-right">
+                      <div className={`text-sm ${dateColor}`}>
+                        {starter.startDate ? format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale }) : '-'}
+                      </div>
+                      {isDeparture && starter.materialReturnDate && (
+                        <div className="text-xs text-muted-foreground">
+                          {t('materialReturnLabel')} {format(new Date(starter.materialReturnDate), 'dd MMM', { locale: dateLocale })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
