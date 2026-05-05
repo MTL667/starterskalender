@@ -781,7 +781,7 @@ export async function recalculateTaskDates(
   }
 
   if (updated > 0) {
-    eventBus.emit('task:updated', { starterId, recalculated: updated })
+    eventBus.emit({ type: 'task:updated', payload: { starterId, recalculated: updated } })
   }
 
   return updated
