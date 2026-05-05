@@ -7,7 +7,7 @@ import { getCurrentAuthorizedUser, sanitizeFields, filterWritableFields } from '
 import { calculateWeekNumber, getYearInTimezone } from '@/lib/week-utils'
 import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
-import { createAutomaticTasks } from '@/lib/task-automation'
+import { createAutomaticTasks, recalculateTaskDates } from '@/lib/task-automation'
 import { eventBus } from '@/lib/events'
 
 const UpdateStarterSchema = z.object({
@@ -180,6 +180,23 @@ export async function PATCH(
         ...(data.inspectorNumber !== undefined ? { inspectorNumber: data.inspectorNumber, inspectorNumberMethod: data.inspectorNumber === null ? 'cleared' : 'manual' } : {}),
       },
     })
+
+    // Herbereken taakdata als startDate of materialReturnDate gewijzigd is
+    const datesChanged = updateData.startDate !== undefined || updateData.materialReturnDate !== undefined
+    if (datesChanged && !isActivatingPending) {
+      try {
+        const recalculated = await recalculateTaskDates(
+          starter.id,
+          starter.startDate,
+          starter.materialReturnDate,
+        )
+        if (recalculated > 0) {
+          console.log(`📅 Recalculated ${recalculated} task dates for starter "${starter.firstName} ${starter.lastName}"`)
+        }
+      } catch (recalcError) {
+        console.error('Failed to recalculate task dates:', recalcError)
+      }
+    }
 
     // When activating a pending boarding starter, create automatic onboarding tasks + assign materials
     if (isActivatingPending) {

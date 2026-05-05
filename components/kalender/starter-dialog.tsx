@@ -1368,9 +1368,6 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   onChange={(e) => setFormData({ ...formData, materialReturnDate: e.target.value })}
                   disabled={!canEdit}
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('hintMaterialReturnDate')}
-                </p>
               </div>
             )}
 

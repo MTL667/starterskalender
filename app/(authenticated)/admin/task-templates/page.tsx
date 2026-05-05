@@ -41,7 +41,7 @@ type TaskTemplate = {
   requireExplicitJobRole: boolean
   forStarterType: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION' | null
   dependsOnTemplateIds: string[]
-  scheduleType: 'OFFSET_FROM_START' | 'ON_START_DATE' | 'AFTER_DEPENDENCIES'
+  scheduleType: 'OFFSET_FROM_START' | 'ON_START_DATE' | 'AFTER_DEPENDENCIES' | 'OFFSET_FROM_MATERIAL_RETURN' | 'ON_MATERIAL_RETURN'
   addToCalendar: boolean
   uploadFolder: string | null
   expectedOutputs: any
@@ -65,11 +65,22 @@ const TASK_TYPES = [
 
 const STARTER_TYPES = ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'] as const
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const
-const SCHEDULE_TYPES = [
-  { value: 'OFFSET_FROM_START', label: 'Offset vanaf startdatum (standaard)' },
-  { value: 'ON_START_DATE', label: 'Op startdatum zelf (calendar event)' },
-  { value: 'AFTER_DEPENDENCIES', label: 'Na afronding dependencies' },
-] as const
+function getScheduleTypes(starterType: string | null) {
+  if (starterType === 'OFFBOARDING') {
+    return [
+      { value: 'OFFSET_FROM_START', label: 'Offset vanaf uitdienstdatum' },
+      { value: 'ON_START_DATE', label: 'Op uitdienstdatum (calendar event)' },
+      { value: 'OFFSET_FROM_MATERIAL_RETURN', label: 'Offset vanaf inleverdatum materiaal' },
+      { value: 'ON_MATERIAL_RETURN', label: 'Op inleverdatum materiaal (calendar event)' },
+      { value: 'AFTER_DEPENDENCIES', label: 'Na afronding dependencies' },
+    ]
+  }
+  return [
+    { value: 'OFFSET_FROM_START', label: 'Offset vanaf startdatum (standaard)' },
+    { value: 'ON_START_DATE', label: 'Op startdatum zelf (calendar event)' },
+    { value: 'AFTER_DEPENDENCIES', label: 'Na afronding dependencies' },
+  ]
+}
 
 type FormState = {
   type: string
@@ -84,7 +95,7 @@ type FormState = {
   requireExplicitJobRole: boolean
   forStarterType: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION' | null
   dependsOnTemplateIds: string[]
-  scheduleType: 'OFFSET_FROM_START' | 'ON_START_DATE' | 'AFTER_DEPENDENCIES'
+  scheduleType: 'OFFSET_FROM_START' | 'ON_START_DATE' | 'AFTER_DEPENDENCIES' | 'OFFSET_FROM_MATERIAL_RETURN' | 'ON_MATERIAL_RETURN'
   addToCalendar: boolean
   uploadFolder: string
   expectedOutputs: string
@@ -345,9 +356,11 @@ export default function TaskTemplatesAdminPage() {
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {tpl.scheduleType === 'OFFSET_FROM_START' && `+${tpl.daysUntilDue} dagen`}
-                      {tpl.scheduleType === 'ON_START_DATE' && 'Op startdatum'}
+                      {tpl.scheduleType === 'OFFSET_FROM_START' && `${tpl.daysUntilDue >= 0 ? '+' : ''}${tpl.daysUntilDue}d ${tpl.forStarterType === 'OFFBOARDING' ? 'uitdienst' : 'start'}`}
+                      {tpl.scheduleType === 'ON_START_DATE' && (tpl.forStarterType === 'OFFBOARDING' ? 'Op uitdienstdatum' : 'Op startdatum')}
                       {tpl.scheduleType === 'AFTER_DEPENDENCIES' && 'Na dependencies'}
+                      {tpl.scheduleType === 'OFFSET_FROM_MATERIAL_RETURN' && `${tpl.daysUntilDue >= 0 ? '+' : ''}${tpl.daysUntilDue}d inlevering`}
+                      {tpl.scheduleType === 'ON_MATERIAL_RETURN' && 'Op inleverdatum'}
                     </span>
                     {tpl.addToCalendar && (
                       <span className="inline-flex items-center gap-1 text-blue-600">
@@ -425,7 +438,7 @@ export default function TaskTemplatesAdminPage() {
           </div>
 
           <div className="space-y-2">
-            <Label>Titel (gebruik {'{{starterName}}'}, {'{{roleTitle}}'}, {'{{entityName}}'})</Label>
+            <Label>Titel (gebruik {'{{starterName}}'}, {'{{roleTitle}}'}, {'{{entityName}}'}, {'{{materialReturnDate}}'})</Label>
             <Input value={form.title} onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))} />
           </div>
 
@@ -443,7 +456,15 @@ export default function TaskTemplatesAdminPage() {
               <Label>Starter type</Label>
               <Select
                 value={form.forStarterType || 'ANY'}
-                onValueChange={(v) => setForm(f => ({ ...f, forStarterType: v === 'ANY' ? null : (v as any) }))}
+                onValueChange={(v) => {
+                  const newType = v === 'ANY' ? null : (v as any)
+                  const available = getScheduleTypes(newType).map(s => s.value)
+                  setForm(f => ({
+                    ...f,
+                    forStarterType: newType,
+                    scheduleType: available.includes(f.scheduleType) ? f.scheduleType : 'OFFSET_FROM_START',
+                  }))
+                }}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -457,7 +478,7 @@ export default function TaskTemplatesAdminPage() {
               <Select value={form.scheduleType} onValueChange={(v: any) => setForm(f => ({ ...f, scheduleType: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {SCHEDULE_TYPES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  {getScheduleTypes(form.forStarterType).map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

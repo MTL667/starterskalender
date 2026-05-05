@@ -62,6 +62,8 @@ enum ScheduleType {
   OFFSET_FROM_START // Standaard: dueDate = startDate + daysUntilDue
   ON_START_DATE // Gepland op startersdag zelf (+ O365 event)
   AFTER_DEPENDENCIES // Zodra alle dependencies DONE zijn
+  OFFSET_FROM_MATERIAL_RETURN // dueDate = materialReturnDate + daysUntilDue (offboarding)
+  ON_MATERIAL_RETURN // Gepland op inleverdag zelf (+ O365 event, offboarding)
 }
 
 enum TaskStatus {

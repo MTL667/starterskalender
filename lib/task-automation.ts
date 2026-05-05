@@ -303,18 +303,31 @@ export async function createAutomaticTasks(
 
       // Bereken due date volgens scheduleType
       const startDate = starter.startDate ? new Date(starter.startDate) : null
+      const materialReturnDate = starter.materialReturnDate ? new Date(starter.materialReturnDate) : null
       let dueDate: Date | null = null
       let scheduledFor: Date | null = null
 
-      if (startDate) {
+      if (template.scheduleType === 'ON_MATERIAL_RETURN') {
+        const anchor = materialReturnDate ?? startDate
+        if (anchor) {
+          scheduledFor = new Date(anchor)
+          scheduledFor.setHours(9, 0, 0, 0)
+          dueDate = new Date(anchor)
+          dueDate.setHours(17, 0, 0, 0)
+        }
+      } else if (template.scheduleType === 'OFFSET_FROM_MATERIAL_RETURN') {
+        const anchor = materialReturnDate ?? startDate
+        if (anchor) {
+          dueDate = new Date(anchor)
+          dueDate.setDate(dueDate.getDate() + template.daysUntilDue)
+        }
+      } else if (startDate) {
         if (template.scheduleType === 'ON_START_DATE') {
           scheduledFor = new Date(startDate)
           scheduledFor.setHours(9, 0, 0, 0)
           dueDate = new Date(startDate)
           dueDate.setHours(17, 0, 0, 0)
         } else if (template.scheduleType === 'AFTER_DEPENDENCIES') {
-          // Eindstate — dueDate wordt gezet zodra dependencies klaar zijn.
-          // Als fallback: startDate + daysUntilDue (meestal positief getal).
           dueDate = new Date(startDate)
           dueDate.setDate(dueDate.getDate() + (template.daysUntilDue || 7))
         } else {
@@ -353,6 +366,9 @@ export async function createAutomaticTasks(
         roleTitle: starter.roleTitle || 'Onbekend',
         startDate: starter.startDate
           ? new Date(starter.startDate).toLocaleDateString('nl-BE')
+          : 'Nog niet bekend',
+        materialReturnDate: starter.materialReturnDate
+          ? new Date(starter.materialReturnDate).toLocaleDateString('nl-BE')
           : 'Nog niet bekend',
         desiredEmail: starter.desiredEmail || '',
         phoneNumber: starter.phoneNumber || '',
@@ -682,6 +698,87 @@ async function sendTaskAssignmentEmail(task: any, starter: any) {
     subject,
     html,
   })
+}
+
+/**
+ * Herbereken dueDate/scheduledFor voor PENDING/BLOCKED taken van een starter
+ * wanneer startDate of materialReturnDate wijzigt.
+ * Taken die al IN_PROGRESS of COMPLETED zijn worden niet aangepast.
+ */
+export async function recalculateTaskDates(
+  starterId: string,
+  newStartDate: Date | null,
+  newMaterialReturnDate: Date | null,
+): Promise<number> {
+  const tasks = await prisma.task.findMany({
+    where: {
+      starterId,
+      templateId: { not: null },
+      status: { in: ['PENDING', 'BLOCKED'] },
+    },
+    include: { template: true },
+  })
+
+  let updated = 0
+
+  for (const task of tasks) {
+    if (!task.template) continue
+
+    const { scheduleType, daysUntilDue } = task.template
+    let dueDate: Date | null = null
+    let scheduledFor: Date | null = null
+
+    if (scheduleType === 'ON_MATERIAL_RETURN') {
+      const anchor = newMaterialReturnDate ?? newStartDate
+      if (anchor) {
+        scheduledFor = new Date(anchor)
+        scheduledFor.setHours(9, 0, 0, 0)
+        dueDate = new Date(anchor)
+        dueDate.setHours(17, 0, 0, 0)
+      }
+    } else if (scheduleType === 'OFFSET_FROM_MATERIAL_RETURN') {
+      const anchor = newMaterialReturnDate ?? newStartDate
+      if (anchor) {
+        dueDate = new Date(anchor)
+        dueDate.setDate(dueDate.getDate() + daysUntilDue)
+      }
+    } else if (scheduleType === 'ON_START_DATE') {
+      if (newStartDate) {
+        scheduledFor = new Date(newStartDate)
+        scheduledFor.setHours(9, 0, 0, 0)
+        dueDate = new Date(newStartDate)
+        dueDate.setHours(17, 0, 0, 0)
+      }
+    } else if (scheduleType === 'OFFSET_FROM_START') {
+      if (newStartDate) {
+        dueDate = new Date(newStartDate)
+        dueDate.setDate(dueDate.getDate() + daysUntilDue)
+      }
+    } else if (scheduleType === 'AFTER_DEPENDENCIES') {
+      if (newStartDate) {
+        dueDate = new Date(newStartDate)
+        dueDate.setDate(dueDate.getDate() + (daysUntilDue || 7))
+      }
+    }
+
+    const needsUpdate = dueDate !== null || scheduledFor !== null ||
+      (task.dueDate !== null && dueDate === null) ||
+      (task.scheduledFor !== null && scheduledFor === null)
+
+    if (needsUpdate) {
+      await prisma.task.update({
+        where: { id: task.id },
+        data: { dueDate, scheduledFor },
+      })
+      updated++
+    }
+  }
+
+  if (updated > 0) {
+    eventBus.emit('task:updated', { starterId, recalculated: updated })
+  }
+
+  return updated
 }
 
 /**
