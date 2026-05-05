@@ -709,6 +709,7 @@ export async function recalculateTaskDates(
   starterId: string,
   newStartDate: Date | null,
   newMaterialReturnDate: Date | null,
+  entityId?: string | null,
 ): Promise<number> {
   const tasks = await prisma.task.findMany({
     where: {
@@ -781,7 +782,7 @@ export async function recalculateTaskDates(
   }
 
   if (updated > 0) {
-    eventBus.emit({ type: 'task:updated', payload: { starterId, recalculated: updated } })
+    eventBus.emit({ type: 'task:updated', entityId: entityId || '', payload: { starterId, recalculated: updated } })
   }
 
   return updated

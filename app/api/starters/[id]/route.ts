@@ -189,6 +189,7 @@ export async function PATCH(
           starter.id,
           starter.startDate,
           starter.materialReturnDate,
+          starter.entityId,
         )
         if (recalculated > 0) {
           console.log(`📅 Recalculated ${recalculated} task dates for starter "${starter.firstName} ${starter.lastName}"`)
