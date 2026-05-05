@@ -716,15 +716,21 @@ export async function recalculateTaskDates(
       templateId: { not: null },
       status: { in: ['PENDING', 'BLOCKED'] },
     },
-    include: { template: true },
   })
+
+  const templateIds = [...new Set(tasks.map(t => t.templateId).filter(Boolean))] as string[]
+  const templates = await prisma.taskTemplate.findMany({
+    where: { id: { in: templateIds } },
+  })
+  const templateMap = new Map(templates.map(t => [t.id, t]))
 
   let updated = 0
 
   for (const task of tasks) {
-    if (!task.template) continue
+    const template = task.templateId ? templateMap.get(task.templateId) : null
+    if (!template) continue
 
-    const { scheduleType, daysUntilDue } = task.template
+    const { scheduleType, daysUntilDue } = template
     let dueDate: Date | null = null
     let scheduledFor: Date | null = null
 
