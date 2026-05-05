@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth-utils'
+import { can, toAuthorizedUser } from '@/lib/authz'
 import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 import { CalendarView } from '@/components/kalender/calendar-view'
@@ -13,9 +14,7 @@ export default async function KalenderPage() {
 
   const currentYear = new Date().getFullYear()
   
-  // Check if user has edit rights (can create starters)
-  const canEdit = user.role === 'HR_ADMIN' || 
-    user.memberships.some(m => m.canEdit)
+  const canEdit = can(toAuthorizedUser(user), 'starters:update')
 
   return (
     <div className="container mx-auto py-8">

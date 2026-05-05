@@ -70,8 +70,8 @@ export function Navbar() {
     { href: '/kalender', icon: Calendar, label: t('calendar'), show: true },
     { href: '/starters', icon: Users, label: t('starters'), show: true },
     { href: '/taken', icon: CheckSquare, label: t('tasks'), show: true },
-    { href: '/materialen', icon: Package, label: t('materials'), show: ((session?.user as any)?.permissions ?? []).includes('MATERIAL_MANAGER') },
-    { href: '/admin', icon: Settings, label: t('admin'), show: session?.user?.role === 'HR_ADMIN' },
+    { href: '/materialen', icon: Package, label: t('materials'), show: session?.user?.perms?.includes('materials:manage') ?? false },
+    { href: '/admin', icon: Settings, label: t('admin'), show: session?.user?.perms?.includes('admin:users:manage') ?? false },
   ]
 
   return (

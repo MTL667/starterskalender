@@ -165,13 +165,13 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   })
 
   // Check if user can edit extra info (notes)
-  // Everyone except NONE can edit notes for entities they have access to
+  // Everyone except no-permission users can edit notes for entities they have access to
   const canEditExtraInfo = (() => {
     if (!session?.user) return false
-    if (session.user.role === 'NONE') return false
-    
-    // HR_ADMIN can edit everything
-    if (session.user.role === 'HR_ADMIN') return true
+    if (!session.user.perms?.length) return false
+
+    // Admin can edit everything
+    if (session.user.perms.includes('admin:users:manage')) return true
     
     // For other roles, check if they have access to this entity
     if (starter?.entity?.id) {
@@ -193,12 +193,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   })()
 
   // Check if user can edit contact info (email & phone)
-  // Only HR_ADMIN or IT_SETUP responsible can edit these fields
+  // Only admin or IT_SETUP responsible can edit these fields
   const canEditContactInfo = (() => {
     if (!session?.user) return false
-    
-    // HR_ADMIN can always edit
-    if (session.user.role === 'HR_ADMIN') return true
+
+    if (session.user.perms?.includes('admin:users:manage')) return true
     
     // IT_SETUP verantwoordelijke can edit
     return isITResponsible
@@ -775,10 +774,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
-  const isAdmin = (session?.user as any)?.role === 'HR_ADMIN' || (session?.user as any)?.role === 'ADMIN'
-  const userPermissions: string[] = (session?.user as any)?.permissions ?? []
-  const userPerms: string[] = (session?.user as any)?.perms ?? []
-  const isMaterialMgr = isAdmin || userPermissions.includes('MATERIAL_MANAGER')
+  const userPerms: string[] = session?.user?.perms ?? []
+  const isAdmin = userPerms.includes('admin:users:manage')
+  const isMaterialMgr =
+    userPerms.includes('materials:manage') || userPerms.includes('admin:users:manage')
   const canManagePhoto = isAdmin || userPerms.includes('starters:photo:manage')
   const canEditInspectorNumber = isAdmin || userPerms.includes('starters:write:inspectornumber')
 

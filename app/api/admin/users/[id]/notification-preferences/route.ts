@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { z } from 'zod'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { ROLE_ASSIGNMENTS_INCLUDE, toAuthorizedUser, visibleEntityIds } from '@/lib/authz'
 
 /**
  * GET /api/admin/users/[id]/notification-preferences
@@ -17,7 +18,10 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user || session.user.role !== 'HR_ADMIN') {
+    if (
+      !session?.user ||
+      !(session.user as { perms?: string[] }).perms?.includes('admin:users:manage')
+    ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -36,6 +40,7 @@ export async function GET(
         memberships: {
           select: { entityId: true },
         },
+        ...ROLE_ASSIGNMENTS_INCLUDE,
       },
     })
 
@@ -43,10 +48,12 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    const authTarget = toAuthorizedUser(targetUser)
+
     // Bepaal welke entiteiten deze user zou moeten zien
     let accessibleEntityIds: string[]
 
-    if (targetUser.legacyRole === 'HR_ADMIN' || targetUser.legacyRole === 'GLOBAL_VIEWER') {
+    if (visibleEntityIds(authTarget, 'starters:read') === 'ALL') {
       const allEntities = await prisma.entity.findMany({
         where: { isActive: true },
         select: { id: true },
@@ -129,7 +136,10 @@ export async function PATCH(
   try {
     const session = await getServerSession(authOptions)
 
-    if (!session?.user || session.user.role !== 'HR_ADMIN') {
+    if (
+      !session?.user ||
+      !(session.user as { perms?: string[] }).perms?.includes('admin:users:manage')
+    ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -139,17 +149,19 @@ export async function PATCH(
 
     const targetUser = await prisma.user.findUnique({
       where: { id },
-      include: { memberships: { select: { entityId: true } } },
+      include: { memberships: { select: { entityId: true } }, ...ROLE_ASSIGNMENTS_INCLUDE },
     })
 
     if (!targetUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    const authTarget = toAuthorizedUser(targetUser)
+
     // Bepaal toegankelijke entiteiten
     let accessibleEntityIds: Set<string>
 
-    if (targetUser.legacyRole === 'HR_ADMIN' || targetUser.legacyRole === 'GLOBAL_VIEWER') {
+    if (visibleEntityIds(authTarget, 'starters:read') === 'ALL') {
       const allEntities = await prisma.entity.findMany({
         where: { isActive: true },
         select: { id: true },

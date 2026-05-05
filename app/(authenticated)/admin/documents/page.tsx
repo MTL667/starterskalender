@@ -39,7 +39,7 @@ export default function AdminDocumentsPage() {
   const [entityFilter, setEntityFilter] = useState<string>('ALL')
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
 
-  const isAdmin = session?.user?.role === 'HR_ADMIN'
+  const isAdmin = session?.user?.perms?.includes('admin:users:manage') ?? false
 
   useEffect(() => {
     if (session && !isAdmin) {

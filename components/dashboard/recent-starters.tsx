@@ -61,7 +61,7 @@ export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
 
-  const canEdit = session?.user?.role === 'HR_ADMIN' || session?.user?.role === 'ENTITY_EDITOR'
+  const canEdit = session?.user?.perms?.includes('starters:update') ?? false
 
   const starterIds = starters.map(s => s.id)
   const { scores: healthScores } = useHealthScores(starterIds)

@@ -1,4 +1,5 @@
 import { getCurrentUser } from '@/lib/auth-utils'
+import { can, toAuthorizedUser } from '@/lib/authz'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { YTDStats } from '@/components/dashboard/ytd-stats'
@@ -58,7 +59,7 @@ export default async function DashboardPage() {
           </Card>
         </Link>
 
-        {user.role === 'HR_ADMIN' && (
+        {can(toAuthorizedUser(user), 'admin:users:manage') && (
           <Link href="/admin">
             <Card className="cursor-pointer hover:border-primary transition-colors">
               <CardHeader className="flex flex-row items-center space-y-0 pb-2">

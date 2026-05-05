@@ -31,15 +31,29 @@ export async function GET(req: Request) {
 
     const materialManagers = await prisma.user.findMany({
       where: {
-        legacyPermissions: { has: 'MATERIAL_MANAGER' },
         status: 'ACTIVE',
-        legacyRole: { not: 'NONE' },
+        roleAssignments: {
+          some: {
+            role: {
+              permissions: { some: { permissionKey: 'materials:manage' } },
+            },
+          },
+        },
       },
       select: { id: true },
     })
 
     const hrAdmins = await prisma.user.findMany({
-      where: { legacyRole: 'HR_ADMIN', status: 'ACTIVE' },
+      where: {
+        status: 'ACTIVE',
+        roleAssignments: {
+          some: {
+            role: {
+              permissions: { some: { permissionKey: 'admin:users:manage' } },
+            },
+          },
+        },
+      },
       select: { id: true },
     })
 

@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     const entityId = searchParams.get('entityId')
     const search = searchParams.get('search')
     const type = searchParams.get('type')
-    const includePending = searchParams.get('includePending') === 'true' && user.role === 'HR_ADMIN'
+    const includePending = searchParams.get('includePending') === 'true' && isHRAdmin(user)
 
     let where: any = {}
     const andConditions: any[] = []
@@ -95,8 +95,8 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Non-HR_ADMIN users never see pending boarding starters
-    if (user.role !== 'HR_ADMIN') {
+    // Non-admin users never see pending boarding starters
+    if (!isHRAdmin(user)) {
       where.isPendingBoarding = false
     }
 

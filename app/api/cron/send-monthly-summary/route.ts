@@ -9,6 +9,7 @@ import {
 import { logAudit } from '@/lib/audit'
 import { verifyCronAuth } from '@/lib/cron-auth'
 import { renderAllEntities, countByType, buildSubjectParts, renderSummaryBlocks, groupByEntity, tt, getDateLocale, type EmailLocale } from '@/lib/cron-email-helpers'
+import { ROLE_ASSIGNMENTS_INCLUDE, toAuthorizedUser, visibleEntityIds } from '@/lib/authz'
 
 /**
  * Cron Job: Maandelijks overzicht
@@ -108,6 +109,7 @@ export async function GET(req: Request) {
             entity: true,
           },
         },
+        ...ROLE_ASSIGNMENTS_INCLUDE,
       },
     })
 
@@ -120,7 +122,7 @@ export async function GET(req: Request) {
       // Bepaal welke entiteiten deze user mag zien
       let accessibleEntityIds: string[]
       
-      if (user.legacyRole === 'HR_ADMIN' || user.legacyRole === 'GLOBAL_VIEWER') {
+      if (visibleEntityIds(toAuthorizedUser(user), 'starters:read') === 'ALL') {
         accessibleEntityIds = user.notificationPreferences.map(p => p.entityId)
       } else {
         const preferencesMap = new Set(user.notificationPreferences.map(p => p.entityId))

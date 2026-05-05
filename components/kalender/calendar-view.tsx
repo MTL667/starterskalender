@@ -33,7 +33,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   const t = useTranslations('calendar')
   const dateLocale = getDateLocale(useLocale())
   const { data: session } = useSession()
-  const isAdmin = session?.user?.role === 'HR_ADMIN'
+  const isAdmin = session?.user?.perms?.includes('admin:users:manage') ?? false
   const searchParams = useSearchParams()
   const today = new Date()
   const [viewMode, setViewMode] = useState<ViewMode>('week')

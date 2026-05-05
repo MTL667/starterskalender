@@ -1,0 +1,67 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`groupByEntity > groups by entity name and uses unknown label when entity is null (nl/fr) > fr-unknown-entity 1`] = `
+{
+  "Inconnu": [
+    {
+      "entity": null,
+      "firstName": "A",
+      "id": "1",
+      "language": "NL",
+      "lastName": "B",
+      "roleTitle": null,
+      "startDate": null,
+      "type": "ONBOARDING",
+    },
+  ],
+}
+`;
+
+exports[`groupByEntity > groups by entity name and uses unknown label when entity is null (nl/fr) > nl-unknown-entity 1`] = `
+{
+  "Onbekend": [
+    {
+      "entity": null,
+      "firstName": "A",
+      "id": "1",
+      "language": "NL",
+      "lastName": "B",
+      "roleTitle": null,
+      "startDate": null,
+      "type": "ONBOARDING",
+    },
+  ],
+}
+`;
+
+exports[`rendering (snapshots, deterministic dates) > buildSubjectParts matches snapshot for nl and fr > subject-fr 1`] = `"2 starters, 1 partant, 3 mutations"`;
+
+exports[`rendering (snapshots, deterministic dates) > buildSubjectParts matches snapshot for nl and fr > subject-nl 1`] = `"2 starters, 1 vertrekker, 3 mutaties"`;
+
+exports[`rendering (snapshots, deterministic dates) > buildSubjectParts matches snapshot for nl and fr > subject-singular-fr 1`] = `"1 starter, 1 partant, 1 mutation"`;
+
+exports[`rendering (snapshots, deterministic dates) > buildSubjectParts matches snapshot for nl and fr > subject-singular-nl 1`] = `"1 starter, 1 vertrekker, 1 mutatie"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderEntitySection matches snapshot for nl and fr > entity-section-fr 1`] = `"<div style="margin-bottom: 20px;"><h3 style="color: #1f2937; margin-bottom: 10px;">Section X (2)</h3><ul style="list-style-type: none; padding: 0;"><li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">🟢 <strong>Jan Peeters</strong> 🇳🇱<br/><span style="color: #6b7280;">Technicus</span><br/><span style="color: #6b7280; font-size: 14px;">Début: 15 juin 2024</span></li><li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #f97316; border-radius: 4px;">🔴 <strong>X Dupont</strong> 🇫🇷<br/><span style="color: #6b7280; font-size: 14px;">Départ: 15 juin 2024</span></li></ul></div>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderEntitySection matches snapshot for nl and fr > entity-section-nl 1`] = `"<div style="margin-bottom: 20px;"><h3 style="color: #1f2937; margin-bottom: 10px;">Section X (2)</h3><ul style="list-style-type: none; padding: 0;"><li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">🟢 <strong>Jan Peeters</strong> 🇳🇱<br/><span style="color: #6b7280;">Technicus</span><br/><span style="color: #6b7280; font-size: 14px;">Start: 15 juni 2024</span></li><li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #f97316; border-radius: 4px;">🔴 <strong>X Dupont</strong> 🇫🇷<br/><span style="color: #6b7280; font-size: 14px;">Vertrek: 15 juni 2024</span></li></ul></div>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderStarterItem matches snapshot for nl and fr > starter-migration-fr 1`] = `"<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #8b5cf6; border-radius: 4px;">🔄 <strong>Koen Verhoeven</strong> 🇳🇱<br/><span style="color: #6b7280;">Planner</span><br/><span style="color: #6b7280; font-size: 13px;">De: Old NV → New BV</span><br/><span style="color: #6b7280; font-size: 14px;">Mutation: 15 juin 2024</span></li>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderStarterItem matches snapshot for nl and fr > starter-migration-nl 1`] = `"<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #8b5cf6; border-radius: 4px;">🔄 <strong>Koen Verhoeven</strong> 🇳🇱<br/><span style="color: #6b7280;">Planner</span><br/><span style="color: #6b7280; font-size: 13px;">Van: Old NV → New BV</span><br/><span style="color: #6b7280; font-size: 14px;">Mutatie: 15 juni 2024</span></li>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderStarterItem matches snapshot for nl and fr > starter-offboarding-fr 1`] = `"<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #f97316; border-radius: 4px;">🔴 <strong>Marie Dupont</strong> 🇫🇷<br/><span style="color: #6b7280; font-size: 14px;">Départ: 15 juin 2024</span></li>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderStarterItem matches snapshot for nl and fr > starter-offboarding-nl 1`] = `"<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #f97316; border-radius: 4px;">🔴 <strong>Marie Dupont</strong> 🇫🇷<br/><span style="color: #6b7280; font-size: 14px;">Vertrek: 15 juni 2024</span></li>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderStarterItem matches snapshot for nl and fr > starter-onboarding-fr 1`] = `"<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">🟢 <strong>Jan Peeters</strong> 🇫🇷<br/><span style="color: #6b7280;">Technicus</span><br/><span style="color: #6b7280; font-size: 14px;">Début: 15 juin 2024</span></li>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderStarterItem matches snapshot for nl and fr > starter-onboarding-nl 1`] = `"<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">🟢 <strong>Jan Peeters</strong> 🇳🇱<br/><span style="color: #6b7280;">Technicus</span><br/><span style="color: #6b7280; font-size: 14px;">Start: 15 juni 2024</span></li>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderStarterItem uses date unknown copy when startDate is null > starter-no-date-fr 1`] = `"<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">🟢 <strong>Jan Peeters</strong> 🇳🇱<br/><span style="color: #6b7280;">Technicus</span><br/><span style="color: #6b7280; font-size: 14px;">Début: Date inconnue</span></li>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderStarterItem uses date unknown copy when startDate is null > starter-no-date-nl 1`] = `"<li style="padding: 10px; margin: 5px 0; background: #f9fafb; border-left: 3px solid #3b82f6; border-radius: 4px;">🟢 <strong>Jan Peeters</strong> 🇳🇱<br/><span style="color: #6b7280;">Technicus</span><br/><span style="color: #6b7280; font-size: 14px;">Start: Datum onbekend</span></li>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderSummaryBlocks matches snapshot for nl and fr > summary-mixed-fr 1`] = `"<div style="display: flex; gap: 10px; margin: 20px 0;"><div style="text-align: center; flex: 1; padding: 15px; background: #eff6ff; border-radius: 8px;"><div style="font-size: 28px; font-weight: bold; color: #1e40af;">2</div><div style="color: #1e40af; font-size: 13px;">🟢 Starters</div></div><div style="text-align: center; flex: 1; padding: 15px; background: #fff7ed; border-radius: 8px;"><div style="font-size: 28px; font-weight: bold; color: #c2410c;">1</div><div style="color: #c2410c; font-size: 13px;">🔴 Partant</div></div><div style="text-align: center; flex: 1; padding: 15px; background: #f5f3ff; border-radius: 8px;"><div style="font-size: 28px; font-weight: bold; color: #6d28d9;">1</div><div style="color: #6d28d9; font-size: 13px;">🔄 Mutation</div></div></div>"`;
+
+exports[`rendering (snapshots, deterministic dates) > renderSummaryBlocks matches snapshot for nl and fr > summary-mixed-nl 1`] = `"<div style="display: flex; gap: 10px; margin: 20px 0;"><div style="text-align: center; flex: 1; padding: 15px; background: #eff6ff; border-radius: 8px;"><div style="font-size: 28px; font-weight: bold; color: #1e40af;">2</div><div style="color: #1e40af; font-size: 13px;">🟢 Starters</div></div><div style="text-align: center; flex: 1; padding: 15px; background: #fff7ed; border-radius: 8px;"><div style="font-size: 28px; font-weight: bold; color: #c2410c;">1</div><div style="color: #c2410c; font-size: 13px;">🔴 Vertrekker</div></div><div style="text-align: center; flex: 1; padding: 15px; background: #f5f3ff; border-radius: 8px;"><div style="font-size: 28px; font-weight: bold; color: #6d28d9;">1</div><div style="color: #6d28d9; font-size: 13px;">🔄 Mutatie</div></div></div>"`;

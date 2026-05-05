@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { eventBus, type SSEEvent } from '@/lib/events'
+import { ROLE_ASSIGNMENTS_INCLUDE, toAuthorizedUser, visibleEntityIds } from '@/lib/authz'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -14,22 +15,25 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { email: session.user.email! },
-    include: { memberships: { select: { entityId: true } } },
+    include: {
+      memberships: { select: { entityId: true } },
+      ...ROLE_ASSIGNMENTS_INCLUDE,
+    },
   })
 
   if (!user) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const role = user.legacyRole
-  const isGlobalAccess = role === 'HR_ADMIN' || role === 'GLOBAL_VIEWER'
+  const authUser = toAuthorizedUser(user)
+  const starterScope = visibleEntityIds(authUser, 'starters:read')
 
   let entityIds: string[]
-  if (isGlobalAccess) {
+  if (starterScope === 'ALL') {
     const entities = await prisma.entity.findMany({ select: { id: true } })
     entityIds = entities.map(e => e.id)
   } else {
-    entityIds = user.memberships.map(m => m.entityId)
+    entityIds = starterScope
   }
 
   if (entityIds.length === 0) {

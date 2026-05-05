@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
+import { isHRAdmin } from '@/lib/rbac'
 
 // Check of de applicatie al is opgezet (heeft entiteiten)
 export async function GET() {
@@ -16,7 +17,7 @@ export async function GET() {
     
     return NextResponse.json({
       needsSetup: entityCount === 0,
-      isAdmin: user.role === 'HR_ADMIN',
+      isAdmin: isHRAdmin(user),
     })
   } catch (error) {
     console.error('Error checking setup:', error)

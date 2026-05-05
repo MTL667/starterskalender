@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from './auth-options'
 import { prisma } from './prisma'
-import { UserWithMemberships, isMaterialManager } from './rbac'
+import { UserWithMemberships } from './rbac'
 import { can, visibleEntityIds, toAuthorizedUser } from './authz'
 
 /**
@@ -116,10 +116,7 @@ export async function requireMaterialManager(): Promise<UserWithMemberships> {
 
   const authUser = toAuthorizedUser(user)
   if (!can(authUser, 'materials:manage')) {
-    // Backwards-compat: ook de legacy permissions check honoreren
-    if (!isMaterialManager(user)) {
-      throw new Error('Forbidden: Material manager permission required')
-    }
+    throw new Error('Forbidden: Material manager permission required')
   }
 
   return user

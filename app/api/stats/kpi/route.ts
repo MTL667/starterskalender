@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth-utils'
+import { can, toAuthorizedUser } from '@/lib/authz'
 import { startOfMonth, endOfMonth, subMonths, format } from 'date-fns'
 
 export async function GET(request: NextRequest) {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    if (user.role !== 'HR_ADMIN') {
+    if (!can(toAuthorizedUser(user), 'admin:users:manage')) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

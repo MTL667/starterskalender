@@ -67,9 +67,9 @@ export default function MaterialenDashboard() {
   const [entities, setEntities] = useState<{ id: string; name: string }[]>([])
   const [materialTypes, setMaterialTypes] = useState<{ id: string; name: string }[]>([])
 
-  const userPermissions: string[] = (session?.user as any)?.permissions ?? []
-  const isAdmin = (session?.user as any)?.role === 'HR_ADMIN'
-  const isMaterialMgr = isAdmin || userPermissions.includes('MATERIAL_MANAGER')
+  const perms = session?.user?.perms ?? []
+  const isMaterialMgr =
+    perms.includes('materials:manage') || perms.includes('admin:users:manage')
 
   useEffect(() => {
     if (sessionStatus === 'loading') return

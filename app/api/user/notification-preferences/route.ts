@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { ROLE_ASSIGNMENTS_INCLUDE, toAuthorizedUser, visibleEntityIds, can } from '@/lib/authz'
 
 // GET: Haal notificatie voorkeuren op voor huidige user
 export async function GET() {
@@ -41,6 +42,7 @@ export async function GET() {
             },
           },
         },
+        ...ROLE_ASSIGNMENTS_INCLUDE,
       },
     })
 
@@ -51,18 +53,18 @@ export async function GET() {
       )
     }
 
-    // Voor HR_ADMIN en GLOBAL_VIEWER: alle actieve entiteiten
-    // Voor andere users: alleen memberships
+    const authUser = toAuthorizedUser(user)
+
     let accessibleEntities: string[]
-    
-    if (user.legacyRole === 'HR_ADMIN' || user.legacyRole === 'GLOBAL_VIEWER') {
+    const scope = visibleEntityIds(authUser, 'starters:read')
+    if (scope === 'ALL') {
       const allEntities = await prisma.entity.findMany({
         where: { isActive: true },
         select: { id: true },
       })
       accessibleEntities = allEntities.map(e => e.id)
     } else {
-      accessibleEntities = user.memberships.map(m => m.entityId)
+      accessibleEntities = scope
     }
 
     // Maak default preferences aan voor entiteiten zonder preferences
@@ -142,6 +144,7 @@ export async function PATCH(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
+      include: ROLE_ASSIGNMENTS_INCLUDE,
     })
 
     if (!user) {
@@ -150,6 +153,8 @@ export async function PATCH(req: Request) {
         { status: 404 }
       )
     }
+
+    const authUser = toAuthorizedUser(user)
 
     const body = await req.json()
     const data = UpdatePreferenceSchema.parse(body)
@@ -164,8 +169,7 @@ export async function PATCH(req: Request) {
       },
     })
 
-    // HR_ADMIN en GLOBAL_VIEWER hebben toegang tot alle entiteiten
-    if (!membership && user.legacyRole !== 'HR_ADMIN' && user.legacyRole !== 'GLOBAL_VIEWER') {
+    if (!membership && !can(authUser, 'starters:read', { entityId: data.entityId })) {
       return NextResponse.json(
         { error: 'No access to this entity' },
         { status: 403 }

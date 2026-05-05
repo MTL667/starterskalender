@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { toAuthorizedUser, visibleEntityIds, can } from '@/lib/authz'
+import { isHRAdmin } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { eventBus } from '@/lib/events'
 
 // GET /api/tasks - Haal taken op (met filters)
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -19,8 +20,8 @@ export async function GET(req: Request) {
     const entityId = searchParams.get('entityId')
     const type = searchParams.get('type')
 
-    const user = session.user as any
-    const isAdmin = user.role === 'HR_ADMIN'
+    const authUser = toAuthorizedUser(user)
+    const isAdmin = isHRAdmin(user)
 
     // Build where clause
     const where: any = {}
@@ -50,16 +51,13 @@ export async function GET(req: Request) {
       where.type = type
     }
 
-    // Als niet admin, alleen taken zien die:
-    // 1. Aan jou toegewezen zijn
-    // 2. Of van entiteiten waar je toegang tot hebt
     if (!isAdmin && !assignedToMe) {
-      const membershipEntityIds = user.memberships?.map((m: any) => m.entityId) || []
-      
-      where.OR = [
-        { assignedToId: user.id },
-        { entityId: { in: membershipEntityIds } },
-      ]
+      const scope = visibleEntityIds(authUser, 'starters:read')
+      if (scope === 'ALL') {
+        where.OR = [{ assignedToId: user.id }, { entityId: { not: null } }]
+      } else {
+        where.OR = [{ assignedToId: user.id }, { entityId: { in: scope } }]
+      }
     }
 
     const tasks = await prisma.task.findMany({
@@ -123,13 +121,13 @@ export async function GET(req: Request) {
 // POST /api/tasks - Maak nieuwe taak aan
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = session.user as any
-    const isAdmin = user.role === 'HR_ADMIN'
+    const authUser = toAuthorizedUser(user)
+    const isAdmin = isHRAdmin(user)
 
     const body = await req.json()
     const {
@@ -153,10 +151,8 @@ export async function POST(req: Request) {
 
     // Permissions check
     if (!isAdmin) {
-      // Als niet admin, check of user toegang heeft tot de entiteit
       if (entityId) {
-        const hasAccess = user.memberships?.some((m: any) => m.entityId === entityId)
-        if (!hasAccess) {
+        if (!can(authUser, 'starters:read', { entityId })) {
           return NextResponse.json({ error: 'No access to this entity' }, { status: 403 })
         }
       }

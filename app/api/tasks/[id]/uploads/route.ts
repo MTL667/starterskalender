@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { isHRAdmin } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { uploadDocument, isDocsGraphConfigured } from '@/lib/graph-teams'
 
@@ -11,11 +11,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    const user = session.user as any
     const { id } = await params
 
     const task = await prisma.task.findUnique({
@@ -36,7 +35,7 @@ export async function POST(
     }
 
     // Permissions: assignee of admin
-    const isAdmin = user.role === 'HR_ADMIN'
+    const isAdmin = isHRAdmin(user)
     const isAssignedToMe = task.assignedToId === user.id
     if (!isAdmin && !isAssignedToMe) {
       return NextResponse.json(
@@ -170,8 +169,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const { id } = await params

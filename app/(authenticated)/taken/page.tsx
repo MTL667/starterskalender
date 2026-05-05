@@ -39,7 +39,7 @@ export default function TakenPage() {
   const [users, setUsers] = useState<Array<{ id: string; name: string | null; email: string }>>([])
   const [reassigning, setReassigning] = useState(false)
 
-  const isAdmin = session?.user?.role === 'HR_ADMIN'
+  const isAdmin = session?.user?.perms?.includes('admin:users:manage') ?? false
   const currentUserId = session?.user?.id
 
   const [statusFilter, setStatusFilter] = useState<string>('all')

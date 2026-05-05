@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
+import { getCurrentUser } from '@/lib/auth-utils'
+import { can, toAuthorizedUser, visibleEntityIds } from '@/lib/authz'
+import { isHRAdmin } from '@/lib/rbac'
 import { prisma } from '@/lib/prisma'
 import { sendTaskReassignmentEmail } from '@/lib/task-automation'
 import { eventBus } from '@/lib/events'
@@ -12,13 +13,12 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = session.user as any
-    const isAdmin = user.role === 'HR_ADMIN'
+    const authUser = toAuthorizedUser(user)
 
     const task = await prisma.task.findUnique({
       where: { id: id },
@@ -114,12 +114,14 @@ export async function GET(
 
     const taskWithMeta = { ...task, template, dependencies }
 
+    const seesAllStarters =
+      isHRAdmin(user) || visibleEntityIds(authUser, 'starters:read') === 'ALL'
+
     // Permissions check
-    if (!isAdmin) {
+    if (!seesAllStarters) {
       const isAssignedToMe = task.assignedToId === user.id
-      const hasEntityAccess = user.memberships?.some(
-        (m: any) => m.entityId === task.entityId
-      )
+      const hasEntityAccess =
+        !!task.entityId && can(authUser, 'starters:read', { entityId: task.entityId })
 
       if (!isAssignedToMe && !hasEntityAccess) {
         return NextResponse.json({ error: 'No access to this task' }, { status: 403 })
@@ -143,13 +145,12 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = session.user as any
-    const isAdmin = user.role === 'HR_ADMIN'
+    const authUser = toAuthorizedUser(user)
 
     const task = await prisma.task.findUnique({
       where: { id: id },
@@ -159,12 +160,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
+    const seesAllStarters =
+      isHRAdmin(user) || visibleEntityIds(authUser, 'starters:read') === 'ALL'
+
     // Permissions check
-    if (!isAdmin) {
+    if (!seesAllStarters) {
       const isAssignedToMe = task.assignedToId === user.id
-      const hasEntityAccess = user.memberships?.some(
-        (m: any) => m.entityId === task.entityId
-      )
+      const hasEntityAccess =
+        !!task.entityId && can(authUser, 'starters:read', { entityId: task.entityId })
 
       if (!isAssignedToMe && !hasEntityAccess) {
         return NextResponse.json({ error: 'No access to this task' }, { status: 403 })
@@ -291,13 +294,10 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const user = session.user as any
-    const isAdmin = user.role === 'HR_ADMIN'
 
     const task = await prisma.task.findUnique({
       where: { id: id },
@@ -308,7 +308,7 @@ export async function DELETE(
     }
 
     // Permissions check - alleen admins of de creator kunnen verwijderen
-    if (!isAdmin && task.createdById !== user.id) {
+    if (!isHRAdmin(user) && task.createdById !== user.id) {
       return NextResponse.json(
         { error: 'Only admins or task creator can delete tasks' },
         { status: 403 }

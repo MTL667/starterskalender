@@ -601,6 +601,7 @@ model Task {
 
   @@index([status, assignedToId])
   @@index([starterId, status])
+  @@index([starterId, templateId])
   @@index([entityId, status])
   @@index([assignedToId, dueDate])
   @@index([type, status])
@@ -626,6 +627,7 @@ model TaskAssignment {
   @@unique([entityId, taskType]) // Per entiteit+type slechts 1 verantwoordelijke
   @@index([entityId, taskType])
   @@index([assignedToId])
+  @@index([assignedToId, taskType])
 }
 
 // Uploads per taak (foto-varianten, handtekening, etc.) — opgeslagen in SharePoint
@@ -813,6 +815,7 @@ model StarterDocument {
   @@index([starterId, sortOrder])
   @@index([status])
   @@index([taskId])
+  @@index([quillDocumentId])
 }
 
 // Document audit trail

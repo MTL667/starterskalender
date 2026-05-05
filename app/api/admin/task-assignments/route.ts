@@ -26,16 +26,17 @@ export async function GET(req: Request) {
     // Get all users for assignee dropdown
     const users = await prisma.user.findMany({
       where: {
-        legacyRole: {
-          not: 'NONE',
-        },
+        roleAssignments: { some: {} },
       },
       select: {
         id: true,
         name: true,
         email: true,
-        legacyRole: true,
         status: true,
+        roleAssignments: {
+          include: { role: { select: { name: true } } },
+          orderBy: { role: { name: 'asc' } },
+        },
       },
       orderBy: {
         name: 'asc',
@@ -51,19 +52,22 @@ export async function GET(req: Request) {
             id: true,
             name: true,
             email: true,
-            legacyRole: true,
+            roleAssignments: {
+              include: { role: { select: { name: true } } },
+              orderBy: { role: { name: 'asc' } },
+            },
           },
         })
         return {
           ...assignment,
-          assignee: assignee ? { ...assignee, role: assignee.legacyRole } : null,
+          assignee: assignee ? { ...assignee, role: assignee.roleAssignments.map(ra => ra.role.name).join(', ') || 'Geen rol' } : null,
         }
       })
     )
 
     return NextResponse.json({
       assignments: assignmentsWithAssignees,
-      users: users.map((u) => ({ ...u, role: u.legacyRole })),
+      users: users.map((u) => ({ ...u, role: u.roleAssignments.map(ra => ra.role.name).join(', ') || 'Geen rol' })),
     })
   } catch (error) {
     console.error('Error fetching task assignments:', error)
@@ -157,7 +161,10 @@ export async function POST(req: Request) {
         id: true,
         name: true,
         email: true,
-        legacyRole: true,
+        roleAssignments: {
+          include: { role: { select: { name: true } } },
+          orderBy: { role: { name: 'asc' } },
+        },
       },
     })
 
@@ -178,7 +185,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       ...assignment,
-      assignee: assignee ? { ...assignee, role: assignee.legacyRole } : null,
+      assignee: assignee ? { ...assignee, role: assignee.roleAssignments.map(ra => ra.role.name).join(', ') || 'Geen rol' } : null,
     }, { status: 201 })
   } catch (error) {
     console.error('❌ Error creating/updating task assignment:', error)

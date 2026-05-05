@@ -31,7 +31,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   const tc = useTranslations('common')
   const dateLocale = getDateLocale(useLocale())
   const { data: session } = useSession()
-  const isAdmin = session?.user?.role === 'HR_ADMIN'
+  const isAdmin = session?.user?.perms?.includes('admin:users:manage') ?? false
   const today = new Date()
   const [periodMode, setPeriodMode] = useState<'year' | 'custom'>('year')
   const [year, setYear] = useState(initialYear)

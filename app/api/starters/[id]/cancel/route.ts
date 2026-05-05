@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { z } from 'zod'
-import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
 import { sendEmail } from '@/lib/email'
 import { eventBus } from '@/lib/events'
+import { getCurrentUser, hasEntityAccess } from '@/lib/auth-utils'
+import { isHRAdmin } from '@/lib/rbac'
+import { ROLE_ASSIGNMENTS_INCLUDE, toAuthorizedUser, visibleEntityIds } from '@/lib/authz'
 
 const CancelSchema = z.object({
   cancelReason: z.string().optional(),
@@ -16,9 +17,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const user = await getCurrentUser()
     
-    if (!session?.user) {
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -51,18 +52,9 @@ export async function POST(
       return NextResponse.json({ error: 'Starter niet gevonden' }, { status: 404 })
     }
 
-    // Check permissions
-    const userRole = session.user.role
-    const canCancel = 
-      userRole === 'HR_ADMIN' ||
-      (userRole === 'ENTITY_EDITOR' && starter.entityId && 
-       await prisma.membership.findFirst({
-         where: { 
-           userId: session.user.id, 
-           entityId: starter.entityId,
-           canEdit: true 
-         }
-       }))
+    const canCancel =
+      isHRAdmin(user) ||
+      (!!starter.entityId && (await hasEntityAccess(user, starter.entityId, true)))
 
     if (!canCancel) {
       return NextResponse.json({ error: 'Geen toestemming om te annuleren' }, { status: 403 })
@@ -74,14 +66,14 @@ export async function POST(
       data: {
         isCancelled: true,
         cancelledAt: new Date(),
-        cancelledBy: session.user.id,
+        cancelledBy: user.id,
         cancelReason: data.cancelReason,
       },
     })
 
     // Audit log
     await createAuditLog({
-      actorId: session.user.id,
+      actorId: user.id,
       action: 'CANCEL_STARTER',
       target: `Starter:${starter.id}`,
       meta: { 
@@ -94,19 +86,28 @@ export async function POST(
     // Verzamel alle email ontvangers
     const recipients: string[] = []
 
-    // 1. HR_ADMIN users
-    const hrAdmins = await prisma.user.findMany({
-      where: { legacyRole: 'HR_ADMIN' },
-      select: { email: true, name: true },
+    const broadcastUsers = await prisma.user.findMany({
+      where: {
+        status: 'ACTIVE',
+        roleAssignments: {
+          some: {
+            role: {
+              permissions: {
+                some: {
+                  permissionKey: { in: ['starters:read', 'admin:users:manage'] },
+                },
+              },
+            },
+          },
+        },
+      },
+      include: ROLE_ASSIGNMENTS_INCLUDE,
     })
-    recipients.push(...hrAdmins.map(u => u.email))
-
-    // 2. GLOBAL_VIEWER users
-    const globalViewers = await prisma.user.findMany({
-      where: { legacyRole: 'GLOBAL_VIEWER' },
-      select: { email: true },
-    })
-    recipients.push(...globalViewers.map(u => u.email))
+    for (const u of broadcastUsers) {
+      if (visibleEntityIds(toAuthorizedUser(u), 'starters:read') === 'ALL') {
+        recipients.push(u.email)
+      }
+    }
 
     // 3. Entity viewers/editors (via memberships)
     if (starter.entity) {
@@ -133,13 +134,13 @@ export async function POST(
             <p><strong>Entiteit:</strong> ${starter.entity?.name || 'N/A'}</p>
             <p><strong>Startdatum:</strong> ${starter.startDate ? new Date(starter.startDate).toLocaleDateString('nl-BE') : 'Nog niet gekend'}</p>
             ${data.cancelReason ? `<p><strong>Reden:</strong> ${data.cancelReason}</p>` : ''}
-            <p><strong>Geannuleerd door:</strong> ${session.user.name || session.user.email}</p>
+            <p><strong>Geannuleerd door:</strong> ${user.name || user.email}</p>
             <p><strong>Datum annulering:</strong> ${new Date().toLocaleDateString('nl-BE')}</p>
           `,
         })
 
         await createAuditLog({
-          actorId: session.user.id,
+          actorId: user.id,
           action: 'SEND_MAIL',
           target: 'CancellationNotification',
           meta: { 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { ROLE_ASSIGNMENTS_INCLUDE, toAuthorizedUser, visibleEntityIds } from '@/lib/authz'
 
 /**
  * POST /api/admin/cron-preview
@@ -13,7 +14,10 @@ import { prisma } from '@/lib/prisma'
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== 'HR_ADMIN') {
+  if (
+    !session ||
+    !(session.user as { perms?: string[] }).perms?.includes('admin:users:manage')
+  ) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
@@ -104,7 +108,7 @@ export async function POST(req: Request) {
     // Haal ALLE users op (met memberships en notification preferences)
     const allUsersRaw = await prisma.user.findMany({
       where: {
-        legacyRole: { not: 'NONE' },
+        roleAssignments: { some: {} },
       },
       include: {
         notificationPreferences: {
@@ -127,6 +131,7 @@ export async function POST(req: Request) {
             },
           },
         },
+        ...ROLE_ASSIGNMENTS_INCLUDE,
       },
       orderBy: { name: 'asc' },
     })
@@ -147,7 +152,8 @@ export async function POST(req: Request) {
       const enabledPrefs = user.notificationPreferences.filter(p => p[notificationType])
       
       let accessibleEntityIds: string[] = []
-      if (user.legacyRole === 'HR_ADMIN' || user.legacyRole === 'GLOBAL_VIEWER') {
+      const authUser = toAuthorizedUser(user)
+      if (visibleEntityIds(authUser, 'starters:read') === 'ALL') {
         accessibleEntityIds = enabledPrefs.map(p => p.entityId)
       } else {
         const preferencesMap = new Set(enabledPrefs.map(p => p.entityId))
