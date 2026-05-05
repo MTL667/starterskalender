@@ -9,29 +9,41 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { ArrowLeft, UserPlus, Trash2, Building2, Search, X, Bell, Package, KeyRound } from 'lucide-react'
+import { ArrowLeft, UserPlus, Trash2, Building2, Search, X, Bell, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 import { UserMembershipsDialog } from '@/components/admin/user-memberships-dialog'
 import { UserNotificationPrefsDialog } from '@/components/admin/user-notification-prefs-dialog'
 import { UserRolesDialog } from '@/components/admin/user-roles-dialog'
 
+interface RoleInfo {
+  id: string
+  key: string
+  name: string
+  isSystem: boolean
+  bypassEntityScope: boolean
+}
+
+interface RoleAssignment {
+  id: string
+  entityIds: string[]
+  grantedAt: string
+  expiresAt: string | null
+  role: RoleInfo
+}
+
 interface User {
   id: string
   email: string
   name: string | null
-  role: string
   locale: string
-  permissions: string[]
+  roleAssignments: RoleAssignment[]
   createdAt: string
   lastLoginAt: string | null
   memberships: {
     id: string
     entityId: string
     canEdit: boolean
-    entity: {
-      name: string
-    }
+    entity: { id: string; name: string }
   }[]
 }
 
@@ -40,16 +52,37 @@ interface Entity {
   name: string
 }
 
-const ROLES = [
-  { value: 'HR_ADMIN', label: 'HR Admin' },
-  { value: 'ENTITY_EDITOR', label: 'Entity Editor' },
-  { value: 'ENTITY_VIEWER', label: 'Entity Viewer' },
-  { value: 'GLOBAL_VIEWER', label: 'Global Viewer' },
-  { value: 'NONE', label: 'None (Guest - No Access)' },
-]
+interface AvailableRole {
+  id: string
+  key: string
+  name: string
+  isSystem: boolean
+  bypassEntityScope: boolean
+}
 
-function getRoleLabel(role: string): string {
-  return ROLES.find(r => r.value === role)?.label || role
+const ROLE_BADGE_COLORS: Record<string, string> = {
+  'hr-admin': 'bg-red-100 text-red-800',
+  'entity-editor': 'bg-blue-100 text-blue-800',
+  'entity-viewer': 'bg-green-100 text-green-800',
+  'global-viewer': 'bg-purple-100 text-purple-800',
+  'material-manager': 'bg-amber-100 text-amber-800',
+}
+
+const ROLE_PRIORITY: Record<string, number> = {
+  'hr-admin': 0,
+  'global-viewer': 1,
+  'entity-editor': 2,
+  'entity-viewer': 3,
+  'material-manager': 4,
+}
+
+const NO_ROLE = '__none__'
+
+function getPrimaryRolePriority(user: User): number {
+  if (user.roleAssignments.length === 0) return 99
+  return Math.min(
+    ...user.roleAssignments.map((ra) => ROLE_PRIORITY[ra.role.key] ?? 50),
+  )
 }
 
 export default function UsersAdminPage() {
@@ -57,25 +90,26 @@ export default function UsersAdminPage() {
   const tc = useTranslations('common')
   const [users, setUsers] = useState<User[]>([])
   const [entities, setEntities] = useState<Entity[]>([])
+  const [allRoles, setAllRoles] = useState<AvailableRole[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [membershipsDialogOpen, setMembershipsDialogOpen] = useState(false)
   const [notifPrefsDialogOpen, setNotifPrefsDialogOpen] = useState(false)
   const [rolesDialogOpen, setRolesDialogOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [editUser, setEditUser] = useState<User | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState<string>('ALL')
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'ENTITY_VIEWER',
+    roleKey: '',
   })
 
   useEffect(() => {
     fetchUsers()
     fetchEntities()
+    fetchRoles()
   }, [])
 
   const fetchUsers = async () => {
@@ -104,6 +138,18 @@ export default function UsersAdminPage() {
     }
   }
 
+  const fetchRoles = async () => {
+    try {
+      const res = await fetch('/api/admin/roles')
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data?.roles)) setAllRoles(data.roles)
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error)
+    }
+  }
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -112,7 +158,12 @@ export default function UsersAdminPage() {
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          roleKey: formData.roleKey || undefined,
+        }),
       })
 
       if (!res.ok) {
@@ -121,7 +172,7 @@ export default function UsersAdminPage() {
       }
 
       setDialogOpen(false)
-      setFormData({ name: '', email: '', password: '', role: 'ENTITY_VIEWER' })
+      setFormData({ name: '', email: '', password: '', roleKey: '' })
       fetchUsers()
       alert(t('userCreated'))
     } catch (error) {
@@ -129,24 +180,6 @@ export default function UsersAdminPage() {
       alert(error instanceof Error ? error.message : t('errorCreating'))
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleUpdateRole = async (userId: string, newRole: string) => {
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
-      })
-
-      if (!res.ok) throw new Error('Failed to update role')
-
-      fetchUsers()
-      alert(t('roleUpdated'))
-    } catch (error) {
-      console.error('Error updating role:', error)
-      alert(t('errorUpdatingRole'))
     }
   }
 
@@ -161,27 +194,6 @@ export default function UsersAdminPage() {
       fetchUsers()
     } catch (error) {
       console.error('Error updating locale:', error)
-    }
-  }
-
-  const handleTogglePermission = async (userId: string, permission: string, currentPermissions: string[]) => {
-    const hasIt = currentPermissions.includes(permission)
-    const newPermissions = hasIt
-      ? currentPermissions.filter(p => p !== permission)
-      : [...currentPermissions, permission]
-
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ permissions: newPermissions }),
-      })
-
-      if (!res.ok) throw new Error('Failed to update permissions')
-      fetchUsers()
-    } catch (error) {
-      console.error('Error updating permissions:', error)
-      alert('Fout bij bijwerken van permissies')
     }
   }
 
@@ -203,43 +215,60 @@ export default function UsersAdminPage() {
     }
   }
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'HR_ADMIN':
-        return 'bg-red-100 text-red-800'
-      case 'ENTITY_EDITOR':
-        return 'bg-blue-100 text-blue-800'
-      case 'ENTITY_VIEWER':
-        return 'bg-green-100 text-green-800'
-      case 'GLOBAL_VIEWER':
-        return 'bg-gray-100 text-gray-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+  function getUserEntityNames(user: User): string[] {
+    const hasGlobal = user.roleAssignments.some(
+      (ra) => ra.role.bypassEntityScope || ra.entityIds.length === 0,
+    )
+    if (hasGlobal) return []
+
+    const entityIds = new Set(user.roleAssignments.flatMap((ra) => ra.entityIds))
+    return [...entityIds]
+      .map((id) => entities.find((e) => e.id === id)?.name)
+      .filter((n): n is string => !!n)
+      .sort()
   }
 
   const filteredAndSortedUsers = [...users]
     .filter((user) => {
-      if (roleFilter !== 'ALL' && user.role !== roleFilter) return false
+      if (roleFilter === NO_ROLE) {
+        if (user.roleAssignments.length > 0) return false
+      } else if (roleFilter !== 'ALL') {
+        if (!user.roleAssignments.some((ra) => ra.role.key === roleFilter)) return false
+      }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
         const matchesName = user.name?.toLowerCase().includes(q)
         const matchesEmail = user.email.toLowerCase().includes(q)
-        const matchesEntity = user.memberships.some(m =>
-          m.entity.name.toLowerCase().includes(q)
+        const matchesRole = user.roleAssignments.some((ra) =>
+          ra.role.name.toLowerCase().includes(q),
         )
-        if (!matchesName && !matchesEmail && !matchesEntity) return false
+        const entityNames = getUserEntityNames(user)
+        const matchesEntity = entityNames.some((name) =>
+          name.toLowerCase().includes(q),
+        )
+        if (!matchesName && !matchesEmail && !matchesRole && !matchesEntity) return false
       }
       return true
     })
     .sort((a, b) => {
-      const roleOrderA = ROLES.findIndex(r => r.value === a.role)
-      const roleOrderB = ROLES.findIndex(r => r.value === b.role)
-      if (roleOrderA !== roleOrderB) return roleOrderA - roleOrderB
+      const priorityA = getPrimaryRolePriority(a)
+      const priorityB = getPrimaryRolePriority(b)
+      if (priorityA !== priorityB) return priorityA - priorityB
       const nameA = (a.name || a.email).toLowerCase()
       const nameB = (b.name || b.email).toLowerCase()
       return nameA.localeCompare(nameB)
     })
+
+  const filterRoles =
+    allRoles.length > 0
+      ? allRoles
+      : [
+          ...new Map(
+            users
+              .flatMap((u) => u.roleAssignments.map((ra) => [ra.role.key, ra.role]))
+              .map(([key, role]) => [key, role] as [string, RoleInfo]),
+          ).values(),
+        ]
 
   return (
     <div className="container mx-auto py-8 max-w-6xl">
@@ -255,9 +284,7 @@ export default function UsersAdminPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>{t('title')}</CardTitle>
-              <CardDescription>
-                {t('subtitle')}
-              </CardDescription>
+              <CardDescription>{t('subtitle')}</CardDescription>
             </div>
             <Button onClick={() => setDialogOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
@@ -285,14 +312,15 @@ export default function UsersAdminPage() {
               )}
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="w-full sm:w-[220px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">{t('allRoles')}</SelectItem>
-                {ROLES.map((role) => (
-                  <SelectItem key={role.value} value={role.value}>
-                    {role.label}
+                <SelectItem value={NO_ROLE}>Geen rollen</SelectItem>
+                {filterRoles.map((role) => (
+                  <SelectItem key={role.key} value={role.key}>
+                    {role.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -316,121 +344,112 @@ export default function UsersAdminPage() {
               <p className="text-sm text-muted-foreground">
                 {t('showingCount', { count: filteredAndSortedUsers.length, total: users.length })}
               </p>
-              {filteredAndSortedUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <p className="font-medium">{user.name || t('noName')}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                        {user.lastLoginAt && (
-                          <p className="text-xs text-muted-foreground">
-                            {t('lastLogin')}: {new Date(user.lastLoginAt).toLocaleString('nl-BE', {
-                              dateStyle: 'short',
-                              timeStyle: 'short',
-                            })}
-                          </p>
+              {filteredAndSortedUsers.map((user) => {
+                const entityNames = getUserEntityNames(user)
+                return (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div>
+                          <p className="font-medium">{user.name || t('noName')}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                          {user.lastLoginAt && (
+                            <p className="text-xs text-muted-foreground">
+                              {t('lastLogin')}: {new Date(user.lastLoginAt).toLocaleString('nl-BE', {
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                              })}
+                            </p>
+                          )}
+                        </div>
+                        {user.roleAssignments.length > 0 ? (
+                          user.roleAssignments.map((ra) => (
+                            <Badge
+                              key={ra.id}
+                              className={
+                                ROLE_BADGE_COLORS[ra.role.key] ?? 'bg-gray-100 text-gray-800'
+                              }
+                            >
+                              {ra.role.name}
+                            </Badge>
+                          ))
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            Geen rollen
+                          </Badge>
                         )}
                       </div>
-                      <Badge className={getRoleBadgeColor(user.role)}>
-                        {getRoleLabel(user.role)}
-                      </Badge>
-                      {(user.permissions ?? []).includes('MATERIAL_MANAGER') && (
-                        <Badge variant="outline" className="text-xs gap-1">
-                          <Package className="h-3 w-3" />
-                          Materialen
-                        </Badge>
+                      {entityNames.length > 0 && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          {t('entities')}: {entityNames.join(', ')}
+                        </div>
                       )}
                     </div>
-                    {user.memberships.length > 0 && (
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        {t('entities')}: {user.memberships.map(m => m.entity.name).join(', ')}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-[52px] font-medium text-xs"
-                      onClick={() => handleUpdateLocale(user.id, user.locale === 'fr' ? 'nl' : 'fr')}
-                      title={user.locale === 'fr' ? 'Taal: Frans → Nederlands' : 'Langue: Néerlandais → Français'}
-                    >
-                      {user.locale === 'fr' ? '🇫🇷 FR' : '🇳🇱 NL'}
-                    </Button>
-                    <Select
-                      value={user.role}
-                      onValueChange={(value) => handleUpdateRole(user.id, value)}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLES.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            {role.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <label className="flex items-center gap-1.5 text-xs cursor-pointer px-2 py-1 rounded border hover:bg-muted/50 transition-colors">
-                      <Checkbox
-                        checked={(user.permissions ?? []).includes('MATERIAL_MANAGER')}
-                        onCheckedChange={() =>
-                          handleTogglePermission(user.id, 'MATERIAL_MANAGER', user.permissions ?? [])
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-[52px] font-medium text-xs"
+                        onClick={() =>
+                          handleUpdateLocale(user.id, user.locale === 'fr' ? 'nl' : 'fr')
                         }
-                      />
-                      <Package className="h-3 w-3" />
-                      Materialen
-                    </label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedUser(user)
-                        setMembershipsDialogOpen(true)
-                      }}
-                    >
-                      <Building2 className="h-4 w-4 mr-2" />
-                      {t('entities')}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedUser(user)
-                        setRolesDialogOpen(true)
-                      }}
-                    >
-                      <KeyRound className="h-4 w-4 mr-2" />
-                      Rollen
-                    </Button>
-                    {user.role !== 'NONE' && (
+                        title={
+                          user.locale === 'fr'
+                            ? 'Taal: Frans → Nederlands'
+                            : 'Langue: Néerlandais → Français'
+                        }
+                      >
+                        {user.locale === 'fr' ? '🇫🇷 FR' : '🇳🇱 NL'}
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
                           setSelectedUser(user)
-                          setNotifPrefsDialogOpen(true)
+                          setMembershipsDialogOpen(true)
                         }}
                       >
-                        <Bell className="h-4 w-4 mr-2" />
-                        {t('notifications')}
+                        <Building2 className="h-4 w-4 mr-2" />
+                        {t('entities')}
                       </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteUser(user.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedUser(user)
+                          setRolesDialogOpen(true)
+                        }}
+                      >
+                        <KeyRound className="h-4 w-4 mr-2" />
+                        Rollen
+                      </Button>
+                      {user.roleAssignments.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUser(user)
+                            setNotifPrefsDialogOpen(true)
+                          }}
+                        >
+                          <Bell className="h-4 w-4 mr-2" />
+                          {t('notifications')}
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteUser(user.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
@@ -440,9 +459,7 @@ export default function UsersAdminPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('newUserTitle')}</DialogTitle>
-            <DialogDescription>
-              {t('newUserDescription')}
-            </DialogDescription>
+            <DialogDescription>{t('newUserDescription')}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreateUser}>
             <div className="space-y-4 py-4">
@@ -479,16 +496,19 @@ export default function UsersAdminPage() {
               <div>
                 <Label htmlFor="role">{t('role')}</Label>
                 <Select
-                  value={formData.role}
-                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                  value={formData.roleKey || NO_ROLE}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, roleKey: value === NO_ROLE ? '' : value })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ROLES.map((role) => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
+                    <SelectItem value={NO_ROLE}>Geen (gast)</SelectItem>
+                    {allRoles.map((role) => (
+                      <SelectItem key={role.key} value={role.key}>
+                        {role.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -507,7 +527,6 @@ export default function UsersAdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* User Memberships Dialog */}
       {selectedUser && (
         <UserMembershipsDialog
           open={membershipsDialogOpen}
@@ -521,7 +540,6 @@ export default function UsersAdminPage() {
         />
       )}
 
-      {/* User Notification Preferences Dialog */}
       {selectedUser && (
         <UserNotificationPrefsDialog
           open={notifPrefsDialogOpen}
@@ -534,7 +552,6 @@ export default function UsersAdminPage() {
         />
       )}
 
-      {/* User Role Assignments Dialog (RBAC v2) */}
       {selectedUser && (
         <UserRolesDialog
           open={rolesDialogOpen}

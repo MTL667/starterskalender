@@ -5,13 +5,12 @@ import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
 import { getCurrentUser } from '@/lib/auth-utils'
 import { isHRAdmin } from '@/lib/rbac'
-import { syncLegacyRoleToAssignments } from '@/lib/rbac-sync'
 
 const CreateUserSchema = z.object({
   name: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(6),
-  role: z.enum(['HR_ADMIN', 'ENTITY_EDITOR', 'ENTITY_VIEWER', 'GLOBAL_VIEWER']),
+  roleKey: z.string().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -30,14 +29,13 @@ export async function GET(request: NextRequest) {
         email: true,
         name: true,
         locale: true,
-        legacyRole: true,
-        legacyPermissions: true,
         createdAt: true,
         lastLoginAt: true,
         memberships: {
           include: {
             entity: {
               select: {
+                id: true,
                 name: true,
               },
             },
@@ -45,7 +43,15 @@ export async function GET(request: NextRequest) {
         },
         roleAssignments: {
           include: {
-            role: { select: { id: true, key: true, name: true, isSystem: true } },
+            role: {
+              select: {
+                id: true,
+                key: true,
+                name: true,
+                isSystem: true,
+                bypassEntityScope: true,
+              },
+            },
           },
         },
       },
@@ -54,14 +60,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Alias legacyRole/legacyPermissions terug naar role/permissions voor de bestaande UI
-    const response = users.map((u) => ({
-      ...u,
-      role: u.legacyRole,
-      permissions: u.legacyPermissions,
-    }))
-
-    return NextResponse.json(response)
+    return NextResponse.json(users)
   } catch (error) {
     console.error('Error fetching users:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -91,37 +90,50 @@ export async function POST(request: NextRequest) {
 
     const hashedPassword = await hash(data.password, 12)
 
-    const newUser = await prisma.user.create({
-      data: {
-        email: data.email,
-        name: data.name,
-        password: hashedPassword,
-        legacyRole: data.role,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        legacyRole: true,
-      },
-    })
+    let assignRole: { id: string } | null = null
+    if (data.roleKey) {
+      assignRole = await prisma.role.findUnique({ where: { key: data.roleKey }, select: { id: true } })
+      if (!assignRole) {
+        return NextResponse.json({ error: `Onbekende rol: ${data.roleKey}` }, { status: 400 })
+      }
+    }
 
-    // Sync naar RBAC v2 assignments zodat de nieuwe can()-checks meteen kloppen.
-    await syncLegacyRoleToAssignments(newUser.id)
+    const newUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: data.email,
+          name: data.name,
+          password: hashedPassword,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      })
+
+      if (assignRole) {
+        await tx.userRoleAssignment.create({
+          data: {
+            userId: user.id,
+            roleId: assignRole.id,
+            entityIds: [],
+            grantedById: currentUser.id,
+          },
+        })
+      }
+
+      return user
+    })
 
     await createAuditLog({
       actorId: currentUser.id,
       action: 'CREATE',
       target: `User:${newUser.id}`,
-      meta: { email: newUser.email, role: newUser.legacyRole },
+      meta: { email: newUser.email, roleKey: data.roleKey },
     })
 
-    return NextResponse.json({
-      id: newUser.id,
-      email: newUser.email,
-      name: newUser.name,
-      role: newUser.legacyRole,
-    })
+    return NextResponse.json(newUser)
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Ongeldige invoer', details: error.errors }, { status: 400 })
