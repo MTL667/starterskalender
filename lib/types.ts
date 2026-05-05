@@ -19,6 +19,7 @@ export interface Starter {
   notes?: string | null
   contractSignedOn?: string | null
   startDate: string | null
+  materialReturnDate?: string | null
   weekNumber: number | null
   isPendingBoarding?: boolean
   isCancelled?: boolean

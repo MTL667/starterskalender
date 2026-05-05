@@ -20,6 +20,7 @@ interface Starter {
   notes?: string | null
   contractSignedOn?: string | null
   startDate: string | null
+  materialReturnDate?: string | null
   isPendingBoarding?: boolean
   isCancelled?: boolean
   entity?: {
@@ -115,6 +116,11 @@ export function StarterCard({ starter, onClick, healthLevel }: { starter: Starte
       ) : starter.startDate ? (
         <div className="text-xs text-muted-foreground mb-2">
           <span className="font-medium">{isMigration ? t('labelMigration') : isOffboarding ? t('labelDeparture') : t('labelStart')}</span> {format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })}
+          {isOffboarding && starter.materialReturnDate && (
+            <div className="mt-0.5">
+              <span className="font-medium">{t('labelMaterialReturn')}</span> {format(new Date(starter.materialReturnDate), 'dd MMM yyyy', { locale: dateLocale })}
+            </div>
+          )}
         </div>
       ) : null}
 

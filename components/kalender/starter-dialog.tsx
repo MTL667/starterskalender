@@ -41,6 +41,7 @@ interface Starter {
   notes?: string | null
   contractSignedOn?: string | null
   startDate: string | null
+  materialReturnDate?: string | null
   isPendingBoarding?: boolean
   isCancelled?: boolean
   cancelledAt?: string | null
@@ -156,6 +157,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     notes: '',
     contractSignedOn: '',
     startDate: '',
+    materialReturnDate: '',
     hasExperience: false,
     experienceSince: '',
     experienceRole: '',
@@ -330,6 +332,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         notes: starter.notes || '',
         contractSignedOn: starter.contractSignedOn ? format(new Date(starter.contractSignedOn), 'yyyy-MM-dd') : '',
         startDate: starter.startDate ? format(new Date(starter.startDate), 'yyyy-MM-dd') : '',
+        materialReturnDate: starter.materialReturnDate ? format(new Date(starter.materialReturnDate), 'yyyy-MM-dd') : '',
         hasExperience: starter.hasExperience || false,
         experienceSince: starter.experienceSince ? format(new Date(starter.experienceSince), 'yyyy-MM-dd') : '',
         experienceRole: starter.experienceRole || '',
@@ -352,6 +355,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         notes: '',
         contractSignedOn: '',
         startDate: '',
+        materialReturnDate: '',
         hasExperience: false,
         experienceSince: '',
         experienceRole: '',
@@ -520,6 +524,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
           ? new Date(formData.contractSignedOn).toISOString() 
           : null,
         startDate: hasStartDate ? new Date(formData.startDate).toISOString() : null,
+        materialReturnDate: formData.type === 'OFFBOARDING' && formData.materialReturnDate
+          ? new Date(formData.materialReturnDate).toISOString() : null,
         isPendingBoarding: isPendingBoarding,
         hasExperience: formData.type === 'ONBOARDING' ? formData.hasExperience : false,
         experienceSince: formData.type === 'ONBOARDING' && formData.hasExperience && formData.experienceSince 
@@ -1351,6 +1357,22 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 )}
               </div>
             </div>
+
+            {formData.type === 'OFFBOARDING' && (
+              <div>
+                <Label htmlFor="materialReturnDate">{t('labelMaterialReturnDate')}</Label>
+                <Input
+                  id="materialReturnDate"
+                  type="date"
+                  value={formData.materialReturnDate}
+                  onChange={(e) => setFormData({ ...formData, materialReturnDate: e.target.value })}
+                  disabled={!canEdit}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t('hintMaterialReturnDate')}
+                </p>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="notes">

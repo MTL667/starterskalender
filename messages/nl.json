@@ -149,7 +149,8 @@
     "columnEmail": "E-mail",
     "columnPhone": "Telefoon",
     "pendingBoarding": "Startdatum onbekend",
-    "pendingBoardingTitle": "Boarding nog niet bekend"
+    "pendingBoardingTitle": "Boarding nog niet bekend",
+    "materialReturnDate": "Inleverdatum materiaal"
   },
   "starterDialog": {
     "titleEditOnboarding": "Onboarding Bewerken",
@@ -204,6 +205,8 @@
     "hintContract": "Sterk aanbevolen - Datum waarop het contract is ondertekend",
     "labelStartDate": "Startdatum *",
     "labelDepartureDate": "Vertrekdatum *",
+    "labelMaterialReturnDate": "Inleverdatum materiaal",
+    "hintMaterialReturnDate": "Deadline waarop het bedrijfsmateriaal ingeleverd moet worden",
     "labelExtraInfo": "Extra Info",
     "hintCanEditField": "(Je kunt dit veld bewerken)",
     "placeholderNotes": "Voeg extra informatie toe...",
@@ -292,7 +295,8 @@
     "badgeOnboarding": "Instroom",
     "badgeOffboarding": "Uitstroom",
     "badgeMigration": "Migratie",
-    "pendingBoarding": "Startdatum onbekend"
+    "pendingBoarding": "Startdatum onbekend",
+    "labelMaterialReturn": "Inlevering:"
   },
   "tasks": {
     "title": "Taken",

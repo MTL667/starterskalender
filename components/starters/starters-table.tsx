@@ -639,12 +639,19 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                       )}
                     </td>
                     <td className="py-3 text-sm">
-                      {starter.startDate
-                        ? format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })
-                        : starter.isPendingBoarding
-                          ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium"><Clock className="h-3 w-3" />{t('pendingBoarding')}</span>
-                          : '-'
-                      }
+                      <div>
+                        {starter.startDate
+                          ? format(new Date(starter.startDate), 'dd MMM yyyy', { locale: dateLocale })
+                          : starter.isPendingBoarding
+                            ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium"><Clock className="h-3 w-3" />{t('pendingBoarding')}</span>
+                            : '-'
+                        }
+                        {starter.type === 'OFFBOARDING' && starter.materialReturnDate && (
+                          <div className="text-xs text-muted-foreground mt-0.5" title={t('materialReturnDate')}>
+                            📦 {format(new Date(starter.materialReturnDate), 'dd MMM yyyy', { locale: dateLocale })}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 text-sm">{starter.weekNumber}</td>
                     <td className="py-3">

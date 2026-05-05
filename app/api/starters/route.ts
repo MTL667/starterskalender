@@ -33,6 +33,7 @@ const StarterSchema = z.object({
   experienceEntity: z.string().nullable().optional(),
   phoneNumber: z.string().nullable().optional(),
   desiredEmail: z.string().email().nullable().optional(),
+  materialReturnDate: z.string().datetime().nullable().optional(),
   // Gevoelige velden — alleen gebruikt wanneer de user field-permissie heeft.
   salary: z
     .union([z.number(), z.string()])
@@ -209,6 +210,8 @@ export async function POST(request: NextRequest) {
         experienceEntity: normalizeString(data.experienceEntity),
         phoneNumber: normalizeString(data.phoneNumber),
         desiredEmail: normalizeString(data.desiredEmail),
+        materialReturnDate: data.type === 'OFFBOARDING' && data.materialReturnDate
+          ? new Date(data.materialReturnDate) : null,
         salary: data.salary ?? null,
         salaryCurrency: data.salaryCurrency ?? (data.salary != null ? 'EUR' : null),
         bankAccount: normalizeString(data.bankAccount ?? null),

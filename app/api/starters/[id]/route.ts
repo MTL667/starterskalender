@@ -27,6 +27,7 @@ const UpdateStarterSchema = z.object({
   experienceEntity: z.string().nullable().optional(),
   phoneNumber: z.string().nullable().optional(),
   desiredEmail: z.string().email().nullable().optional(),
+  materialReturnDate: z.string().datetime().nullable().optional(),
   inspectorNumber: z.number().int().positive().nullable().optional(),
   salary: z
     .union([z.number(), z.string()])
@@ -140,6 +141,7 @@ export async function PATCH(
     if (data.experienceEntity !== undefined) updateData.experienceEntity = normalizeString(data.experienceEntity)
     if (data.phoneNumber !== undefined) updateData.phoneNumber = normalizeString(data.phoneNumber)
     if (data.desiredEmail !== undefined) updateData.desiredEmail = normalizeString(data.desiredEmail)
+    if (data.materialReturnDate !== undefined) updateData.materialReturnDate = existingStarter?.type === 'OFFBOARDING' && data.materialReturnDate ? new Date(data.materialReturnDate) : null
     if (data.salary !== undefined) updateData.salary = data.salary ?? null
     if (data.salaryCurrency !== undefined) updateData.salaryCurrency = data.salaryCurrency ?? null
     if (data.bankAccount !== undefined) updateData.bankAccount = normalizeString(data.bankAccount)

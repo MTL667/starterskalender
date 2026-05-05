@@ -149,7 +149,8 @@
     "columnEmail": "E-mail",
     "columnPhone": "Téléphone",
     "pendingBoarding": "Date de début inconnue",
-    "pendingBoardingTitle": "Boarding pas encore connu"
+    "pendingBoardingTitle": "Boarding pas encore connu",
+    "materialReturnDate": "Date de restitution du matériel"
   },
   "starterDialog": {
     "titleEditOnboarding": "Modifier l'onboarding",
@@ -204,6 +205,8 @@
     "hintContract": "Fortement recommandé - Date de signature du contrat",
     "labelStartDate": "Date de début *",
     "labelDepartureDate": "Date de départ *",
+    "labelMaterialReturnDate": "Date de restitution du matériel",
+    "hintMaterialReturnDate": "Date limite pour la restitution du matériel de l'entreprise",
     "labelExtraInfo": "Info supplémentaire",
     "hintCanEditField": "(Vous pouvez modifier ce champ)",
     "placeholderNotes": "Ajouter des informations supplémentaires...",
@@ -292,7 +295,8 @@
     "badgeOnboarding": "Entrée",
     "badgeOffboarding": "Départ",
     "badgeMigration": "Migration",
-    "pendingBoarding": "Date de début inconnue"
+    "pendingBoarding": "Date de début inconnue",
+    "labelMaterialReturn": "Restitution :"
   },
   "tasks": {
     "title": "Tâches",
