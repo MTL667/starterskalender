@@ -638,7 +638,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                     <div className="font-semibold mb-3 text-base">
                       {format(date, 'EEEE d MMMM yyyy', { locale: dateLocale })}
                       <span className="text-sm text-muted-foreground ml-2">
-                        ({t('weekLabel', { number: getWeek(date, { weekStartsOn: 1, firstWeekContainsDate: 4 }) })}
+                        ({t('weekLabel', { number: getWeek(date, { weekStartsOn: 1, firstWeekContainsDate: 4 }) })})
                       </span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
