@@ -56,8 +56,7 @@ const baseUser = {
   name: 'Test',
   image: null,
   emailVerified: null,
-  role: 'NONE' as const,
-  legacyRole: 'NONE' as const,
+  legacyRole: 'NONE',
   locale: 'nl',
   tenantId: null,
   createdAt: new Date(),
@@ -70,6 +69,8 @@ const baseUser = {
   twoFASecret: null,
   twoFAEnabled: false,
   lastLoginAt: null,
+  memberships: [],
+  roleAssignments: [],
 } as unknown as UserWithMemberships
 
 function withV2Role(

@@ -50,6 +50,8 @@ export async function GET(request: NextRequest) {
       where.entityId = entityId
     }
 
+    const limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '500')))
+
     const starters = await prisma.starter.findMany({
       where,
       select: {
@@ -75,6 +77,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
+      take: limit,
     })
 
     const now = new Date()

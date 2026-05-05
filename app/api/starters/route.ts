@@ -57,6 +57,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const type = searchParams.get('type')
     const includePending = searchParams.get('includePending') === 'true' && isHRAdmin(user)
+    const limit = Math.min(500, Math.max(1, parseInt(searchParams.get('limit') || '500')))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'))
 
     let where: any = {}
     const andConditions: any[] = []
@@ -128,9 +130,10 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: [{ startDate: 'asc' }, { lastName: 'asc' }],
+      take: limit,
+      skip: offset,
     })
 
-    // RBAC v2: strip veld-level beschermde velden (salary, bankAccount, …)
     const authz = await getCurrentAuthorizedUser()
     const safe = sanitizeFieldsList(starters, authz, 'starters')
     return NextResponse.json(safe)

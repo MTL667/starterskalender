@@ -1,11 +1,10 @@
 /**
- * RBAC helpers — delegeren naar `lib/authz` (RBAC v2) wanneer de user
- * actieve roleAssignments heeft. Zonder assignments valt de code terug op
- * legacy kolommen (`legacyRole`, `legacyPermissions`) zodat gebruikers
- * die nog niet gebackfilled zijn blijven werken.
+ * RBAC helpers — delegeren volledig naar `lib/authz` (RBAC v2).
+ * Legacy fallback-logica is verwijderd: alle users worden verwacht
+ * via UserRoleAssignment hun rechten te hebben.
  */
 
-import { User, Membership, LegacyRole } from '@prisma/client'
+import { User, Membership } from '@prisma/client'
 import { prisma } from './prisma'
 import {
   can,
@@ -15,20 +14,22 @@ import {
   type LoadedRoleAssignment,
 } from './authz'
 
-export type Permission = 'MATERIAL_MANAGER'
-
 export type UserWithMemberships = User & {
-  role: LegacyRole
   memberships: (Membership & { entity: { id: string; name: string } })[]
   roleAssignments?: any[]
 }
 
-function hasV2Roles(user: { roleAssignments?: any[] }): boolean {
-  return Array.isArray(user.roleAssignments) && user.roleAssignments.length > 0
+function asAuthUserSync(user: UserWithMemberships): AuthorizedUser {
+  return toAuthorizedUser({
+    ...user,
+    roleAssignments: (user.roleAssignments as LoadedRoleAssignment[] | undefined) ?? [],
+  })
 }
 
 async function asAuthUser(user: UserWithMemberships): Promise<AuthorizedUser> {
-  if (hasV2Roles(user)) return toAuthorizedUser(user)
+  if (Array.isArray(user.roleAssignments) && user.roleAssignments.length > 0) {
+    return toAuthorizedUser(user)
+  }
   const loaded = await prisma.user.findUnique({
     where: { id: user.id },
     include: {
@@ -42,49 +43,26 @@ async function asAuthUser(user: UserWithMemberships): Promise<AuthorizedUser> {
   return toAuthorizedUser({ ...user, roleAssignments: loaded?.roleAssignments ?? [] })
 }
 
-function asAuthUserSync(user: UserWithMemberships): AuthorizedUser {
-  return toAuthorizedUser({
-    ...user,
-    roleAssignments: (user.roleAssignments as LoadedRoleAssignment[] | undefined) ?? [],
-  })
-}
-
-export function isHRAdmin(user: User & { role?: LegacyRole; legacyRole?: LegacyRole; roleAssignments?: any[] }): boolean {
-  if (hasV2Roles(user as any)) {
-    return can(toAuthorizedUser(user as any), 'admin:users:manage')
-  }
-  const role = (user as any).role ?? user.legacyRole
-  return role === 'HR_ADMIN'
+export function isHRAdmin(user: User & { roleAssignments?: any[] }): boolean {
+  return can(toAuthorizedUser(user as any), 'admin:users:manage')
 }
 
 export function hasPermission(
-  user: User & { permissions?: string[]; legacyPermissions?: string[]; roleAssignments?: any[] },
-  permission: Permission,
+  user: User & { roleAssignments?: any[] },
+  permission: string,
 ): boolean {
-  if (hasV2Roles(user as any)) {
-    const authUser = toAuthorizedUser(user as any)
-    if (permission === 'MATERIAL_MANAGER') return can(authUser, 'materials:manage')
-    return can(authUser, 'admin:users:manage')
-  }
-  if (isHRAdmin(user)) return true
-  const perms = (user as any).permissions ?? user.legacyPermissions ?? []
-  return perms.includes(permission)
+  const authUser = toAuthorizedUser(user as any)
+  if (permission === 'MATERIAL_MANAGER') return can(authUser, 'materials:manage')
+  return can(authUser, 'admin:users:manage')
 }
 
-export function isMaterialManager(user: User & any): boolean {
-  if (hasV2Roles(user)) {
-    return can(toAuthorizedUser(user), 'materials:manage')
-  }
-  return hasPermission(user, 'MATERIAL_MANAGER')
+export function isMaterialManager(user: User & { roleAssignments?: any[] }): boolean {
+  return can(toAuthorizedUser(user as any), 'materials:manage')
 }
 
-export function isGlobalViewer(user: User & { role?: LegacyRole; legacyRole?: LegacyRole; roleAssignments?: any[] }): boolean {
-  if (hasV2Roles(user as any)) {
-    const authUser = toAuthorizedUser(user as any)
-    return visibleEntityIds(authUser, 'starters:read') === 'ALL' && !can(authUser, 'admin:users:manage')
-  }
-  const role = (user as any).role ?? user.legacyRole
-  return role === 'GLOBAL_VIEWER'
+export function isGlobalViewer(user: User & { roleAssignments?: any[] }): boolean {
+  const authUser = toAuthorizedUser(user as any)
+  return visibleEntityIds(authUser, 'starters:read') === 'ALL' && !can(authUser, 'admin:users:manage')
 }
 
 export function getAccessibleEntityIds(user: UserWithMemberships): string[] {
@@ -123,7 +101,7 @@ export function filterStartersByRBAC(
   return { ...where, entityId: { in: scope } }
 }
 
-export function hasAdminRights(user: User & { role?: LegacyRole; legacyRole?: LegacyRole; roleAssignments?: any[] }): boolean {
+export function hasAdminRights(user: User & { roleAssignments?: any[] }): boolean {
   return isHRAdmin(user)
 }
 

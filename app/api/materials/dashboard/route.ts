@@ -20,6 +20,9 @@ export async function GET(request: NextRequest) {
     const entityFilter = searchParams.get('entityId')
     const overdueOnly = searchParams.get('overdue') === '1'
 
+    const limit = Math.min(1000, Math.max(1, parseInt(searchParams.get('limit') || '1000')))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'))
+
     const where: any = {
       starter: {
         isCancelled: false,
@@ -63,6 +66,8 @@ export async function GET(request: NextRequest) {
         { expectedDeliveryDate: 'asc' },
         { createdAt: 'asc' },
       ],
+      take: limit,
+      skip: offset,
     })
 
     const statusCounts = await prisma.starterMaterial.groupBy({

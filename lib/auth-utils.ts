@@ -6,9 +6,6 @@ import { can, visibleEntityIds, toAuthorizedUser } from './authz'
 
 /**
  * Haalt de huidige gebruiker op met memberships + roleAssignments (RBAC v2).
- *
- * Het returned object heeft `role` als alias voor `legacyRole` om backwards-
- * compat te behouden met bestaande code die `user.role === 'HR_ADMIN'` doet.
  */
 export async function getCurrentUser(): Promise<UserWithMemberships | null> {
   const session = await getServerSession(authOptions)
@@ -36,14 +33,11 @@ export async function getCurrentUser(): Promise<UserWithMemberships | null> {
   })
 
   if (!user) return null
-  return {
-    ...user,
-    role: user.legacyRole,
-  } as UserWithMemberships
+  return user as UserWithMemberships
 }
 
 /**
- * Vereist dat de gebruiker is ingelogd EN een actieve rol heeft (niet NONE zonder roleAssignments)
+ * Vereist dat de gebruiker is ingelogd EN minstens één actieve rol heeft.
  */
 export async function requireAuth(): Promise<UserWithMemberships> {
   const user = await getCurrentUser()
@@ -52,10 +46,7 @@ export async function requireAuth(): Promise<UserWithMemberships> {
     throw new Error('Unauthorized: Not logged in')
   }
 
-  // Block users zonder rollen EN zonder legacy NONE-fallback
-  const hasAnyRole =
-    (user.roleAssignments?.length ?? 0) > 0 || user.legacyRole !== 'NONE'
-  if (!hasAnyRole) {
+  if ((user.roleAssignments?.length ?? 0) === 0) {
     throw new Error(
       'Forbidden: Your account is pending approval. Contact an administrator.',
     )
@@ -66,7 +57,6 @@ export async function requireAuth(): Promise<UserWithMemberships> {
 
 /**
  * Vereist dat de gebruiker admin rechten heeft.
- * Delegeert naar `can(user, 'admin:users:manage')` onder RBAC v2.
  */
 export async function requireAdmin(): Promise<UserWithMemberships> {
   const user = await requireAuth()
@@ -96,7 +86,6 @@ export async function requireGlobalViewer(): Promise<UserWithMemberships> {
 
 /**
  * Check of gebruiker toegang heeft tot een specifieke entiteit.
- * Onder RBAC v2: delegeert naar `can(user, 'starters:read' | 'starters:update', { entityId })`.
  */
 export async function hasEntityAccess(
   user: UserWithMemberships,

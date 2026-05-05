@@ -19,6 +19,8 @@ export async function GET(req: Request) {
     const starterId = searchParams.get('starterId')
     const entityId = searchParams.get('entityId')
     const type = searchParams.get('type')
+    const limit = Math.min(1000, Math.max(1, parseInt(searchParams.get('limit') || '1000')))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'))
 
     const authUser = toAuthorizedUser(user)
     const isAdmin = isHRAdmin(user)
@@ -102,10 +104,12 @@ export async function GET(req: Request) {
         },
       },
       orderBy: [
-        { status: 'asc' }, // PENDING eerst
-        { priority: 'desc' }, // URGENT eerst
-        { dueDate: 'asc' }, // Vroegste deadline eerst
+        { status: 'asc' },
+        { priority: 'desc' },
+        { dueDate: 'asc' },
       ],
+      take: limit,
+      skip: offset,
     })
 
     return NextResponse.json(tasks)

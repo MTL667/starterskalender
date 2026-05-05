@@ -23,6 +23,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const limit = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') || '200')))
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'))
+
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -58,6 +62,8 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: 'desc',
       },
+      take: limit,
+      skip: offset,
     })
 
     return NextResponse.json(users)

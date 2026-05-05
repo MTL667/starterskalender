@@ -340,9 +340,7 @@ export const authOptions: NextAuthOptions = {
 
         if (dbUser) {
           token.id = dbUser.id
-          token.role = dbUser.legacyRole // Backwards-compat voor session.user.role
           token.locale = dbUser.locale
-          token.permissions = dbUser.legacyPermissions ?? []
           token.tenantId = dbUser.tenantId ?? undefined
           token.oid = dbUser.oid ?? undefined
           token.memberships = dbUser.memberships.map(m => ({
@@ -350,14 +348,12 @@ export const authOptions: NextAuthOptions = {
             entityName: m.entity.name,
             canEdit: m.canEdit,
           }))
-          // RBAC v2: flat lijst van permission-keys (ongescoped, voor client-side UI hints).
-          // Server-side validation blijft via can() met volledige scope-context.
           const perms = new Set<string>()
           for (const ra of dbUser.roleAssignments) {
             if (ra.expiresAt && ra.expiresAt < new Date()) continue
             for (const p of ra.role.permissions) perms.add(p.permissionKey)
           }
-          ;(token as any).perms = [...perms]
+          token.perms = [...perms]
         }
       }
 
@@ -376,9 +372,7 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (dbUser) {
-          token.role = dbUser.legacyRole
           token.locale = dbUser.locale
-          token.permissions = dbUser.legacyPermissions ?? []
           token.memberships = dbUser.memberships.map(m => ({
             entityId: m.entityId,
             entityName: m.entity.name,
@@ -389,7 +383,7 @@ export const authOptions: NextAuthOptions = {
             if (ra.expiresAt && ra.expiresAt < new Date()) continue
             for (const p of ra.role.permissions) perms.add(p.permissionKey)
           }
-          ;(token as any).perms = [...perms]
+          token.perms = [...perms]
         }
       }
 
@@ -399,14 +393,11 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).id = token.id as string
-        ;(session.user as any).role = token.role as any
         ;(session.user as any).locale = (token.locale as string) || 'nl'
-        ;(session.user as any).permissions = (token.permissions as string[]) || []
-        ;(session.user as any).perms = ((token as any).perms as string[]) || []
+        ;(session.user as any).perms = (token.perms as string[]) || []
         ;(session.user as any).tenantId = token.tenantId as string | undefined
         ;(session.user as any).oid = token.oid as string | undefined
         ;(session.user as any).memberships = (token.memberships as any) || []
-        ;(session.user as any).twoFAEnabled = false
       }
       return session
     },
