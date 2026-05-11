@@ -376,7 +376,7 @@ export default function EntitiesAdminPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {selectedEntity ? t('editEntity') : t('newEntityTitle')}
@@ -386,8 +386,8 @@ export default function EntitiesAdminPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
+            <div className="space-y-4 overflow-y-auto pr-2">
               <div>
                 <Label htmlFor="name">{tc('name')} *</Label>
                 <Input
