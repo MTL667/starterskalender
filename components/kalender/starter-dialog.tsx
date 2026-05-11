@@ -1715,7 +1715,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     )}
                     {session?.user?.perms?.includes('carddav:delete') &&
                       formData.type === 'OFFBOARDING' &&
-                      (!cardDavLocalStatus || cardDavLocalStatus === 'NONE') && (
+                      (!cardDavLocalStatus || cardDavLocalStatus === 'NONE' || cardDavLocalStatus === 'DELETED') && (
                       <Button
                         type="button"
                         variant="outline"
