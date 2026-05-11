@@ -47,7 +47,8 @@ function authHeader(config: CardDavConfig): string {
 function vcfUrl(config: CardDavConfig, uid: string): string {
   const base = config.url.replace(/\/+$/, '')
   const book = config.addressBook.replace(/^\/+|\/+$/g, '')
-  return `${base}/${book}/${encodeURIComponent(uid)}.vcf`
+  const cleanUid = uid.replace(/&#\d+;/g, '').trim()
+  return `${base}/${book}/${encodeURIComponent(cleanUid)}.vcf`
 }
 
 function escapeVCardValue(value: string): string {
@@ -241,12 +242,13 @@ export async function searchByName(
     }
 
     const xml = await res.text()
+    const clean = (v: string) => v.replace(/&#\d+;/g, '').trim()
     const hrefMatch = xml.match(/<D:href>[^<]*\/([^/<]+)\.vcf<\/D:href>/i)
     if (hrefMatch?.[1]) {
-      return { success: true, data: decodeURIComponent(hrefMatch[1]) }
+      return { success: true, data: clean(decodeURIComponent(hrefMatch[1])) }
     }
     const uidMatch = xml.match(/UID[:\s]*([^\s<\r\n]+)/)
-    return { success: true, data: uidMatch?.[1] || null }
+    return { success: true, data: uidMatch?.[1] ? clean(uidMatch[1]) : null }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) }
   }

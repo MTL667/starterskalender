@@ -65,9 +65,11 @@ export async function POST(
       return NextResponse.json({ ok: true, found: false })
     }
 
+    const cleanUid = result.data.replace(/&#\d+;/g, '').trim()
+
     await prisma.starter.update({
       where: { id },
-      data: { cardDavUid: result.data, cardDavStatus: 'SYNCED' },
+      data: { cardDavUid: cleanUid, cardDavStatus: 'SYNCED' },
     })
 
     eventBus.emit({
