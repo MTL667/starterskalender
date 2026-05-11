@@ -234,7 +234,11 @@ export async function searchByName(
     }
 
     const xml = await res.text()
-    const uidMatch = xml.match(/UID[:\s]*([^\s<]+)/)
+    const hrefMatch = xml.match(/<D:href>[^<]*\/([^/<]+)\.vcf<\/D:href>/i)
+    if (hrefMatch?.[1]) {
+      return { success: true, data: decodeURIComponent(hrefMatch[1]) }
+    }
+    const uidMatch = xml.match(/UID[:\s]*([^\s<\r\n]+)/)
     return { success: true, data: uidMatch?.[1] || null }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) }

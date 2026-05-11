@@ -253,14 +253,16 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode }),
       })
-      const data = await res.json()
+      const text = await res.text()
+      let data: any
+      try { data = JSON.parse(text) } catch { data = { error: `Server: ${res.status} ${text.slice(0, 200)}` } }
       if (data.ok) {
         setCardDavLocalStatus(mode === 'soft' ? 'SOFT_DELETED' : 'DELETED')
       } else {
-        alert(data.error || 'CardDAV verwijdering mislukt')
+        alert(data.error || `CardDAV verwijdering mislukt (${res.status})`)
       }
-    } catch {
-      alert('CardDAV verwijdering mislukt')
+    } catch (e) {
+      alert(`CardDAV verwijdering mislukt: ${(e as Error).message}`)
     } finally {
       setCardDavDeleting(false)
     }
