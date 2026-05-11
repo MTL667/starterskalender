@@ -281,7 +281,18 @@
     "pendingConfirmTitle": "Créer un Pending Boarding",
     "pendingConfirmDescription": "Aucune date de début n'a été indiquée. Voulez-vous créer un collaborateur avec le statut 'Pending Boarding' ?",
     "pendingConfirmInfo": "Une tâche sera automatiquement créée pour attribuer la date de début ultérieurement. Dès que la date de début sera complétée, toutes les tâches d'onboarding seront activées.",
-    "pendingConfirmButton": "Créer Pending Boarding"
+    "pendingConfirmButton": "Créer Pending Boarding",
+    "cardDavTitle": "Contact CardDAV",
+    "cardDavSynced": "Synchronisé",
+    "cardDavOutdated": "Pas à jour",
+    "cardDavError": "Erreur de synchronisation",
+    "cardDavSoftDeleted": "Supprimé (soft)",
+    "cardDavDeleted": "Supprimé",
+    "cardDavSync": "Synchroniser le contact",
+    "cardDavResync": "Resynchroniser",
+    "cardDavSoftDelete": "Supprimer du carnet",
+    "cardDavHardDelete": "Supprimer définitivement",
+    "cardDavAutoDeleteNotice": "Le contact sera automatiquement supprimé vers le {date}"
   },
   "starterCard": {
     "languageNL": "Néerlandais",

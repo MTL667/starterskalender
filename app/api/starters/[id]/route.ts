@@ -65,7 +65,12 @@ export async function GET(
     // RBAC v2: strip veld-level beschermde velden op basis van entity-scope
     const authz = await getCurrentAuthorizedUser()
     const safe = sanitizeFields(starter, authz, 'starters', { entityId: starter.entityId })
-    return NextResponse.json(safe)
+    if (!safe) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    const { entity, ...rest } = safe
+    const safeEntity = entity
+      ? (() => { const { cardDavPasswordEnc: _enc, ...e } = entity; return e })()
+      : entity
+    return NextResponse.json({ ...rest, entity: safeEntity })
   } catch (error) {
     console.error('Error fetching starter:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -180,6 +185,61 @@ export async function PATCH(
         ...(data.inspectorNumber !== undefined ? { inspectorNumber: data.inspectorNumber, inspectorNumberMethod: data.inspectorNumber === null ? 'cleared' : 'manual' } : {}),
       },
     })
+
+    // CardDAV: auto-delete from old entity when entityId changes
+    if (data.entityId !== undefined && existingStarter?.entityId && data.entityId !== existingStarter.entityId) {
+      try {
+        const oldStarter = await prisma.starter.findUnique({
+          where: { id },
+          select: { cardDavUid: true, cardDavStatus: true },
+        })
+        if (
+          oldStarter?.cardDavUid &&
+          ['SYNCED', 'OUTDATED', 'SOFT_DELETED'].includes(oldStarter.cardDavStatus)
+        ) {
+          const oldEntity = await prisma.entity.findUnique({
+            where: { id: existingStarter.entityId },
+            select: {
+              cardDavEnabled: true,
+              cardDavUrl: true,
+              cardDavUsername: true,
+              cardDavPasswordEnc: true,
+              cardDavAddressBook: true,
+            },
+          })
+          let remoteDeleted = false
+          if (oldEntity?.cardDavEnabled) {
+            const { decryptConfig, deleteContact } = await import('@/lib/carddav')
+            try {
+              const config = decryptConfig(oldEntity)
+              const result = await deleteContact(config, oldStarter.cardDavUid)
+              remoteDeleted = result.success
+            } catch (e) {
+              console.warn('Failed to delete CardDAV contact from old entity:', (e as Error).message)
+            }
+          }
+          if (remoteDeleted || !oldEntity?.cardDavEnabled) {
+            await prisma.starter.update({
+              where: { id },
+              data: { cardDavUid: null, cardDavSyncedAt: null, cardDavStatus: 'NONE' },
+            })
+          } else {
+            await prisma.starter.update({
+              where: { id },
+              data: { cardDavStatus: 'ERROR' },
+            })
+          }
+          await createAuditLog({
+            actorId: user.id,
+            action: 'CARDDAV_ENTITY_SWITCH',
+            target: `Starter:${id}`,
+            meta: { oldEntityId: existingStarter.entityId, newEntityId: data.entityId },
+          })
+        }
+      } catch (e) {
+        console.error('CardDAV entity switch cleanup error:', e)
+      }
+    }
 
     // Herbereken taakdata als startDate of materialReturnDate gewijzigd is
     const datesChanged = updateData.startDate !== undefined || updateData.materialReturnDate !== undefined

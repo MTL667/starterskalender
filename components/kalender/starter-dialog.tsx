@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon, Cloud, CloudOff } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { MaterialStatusStepper } from '@/components/materials/material-status-stepper'
@@ -56,6 +56,9 @@ interface Starter {
   photoUploadId?: string | null
   photoDriveId?: string | null
   photoItemId?: string | null
+  cardDavUid?: string | null
+  cardDavSyncedAt?: string | null
+  cardDavStatus?: string | null
   fromEntityId?: string | null
   fromRoleTitle?: string | null
   entity?: {
@@ -64,6 +67,7 @@ interface Starter {
     colorHex?: string
     inspectorNumberEnabled?: boolean
     inspectorNumberLabel?: string
+    cardDavEnabled?: boolean
   } | null
   fromEntity?: {
     id: string
@@ -143,6 +147,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   // Override lokaal na een succesvolle refresh: als `starter.photoUploadId`
   // (uit de prop) nog niet gezet was, willen we toch direct de foto tonen.
   const [photoLinkedOverride, setPhotoLinkedOverride] = useState(false)
+  const [cardDavSyncing, setCardDavSyncing] = useState(false)
+  const [cardDavDeleting, setCardDavDeleting] = useState(false)
+  const [cardDavLocalStatus, setCardDavLocalStatus] = useState<string | null>(null)
+  const [cardDavLocalSyncedAt, setCardDavLocalSyncedAt] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     firstName: '',
@@ -206,6 +214,57 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   })()
 
   // Close employee list on click outside
+  useEffect(() => {
+    if (starter) {
+      setCardDavLocalStatus(starter.cardDavStatus || null)
+      setCardDavLocalSyncedAt(starter.cardDavSyncedAt || null)
+    } else {
+      setCardDavLocalStatus(null)
+      setCardDavLocalSyncedAt(null)
+    }
+  }, [starter])
+
+  const handleCardDavSync = async () => {
+    if (!starter) return
+    setCardDavSyncing(true)
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/carddav/sync`, { method: 'POST' })
+      const data = await res.json()
+      if (data.ok) {
+        setCardDavLocalStatus('SYNCED')
+        setCardDavLocalSyncedAt(data.syncedAt)
+      } else {
+        alert(data.error || 'CardDAV sync mislukt')
+      }
+    } catch {
+      alert('CardDAV sync mislukt')
+    } finally {
+      setCardDavSyncing(false)
+    }
+  }
+
+  const handleCardDavDelete = async (mode: 'soft' | 'hard') => {
+    if (!starter) return
+    setCardDavDeleting(true)
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/carddav/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode }),
+      })
+      const data = await res.json()
+      if (data.ok) {
+        setCardDavLocalStatus(mode === 'soft' ? 'SOFT_DELETED' : 'DELETED')
+      } else {
+        alert(data.error || 'CardDAV verwijdering mislukt')
+      }
+    } catch {
+      alert('CardDAV verwijdering mislukt')
+    } finally {
+      setCardDavDeleting(false)
+    }
+  }
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (employeeListRef.current && !employeeListRef.current.contains(e.target as Node)) {
@@ -1567,6 +1626,99 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 )}
               </div>
             </div>
+
+            {/* CardDAV sync sectie */}
+            {isEdit && starter?.entity?.cardDavEnabled && (formData.phoneNumber || formData.desiredEmail) && (
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Cloud className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">{t('cardDavTitle')}</span>
+                    {cardDavLocalStatus === 'SYNCED' && (
+                      <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-950/20 dark:text-green-300 dark:border-green-800">
+                        {t('cardDavSynced')}
+                        {cardDavLocalSyncedAt && (
+                          <span className="ml-1 text-xs opacity-70">
+                            {format(new Date(cardDavLocalSyncedAt), 'dd/MM/yyyy HH:mm')}
+                          </span>
+                        )}
+                      </Badge>
+                    )}
+                    {cardDavLocalStatus === 'OUTDATED' && (
+                      <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:text-amber-300">
+                        {t('cardDavOutdated')}
+                      </Badge>
+                    )}
+                    {cardDavLocalStatus === 'ERROR' && (
+                      <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50 dark:bg-red-950/20 dark:text-red-300">
+                        {t('cardDavError')}
+                      </Badge>
+                    )}
+                    {cardDavLocalStatus === 'SOFT_DELETED' && (
+                      <Badge variant="outline" className="text-orange-700 border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-300">
+                        {t('cardDavSoftDeleted')}
+                      </Badge>
+                    )}
+                    {cardDavLocalStatus === 'DELETED' && (
+                      <Badge variant="outline" className="text-gray-500 border-gray-300 bg-gray-50 dark:bg-gray-950/20 dark:text-gray-400">
+                        {t('cardDavDeleted')}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    {session?.user?.perms?.includes('carddav:sync') && cardDavLocalStatus !== 'DELETED' && cardDavLocalStatus !== 'SOFT_DELETED' && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCardDavSync}
+                        disabled={cardDavSyncing}
+                      >
+                        {cardDavSyncing ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                        )}
+                        {cardDavLocalStatus === 'SYNCED' || cardDavLocalStatus === 'OUTDATED' || cardDavLocalStatus === 'ERROR'
+                          ? t('cardDavResync')
+                          : t('cardDavSync')}
+                      </Button>
+                    )}
+                    {session?.user?.perms?.includes('carddav:delete') &&
+                      formData.type === 'OFFBOARDING' &&
+                      (cardDavLocalStatus === 'SYNCED' || cardDavLocalStatus === 'OUTDATED' || cardDavLocalStatus === 'SOFT_DELETED') && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleCardDavDelete(cardDavLocalStatus === 'SOFT_DELETED' ? 'hard' : 'soft')}
+                        disabled={cardDavDeleting}
+                      >
+                        {cardDavDeleting ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <CloudOff className="h-3 w-3 mr-1" />
+                        )}
+                        {cardDavLocalStatus === 'SOFT_DELETED'
+                          ? t('cardDavHardDelete')
+                          : t('cardDavSoftDelete')}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {cardDavLocalStatus === 'SOFT_DELETED' && cardDavLocalSyncedAt && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    {t('cardDavAutoDeleteNotice', {
+                      date: format(
+                        new Date(new Date(cardDavLocalSyncedAt).getTime() + 30 * 24 * 60 * 60 * 1000),
+                        'dd/MM/yyyy',
+                      ),
+                    })}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Ervaring sectie (alleen voor onboarding) */}
             {formData.type === 'ONBOARDING' && (

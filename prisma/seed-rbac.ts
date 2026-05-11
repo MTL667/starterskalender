@@ -60,7 +60,9 @@ const SYSTEM_ROLES: SystemRoleSpec[] = [
           k.startsWith('tasks:') ||
           k === 'materials:read' ||
           k === 'materials:assign' ||
-          k === 'reporting:kpi:read') &&
+          k === 'reporting:kpi:read' ||
+          k === 'carddav:sync' ||
+          k === 'carddav:delete') &&
         !k.includes(':read:salary') &&
         !k.includes(':read:bankaccount'),
     },

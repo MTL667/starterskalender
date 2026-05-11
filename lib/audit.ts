@@ -24,6 +24,12 @@ export type AuditAction =
   | 'ROLE_UNASSIGNED'
   | 'STARTER_PHOTO_REFRESH'
   | 'STARTER_PHOTO_PICK'
+  | 'CARDDAV_SYNC'
+  | 'CARDDAV_SOFT_DELETE'
+  | 'CARDDAV_HARD_DELETE'
+  | 'CARDDAV_BULK_SYNC'
+  | 'CARDDAV_AUTO_CLEANUP'
+  | 'CARDDAV_ENTITY_SWITCH'
 
 export interface AuditLogInput {
   actorId?: string

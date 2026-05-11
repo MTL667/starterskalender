@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Plus, Pencil, ArrowLeft, Upload } from 'lucide-react'
+import { Plus, Pencil, ArrowLeft, Upload, Wifi, WifiOff, RefreshCw, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface Entity {
@@ -20,6 +20,11 @@ interface Entity {
   inspectorNumberEnabled: boolean
   inspectorNumberStart: number
   inspectorNumberLabel: string
+  cardDavEnabled: boolean
+  cardDavUrl: string | null
+  cardDavUsername: string | null
+  cardDavPasswordSet: boolean
+  cardDavAddressBook: string | null
 }
 
 export default function EntitiesAdminPage() {
@@ -40,7 +45,16 @@ export default function EntitiesAdminPage() {
     inspectorNumberEnabled: false,
     inspectorNumberStart: 1,
     inspectorNumberLabel: 'Inspecteurnummer',
+    cardDavEnabled: false,
+    cardDavUrl: '',
+    cardDavUsername: '',
+    cardDavPassword: '',
+    cardDavAddressBook: '',
   })
+  const [cardDavTestStatus, setCardDavTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
+  const [cardDavTestError, setCardDavTestError] = useState('')
+  const [bulkSyncStatus, setBulkSyncStatus] = useState<'idle' | 'syncing' | 'done'>('idle')
+  const [bulkSyncProgress, setBulkSyncProgress] = useState({ synced: 0, failed: 0, total: 0 })
 
   useEffect(() => {
     fetchEntities()
@@ -67,7 +81,14 @@ export default function EntitiesAdminPage() {
       inspectorNumberEnabled: entity.inspectorNumberEnabled,
       inspectorNumberStart: entity.inspectorNumberStart,
       inspectorNumberLabel: entity.inspectorNumberLabel,
+      cardDavEnabled: entity.cardDavEnabled,
+      cardDavUrl: entity.cardDavUrl || '',
+      cardDavUsername: entity.cardDavUsername || '',
+      cardDavPassword: '',
+      cardDavAddressBook: entity.cardDavAddressBook || '',
     })
+    setCardDavTestStatus('idle')
+    setBulkSyncStatus('idle')
     setDialogOpen(true)
   }
 
@@ -80,7 +101,14 @@ export default function EntitiesAdminPage() {
       inspectorNumberEnabled: false,
       inspectorNumberStart: 1,
       inspectorNumberLabel: 'Inspecteurnummer',
+      cardDavEnabled: false,
+      cardDavUrl: '',
+      cardDavUsername: '',
+      cardDavPassword: '',
+      cardDavAddressBook: '',
     })
+    setCardDavTestStatus('idle')
+    setBulkSyncStatus('idle')
     setDialogOpen(true)
   }
 
@@ -99,6 +127,13 @@ export default function EntitiesAdminPage() {
       inspectorNumberEnabled: formData.inspectorNumberEnabled,
       inspectorNumberStart: formData.inspectorNumberStart,
       inspectorNumberLabel: formData.inspectorNumberLabel,
+      cardDavEnabled: formData.cardDavEnabled,
+      cardDavUrl: formData.cardDavUrl || null,
+      cardDavUsername: formData.cardDavUsername || null,
+      cardDavAddressBook: formData.cardDavAddressBook || null,
+    }
+    if (formData.cardDavPassword) {
+      data.cardDavPassword = formData.cardDavPassword
     }
 
     try {
@@ -118,6 +153,69 @@ export default function EntitiesAdminPage() {
     } catch (error) {
       console.error('Error saving entity:', error)
       alert(tc('errorSaving'))
+    }
+  }
+
+  const handleTestCardDav = async () => {
+    if (!selectedEntity) return
+    setCardDavTestStatus('testing')
+    setCardDavTestError('')
+    try {
+      const res = await fetch(`/api/entities/${selectedEntity.id}/carddav/test`, {
+        method: 'POST',
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCardDavTestStatus('success')
+      } else {
+        setCardDavTestStatus('error')
+        setCardDavTestError(data.error || 'Verbinding mislukt')
+      }
+    } catch {
+      setCardDavTestStatus('error')
+      setCardDavTestError('Netwerk fout')
+    }
+  }
+
+  const handleBulkSync = async () => {
+    if (!selectedEntity) return
+    setBulkSyncStatus('syncing')
+    setBulkSyncProgress({ synced: 0, failed: 0, total: 0 })
+    try {
+      const res = await fetch(`/api/entities/${selectedEntity.id}/carddav/bulk-sync`, {
+        method: 'POST',
+      })
+      if (!res.ok || !res.body) {
+        setBulkSyncStatus('done')
+        return
+      }
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          const match = line.match(/^data: (.+)$/m)
+          if (match) {
+            try {
+              const event = JSON.parse(match[1])
+              if (event.type === 'progress' || event.type === 'done') {
+                setBulkSyncProgress({ synced: event.synced, failed: event.failed, total: event.total })
+              }
+              if (event.type === 'done') {
+                setBulkSyncStatus('done')
+              }
+            } catch { /* ignore parse errors */ }
+          }
+        }
+      }
+      setBulkSyncStatus('done')
+    } catch {
+      setBulkSyncStatus('done')
     }
   }
 
@@ -360,6 +458,124 @@ export default function EntitiesAdminPage() {
                         Nummers worden automatisch opeenvolgend toegekend vanaf dit startnummer.
                       </p>
                     </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="cardDavEnabled"
+                    checked={formData.cardDavEnabled}
+                    onChange={(e) => setFormData({ ...formData, cardDavEnabled: e.target.checked })}
+                    className="rounded"
+                  />
+                  <Label htmlFor="cardDavEnabled">CardDAV synchronisatie inschakelen</Label>
+                </div>
+                {formData.cardDavEnabled && (
+                  <div className="space-y-3 pl-6">
+                    <div>
+                      <Label htmlFor="cardDavUrl">Server URL</Label>
+                      <Input
+                        id="cardDavUrl"
+                        value={formData.cardDavUrl}
+                        onChange={(e) => setFormData({ ...formData, cardDavUrl: e.target.value })}
+                        placeholder="https://cloud.example.com/remote.php/dav/addressbooks/users/admin"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cardDavUsername">Gebruikersnaam</Label>
+                      <Input
+                        id="cardDavUsername"
+                        value={formData.cardDavUsername}
+                        onChange={(e) => setFormData({ ...formData, cardDavUsername: e.target.value })}
+                        placeholder="admin"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="cardDavPassword">App wachtwoord</Label>
+                      <Input
+                        id="cardDavPassword"
+                        type="password"
+                        value={formData.cardDavPassword}
+                        onChange={(e) => setFormData({ ...formData, cardDavPassword: e.target.value })}
+                        placeholder={selectedEntity?.cardDavPasswordSet ? '••••••••' : 'Vul in...'}
+                      />
+                      {selectedEntity?.cardDavPasswordSet && !formData.cardDavPassword && (
+                        <p className="text-xs text-muted-foreground mt-1">Laat leeg om huidig wachtwoord te behouden</p>
+                      )}
+                    </div>
+                    <div>
+                      <Label htmlFor="cardDavAddressBook">Adresboek naam</Label>
+                      <Input
+                        id="cardDavAddressBook"
+                        value={formData.cardDavAddressBook}
+                        onChange={(e) => setFormData({ ...formData, cardDavAddressBook: e.target.value })}
+                        placeholder="contacts"
+                      />
+                    </div>
+
+                    {selectedEntity && (
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleTestCardDav}
+                          disabled={cardDavTestStatus === 'testing'}
+                        >
+                          {cardDavTestStatus === 'testing' ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : cardDavTestStatus === 'success' ? (
+                            <Wifi className="h-4 w-4 mr-2 text-green-600" />
+                          ) : cardDavTestStatus === 'error' ? (
+                            <WifiOff className="h-4 w-4 mr-2 text-red-600" />
+                          ) : (
+                            <Wifi className="h-4 w-4 mr-2" />
+                          )}
+                          Test verbinding
+                        </Button>
+
+                        {cardDavTestStatus === 'success' && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleBulkSync}
+                            disabled={bulkSyncStatus === 'syncing'}
+                          >
+                            {bulkSyncStatus === 'syncing' ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                            )}
+                            Synchroniseer alle starters
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
+                    {cardDavTestStatus === 'success' && (
+                      <p className="text-sm text-green-600">Verbinding geslaagd</p>
+                    )}
+                    {cardDavTestStatus === 'error' && (
+                      <p className="text-sm text-red-600">{cardDavTestError}</p>
+                    )}
+
+                    {bulkSyncStatus === 'syncing' && (
+                      <div className="text-sm text-muted-foreground">
+                        Synchroniseren... {bulkSyncProgress.synced + bulkSyncProgress.failed}/{bulkSyncProgress.total}
+                      </div>
+                    )}
+                    {bulkSyncStatus === 'done' && (
+                      <div className="text-sm">
+                        <span className="text-green-600">{bulkSyncProgress.synced} gesynchroniseerd</span>
+                        {bulkSyncProgress.failed > 0 && (
+                          <span className="text-red-600 ml-2">{bulkSyncProgress.failed} mislukt</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

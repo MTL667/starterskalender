@@ -59,6 +59,11 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   { key: 'admin:audit:read', category: 'admin', description: 'Audit-logs inzien' },
   { key: 'admin:cron:trigger', category: 'admin', description: 'Cron-jobs manueel triggeren' },
 
+  // ── CardDAV ──────────────────────────────────────────────────────────────
+  { key: 'carddav:sync', category: 'starters', description: 'Contacten synchroniseren naar CardDAV' },
+  { key: 'carddav:delete', category: 'starters', description: 'Contacten verwijderen uit CardDAV' },
+  { key: 'carddav:configure', category: 'admin', description: 'CardDAV-instellingen per entiteit beheren' },
+
   // ── Reporting ─────────────────────────────────────────────────────────────
   { key: 'reporting:kpi:read', category: 'reporting', description: 'KPI-dashboard bekijken' },
   { key: 'reporting:export', category: 'reporting', description: 'Rapporten exporteren' },

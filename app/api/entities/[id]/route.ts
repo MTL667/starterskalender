@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-utils'
+import { can, toAuthorizedUser } from '@/lib/authz'
 import { createAuditLog } from '@/lib/audit'
+import { encrypt } from '@/lib/crypto'
 
 const UpdateEntitySchema = z.object({
   name: z.string().min(1).optional(),
@@ -12,7 +14,14 @@ const UpdateEntitySchema = z.object({
   inspectorNumberEnabled: z.boolean().optional(),
   inspectorNumberStart: z.number().int().positive().optional(),
   inspectorNumberLabel: z.string().min(1).optional(),
+  cardDavEnabled: z.boolean().optional(),
+  cardDavUrl: z.string().url().nullable().optional(),
+  cardDavUsername: z.string().nullable().optional(),
+  cardDavPassword: z.string().nullable().optional(),
+  cardDavAddressBook: z.string().nullable().optional(),
 })
+
+const CARDDAV_FIELDS = ['cardDavEnabled', 'cardDavUrl', 'cardDavUsername', 'cardDavPassword', 'cardDavAddressBook'] as const
 
 // PATCH - Update entity (admin only)
 export async function PATCH(
@@ -26,9 +35,26 @@ export async function PATCH(
     const body = await request.json()
     const data = UpdateEntitySchema.parse(body)
 
+    const hasCardDavFields = CARDDAV_FIELDS.some((f) => f in body)
+    if (hasCardDavFields) {
+      const authUser = toAuthorizedUser(user)
+      if (!can(authUser, 'carddav:configure')) {
+        return NextResponse.json({ error: 'Forbidden: carddav:configure vereist' }, { status: 403 })
+      }
+    }
+
+    const updateData: Record<string, unknown> = { ...data }
+    delete updateData.cardDavPassword
+
+    if (data.cardDavPassword) {
+      updateData.cardDavPasswordEnc = encrypt(data.cardDavPassword)
+    } else if (data.cardDavPassword === null) {
+      updateData.cardDavPasswordEnc = null
+    }
+
     const entity = await prisma.entity.update({
-      where: { id: id },
-      data,
+      where: { id },
+      data: updateData,
     })
 
     await createAuditLog({
@@ -38,7 +64,11 @@ export async function PATCH(
       meta: { name: entity.name, changes: Object.keys(data) },
     })
 
-    return NextResponse.json(entity)
+    const { cardDavPasswordEnc: _stripped, ...safeEntity } = entity
+    return NextResponse.json({
+      ...safeEntity,
+      cardDavPasswordSet: !!entity.cardDavPasswordEnc,
+    })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 })

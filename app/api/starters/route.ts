@@ -120,6 +120,7 @@ export async function GET(request: NextRequest) {
             colorHex: true,
             inspectorNumberEnabled: true,
             inspectorNumberLabel: true,
+            cardDavEnabled: true,
           },
         },
         fromEntity: {
@@ -308,7 +309,7 @@ export async function POST(request: NextRequest) {
 
     // Refetch if inspector number was assigned (so the response includes it)
     const response = inspectorNumberAssigned
-      ? await prisma.starter.findUnique({ where: { id: starter.id }, include: { entity: { select: { id: true, name: true, colorHex: true, inspectorNumberEnabled: true, inspectorNumberLabel: true } }, fromEntity: { select: { id: true, name: true, colorHex: true } } } })
+      ? await prisma.starter.findUnique({ where: { id: starter.id }, include: { entity: { select: { id: true, name: true, colorHex: true, inspectorNumberEnabled: true, inspectorNumberLabel: true, cardDavEnabled: true } }, fromEntity: { select: { id: true, name: true, colorHex: true } } } })
       : starter
 
     return NextResponse.json(response, { status: 201 })

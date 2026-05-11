@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
     }
 
     const entities = await getVisibleEntities(user)
-    return NextResponse.json(entities)
+    const safe = entities.map(({ cardDavPasswordEnc, ...rest }) => ({
+      ...rest,
+      cardDavPasswordSet: !!cardDavPasswordEnc,
+    }))
+    return NextResponse.json(safe)
   } catch (error) {
     console.error('Error fetching entities:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

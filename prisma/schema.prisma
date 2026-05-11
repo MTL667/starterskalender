@@ -58,6 +58,15 @@ enum TaskType {
   MARKETING_SIGNATURE // Emailhandtekening aanmaken (fase 2)
 }
 
+enum CardDavStatus {
+  NONE
+  SYNCED
+  OUTDATED
+  SOFT_DELETED
+  DELETED
+  ERROR
+}
+
 enum ScheduleType {
   OFFSET_FROM_START // Standaard: dueDate = startDate + daysUntilDue
   ON_START_DATE // Gepland op startersdag zelf (+ O365 event)
@@ -174,6 +183,13 @@ model Entity {
   inspectorNumberEnabled Boolean @default(false)
   inspectorNumberStart   Int     @default(1)
   inspectorNumberLabel   String  @default("Inspecteurnummer")
+
+  // CardDAV configuratie
+  cardDavEnabled     Boolean @default(false)
+  cardDavUrl         String? // Nextcloud CardDAV base URL
+  cardDavUsername     String? // App username
+  cardDavPasswordEnc String? // AES-encrypted app password
+  cardDavAddressBook String? // Address book path/name
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -317,6 +333,11 @@ model Starter {
 
   // Inspecteurnummer — per entiteit opeenvolgend, definitief na toekenning
   inspectorNumber Int?
+
+  // CardDAV sync tracking
+  cardDavUid      String?
+  cardDavSyncedAt DateTime?
+  cardDavStatus   CardDavStatus @default(NONE)
 
   createdBy        String? // User ID die het aanmaakte
   createdAt        DateTime          @default(now())
