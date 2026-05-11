@@ -292,7 +292,9 @@
     "cardDavResync": "Opnieuw synchroniseren",
     "cardDavSoftDelete": "Verwijder uit adresboek",
     "cardDavHardDelete": "Definitief verwijderen",
-    "cardDavAutoDeleteNotice": "Contact wordt automatisch verwijderd rond {date}"
+    "cardDavAutoDeleteNotice": "Contact wordt automatisch verwijderd rond {date}",
+    "cardDavSearch": "Zoek in adresboek",
+    "cardDavSearchNotFound": "Geen contact gevonden met deze naam in het adresboek"
   },
   "starterCard": {
     "languageNL": "Nederlands",

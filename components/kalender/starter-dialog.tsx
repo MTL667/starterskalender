@@ -149,6 +149,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [photoLinkedOverride, setPhotoLinkedOverride] = useState(false)
   const [cardDavSyncing, setCardDavSyncing] = useState(false)
   const [cardDavDeleting, setCardDavDeleting] = useState(false)
+  const [cardDavSearching, setCardDavSearching] = useState(false)
   const [cardDavLocalStatus, setCardDavLocalStatus] = useState<string | null>(null)
   const [cardDavLocalSyncedAt, setCardDavLocalSyncedAt] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -262,6 +263,26 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       alert('CardDAV verwijdering mislukt')
     } finally {
       setCardDavDeleting(false)
+    }
+  }
+
+  const handleCardDavSearch = async () => {
+    if (!starter) return
+    setCardDavSearching(true)
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/carddav/search`, { method: 'POST' })
+      const data = await res.json()
+      if (data.ok && data.found) {
+        setCardDavLocalStatus('SYNCED')
+      } else if (data.ok && !data.found) {
+        alert(t('cardDavSearchNotFound'))
+      } else {
+        alert(data.error || 'CardDAV zoeken mislukt')
+      }
+    } catch {
+      alert('CardDAV zoeken mislukt')
+    } finally {
+      setCardDavSearching(false)
     }
   }
 
@@ -1628,7 +1649,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
             </div>
 
             {/* CardDAV sync sectie */}
-            {isEdit && starter?.entity?.cardDavEnabled && (formData.phoneNumber || formData.desiredEmail) && (
+            {isEdit && starter?.entity?.cardDavEnabled && (formData.phoneNumber || formData.desiredEmail || formData.type === 'OFFBOARDING') && (
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1682,6 +1703,24 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                         {cardDavLocalStatus === 'SYNCED' || cardDavLocalStatus === 'OUTDATED' || cardDavLocalStatus === 'ERROR'
                           ? t('cardDavResync')
                           : t('cardDavSync')}
+                      </Button>
+                    )}
+                    {session?.user?.perms?.includes('carddav:delete') &&
+                      formData.type === 'OFFBOARDING' &&
+                      (!cardDavLocalStatus || cardDavLocalStatus === 'NONE') && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCardDavSearch}
+                        disabled={cardDavSearching}
+                      >
+                        {cardDavSearching ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <Search className="h-3 w-3 mr-1" />
+                        )}
+                        {t('cardDavSearch')}
                       </Button>
                     )}
                     {session?.user?.perms?.includes('carddav:delete') &&

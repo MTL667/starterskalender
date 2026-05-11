@@ -292,7 +292,9 @@
     "cardDavResync": "Resynchroniser",
     "cardDavSoftDelete": "Supprimer du carnet",
     "cardDavHardDelete": "Supprimer définitivement",
-    "cardDavAutoDeleteNotice": "Le contact sera automatiquement supprimé vers le {date}"
+    "cardDavAutoDeleteNotice": "Le contact sera automatiquement supprimé vers le {date}",
+    "cardDavSearch": "Rechercher dans le carnet",
+    "cardDavSearchNotFound": "Aucun contact trouvé avec ce nom dans le carnet d'adresses"
   },
   "starterCard": {
     "languageNL": "Néerlandais",
