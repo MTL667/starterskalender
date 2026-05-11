@@ -265,7 +265,7 @@ export async function testConnection(config: CardDavConfig): Promise<CardDavResu
     if (res.ok || res.status === 207) {
       return { success: true, data: true }
     }
-    return { success: false, error: `PROPFIND failed: ${res.status} ${res.statusText}` }
+    return { success: false, error: `PROPFIND ${url} → ${res.status} ${res.statusText}` }
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) }
   }
