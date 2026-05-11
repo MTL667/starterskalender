@@ -482,6 +482,35 @@ export default function EntitiesAdminPage() {
                 </div>
                 {formData.cardDavEnabled && (
                   <div className="space-y-3 pl-6">
+                    {entities.filter((e) => e.cardDavEnabled && e.id !== selectedEntity?.id).length > 0 && (
+                      <div className="flex items-center gap-2 pb-2 border-b">
+                        <Label className="text-sm text-muted-foreground whitespace-nowrap">Kopieer van:</Label>
+                        <select
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                          defaultValue=""
+                          onChange={(e) => {
+                            const source = entities.find((ent) => ent.id === e.target.value)
+                            if (source) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                cardDavUrl: source.cardDavUrl || '',
+                                cardDavUsername: source.cardDavUsername || '',
+                                cardDavPassword: '',
+                                cardDavAddressBook: source.cardDavAddressBook || '',
+                              }))
+                              setCardDavTestStatus('idle')
+                            }
+                          }}
+                        >
+                          <option value="" disabled>Selecteer entiteit...</option>
+                          {entities
+                            .filter((e) => e.cardDavEnabled && e.id !== selectedEntity?.id)
+                            .map((e) => (
+                              <option key={e.id} value={e.id}>{e.name}</option>
+                            ))}
+                        </select>
+                      </div>
+                    )}
                     <div>
                       <Label htmlFor="cardDavUrl">Server URL</Label>
                       <Input
