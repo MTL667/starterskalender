@@ -163,6 +163,13 @@ export default function EntitiesAdminPage() {
     try {
       const res = await fetch(`/api/entities/${selectedEntity.id}/carddav/test`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardDavUrl: formData.cardDavUrl || undefined,
+          cardDavUsername: formData.cardDavUsername || undefined,
+          cardDavPassword: formData.cardDavPassword || undefined,
+          cardDavAddressBook: formData.cardDavAddressBook || undefined,
+        }),
       })
       const data = await res.json()
       if (data.success) {
