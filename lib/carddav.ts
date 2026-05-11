@@ -127,8 +127,9 @@ export async function deleteContact(
   config: CardDavConfig,
   uid: string,
 ): Promise<CardDavResult> {
+  const url = vcfUrl(config, uid)
   try {
-    const res = await fetch(vcfUrl(config, uid), {
+    const res = await fetch(url, {
       method: 'DELETE',
       headers: { Authorization: authHeader(config) },
     })
@@ -136,11 +137,11 @@ export async function deleteContact(
       return { success: true }
     }
     if (!res.ok) {
-      return { success: false, error: `DELETE failed: ${res.status} ${res.statusText}` }
+      return { success: false, error: `DELETE ${url} → ${res.status} ${res.statusText}` }
     }
     return { success: true }
   } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : String(err) }
+    return { success: false, error: `deleteContact ${url}: ${err instanceof Error ? err.message : String(err)}` }
   }
 }
 
@@ -148,17 +149,18 @@ export async function getContact(
   config: CardDavConfig,
   uid: string,
 ): Promise<CardDavResult<string>> {
+  const url = vcfUrl(config, uid)
   try {
-    const res = await fetch(vcfUrl(config, uid), {
+    const res = await fetch(url, {
       method: 'GET',
       headers: { Authorization: authHeader(config) },
     })
     if (!res.ok) {
-      return { success: false, error: `GET failed: ${res.status} ${res.statusText}` }
+      return { success: false, error: `GET ${url} → ${res.status} ${res.statusText}` }
     }
     return { success: true, data: await res.text() }
   } catch (err) {
-    return { success: false, error: err instanceof Error ? err.message : String(err) }
+    return { success: false, error: `getContact ${url}: ${err instanceof Error ? err.message : String(err)}` }
   }
 }
 
@@ -167,32 +169,37 @@ export async function updateContactNote(
   uid: string,
   note: string,
 ): Promise<CardDavResult> {
-  const existing = await getContact(config, uid)
-  if (!existing.success || !existing.data) {
-    return { success: false, error: existing.error || 'Contact not found' }
-  }
+  try {
+    const url = vcfUrl(config, uid)
+    const existing = await getContact(config, uid)
+    if (!existing.success || !existing.data) {
+      return { success: false, error: `GET ${url} → ${existing.error || 'Contact not found'}` }
+    }
 
-  let vcard = existing.data
-  const noteEscaped = escapeVCardValue(note)
+    let vcard = existing.data
+    const noteEscaped = escapeVCardValue(note)
 
-  if (/^NOTE:/m.test(vcard)) {
-    vcard = vcard.replace(/^NOTE:.*$/m, `NOTE:${noteEscaped}`)
-  } else {
-    vcard = vcard.replace(/^END:VCARD/m, `NOTE:${noteEscaped}\r\nEND:VCARD`)
-  }
+    if (/^NOTE:/m.test(vcard)) {
+      vcard = vcard.replace(/^NOTE:.*$/m, `NOTE:${noteEscaped}`)
+    } else {
+      vcard = vcard.replace(/^END:VCARD/m, `NOTE:${noteEscaped}\r\nEND:VCARD`)
+    }
 
-  const res = await fetch(vcfUrl(config, uid), {
-    method: 'PUT',
-    headers: {
-      Authorization: authHeader(config),
-      'Content-Type': 'text/vcard; charset=utf-8',
-    },
-    body: vcard,
-  })
-  if (!res.ok) {
-    return { success: false, error: `PUT note failed: ${res.status} ${res.statusText}` }
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        Authorization: authHeader(config),
+        'Content-Type': 'text/vcard; charset=utf-8',
+      },
+      body: vcard,
+    })
+    if (!res.ok) {
+      return { success: false, error: `PUT ${url} → ${res.status} ${res.statusText}` }
+    }
+    return { success: true }
+  } catch (err) {
+    return { success: false, error: `updateContactNote: ${err instanceof Error ? err.message : String(err)}` }
   }
-  return { success: true }
 }
 
 export async function searchByName(

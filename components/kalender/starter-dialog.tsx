@@ -255,7 +255,13 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       })
       const text = await res.text()
       let data: any
-      try { data = JSON.parse(text) } catch { data = { error: `Server: ${res.status} ${text.slice(0, 200)}` } }
+      try {
+        data = JSON.parse(text)
+      } catch {
+        data = { error: res.status >= 500
+          ? `Server fout (${res.status}). Controleer de server logs voor details.`
+          : `Onverwachte response (${res.status})` }
+      }
       if (data.ok) {
         setCardDavLocalStatus(mode === 'soft' ? 'SOFT_DELETED' : 'DELETED')
       } else {

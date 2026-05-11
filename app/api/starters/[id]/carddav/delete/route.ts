@@ -78,8 +78,10 @@ export async function POST(
         ? starter.startDate.toLocaleDateString('nl-BE')
         : 'onbekend'
       const note = `Vertrokken per ${dateStr}`
+      console.log(`[CardDAV] soft-delete starter=${id} uid=${starter.cardDavUid}`)
       const result = await updateContactNote(config, starter.cardDavUid, note)
       if (!result.success) {
+        console.error(`[CardDAV] soft-delete failed: ${result.error}`)
         return NextResponse.json({ error: result.error || 'Soft-delete failed' }, { status: 502 })
       }
       await prisma.starter.update({
@@ -87,8 +89,10 @@ export async function POST(
         data: { cardDavStatus: 'SOFT_DELETED', cardDavSyncedAt: new Date() },
       })
     } else {
+      console.log(`[CardDAV] hard-delete starter=${id} uid=${starter.cardDavUid}`)
       const result = await deleteContact(config, starter.cardDavUid)
       if (!result.success) {
+        console.error(`[CardDAV] hard-delete failed: ${result.error}`)
         return NextResponse.json({ error: result.error || 'Hard-delete failed' }, { status: 502 })
       }
       await prisma.starter.update({
