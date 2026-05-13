@@ -22,6 +22,7 @@ const nextConfig = {
   // Environment variables exposed to client
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    DEV_MODE: process.env.DEV_MODE,
   },
 }
 
