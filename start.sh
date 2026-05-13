@@ -33,7 +33,7 @@ su-exec nextjs:nodejs node ./node_modules/tsx/dist/cli.mjs prisma/seed-rbac.ts |
 # Idempotent: als de user al bestaat wordt alleen de rol gecontroleerd.
 if [ -n "$ADMIN_EMAIL" ]; then
   echo "👤 Bootstrapping admin user: $ADMIN_EMAIL"
-  su-exec nextjs:nodejs ADMIN_EMAIL="$ADMIN_EMAIL" node ./node_modules/tsx/dist/cli.mjs prisma/seed-admin.ts || echo "⚠️  Admin seed failed (continuing...)"
+  su-exec nextjs:nodejs sh -c "ADMIN_EMAIL='$ADMIN_EMAIL' node ./node_modules/tsx/dist/cli.mjs prisma/seed-admin.ts" || echo "⚠️  Admin seed failed (continuing...)"
 fi
 
 if [ "$RUN_RBAC_V2_BACKFILL" = "true" ]; then
