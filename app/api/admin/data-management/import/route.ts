@@ -51,7 +51,12 @@ export async function POST(request: NextRequest) {
     const tmpFile = join('/tmp', `airport-import-${randomBytes(8).toString('hex')}.sql`)
 
     try {
-      await writeFile(tmpFile, sqlContent, 'utf-8')
+      const wrappedSql = [
+        'SET session_replication_role = replica;',
+        sqlContent,
+        'SET session_replication_role = DEFAULT;',
+      ].join('\n')
+      await writeFile(tmpFile, wrappedSql, 'utf-8')
 
       const { stdout, stderr } = await execAsync(
         `psql "${dbUrl}" -f "${tmpFile}" --set ON_ERROR_STOP=off 2>&1`,
