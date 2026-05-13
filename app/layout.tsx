@@ -20,16 +20,9 @@ export default async function RootLayout({
   const locale = await getLocale()
   const messages = await getMessages()
 
-  const devMode = process.env.DEV_MODE === 'true'
-
   return (
     <html lang={locale}>
       <body className={inter.className}>
-        {devMode && (
-          <div className="bg-amber-500 text-amber-950 text-center text-sm font-semibold py-1.5 px-4 z-50">
-            DEV OMGEVING — Dit is geen productieomgeving
-          </div>
-        )}
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
