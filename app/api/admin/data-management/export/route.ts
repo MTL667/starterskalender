@@ -7,16 +7,16 @@ import { promisify } from 'util'
 const execAsync = promisify(exec)
 
 const TABLE_GROUPS: Record<string, string[]> = {
-  configuration: [
-    'Entity', 'JobRole', 'BlockedPeriod', 'Material', 'JobRoleMaterial',
-    'TaskTemplate', 'TaskAssignment', 'EmailTemplate', 'SystemSettings',
-    'AllowedTenant', 'Room', 'SignatureTemplate',
-  ],
   rbac: [
     'Permission', 'Role', 'RolePermission',
   ],
   users: [
     'User', 'UserRoleAssignment', 'Membership', 'NotificationPreference',
+  ],
+  configuration: [
+    'Entity', 'JobRole', 'BlockedPeriod', 'Material', 'JobRoleMaterial',
+    'TaskTemplate', 'TaskAssignment', 'EmailTemplate', 'SystemSettings',
+    'AllowedTenant', 'Room', 'SignatureTemplate',
   ],
   starters: [
     'Starter', 'StarterMaterial', 'Task', 'StarterTaskUpload',

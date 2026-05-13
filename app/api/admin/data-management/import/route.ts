@@ -64,12 +64,9 @@ export async function POST(request: NextRequest) {
       )
 
       const output = stdout + (stderr || '')
-      const errorLines = output
-        .split('\n')
-        .filter(l => l.includes('ERROR'))
-      const insertLines = output
-        .split('\n')
-        .filter(l => l.includes('INSERT'))
+      const lines = output.split('\n')
+      const errorLines = lines.filter(l => l.includes('ERROR'))
+      const insertLines = lines.filter(l => l.includes('INSERT'))
 
       console.log(`[Data Import] Completed by ${user.email}: ${insertLines.length} inserts, ${errorLines.length} errors`)
 
@@ -78,7 +75,7 @@ export async function POST(request: NextRequest) {
         stats: {
           inserts: insertLines.length,
           errors: errorLines.length,
-          errorDetails: errorLines.slice(0, 20),
+          errorDetails: errorLines.slice(0, 50),
         },
       })
     } finally {
