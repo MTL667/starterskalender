@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         stats: {
           inserts: insertLines.length,
           errors: errorLines.length,
-          errorDetails: errorLines.slice(0, 50),
+          errorDetails: errorLines,
         },
       })
     } finally {

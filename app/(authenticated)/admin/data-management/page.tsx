@@ -264,12 +264,33 @@ export default function DataManagementPage() {
                         {importResult.stats?.errors || 0} fouten.
                       </p>
                       {(importResult.stats?.errors ?? 0) > 0 && (
-                        <details className="mt-2">
-                          <summary className="text-xs cursor-pointer">Foutdetails</summary>
-                          <pre className="text-xs mt-1 whitespace-pre-wrap max-h-40 overflow-auto">
-                            {importResult.stats?.errorDetails?.join('\n')}
-                          </pre>
-                        </details>
+                        <div className="mt-2 space-y-2">
+                          <details>
+                            <summary className="text-xs cursor-pointer">Foutdetails</summary>
+                            <pre className="text-xs mt-1 whitespace-pre-wrap max-h-40 overflow-auto">
+                              {importResult.stats?.errorDetails?.join('\n')}
+                            </pre>
+                          </details>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const log = importResult.stats?.errorDetails?.join('\n') || ''
+                              const blob = new Blob([log], { type: 'text/plain' })
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = `import-errors-${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.log`
+                              document.body.appendChild(a)
+                              a.click()
+                              document.body.removeChild(a)
+                              URL.revokeObjectURL(url)
+                            }}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download foutlog
+                          </Button>
+                        </div>
                       )}
                     </div>
                   ) : (
