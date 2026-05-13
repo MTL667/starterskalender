@@ -34,7 +34,7 @@ const TABLE_GROUPS: Record<string, string[]> = {
 }
 
 function prismaToSqlTable(model: string): string {
-  return `"${model}"`
+  return `'"${model}"'`
 }
 
 export async function POST(request: NextRequest) {
