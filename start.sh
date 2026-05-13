@@ -29,6 +29,13 @@ su-exec nextjs:nodejs node ./node_modules/tsx/dist/cli.mjs prisma/seed-rbac.ts |
 # Zet RUN_RBAC_V2_BACKFILL=true in de productie-env bij de eerste deploy van
 # RBAC v2. Daarna kan je de env var weghalen of op false zetten; het script
 # is idempotent maar het scheelt logvolume.
+# Admin bootstrap — zet ADMIN_EMAIL in .env bij eerste installatie.
+# Idempotent: als de user al bestaat wordt alleen de rol gecontroleerd.
+if [ -n "$ADMIN_EMAIL" ]; then
+  echo "👤 Bootstrapping admin user: $ADMIN_EMAIL"
+  su-exec nextjs:nodejs ADMIN_EMAIL="$ADMIN_EMAIL" node ./node_modules/tsx/dist/cli.mjs prisma/seed-admin.ts || echo "⚠️  Admin seed failed (continuing...)"
+fi
+
 if [ "$RUN_RBAC_V2_BACKFILL" = "true" ]; then
   echo "🔄 Running RBAC v2 backfill (legacy roles → UserRoleAssignment)..."
   su-exec nextjs:nodejs node ./node_modules/tsx/dist/cli.mjs prisma/backfill-rbac.ts || echo "⚠️  RBAC backfill failed (continuing...)"
