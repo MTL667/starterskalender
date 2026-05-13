@@ -35,7 +35,7 @@ FROM node:20-alpine3.19 AS runner
 WORKDIR /app
 
 # Installeer OpenSSL voor Prisma, curl voor cron jobs, en su-exec voor user switching
-RUN apk add --no-cache openssl curl su-exec
+RUN apk add --no-cache openssl curl su-exec postgresql16-client
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
