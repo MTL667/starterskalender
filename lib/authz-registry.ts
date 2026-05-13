@@ -58,6 +58,7 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   { key: 'admin:system:settings', category: 'admin', description: 'Systeemconfiguratie (branding, mail, allowed tenants)' },
   { key: 'admin:audit:read', category: 'admin', description: 'Audit-logs inzien' },
   { key: 'admin:cron:trigger', category: 'admin', description: 'Cron-jobs manueel triggeren' },
+  { key: 'admin:data:manage', category: 'admin', description: 'Database export/import beheren' },
 
   // ── CardDAV ──────────────────────────────────────────────────────────────
   { key: 'carddav:sync', category: 'starters', description: 'Contacten synchroniseren naar CardDAV' },
