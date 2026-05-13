@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     const filename = `airport-export-${timestamp}.sql`
 
     const { stdout, stderr } = await execAsync(
-      `pg_dump "${dbUrl}" ${tableArgs} --data-only --inserts --on-conflict-do-nothing --no-owner --no-privileges`,
+      `pg_dump "${dbUrl}" ${tableArgs} --data-only --column-inserts --on-conflict-do-nothing --no-owner --no-privileges`,
       { maxBuffer: 100 * 1024 * 1024 },
     )
 
