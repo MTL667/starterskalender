@@ -100,7 +100,7 @@ export default async function PublicVacancyDetailPage({ params }: PageProps) {
   }
 
   const t = await getTranslations('public.vacancy')
-  const blocks = (Array.isArray(vacancy.content) ? vacancy.content : []) as ContentBlock[]
+  const blocks = (Array.isArray(vacancy.content) ? vacancy.content : []) as unknown as ContentBlock[]
   const entityColor = vacancy.entity.colorHex
 
   const jsonLd = {
