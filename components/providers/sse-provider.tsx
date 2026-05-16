@@ -113,6 +113,12 @@ export function SSEProvider({ children }: { children: ReactNode }) {
         'task:updated',
         'task:completed',
         'notification:new',
+        'recruitment:pipeline:candidate-moved',
+        'recruitment:pipeline:candidate-added',
+        'recruitment:share:created',
+        'recruitment:share:revoked',
+        'recruitment:share:evaluated',
+        'recruitment:candidate:comment-added',
       ]
 
       for (const type of eventTypes) {

@@ -6,6 +6,12 @@ export type SSEEventType =
   | 'task:updated'
   | 'task:completed'
   | 'notification:new'
+  | 'recruitment:pipeline:candidate-moved'
+  | 'recruitment:pipeline:candidate-added'
+  | 'recruitment:share:created'
+  | 'recruitment:share:revoked'
+  | 'recruitment:share:evaluated'
+  | 'recruitment:candidate:comment-added'
 
 export interface SSEEvent {
   type: SSEEventType

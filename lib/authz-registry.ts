@@ -14,6 +14,7 @@ export type PermissionCategory =
   | 'materials'
   | 'admin'
   | 'reporting'
+  | 'recruitment'
 
 export interface PermissionDefinition {
   key: string
@@ -68,6 +69,18 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   // ── Reporting ─────────────────────────────────────────────────────────────
   { key: 'reporting:kpi:read', category: 'reporting', description: 'KPI-dashboard bekijken' },
   { key: 'reporting:export', category: 'reporting', description: 'Rapporten exporteren' },
+
+  // ── Recruitment ────────────────────────────────────────────────────────────
+  { key: 'recruitment:read', category: 'recruitment', description: 'Recruitment module bekijken (vacatures, pipeline)' },
+  { key: 'recruitment:write', category: 'recruitment', description: 'Recruitment data bewerken (kandidaten verplaatsen, comments)' },
+  { key: 'recruitment:admin', category: 'recruitment', description: 'Recruitment beheer (templates, instellingen, retentie)' },
+  { key: 'vacancy:create', category: 'recruitment', description: 'Nieuwe vacatures aanmaken' },
+  { key: 'vacancy:edit', category: 'recruitment', description: 'Vacatures bewerken (content, criteria, stages)' },
+  { key: 'vacancy:publish', category: 'recruitment', description: 'Vacatures publiceren en depubliceren' },
+  { key: 'vacancy:delete', category: 'recruitment', description: 'Vacatures verwijderen' },
+  { key: 'candidate:read', category: 'recruitment', description: 'Kandidaat-profielen bekijken' },
+  { key: 'candidate:write', category: 'recruitment', description: 'Kandidaten toevoegen en bewerken' },
+  { key: 'candidate:share', category: 'recruitment', description: 'Kandidaatdata delen met reviewers' },
 ]
 
 export type PermissionKey = string

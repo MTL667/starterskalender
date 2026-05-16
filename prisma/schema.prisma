@@ -152,6 +152,15 @@ model User {
   taskAssignments         TaskAssignment[]         @relation("TaskAssignmentUser") // Task assignments voor deze user
   notifications           Notification[] // In-app notificaties voor deze user
   auditLogs               AuditLog[]
+  createdVacancies        Vacancy[]                @relation("VacancyCreator")
+  createdTemplates        VacancyTemplate[]        @relation("TemplateCreator")
+  createdCandidates       Candidate[]              @relation("CandidateCreator")
+  receivedShares          CandidateShare[]         @relation("SharedWithUser")
+  createdShares           CandidateShare[]         @relation("ShareCreator")
+  evaluations             Evaluation[]
+  candidateComments       CandidateComment[]           @relation("CandidateCommentAuthor")
+  linkedEmails            LinkedEmail[]                @relation("LinkedEmailOwner")
+  recruitmentEmailTemplates RecruitmentEmailTemplate[] @relation("RecruitmentEmailTemplateCreator")
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   lastLoginAt             DateTime? // Tijdstip van laatste succesvolle login
@@ -178,11 +187,25 @@ model Entity {
   tasks                   Task[] // Taken gekoppeld aan deze entiteit
   taskAssignments         TaskAssignment[] // Taak verantwoordelijken voor deze entiteit
   signatureTemplate       SignatureTemplate? // Email signature template voor deze entiteit
+  vacancies               Vacancy[]
+  vacancyTemplates        VacancyTemplate[]
+  recruitmentEmailTemplates RecruitmentEmailTemplate[]
+  siteGroup               SiteGroup? @relation("SiteGroupEntities", fields: [siteGroupId], references: [id])
+  siteGroupId             String?
 
   // Inspecteurnummer configuratie
   inspectorNumberEnabled Boolean @default(false)
   inspectorNumberStart   Int     @default(1)
   inspectorNumberLabel   String  @default("Inspecteurnummer")
+
+  // GDPR Retention configuratie
+  retentionDays      Int     @default(365)
+  retentionGraceDays Int     @default(30)
+  retentionNotifyDays Int    @default(30)
+
+  // SLA configuratie
+  slaWarningDays  Int @default(7)
+  slaExceededDays Int @default(14)
 
   // CardDAV configuratie
   cardDavEnabled     Boolean @default(false)
@@ -195,6 +218,7 @@ model Entity {
   updatedAt DateTime @updatedAt
 
   @@index([isActive])
+  @@index([siteGroupId])
 }
 
 // @deprecated — vervangen door UserRoleAssignment.entityIds in RBAC v2.
@@ -345,6 +369,7 @@ model Starter {
   starterMaterials StarterMaterial[] // Materiaal toegewezen aan deze starter
   tasks            Task[] // Taken gekoppeld aan deze starter
   documents        StarterDocument[] // Documenten voor ondertekening
+  hiredCandidate   Candidate?        @relation("CandidateStarter")
 
   @@unique([entityId, inspectorNumber])
   @@index([type])
@@ -367,6 +392,8 @@ model JobRole {
   requiresInspectorNumber Boolean           @default(false)
   blockedPeriods          BlockedPeriod[]
   materials               JobRoleMaterial[] // Materiaal gekoppeld aan deze functie
+  vacancies               Vacancy[]
+  vacancyTemplates        VacancyTemplate[] @relation("TemplateFunction")
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
 
@@ -509,17 +536,34 @@ model EmailTemplate {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  actorId   String?
-  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
-  action    String
-  target    String?
-  meta      Json?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  sequenceNum   Int      @default(autoincrement())
+  actorId       String?
+  actor         User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action        String
+  target        String?
+  meta          Json?
+  integrityHash String?
+  createdAt     DateTime @default(now())
 
   @@index([actorId])
   @@index([action])
+  @@index([target])
   @@index([createdAt])
+}
+
+model DataExportRequest {
+  id           String    @id @default(cuid())
+  candidateId  String
+  token        String    @unique
+  mechanism    String    // "self-service" or "admin"
+  data         Json?     @db.JsonB
+  expiresAt    DateTime
+  downloadedAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([candidateId])
+  @@index([token])
 }
 
 // System settings voor branding en configuratie
@@ -872,5 +916,284 @@ model SignatureTemplate {
   updatedAt    DateTime @updatedAt
 
   @@index([entityId])
+  @@index([isActive])
+}
+
+// ─── Recruitment Module ─────────────────────────────────────────────────────────
+
+enum VacancyStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+model Vacancy {
+  id          String        @id @default(cuid())
+  title       String
+  entityId    String
+  entity      Entity        @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  functionId  String?
+  function    JobRole?      @relation(fields: [functionId], references: [id], onDelete: SetNull)
+  status      VacancyStatus @default(DRAFT)
+  content      Json?         @default("[]") // Modular content blocks (typed JSON array)
+  dealbreakers      Json          @default("[]") // VacancyDealbreaker[] — criteria that auto-filter candidates
+  niceToHaves       Json          @default("[]") // VacancyNiceToHave[] — weighted preferences for scoring
+  scorecardCriteria Json          @default("[]") // VacancyScorecardCriterion[] — reviewer evaluation criteria
+  description  String?
+  location    String?
+  type        String?       // e.g. fulltime, parttime, interim
+  createdById String
+  createdBy   User          @relation("VacancyCreator", fields: [createdById], references: [id])
+  templateId    String?
+  template      VacancyTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  retentionDays Int?
+  deletedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  stages      VacancyStage[]
+  candidates  Candidate[]
+  evaluations Evaluation[]
+
+  @@index([entityId])
+  @@index([status])
+  @@index([createdById])
+  @@index([deletedAt])
+}
+
+model VacancyTemplate {
+  id                String    @id @default(cuid())
+  name              String
+  entityId          String
+  entity            Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  functionId        String?
+  function          JobRole?  @relation("TemplateFunction", fields: [functionId], references: [id], onDelete: SetNull)
+  content           Json      @default("[]")
+  stages            Json      @default("[]")
+  dealbreakers      Json      @default("[]")
+  niceToHaves       Json      @default("[]")
+  scorecardCriteria Json      @default("[]") // VacancyScorecardCriterion[] — default evaluation criteria
+  usageCount        Int       @default(0)
+  createdById       String
+  createdBy         User      @relation("TemplateCreator", fields: [createdById], references: [id])
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  vacancies Vacancy[]
+
+  @@index([entityId])
+}
+
+model VacancyStage {
+  id            String  @id @default(cuid())
+  vacancyId     String
+  vacancy       Vacancy @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  name          String
+  order         Int
+  isTerminal    Boolean @default(false)
+  triggersEmail Boolean @default(false)
+
+  candidates Candidate[]
+
+  @@unique([vacancyId, order])
+  @@index([vacancyId])
+}
+
+enum CandidateStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  RETENTION_EXPIRED
+}
+
+enum CandidateSource {
+  DIRECT
+  REFERRAL
+  LINKEDIN
+  APPLICATION
+  OTHER
+}
+
+enum DealbreakersResult {
+  PASS
+  FAIL
+  PENDING
+}
+
+model Candidate {
+  id                 String             @id @default(cuid())
+  vacancyId          String
+  vacancy            Vacancy            @relation(fields: [vacancyId], references: [id], onDelete: Cascade)
+  stageId            String
+  stage              VacancyStage       @relation(fields: [stageId], references: [id])
+  firstName          String
+  lastName           String
+  email              String
+  phone              String?
+  source             CandidateSource    @default(DIRECT)
+  status             CandidateStatus    @default(ACTIVE)
+  notes              String?
+  rejectionReason    String?
+  dealbreakersResult DealbreakersResult @default(PENDING)
+  niceToHaveScore    Float?
+  createdById        String?
+  createdBy          User?              @relation("CandidateCreator", fields: [createdById], references: [id])
+  verificationToken    String?            @unique
+  verifiedAt           DateTime?
+  retentionExpiresAt   DateTime?
+  retentionNotifiedAt  DateTime?
+  consentRenewalToken  String?            @unique
+  deletedAt            DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  starterId    String?              @unique
+  starter      Starter?             @relation("CandidateStarter", fields: [starterId], references: [id])
+
+  application  CandidateApplication?
+  shares       CandidateShare[]
+  evaluations  Evaluation[]
+  comments     CandidateComment[]
+  linkedEmails LinkedEmail[]
+
+  @@unique([vacancyId, email])
+  @@index([vacancyId, stageId])
+  @@index([deletedAt])
+}
+
+model CandidateApplication {
+  id          String    @id @default(cuid())
+  candidateId String    @unique
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  cvDriveId   String?
+  cvItemId    String?
+  cvFileName  String?
+  motivation  String?
+  responses   Json      @default("[]")
+  appliedAt   DateTime  @default(now())
+}
+
+model ShareTemplate {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  visibleFields String[]
+  isDefault     Boolean  @default(false)
+  usageCount    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model CandidateShare {
+  id                    String      @id @default(cuid())
+  candidateId           String
+  candidate             Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  sharedWithUserId      String
+  sharedWith            User        @relation("SharedWithUser", fields: [sharedWithUserId], references: [id])
+  createdById           String
+  createdBy             User        @relation("ShareCreator", fields: [createdById], references: [id])
+  visibleFields         String[]
+  token                 String      @unique @default(cuid())
+  expiresAt             DateTime?
+  evaluationSubmittedAt   DateTime?
+  revokedAt               DateTime?
+  expirationNotifiedAt    DateTime?
+  createdAt               DateTime    @default(now())
+
+  evaluation Evaluation?
+
+  @@index([candidateId])
+  @@index([sharedWithUserId])
+  @@index([token])
+}
+
+model Evaluation {
+  id          String         @id @default(cuid())
+  candidateId String
+  candidate   Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  shareId     String         @unique
+  share       CandidateShare @relation(fields: [shareId], references: [id])
+  vacancyId   String
+  vacancy     Vacancy        @relation(fields: [vacancyId], references: [id])
+  evaluatorId String
+  evaluator   User           @relation(fields: [evaluatorId], references: [id])
+  scores      Json           // EvaluationScore[] — per criterion scores
+  comment     String?
+  createdAt   DateTime       @default(now())
+
+  @@index([candidateId])
+  @@index([vacancyId])
+}
+
+model CandidateComment {
+  id          String    @id @default(cuid())
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User      @relation("CandidateCommentAuthor", fields: [authorId], references: [id])
+  text        String    @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([candidateId])
+}
+
+enum EmailDirection {
+  SENT
+  RECEIVED
+}
+
+model LinkedEmail {
+  id              String         @id @default(cuid())
+  candidateId     String
+  candidate       Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User           @relation("LinkedEmailOwner", fields: [userId], references: [id])
+  vacancyId       String?
+  graphMessageId  String
+  subject         String
+  preview         String         @db.Text
+  direction       EmailDirection
+  sentAt          DateTime
+  isPrivate       Boolean        @default(false)
+  markedPrivateBy String?
+  createdAt       DateTime       @default(now())
+
+  @@unique([userId, graphMessageId])
+  @@index([candidateId])
+}
+
+model SiteGroup {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  entities  Entity[] @relation("SiteGroupEntities")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum RecruitmentEmailType {
+  STAGE_TRANSITION
+  APPLICATION_CONFIRMATION
+  REJECTION
+}
+
+model RecruitmentEmailTemplate {
+  id          String               @id @default(cuid())
+  entityId    String
+  entity      Entity               @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  type        RecruitmentEmailType
+  name        String
+  subject     String
+  body        String               @db.Text
+  variables   Json                 @default("[]")
+  isActive    Boolean              @default(false)
+  createdById String
+  createdBy   User                 @relation("RecruitmentEmailTemplateCreator", fields: [createdById], references: [id])
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@unique([entityId, type, name])
+  @@index([entityId])
+  @@index([type])
   @@index([isActive])
 }

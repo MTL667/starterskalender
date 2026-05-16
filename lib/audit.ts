@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { createHash } from 'crypto'
 
 export type AuditAction =
   | 'CREATE'
@@ -30,6 +31,20 @@ export type AuditAction =
   | 'CARDDAV_BULK_SYNC'
   | 'CARDDAV_AUTO_CLEANUP'
   | 'CARDDAV_ENTITY_SWITCH'
+  | 'CANDIDATE_STAGE_MOVE'
+  | 'CANDIDATE_VIEWED'
+  | 'CANDIDATE_DOCUMENT_ACCESSED'
+  | 'CANDIDATE_SHARED'
+  | 'CANDIDATE_SHARE_REVOKED'
+  | 'CANDIDATE_EVALUATED'
+  | 'CANDIDATE_EMAIL_SENT'
+  | 'CANDIDATE_REJECTED'
+  | 'CONSENT_RENEWED'
+  | 'CANDIDATE_RETENTION_EXPIRED'
+  | 'CANDIDATE_DATA_PURGED'
+  | 'CANDIDATE_ERASURE_REQUESTED'
+  | 'CANDIDATE_DATA_EXPORTED'
+  | 'AUDIT_REPORT_EXPORTED'
 
 export interface AuditLogInput {
   actorId?: string
@@ -43,17 +58,30 @@ export interface AuditLogInput {
  */
 export async function createAuditLog(input: AuditLogInput): Promise<void> {
   try {
-    await prisma.auditLog.create({
-      data: {
-        actorId: input.actorId,
-        action: input.action,
-        target: input.target,
-        meta: input.meta ? JSON.parse(JSON.stringify(input.meta)) : null,
-      },
+    const timestamp = new Date().toISOString()
+
+    await prisma.$transaction(async (tx) => {
+      const prevEntry = await tx.auditLog.findFirst({
+        orderBy: { sequenceNum: 'desc' },
+        select: { integrityHash: true },
+      })
+
+      const prevHash = prevEntry?.integrityHash ?? 'genesis'
+      const hashPayload = `${prevHash}|${input.action}|${input.target ?? ''}|${timestamp}`
+      const integrityHash = createHash('sha256').update(hashPayload).digest('hex')
+
+      await tx.auditLog.create({
+        data: {
+          actorId: input.actorId,
+          action: input.action,
+          target: input.target,
+          meta: input.meta ? JSON.parse(JSON.stringify(input.meta)) : null,
+          integrityHash,
+        },
+      })
     })
   } catch (error) {
     console.error('Failed to create audit log:', error)
-    // We don't throw - audit logging should not break the application
   }
 }
 

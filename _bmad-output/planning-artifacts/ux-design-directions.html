@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airport Recruitment — UX Design Directions</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-muted: #f4f4f5;
+    --bg-card: #ffffff;
+    --border: #e4e4e7;
+    --text: #18181b;
+    --text-muted: #71717a;
+    --text-sm: #a1a1aa;
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --stage-new: #3b82f6;
+    --stage-screening: #06b6d4;
+    --stage-review: #f59e0b;
+    --stage-interview: #8b5cf6;
+    --stage-offer: #10b981;
+    --stage-hired: #16a34a;
+    --stage-rejected: #ef4444;
+    --score-high: #22c55e;
+    --score-medium: #f59e0b;
+    --score-low: #ef4444;
+    --entity-aceg: #6366f1;
+    --entity-vgc: #0ea5e9;
+    --entity-facil: #f97316;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+    --shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-lg: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+    --radius: 8px;
+    --radius-sm: 6px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #09090b; color: var(--text); }
+  
+  /* Nav */
+  .screen-nav { position: sticky; top: 0; z-index: 100; background: #18181b; border-bottom: 1px solid #27272a; padding: 12px 24px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .screen-nav h1 { color: #fafafa; font-size: 14px; font-weight: 600; margin-right: 16px; white-space: nowrap; }
+  .screen-nav button { background: #27272a; color: #d4d4d8; border: 1px solid #3f3f46; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; transition: all .15s; }
+  .screen-nav button:hover, .screen-nav button.active { background: var(--primary); color: white; border-color: var(--primary); }
+  
+  /* Screens */
+  .screen { display: none; min-height: calc(100vh - 52px); background: var(--bg); }
+  .screen.active { display: block; }
+  
+  /* Screen 1: Pipeline Kanban */
+  .pipeline-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .pipeline-header h2 { font-size: 18px; font-weight: 600; }
+  .pipeline-header .meta { color: var(--text-muted); font-size: 13px; }
+  .pipeline-filters { padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; background: var(--bg-muted); }
+  .filter-chip { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
+  .filter-chip.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+  .pipeline-board { display: flex; gap: 12px; padding: 16px 24px; overflow-x: auto; min-height: calc(100vh - 170px); align-items: flex-start; }
+  .stage-column { min-width: 280px; max-width: 280px; background: var(--bg-muted); border-radius: var(--radius); display: flex; flex-direction: column; }
+  .stage-header { padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid; border-radius: var(--radius) var(--radius) 0 0; }
+  .stage-header h3 { font-size: 13px; font-weight: 600; }
+  .stage-count { background: white; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 600; color: var(--text-muted); }
+  .stage-cards { padding: 8px; display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 100px; }
+  
+  /* Candidate Card */
+  .candidate-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; cursor: grab; transition: box-shadow .15s, transform .15s; position: relative; }
+  .candidate-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+  .candidate-card .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .candidate-card .name { font-size: 13px; font-weight: 500; }
+  .candidate-card .entity-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; color: white; font-weight: 500; }
+  .candidate-card .card-meta { display: flex; gap: 8px; align-items: center; font-size: 11px; color: var(--text-muted); }
+  .candidate-card .card-meta .days { display: flex; align-items: center; gap: 2px; }
+  .candidate-card .card-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .score-ring { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: white; }
+  .dealbreaker-badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 500; }
+  .db-pass { background: #dcfce7; color: #16a34a; }
+  .db-fail { background: #fef2f2; color: #ef4444; }
+  .card-actions { display: flex; gap: 4px; opacity: 0; transition: opacity .15s; }
+  .candidate-card:hover .card-actions { opacity: 1; }
+  .card-action { width: 24px; height: 24px; border-radius: 4px; border: none; background: var(--bg-muted); color: var(--text-muted); cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .card-action:hover { background: var(--primary-light); color: var(--primary); }
+  .reviewer-avatars { display: flex; margin-left: auto; }
+  .reviewer-avatar { width: 20px; height: 20px; border-radius: 50%; background: var(--primary-light); border: 2px solid white; margin-left: -6px; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 600; color: var(--primary); }
+  
+  /* Screen 2: Share Dialog */
+  .dialog-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .dialog-bg { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+  .share-dialog { background: var(--bg-card); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.15); width: 100%; max-width: 520px; padding: 24px; position: relative; }
+  .share-dialog h3 { font-size: 16px; font-weight: 600; margin-bottom: 20px; }
+  .share-section { margin-bottom: 20px; }
+  .share-section label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: 8px; }
+  .user-picker { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .user-picker .avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; }
+  .template-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .template-card { border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 10px; cursor: pointer; transition: all .15s; }
+  .template-card.selected { border-color: var(--primary); background: var(--primary-light); }
+  .template-card h4 { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+  .template-card .fields { font-size: 10px; color: var(--text-muted); line-height: 1.5; }
+  .template-card .fields span { display: block; }
+  .expiry-row { display: flex; align-items: center; gap: 8px; }
+  .expiry-select { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 13px; flex: 1; }
+  .preview-box { background: var(--bg-muted); border-radius: var(--radius-sm); padding: 14px; border: 1px dashed var(--border); }
+  .preview-box h4 { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+  .preview-fields { display: flex; flex-wrap: wrap; gap: 6px; }
+  .preview-field { font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .preview-field.visible { background: #dcfce7; color: #16a34a; }
+  .preview-field.hidden { background: #f4f4f5; color: #a1a1aa; text-decoration: line-through; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .btn { padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all .15s; }
+  .btn-ghost { background: transparent; color: var(--text-muted); }
+  .btn-ghost:hover { background: var(--bg-muted); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { opacity: .9; }
+  
+  /* Screen 3: Reviewer View */
+  .reviewer-container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+  .reviewer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .reviewer-header h2 { font-size: 18px; font-weight: 600; }
+  .reviewer-header .nav-pills { display: flex; gap: 4px; }
+  .reviewer-header .pill { padding: 4px 12px; border-radius: 6px; font-size: 13px; color: var(--text-muted); cursor: pointer; }
+  .reviewer-header .pill.active { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+  .reviewer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .reviewer-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .reviewer-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; color: var(--text-muted); }
+  .cv-summary { font-size: 13px; line-height: 1.7; color: var(--text); }
+  .cv-summary p { margin-bottom: 8px; }
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .skill-tag { background: var(--bg-muted); border: 1px solid var(--border); border-radius: 4px; padding: 3px 10px; font-size: 11px; }
+  .scorecard-item { margin-bottom: 16px; }
+  .scorecard-item label { font-size: 13px; font-weight: 500; display: block; margin-bottom: 6px; }
+  .score-dots { display: flex; gap: 6px; }
+  .score-dot { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all .15s; }
+  .score-dot.filled { border-color: var(--score-high); background: #dcfce7; color: #16a34a; }
+  .score-dot:hover { border-color: var(--primary); }
+  .recommendation-input { width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; font-size: 13px; min-height: 80px; resize: vertical; font-family: inherit; }
+  .shared-by { font-size: 11px; color: var(--text-sm); margin-top: 16px; }
+  
+  /* Screen 4: Public Vacancy Page */
+  .public-page { background: #fafafa; }
+  .public-nav { background: white; border-bottom: 1px solid #e5e7eb; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .public-nav .entity-logo { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+  .public-nav .entity-name { font-size: 14px; font-weight: 500; }
+  .public-content { max-width: 720px; margin: 0 auto; padding: 40px 24px; }
+  .public-content .breadcrumb { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+  .public-content .breadcrumb a { color: var(--primary); text-decoration: none; }
+  .public-content h1 { font-size: 28px; font-weight: 700; line-height: 1.3; margin-bottom: 12px; }
+  .vacancy-meta { display: flex; gap: 16px; font-size: 13px; color: var(--text-muted); margin-bottom: 32px; flex-wrap: wrap; }
+  .vacancy-meta span { display: flex; align-items: center; gap: 4px; }
+  .content-block { background: white; border-radius: var(--radius); border: 1px solid #e5e7eb; padding: 24px; margin-bottom: 16px; }
+  .content-block h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .content-block p, .content-block li { font-size: 14px; line-height: 1.7; color: #374151; }
+  .content-block ul { padding-left: 20px; }
+  .content-block li { margin-bottom: 6px; }
+  .dealbreaker-list { list-style: none; padding: 0; }
+  .dealbreaker-list li { padding: 8px 0; border-bottom: 1px solid #f3f4f6; display: flex; align-items: center; gap: 8px; }
+  .dealbreaker-list .icon { font-size: 16px; }
+  .dealbreaker-list .required { color: #ef4444; font-weight: 600; }
+  .dealbreaker-list .preferred { color: #f59e0b; font-weight: 500; }
+  .apply-cta { background: white; border-radius: var(--radius); border: 1px solid #e5e7eb; padding: 32px; text-align: center; margin-top: 24px; }
+  .apply-cta h2 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+  .apply-cta p { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
+  .btn-apply { padding: 12px 32px; font-size: 16px; font-weight: 600; border-radius: var(--radius); border: none; color: white; cursor: pointer; }
+  
+  /* Screen 5: Confirm Popover */
+  .popover-demo { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 52px); background: var(--bg-muted); }
+  .confirm-popover { background: white; border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 16px; width: 320px; border: 1px solid var(--border); }
+  .confirm-popover h4 { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .confirm-popover .option { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 8px; cursor: pointer; }
+  .confirm-popover .option input { accent-color: var(--primary); }
+  .confirm-popover .template-select { border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font-size: 12px; margin-left: 24px; margin-bottom: 8px; width: calc(100% - 24px); }
+  .confirm-popover .actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .confirm-popover .btn { padding: 6px 14px; font-size: 12px; }
+  
+  /* Screen 6: Hire Confirmation */
+  .hire-demo { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 52px); background: var(--bg-muted); }
+  .hire-dialog { background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.12); width: 440px; overflow: hidden; }
+  .hire-banner { background: linear-gradient(135deg, #16a34a, #10b981); padding: 24px; color: white; text-align: center; }
+  .hire-banner .check { width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 12px; }
+  .hire-banner h3 { font-size: 18px; font-weight: 600; }
+  .hire-banner p { font-size: 13px; opacity: .9; margin-top: 4px; }
+  .hire-body { padding: 24px; }
+  .hire-field { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .hire-field .label { color: var(--text-muted); }
+  .hire-field .value { font-weight: 500; }
+  .hire-note { background: #f0fdf4; border-radius: 6px; padding: 12px; font-size: 12px; color: #16a34a; margin-top: 16px; display: flex; align-items: center; gap: 8px; }
+  
+  /* Mobile app form */
+  .mobile-frame { width: 375px; min-height: 680px; background: white; border-radius: 40px; border: 8px solid #18181b; box-shadow: 0 20px 60px rgba(0,0,0,.2); overflow: hidden; margin: 40px auto; }
+  .mobile-status { height: 44px; background: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+  .mobile-content { padding: 0 20px 20px; }
+  .mobile-content h2 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .mobile-content .subtitle { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; }
+  .mobile-field { margin-bottom: 16px; }
+  .mobile-field label { font-size: 12px; font-weight: 500; display: block; margin-bottom: 6px; }
+  .mobile-field input, .mobile-field textarea { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; }
+  .mobile-field textarea { min-height: 60px; resize: none; }
+  .upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 20px; text-align: center; cursor: pointer; transition: all .15s; }
+  .upload-zone:hover { border-color: var(--primary); background: var(--primary-light); }
+  .upload-zone .icon { font-size: 24px; margin-bottom: 4px; }
+  .upload-zone p { font-size: 13px; color: var(--text-muted); }
+  .upload-zone .small { font-size: 11px; }
+  .btn-mobile { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 16px; font-weight: 600; color: white; cursor: pointer; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<nav class="screen-nav">
+  <h1>Airport Recruitment — UX Directions</h1>
+  <button class="active" onclick="show('pipeline')">Pipeline Kanban</button>
+  <button onclick="show('share')">Share Dialog</button>
+  <button onclick="show('reviewer')">Reviewer View</button>
+  <button onclick="show('public')">Public Vacancy</button>
+  <button onclick="show('mobile')">Mobile Apply</button>
+  <button onclick="show('confirm')">Stage Move</button>
+  <button onclick="show('hire')">Hire Moment</button>
+</nav>
+
+<!-- Screen 1: Pipeline Kanban -->
+<div id="pipeline" class="screen active">
+  <div class="pipeline-header">
+    <div>
+      <h2>Facility Manager</h2>
+      <span class="meta">ACEG · Published 3 weeks ago · 12 candidates</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" style="border:1px solid var(--border)">⚙ Stages</button>
+      <button class="btn btn-ghost" style="border:1px solid var(--border)">↓ Export</button>
+    </div>
+  </div>
+  <div class="pipeline-filters">
+    <span style="font-size:12px;color:var(--text-muted);margin-right:4px;">Filter:</span>
+    <span class="filter-chip active" style="background:var(--entity-aceg);color:white;border-color:var(--entity-aceg);">ACEG</span>
+    <span class="filter-chip">VGC</span>
+    <span class="filter-chip">Facil</span>
+    <span style="margin-left:auto;font-size:12px;color:var(--text-muted);">🔍</span>
+    <input type="text" placeholder="Search candidates..." style="border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;width:180px;">
+  </div>
+  <div class="pipeline-board">
+    <!-- Applied -->
+    <div class="stage-column">
+      <div class="stage-header" style="border-color:var(--stage-new);background:#eff6ff;">
+        <h3 style="color:var(--stage-new);">Applied</h3>
+        <span class="stage-count">4</span>
+      </div>
+      <div class="stage-cards">
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Thomas de Vries</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 2d</span>
+            <span>·</span>
+            <span>Indeed</span>
+          </div>
+          <div class="card-bottom">
+            <span class="dealbreaker-badge db-pass">✓ Dealbreakers</span>
+            <div class="score-ring" style="background:var(--score-high);">4.2</div>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+              <button class="card-action" title="Comment">💬</button>
+            </div>
+          </div>
+        </div>
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Lisa Janssen</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 5d</span>
+            <span>·</span>
+            <span>Website</span>
+          </div>
+          <div class="card-bottom">
+            <span class="dealbreaker-badge db-pass">✓ Dealbreakers</span>
+            <div class="score-ring" style="background:var(--score-medium);">3.1</div>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+              <button class="card-action" title="Comment">💬</button>
+            </div>
+          </div>
+        </div>
+        <div class="candidate-card" style="opacity:.5;">
+          <div class="card-top">
+            <span class="name">Kevin Peters</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 1d</span>
+            <span>·</span>
+            <span>Referral</span>
+          </div>
+          <div class="card-bottom">
+            <span class="dealbreaker-badge db-fail">✗ Rijbewijs</span>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+            </div>
+          </div>
+        </div>
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Sara Ahmed</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 8d</span>
+            <span>·</span>
+            <span>LinkedIn</span>
+          </div>
+          <div class="card-bottom">
+            <span class="dealbreaker-badge db-pass">✓ Dealbreakers</span>
+            <div class="score-ring" style="background:var(--score-high);">3.8</div>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+              <button class="card-action" title="Comment">💬</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screening -->
+    <div class="stage-column">
+      <div class="stage-header" style="border-color:var(--stage-screening);background:#ecfeff;">
+        <h3 style="color:var(--stage-screening);">Screening</h3>
+        <span class="stage-count">2</span>
+      </div>
+      <div class="stage-cards">
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Pieter Claes</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 3d</span>
+            <span>·</span>
+            <span>Indeed</span>
+          </div>
+          <div class="card-bottom">
+            <span class="dealbreaker-badge db-pass">✓ Dealbreakers</span>
+            <div class="score-ring" style="background:var(--score-high);">4.5</div>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+              <button class="card-action" title="Comment">💬</button>
+            </div>
+          </div>
+        </div>
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">An Peeters</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 6d</span>
+            <span>·</span>
+            <span>Website</span>
+          </div>
+          <div class="card-bottom">
+            <span class="dealbreaker-badge db-pass">✓ Dealbreakers</span>
+            <div class="score-ring" style="background:var(--score-medium);">3.4</div>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+              <button class="card-action" title="Comment">💬</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technical Review -->
+    <div class="stage-column">
+      <div class="stage-header" style="border-color:var(--stage-review);background:#fffbeb;">
+        <h3 style="color:var(--stage-review);">Technical Review</h3>
+        <span class="stage-count">3</span>
+      </div>
+      <div class="stage-cards">
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Jan Willems</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 2d</span>
+            <span>·</span>
+            <span>Indeed</span>
+          </div>
+          <div class="card-bottom">
+            <div class="score-ring" style="background:var(--score-high);">4.1</div>
+            <div class="reviewer-avatars">
+              <div class="reviewer-avatar" title="Mark (evaluated)" style="background:#dcfce7;color:#16a34a;">M</div>
+            </div>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+              <button class="card-action" title="Comment">💬</button>
+            </div>
+          </div>
+        </div>
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Eva Maes</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days" style="color:var(--stage-review);">⏱ 7d</span>
+            <span>·</span>
+            <span>LinkedIn</span>
+          </div>
+          <div class="card-bottom">
+            <div class="score-ring" style="background:var(--score-medium);">3.0</div>
+            <div class="reviewer-avatars">
+              <div class="reviewer-avatar" title="Mark (pending)" style="background:var(--primary-light);color:var(--primary);">M</div>
+            </div>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+            </div>
+          </div>
+        </div>
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Bram Hendrickx</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 1d</span>
+          </div>
+          <div class="card-bottom">
+            <div class="score-ring" style="background:var(--score-high);">4.3</div>
+            <div style="font-size:10px;color:var(--text-sm);">Not yet shared</div>
+            <div class="card-actions">
+              <button class="card-action" title="Share">👤</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interview -->
+    <div class="stage-column">
+      <div class="stage-header" style="border-color:var(--stage-interview);background:#f5f3ff;">
+        <h3 style="color:var(--stage-interview);">Interview</h3>
+        <span class="stage-count">2</span>
+      </div>
+      <div class="stage-cards">
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Marie Dubois</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 4d</span>
+          </div>
+          <div class="card-bottom">
+            <div class="score-ring" style="background:var(--score-high);">4.4</div>
+            <div class="reviewer-avatars">
+              <div class="reviewer-avatar" style="background:#dcfce7;color:#16a34a;">M</div>
+            </div>
+            <div class="card-actions">
+              <button class="card-action">👤</button>
+              <button class="card-action">💬</button>
+            </div>
+          </div>
+        </div>
+        <div class="candidate-card">
+          <div class="card-top">
+            <span class="name">Tom Vermeersch</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 1d</span>
+          </div>
+          <div class="card-bottom">
+            <div class="score-ring" style="background:var(--score-high);">3.9</div>
+            <div class="reviewer-avatars">
+              <div class="reviewer-avatar" style="background:#dcfce7;color:#16a34a;">M</div>
+            </div>
+            <div class="card-actions">
+              <button class="card-action">👤</button>
+              <button class="card-action">💬</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Offer -->
+    <div class="stage-column">
+      <div class="stage-header" style="border-color:var(--stage-offer);background:#ecfdf5;">
+        <h3 style="color:var(--stage-offer);">Offer</h3>
+        <span class="stage-count">1</span>
+      </div>
+      <div class="stage-cards">
+        <div class="candidate-card" style="border-left:3px solid var(--stage-offer);">
+          <div class="card-top">
+            <span class="name" style="font-weight:600;">Thomas de Vries</span>
+            <span class="entity-badge" style="background:var(--entity-aceg);">ACEG</span>
+          </div>
+          <div class="card-meta">
+            <span class="days">⏱ 2d</span>
+            <span>·</span>
+            <span style="color:var(--stage-offer);">Offer sent</span>
+          </div>
+          <div class="card-bottom">
+            <div class="score-ring" style="background:var(--score-high);">4.6</div>
+            <div class="reviewer-avatars">
+              <div class="reviewer-avatar" style="background:#dcfce7;color:#16a34a;">M</div>
+            </div>
+            <div class="card-actions">
+              <button class="card-action">💬</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hired -->
+    <div class="stage-column">
+      <div class="stage-header" style="border-color:var(--stage-hired);background:#f0fdf4;">
+        <h3 style="color:var(--stage-hired);">✓ Hired</h3>
+        <span class="stage-count">0</span>
+      </div>
+      <div class="stage-cards" style="display:flex;align-items:center;justify-content:center;color:var(--text-sm);font-size:12px;">
+        <span>Drop candidate here to hire</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 2: Share Dialog -->
+<div id="share" class="screen" style="background:var(--bg-muted);display:none;">
+  <div class="dialog-overlay">
+    <div class="dialog-bg">
+      <div class="share-dialog">
+        <h3>Share Thomas de Vries with...</h3>
+        
+        <div class="share-section">
+          <label>Reviewer</label>
+          <div class="user-picker">
+            <div class="avatar">M</div>
+            <span style="font-size:13px;">Mark van den Berg</span>
+            <span style="margin-left:auto;color:var(--text-sm);font-size:11px;">Team Lead Infrastructure</span>
+          </div>
+        </div>
+
+        <div class="share-section">
+          <label>Share Profile</label>
+          <div class="template-cards">
+            <div class="template-card selected">
+              <h4>📋 Technical Review</h4>
+              <div class="fields">
+                <span>✓ CV document</span>
+                <span>✓ Skills</span>
+                <span>✓ Scorecard</span>
+                <span style="color:#ef4444;">✗ Name, contact</span>
+              </div>
+            </div>
+            <div class="template-card">
+              <h4>👤 HR Review</h4>
+              <div class="fields">
+                <span>✓ Full name</span>
+                <span>✓ CV + skills</span>
+                <span>✓ Contact info</span>
+                <span>✓ Scorecard</span>
+              </div>
+            </div>
+            <div class="template-card">
+              <h4>⚙ Custom</h4>
+              <div class="fields">
+                <span style="color:var(--primary);">Pick individual</span>
+                <span style="color:var(--primary);">fields to share...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="share-section">
+          <label>Access Duration</label>
+          <div class="expiry-row">
+            <span style="font-size:12px;">⏱</span>
+            <select class="expiry-select">
+              <option selected>Expires after evaluation submitted</option>
+              <option>Expires after 7 days</option>
+              <option>Expires after 30 days</option>
+              <option>Permanent access</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="share-section">
+          <label>Preview — Mark will see:</label>
+          <div class="preview-box">
+            <div class="preview-fields">
+              <span class="preview-field visible">CV document</span>
+              <span class="preview-field visible">Skills</span>
+              <span class="preview-field visible">Scorecard form</span>
+              <span class="preview-field hidden">Full name</span>
+              <span class="preview-field hidden">Email</span>
+              <span class="preview-field hidden">Phone</span>
+              <span class="preview-field hidden">Address</span>
+              <span class="preview-field hidden">Age</span>
+              <span class="preview-field hidden">Photo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="dialog-actions">
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn btn-primary">Share with Mark →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 3: Reviewer View -->
+<div id="reviewer" class="screen" style="display:none;">
+  <div class="reviewer-container">
+    <div class="reviewer-header">
+      <div>
+        <h2>Candidate Review</h2>
+        <span style="font-size:13px;color:var(--text-muted);">Facility Manager · ACEG</span>
+      </div>
+      <div class="nav-pills">
+        <span class="pill active">1 of 2</span>
+        <span class="pill">Next →</span>
+      </div>
+    </div>
+    <div class="reviewer-grid">
+      <div class="reviewer-card">
+        <h3>📄 CV Summary</h3>
+        <div class="cv-summary">
+          <p><strong>Experience:</strong> 8 years in facility management, currently at XYZ Corp as Senior Facility Manager. Managed teams of 15+ across 3 locations.</p>
+          <p><strong>Education:</strong> Bachelor Facility Management (HAN), Certificate Energy Management (TÜV)</p>
+          <p><strong>Languages:</strong> Dutch (native), English (fluent), French (basic)</p>
+        </div>
+        <div class="skill-tags">
+          <span class="skill-tag">Facility Management</span>
+          <span class="skill-tag">Team Leadership</span>
+          <span class="skill-tag">HVAC Systems</span>
+          <span class="skill-tag">Budget Planning</span>
+          <span class="skill-tag">Vendor Management</span>
+          <span class="skill-tag">Energy Efficiency</span>
+        </div>
+      </div>
+      <div class="reviewer-card">
+        <h3>📊 Scorecard</h3>
+        <div class="scorecard-item">
+          <label>Technical Knowledge</label>
+          <div class="score-dots">
+            <div class="score-dot filled">1</div>
+            <div class="score-dot filled">2</div>
+            <div class="score-dot filled">3</div>
+            <div class="score-dot filled">4</div>
+            <div class="score-dot">5</div>
+          </div>
+        </div>
+        <div class="scorecard-item">
+          <label>Problem Solving</label>
+          <div class="score-dots">
+            <div class="score-dot filled">1</div>
+            <div class="score-dot filled">2</div>
+            <div class="score-dot filled">3</div>
+            <div class="score-dot">4</div>
+            <div class="score-dot">5</div>
+          </div>
+        </div>
+        <div class="scorecard-item">
+          <label>Team Fit</label>
+          <div class="score-dots">
+            <div class="score-dot">1</div>
+            <div class="score-dot">2</div>
+            <div class="score-dot">3</div>
+            <div class="score-dot">4</div>
+            <div class="score-dot">5</div>
+          </div>
+        </div>
+        <div class="scorecard-item">
+          <label>Communication</label>
+          <div class="score-dots">
+            <div class="score-dot">1</div>
+            <div class="score-dot">2</div>
+            <div class="score-dot">3</div>
+            <div class="score-dot">4</div>
+            <div class="score-dot">5</div>
+          </div>
+        </div>
+        <div class="scorecard-item" style="margin-top:20px;">
+          <label>Recommendation</label>
+          <textarea class="recommendation-input" placeholder="Your recommendation for this candidate..."></textarea>
+        </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:12px;padding:10px;">Submit Review →</button>
+        <div class="shared-by">Shared by Anja · Access expires after evaluation</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 4: Public Vacancy Page -->
+<div id="public" class="screen public-page" style="display:none;">
+  <div class="public-nav">
+    <div class="entity-logo" style="background:var(--entity-aceg);">A</div>
+    <span class="entity-name">ACEG Jobs</span>
+    <span style="margin-left:auto;font-size:13px;color:var(--text-muted);">3 open vacatures</span>
+  </div>
+  <div class="public-content">
+    <div class="breadcrumb"><a href="#">ACEG Jobs</a> / Facility Manager</div>
+    <h1>Facility Manager</h1>
+    <div class="vacancy-meta">
+      <span>📍 Brussels</span>
+      <span>⏰ Full-time</span>
+      <span>🏢 ACEG</span>
+      <span>📅 Published 3 weeks ago</span>
+    </div>
+
+    <div class="content-block">
+      <h2>About the Role</h2>
+      <p>We're looking for an experienced Facility Manager to oversee our Brussels headquarters and two satellite offices. You'll lead a team of 8 technicians and coordinate with external vendors to ensure our facilities run smoothly, safely, and sustainably.</p>
+    </div>
+
+    <div class="content-block">
+      <h2>What You'll Do</h2>
+      <ul>
+        <li>Manage day-to-day facility operations across 3 locations</li>
+        <li>Lead and develop a team of 8 facility technicians</li>
+        <li>Negotiate and manage vendor contracts (cleaning, security, HVAC)</li>
+        <li>Drive energy efficiency initiatives (target: 15% reduction in 2 years)</li>
+        <li>Ensure compliance with Belgian building regulations and safety standards</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2>Requirements</h2>
+      <ul class="dealbreaker-list">
+        <li><span class="icon required">⚠️</span> <span class="required">Required:</span> Valid driver's license (B)</li>
+        <li><span class="icon required">⚠️</span> <span class="required">Required:</span> Dutch speaking (C1 or native)</li>
+        <li><span class="icon preferred">⭐</span> <span class="preferred">Preferred:</span> 5+ years facility management experience</li>
+        <li><span class="icon preferred">⭐</span> <span class="preferred">Preferred:</span> Team leadership experience</li>
+        <li><span class="icon preferred">⭐</span> <span class="preferred">Preferred:</span> Knowledge of HVAC and building systems</li>
+      </ul>
+    </div>
+
+    <div class="content-block">
+      <h2>What We Offer</h2>
+      <ul>
+        <li>Competitive salary with benefits package</li>
+        <li>Company car + fuel card</li>
+        <li>Meal vouchers and group insurance</li>
+        <li>Flexible working hours</li>
+        <li>Professional development budget</li>
+      </ul>
+    </div>
+
+    <div class="apply-cta">
+      <h2>Interested?</h2>
+      <p>Apply in 30 seconds — no account needed.</p>
+      <button class="btn-apply" style="background:var(--entity-aceg);">Apply Now →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 5: Mobile Apply -->
+<div id="mobile" class="screen" style="display:none;background:#f4f4f5;min-height:calc(100vh - 52px);">
+  <div class="mobile-frame">
+    <div class="mobile-status">9:41</div>
+    <div style="padding:0 20px;">
+      <div class="public-nav" style="border:none;padding:12px 0;">
+        <div class="entity-logo" style="background:var(--entity-aceg);width:28px;height:28px;font-size:12px;">A</div>
+        <span class="entity-name" style="font-size:13px;">ACEG</span>
+      </div>
+    </div>
+    <div class="mobile-content">
+      <h2>Apply</h2>
+      <p class="subtitle">Facility Manager · Brussels</p>
+      
+      <div class="mobile-field">
+        <label>Email *</label>
+        <input type="email" placeholder="your@email.com">
+      </div>
+
+      <div class="mobile-field">
+        <label>CV / Resume *</label>
+        <div class="upload-zone">
+          <div class="icon">📎</div>
+          <p>Tap to upload your CV</p>
+          <p class="small">PDF, DOC, DOCX — max 10MB</p>
+        </div>
+      </div>
+
+      <div class="mobile-field">
+        <label>Motivation <span style="color:var(--text-sm);">(optional)</span></label>
+        <textarea placeholder="Why are you interested in this role?"></textarea>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-sm);margin:12px 0;">
+        By applying, you agree to our privacy policy. Your data will be processed for recruitment purposes only.
+      </div>
+
+      <button class="btn-mobile" style="background:var(--entity-aceg);">Submit Application →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 6: Confirm Popover -->
+<div id="confirm" class="screen popover-demo" style="display:none;">
+  <div style="text-align:center;">
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:24px;">Shown after dragging a candidate to a new pipeline stage</p>
+    <div class="confirm-popover">
+      <h4><span style="color:var(--stage-interview);">●</span> Move Thomas → Interview</h4>
+      <div class="option">
+        <input type="checkbox" checked>
+        <span>Send interview invitation email</span>
+      </div>
+      <select class="template-select">
+        <option>Template: Interview Invitation (default)</option>
+        <option>Template: Interview Invitation (technical)</option>
+      </select>
+      <div class="option">
+        <input type="checkbox">
+        <span>Add a note to this transition</span>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost">Cancel</button>
+        <button class="btn btn-primary">Confirm →</button>
+      </div>
+    </div>
+
+    <div style="margin-top:40px;">
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:24px;">Confirmation for rejection</p>
+      <div class="confirm-popover">
+        <h4><span style="color:var(--stage-rejected);">●</span> Reject An Peeters</h4>
+        <div class="option">
+          <input type="checkbox" checked>
+          <span>Send rejection email</span>
+        </div>
+        <select class="template-select">
+          <option>Template: Rejection (standard)</option>
+          <option>Template: Rejection (after interview)</option>
+        </select>
+        <div class="option">
+          <input type="checkbox">
+          <span>Add rejection reason (internal)</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn" style="background:var(--stage-rejected);color:white;">Reject →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Screen 7: Hire Moment -->
+<div id="hire" class="screen hire-demo" style="display:none;">
+  <div style="text-align:center;">
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:24px;">Shown when dragging a candidate to "Hired" stage</p>
+    <div class="hire-dialog">
+      <div class="hire-banner">
+        <div class="check">✓</div>
+        <h3>Thomas de Vries wordt Starter!</h3>
+        <p>A new chapter begins at ACEG</p>
+      </div>
+      <div class="hire-body">
+        <div class="hire-field">
+          <span class="label">Entity</span>
+          <span class="value">ACEG</span>
+        </div>
+        <div class="hire-field">
+          <span class="label">Function</span>
+          <span class="value">Facility Manager</span>
+        </div>
+        <div class="hire-field">
+          <span class="label">Start date</span>
+          <span class="value" style="display:flex;align-items:center;gap:4px;">
+            <input type="date" value="2026-09-01" style="border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:13px;">
+          </span>
+        </div>
+        <div class="hire-field" style="border:none;">
+          <span class="label">Language</span>
+          <span class="value">NL</span>
+        </div>
+        <div class="hire-note">
+          ✓ A Starter record will be created automatically in the Airport calendar
+        </div>
+        <div class="dialog-actions" style="margin-top:20px;">
+          <button class="btn btn-ghost">Cancel</button>
+          <button class="btn" style="background:var(--stage-hired);color:white;padding:10px 24px;">Confirm Hire →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

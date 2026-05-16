@@ -1,13 +1,14 @@
 ---
 stepsCompleted: ["step-01-init", "step-02-discovery", "step-02b-vision", "step-02c-executive-summary", "step-03-success", "step-04-journeys", "step-05-domain", "step-06-innovation", "step-07-project-type", "step-08-scoping", "step-09-functional", "step-10-nonfunctional", "step-11-polish", "step-12-complete"]
-completedAt: "2026-04-08"
+completedAt: "2026-05-13"
 inputDocuments:
+  - _bmad-output/brainstorming/brainstorming-session-2026-05-12-1210.md
   - docs/project-context.md
 workflowType: 'prd'
 documentCounts:
   briefCount: 0
   researchCount: 0
-  brainstormingCount: 0
+  brainstormingCount: 1
   projectDocsCount: 1
 classification:
   projectType: web_app
@@ -19,636 +20,518 @@ classification:
 # Product Requirements Document - Starterskalender
 
 **Author:** Kevin
-**Date:** 2026-04-07
+**Date:** 2026-05-13
 
 ## Executive Summary
 
-Starterskalender is an internal HR platform that centralizes the management of employee lifecycle events — onboarding, offboarding, and internal migrations — across multiple organizational entities. It replaces fragmented Excel-based workflows with a structured, calendar-driven system that provides HR teams with a unified view of all personnel movements, automated task generation, material provisioning tracking, and proactive email notifications.
+Airport's Recruitment Module replaces Recruitee as the in-house vacancy and candidate management system, eliminating external SaaS dependency while delivering capabilities Recruitee cannot provide. The module extends the existing Starterskalender platform — which already manages onboarding, offboarding, and internal migrations — upstream into the hiring pipeline.
 
-The platform serves organizations operating multiple entities (subsidiaries, departments, divisions) where HR administrators must coordinate personnel movements involving different job roles, responsible stakeholders, and entity-specific processes. Target users range from HR administrators with full management capabilities to entity-level editors and viewers, and global viewers who need cross-entity oversight.
+The module serves three user types: the HR headhunter who manages the full recruitment lifecycle daily, technical reviewers who evaluate candidates with scoped access to relevant data only, and management who monitors pipeline health through dashboards. It operates across multiple organizational entities with per-entity, per-vacancy, and per-field access control.
 
-The core problem: managing dozens of starters per month across multiple entities using spreadsheets causes tasks to fall through the cracks, materials to be forgotten, and no single person to have the complete picture. Starterskalender solves this by embedding structure and automation into the onboarding/offboarding process.
+The core problem: Recruitee's all-or-nothing access model forces a choice between sharing too much candidate data or not collaborating at all. Its full feature set goes largely unused while its cost remains fixed. Meanwhile, hired candidates must be manually re-entered into the onboarding system — the boundary between "candidate" and "starter" exists only because two separate tools enforce it.
 
 ### What Makes This Special
 
-The combination of four capabilities in a single platform tailored to multi-entity organizations:
+**Field-level access control for candidate data.** The headhunter determines exactly which fields each collaborator can see per candidate — CV and skills for technical reviewers, full profile for HR, temporary scoped views via share button. This granularity maps directly to Airport's existing RBAC v2 architecture and is something Recruitee fundamentally cannot do.
 
-1. **Unified calendar view** across all entities with week/month/year/custom perspectives, showing onboarding, offboarding, and migration events with entity-specific color coding and type-based visual distinction.
-2. **Automatic task orchestration** — task templates generate role-specific and entity-specific action items (IT setup, HR admin, facilities, manager actions) with assignment, deadlines, and notification channels the moment a starter is registered.
-3. **Proactive stakeholder communication** — weekly, monthly, quarterly, and yearly email digests automatically notify relevant users based on their entity memberships and notification preferences, distinguishing between starters, leavers, and internal transfers.
-4. **Digital document signing** — HR uploads contracts and documents for digital signing by starters. The system supports two methods: a simple electronic signature (SES) for internal confirmations, and a qualified electronic signature (QES) via itsme/eID (powered by Quill by Dioss) for legally binding documents — with automatic archival of signed PDFs to SharePoint.
+**Zero-boundary candidate-to-starter flow.** When a candidate reaches "Hired" status in the pipeline, their data flows directly into pre-onboarding and subsequently into the existing starter calendar — same data, no re-entry, no export/import. Recruitment, pre-onboarding, and onboarding become phases of one continuous journey rather than handoffs between disconnected tools.
 
-The core insight: generic HR systems are not built for the operational complexity of multi-entity organizations where each entity has its own job roles, material requirements, blocked periods, and responsible stakeholders. Starterskalender provides entity-aware automation that scales with organizational complexity.
+**Cost-justified feature coverage.** The module implements only what the organization actually uses: vacancy management, structured pipeline, evaluation scorecards, and scoped collaboration. No payment for unused features.
 
 ## Project Classification
 
-- **Type:** Web application (Next.js 16, App Router, standalone Docker deployment)
-- **Domain:** General / HR Enterprise — internal workforce lifecycle management
-- **Complexity:** Medium — role-based access control with 5 tiers, entity-scoped permissions via memberships, Azure AD SSO, automated email system with 4 scheduled types, material provisioning matrix
-- **Context:** Brownfield — fully operational production system deployed on Easypanel with PostgreSQL, serving active users via Azure AD authentication
+| Attribute | Value |
+|-----------|-------|
+| Project Type | Web application (Next.js App Router, brownfield module) |
+| Domain | HR / Recruitment |
+| Complexity | Medium — GDPR-sensitive candidate data, field-level RBAC, multi-entity, external integrations (Graph API, embeddable widget), but leverages 60% existing infrastructure |
+| Project Context | Brownfield — extends existing platform with established architecture (Prisma, RBAC v2, Graph API, SSE event bus, i18n) |
 
 ## Success Criteria
 
 ### User Success
 
-- **Single point of truth**: HR staff no longer switch between Excel, email, and other tools — all information about starters, leavers, and migrations lives in one place.
-- **Zero missed tasks**: No onboarding or offboarding task is forgotten thanks to automatic task generation and proactive notifications.
-- **Instant overview**: Every user sees a complete picture of all ongoing and planned personnel movements within seconds via the calendar view.
-- **Trust in completeness**: The "aha moment" is when an HR employee stops maintaining a parallel Excel file because Starterskalender covers everything.
+**HR Headhunter (primary user):**
+- Daily workflow feels easier than Recruitee — fewer clicks, less context-switching, no need to leave Airport for recruitment tasks
+- Can share candidate data with scoped field-level access without workarounds
+- Hired candidates flow into pre-onboarding without manual re-entry
+
+**Technical Reviewer (secondary user):**
+- Receives scoped candidate view (CV + skills), provides technical recommendation, done — minimal friction, no noise from irrelevant personal data
+- Complete evaluation workflow (review + recommendation) achievable in under 2 minutes
+
+**Management (tertiary user):**
+- Pipeline visibility per entity and globally without requesting status updates from headhunter
 
 ### Business Success
 
-- **Time savings**: Significant reduction in manual work around onboarding/offboarding, with the long-term goal of saving the equivalent of **1 FTE**.
-- **Error reduction**: Elimination of forgotten materials, missed tasks, and uninformed stakeholders — measurable via the number of post-start-date corrections.
-- **Adoption**: 100% of HR staff uses Starterskalender as the primary source; no parallel Excel tracking remains.
-- **Data authority**: Starterskalender becomes the authoritative source (single point of truth) for employee lifecycle data, forming the foundation for downstream integrations.
+| Metric | Target | Timeframe |
+|--------|--------|-----------|
+| Recruitee license cancelled | Contract terminated | September 2026 |
+| Time-to-hire | Measurable baseline established, then improved | Wave 1 + 3 months |
+| Candidate drop-off rate | Tracked per pipeline stage, identify bottleneck stages | Wave 1 + 3 months |
+| Cost per hire | Reduction vs Recruitee period (tracked via source attribution) | Wave 2 |
+| Recruitment data continuity | Zero manual re-entry from hired candidate to starter | Wave 1 |
 
 ### Technical Success
 
-- **Reliable automation**: Cron-based email notifications (weekly, monthly, quarterly, yearly) are delivered consistently and on time.
-- **Scalable multi-entity model**: The system supports adding new entities without architectural changes.
-- **Integration-ready**: Data structures and APIs are designed to serve as a source for ERP integrations.
-- **Availability**: >99% uptime via Docker/Easypanel deployment with PostgreSQL.
+- Module integrates with existing RBAC v2 without architectural changes to permission system
+- Prisma schema extension — no breaking changes to existing models
+- Graph API reuse for mail sync leverages existing authentication flow
+- Performance: pipeline Kanban renders under 1s with 50+ candidates per vacancy
+- GDPR: candidate data retention policy automated, deletion verifiable
 
 ### Measurable Outcomes
 
-| Metric | Baseline (Excel) | Target |
-|---|---|---|
-| Time per starter registration | ~15-30 min | <5 min |
-| Missed tasks per month | Unknown (untracked) | 0 |
-| Parallel Excel files | Multiple per entity | 0 |
-| HR admin lifecycle time investment | Multiple FTEs | -1 FTE |
-| Stakeholder notification coverage | Ad hoc / manual | 100% automated |
-| Contract signing turnaround | Days (print, sign, scan) | <24 hours |
-| Forgotten documents per month | Unknown | 0 |
-| Legally binding signatures | Manual via paper | 100% digital via itsme/eID |
+- **Go/No-Go gate:** Wave 1 feature-complete by mid-August 2026, allowing 2-week UAT before Recruitee contract expiry
+- **Adoption metric:** Headhunter completes first full recruitment cycle (vacancy → hire) within Airport before Recruitee cancellation
+- **Quality metric:** Zero candidate data visible to unauthorized users (verified via RBAC audit log)
+
+## Product Scope
+
+See [Project Scoping & Phased Development](#project-scoping--phased-development) for detailed MVP feature set, phased roadmap, and risk mitigation strategy.
 
 ## User Journeys
 
-### Journey 1: Sophie — HR Admin (Primary User, Success Path)
+### Journey 1: Anja — The HR Headhunter (Happy Path)
 
-**Who she is:** Sophie (34) is an HR Business Partner at an organization with 6 entities. She coordinates 15-25 starters, leavers, and internal migrations monthly. Previously she maintained a separate Excel file per entity, a shared mailbox full of requests, and a notebook of "things I must not forget."
+**Who:** Anja, 34, HR specialist at a multi-entity organization. She manages all recruitment single-handedly across 4 entities. Currently switches between Recruitee (vacancies), Outlook (candidate emails), Teams (reviewer feedback), and Excel (pipeline tracking).
 
-**Opening Scene:** Monday morning. Sophie opens Starterskalender and immediately sees in the calendar view that 4 starters and 2 leavers are scheduled this week, spread across 3 entities. She doesn't need to open a single Excel file.
+**Opening Scene:** Monday morning. Anja needs to fill a Facility Manager position for entity ACEG. In Recruitee, she'd create a vacancy from scratch, then manually email the technical reviewer a PDF of the candidate's CV, hoping he doesn't see the candidate's age or address.
 
-**Rising Action:** She registers a new starter for next month: Jan, Software Developer at entity "HQ". She selects the job role, entity, and start date. The system automatically generates 12 tasks — IT setup, badge request, workspace preparation, contract preparation — each assigned to the appropriate responsible person. She adds the required materials: laptop, headset, welcome package. Everything in under 5 minutes.
+**Rising Action:** In Airport, Anja opens the recruitment module. She selects the "Facility Manager" template linked to the existing job function — pre-filled with standard requirements, team description, and SharePoint stock photos. She adds two dealbreakers (driver's license, Dutch-speaking) and three weighted nice-to-haves. One click publishes to the ACEG vacancy page.
 
-**Climax:** Thursday, Sophie discovers that a colleague had forgotten to complete a task for a starter arriving tomorrow. But she didn't discover it herself — the system had already notified the responsible person via the weekly digest. The task was completed after all. Previously, this would have caused panic on the start day.
+**Climax:** Three weeks later, 12 candidates have applied. The dealbreaker filter has already sorted out 4 who lack the driver's license. Anja drags her top 3 into the "Technical Review" stage. She clicks "Share with Mark" → selects only CV, skills, and evaluation form → Mark receives a notification with a stripped-down view. No name, no address, no age visible. Mark fills his scorecard in 90 seconds. Anja sees his recommendation instantly in her pipeline.
 
-**Resolution:** At the end of the month, Sophie pulls the statistics. All 18 starters this month are fully onboarded, zero forgotten materials, zero missed tasks. She closes her laptop and goes home on time. The parallel Excel file? She deleted it 3 months ago.
+**Resolution:** Candidate Thomas scores highest. Anja drags him to "Hired." Airport auto-creates a Starter record for entity ACEG with Thomas's data — name, contact, function, start date — all pre-filled from the candidate profile. Pre-onboarding kicks off. Anja never re-entered a single field.
 
-**Reveals requirements for:** Starter registration, automatic task generation, material provisioning, calendar view, statistics dashboard, email notifications.
+### Journey 2: Anja — Edge Case (Rejection & GDPR)
 
----
+**Opening Scene:** A vacancy has been open for 8 weeks. 3 candidates were rejected after technical review, 2 withdrew. The pipeline shows red — SLA exceeded.
 
-### Journey 2: Mark — Entity Editor (Secondary User, Scoped Operations)
+**Rising Action:** Anja needs to reject the final candidate and close the vacancy. She moves the candidate to "Rejected," triggering an automatic status email using the rejection template. She closes the vacancy.
 
-**Who he is:** Mark (41) is an office manager at entity "Gent". He's responsible for the practical side of onboarding at his location: workspaces, keys, parking cards. He doesn't need to know what's happening at other entities.
+**Climax:** Three months later, GDPR retention policy fires. An automated email goes to the rejected candidates: "Your data will be deleted in 30 days. Want to stay in our talent pool?" No response from 4 of 5. One responds yes — moved to talent pool with fresh consent timestamp.
 
-**Opening Scene:** Monday morning, Mark receives an automatic email: "2 new employees start at Gent this week." The email contains names, job roles, and start dates. He clicks through to Starterskalender.
+**Resolution:** After 30 days, 4 candidate records are soft-deleted, then hard-deleted after the grace period. Audit log confirms compliance. Anja didn't have to remember a single deletion.
 
-**Rising Action:** In his task list, Mark sees 6 tasks assigned to him — 3 per starter. Prepare workspace, request badge, arrange parking card. He clicks the first one, reads the details, and marks it as completed. The next morning he repeats this for the badge.
+### Journey 3: Mark — The Technical Reviewer
 
-**Climax:** One of the starters is unexpectedly transferred to entity "Antwerpen". Mark sees the tasks for that starter disappear from his list — Sophie processed the migration and the tasks were automatically reassigned to the office manager in Antwerpen. No duplicate work, no confusion.
+**Who:** Mark, 41, team lead Infrastructure. Reviews technical candidates 2-3 times per quarter. This is not his main job — he wants to help but not get dragged into HR processes.
 
-**Resolution:** Mark spends 15 minutes per week on Starterskalender. Previously it cost him an hour to check Excel lists and answer emails with "yes, that's been arranged." Now he marks tasks as done and moves on with his day.
+**Opening Scene:** Mark gets a notification in Airport: "Anja shared 2 candidates for Facility Manager — your review requested."
 
-**Reveals requirements for:** Entity-scoped views, task assignment and completion, email notifications, migration handling with task reassignment.
+**Rising Action:** Mark clicks through. He sees a clean card per candidate: CV summary, relevant skills, a scorecard with 5 criteria (technical knowledge, problem-solving, team fit, communication, experience). No name, no photo, no personal details — just the professional profile.
 
----
+**Climax:** Mark scores each candidate on the 5 criteria, adds a one-line recommendation: "Candidate A: strong on infra, weak on communication. Candidate B: solid all-round, recommend." Submits. Total time: 3 minutes for both candidates.
 
-### Journey 3: Anja — Global Viewer (Management Oversight)
+**Resolution:** His access to these candidates automatically expires after submission. He's back to his real work. No follow-up needed unless Anja explicitly re-shares for a second opinion.
 
-**Who she is:** Anja (52) is HR Director overseeing all 6 entities. She has no need to register starters or check off tasks — she wants the big picture.
+### Journey 4: Thomas — The Candidate (External)
 
-**Opening Scene:** Anja is preparing the quarterly report for the board. She opens Starterskalender and navigates to the statistics.
+**Who:** Thomas, 29, looking for a Facility Manager role. Finds the vacancy on the ACEG website.
 
-**Rising Action:** She filters on the past quarter and sees per entity how many starters, leavers, and migrations were processed. She switches to the calendar view at year level and sees a clear peak in September — the new academic year. She notes this as input for capacity planning.
+**Opening Scene:** Thomas sees the vacancy on aceg.be/jobs. Clean layout, clear requirements, honest "what we offer" section. He notices the dealbreakers listed transparently: driver's license required, Dutch-speaking required.
 
-**Climax:** She notices that entity "Luik" has a notably high percentage of incomplete tasks. She clicks through and sees that the responsible person there has been leaving tasks unfinished for 3 weeks. She sends a targeted message to Sophie to follow up.
+**Rising Action:** He clicks "Apply" — one-click apply: upload CV, optional motivation field, confirm email. No account creation. He receives a confirmation email within seconds: "We received your application. You'll hear from us within 5 working days."
 
-**Resolution:** The quarterly report is ready in 20 minutes with concrete figures and trends. Last year it took her a full day to compile the same data from 6 different Excel files.
+**Climax:** Over the next 3 weeks, Thomas receives status emails as he progresses: "Moved to Technical Review" → "Moved to Interview" → "Moved to Offer." Each email has clear next steps. He never has to log in or check a portal.
 
-**Reveals requirements for:** Cross-entity calendar view, statistics and reporting, read-only access model, entity comparison.
+**Resolution:** Thomas receives the "Hired" email with a link to his candidate portal. The portal already shows his start date, pre-onboarding tasks, and documents to upload. Same login he'll use on his first day. One continuous journey from applicant to employee.
 
----
+### Journey 5: Peter — Management Dashboard
 
-### Journey 4: The System — Automatic Orchestration (Non-Human Actor)
+**Who:** Peter, 52, Managing Director. Oversees 4 entities. Wants recruitment visibility without micromanaging Anja.
 
-**What it does:** Every night and at fixed intervals, Starterskalender runs automated processes without human intervention.
+**Opening Scene:** Monthly management meeting. Peter wants to know: how many open vacancies across all entities? What's the average time-to-hire? Are there bottlenecks?
 
-**Weekly cycle:** Sunday evening 22:00. The weekly cron job starts. The system processes all starters with a start date in the coming week. Per starter, the responsible persons are determined based on entity memberships and notification preferences. 47 personalized emails are composed and sent via SendGrid — each with the correct starters, leavers, and migrations for that specific recipient.
+**Rising Action:** Peter opens the Airport dashboard. The recruitment widget shows: 6 open vacancies (2 ACEG, 1 VGC, 3 Facil), 14 candidates in pipeline, average time-to-hire: 32 days. One vacancy flagged orange — SLA exceeded.
 
-**Monthly cycle:** First day of the month. A broader overview is sent: all expected personnel movements for the coming month, grouped by entity.
+**Climax:** Peter clicks into the entity view for ACEG. Sees the funnel: 45 applications → 12 screened → 5 interviewed → 2 in offer stage. No candidate personal data visible — only aggregated metrics.
 
-**Task generation trigger:** When Sophie registers a new starter, the system immediately generates tasks based on task templates linked to the job role and entity. Each task receives a deadline, a responsible person, and a priority.
+**Resolution:** Peter has his answer in 30 seconds. No email to Anja needed. He mentions the SLA flag in the management meeting — Anja already knew and has a plan.
 
-**Failure recovery:** If SendGrid cannot deliver an email, this is logged in the email logs. An HR Admin can see in the admin panel which emails were sent, failed, or pending.
+### Journey 6: Bram — External Widget Integration
 
-**Reveals requirements for:** Cron scheduling (4 frequencies), email template engine, notification preference system, task template engine, email logging, error handling.
+**Who:** Bram, 28, front-end developer at the web agency managing websites for entities ACEG+VGC (shared site) and Facil (separate site).
 
----
+**Opening Scene:** Airport's recruitment module is live. Bram needs to display vacancies on two separate websites with different branding.
 
-### Journey 5: Tom — Super Admin (Future Role, Technical Operations)
+**Rising Action:** In Airport admin, the site grouping is configured: ACEG+VGC → aceg-vgc.be, Facil → facil.be. Bram gets either an embeddable web component `<airport-vacancies group="aceg-vgc" />` or the headless API endpoint `/api/public/vacancies?group=aceg-vgc`.
 
-**Who he is:** Tom (38) is the IT Manager. He manages the technical infrastructure of Starterskalender: user management, entity configuration, system settings, and eventually ERP integrations. He has no access to HR-content data such as individual starter details or task progress.
+**Climax:** Bram chooses the headless API for full styling control on aceg-vgc.be, and the pre-styled widget for facil.be (quick implementation). Both pull from the same source of truth — when Anja publishes a vacancy for ACEG, it appears on aceg-vgc.be within minutes.
 
-**Opening Scene:** A new entity "Hasselt" is being established. Tom opens the admin panel and creates the entity with the correct color coding and blocked periods. He configures the job roles available for this entity and links the default materials.
-
-**Rising Action:** Tom then manages user access: he adds 3 new users with the correct roles (1 entity editor, 2 entity viewers) and links them to entity "Hasselt". He configures the email templates and verifies that the cron jobs are running correctly.
-
-**Climax:** The ERP integration for "Hasselt" needs to be set up (growth feature). Tom configures the connection with the payroll system and tests the automatic data push. When Sophie later registers a starter at "Hasselt", the data is automatically forwarded to payroll.
-
-**Resolution:** Tom has the complete technical setup ready without ever needing to see individual starter data. The separation between technical management and HR content ensures that sensitive personnel information remains restricted to HR roles.
-
-**Reveals requirements for:** Entity management, user/role management, ERP integration configuration, email template management, system monitoring, separation of technical admin from HR data access.
-
----
-
-### Journey 6: Sophie — Edge Case (Error Recovery)
-
-**The scenario:** Sophie accidentally registers a starter at the wrong entity. Tasks have already been generated and assigned to the wrong people.
-
-**Discovery:** Mark calls: "I have tasks for a Jan Pieters, but that name means nothing to me." Sophie checks and sees her mistake.
-
-**Recovery:** Sophie changes the starter's entity. The system recalculates the tasks: old tasks are cancelled, new tasks are generated for the correct entity and responsible persons. The material list is adjusted to match the job roles of the new entity.
-
-**Resolution:** Within 2 minutes, everything is corrected. No manually walking through tasks, no emails to wrong people. The system handles the cascade.
-
-**Reveals requirements for:** Starter editing with cascading updates, task regeneration on entity change, material reassignment, error recovery without data loss.
-
----
-
-### Journey 7: Sophie — Document Signing (SES Flow)
-
-**Who she is:** Same Sophie from Journey 1 — HR Business Partner coordinating starters across 6 entities.
-
-**Opening Scene:** Sophie has just registered Jan as a new Software Developer at entity "HQ". Alongside the 12 generated tasks, Jan needs to sign an employment contract and an NDA before his start date.
-
-**Rising Action:** Sophie opens Jan's starter detail page and navigates to the Documents section. She uploads the employment contract PDF, enters the document title "Arbeidscontract", selects "Interne bevestiging (SES)" as the signing method, and enters Jan's email address. After uploading, she opens the PDF field placer and positions the signature box at the bottom of the last page. She repeats for the NDA, setting the employment contract as a prerequisite — Jan must sign the contract before the NDA becomes available.
-
-**Climax:** Sophie clicks "Mail versturen". Jan receives a branded email with a clear call-to-action. He clicks the link, sees the document with the signature field, enters his name, and signs. The system embeds the signature in the PDF, uploads the signed version to SharePoint, marks the linked task as completed, and sends Jan a confirmation email with a download link.
-
-**Resolution:** Sophie sees both documents turn green in the progress bar. The linked tasks are completed automatically. The signed PDFs are archived in Jan's SharePoint folder. She didn't need to print, scan, or chase a single document.
-
-**Reveals requirements for:** PDF upload, signature field placement, SES signing page, signing email with branded template, signed PDF archival to SharePoint, document prerequisite chains, linked task completion, confirmation email.
-
----
-
-### Journey 8: Sophie — Legally Binding Signature (QES Flow)
-
-**Who she is:** Same Sophie — but now she needs a legally binding signature for a confidentiality agreement with a contractor.
-
-**Opening Scene:** The legal department requires that the confidentiality agreement for external contractor Lisa is signed via a qualified electronic signature (QES) to be legally equivalent to a handwritten signature.
-
-**Rising Action:** Sophie uploads the confidentiality agreement PDF, selects "Itsme (gekwalificeerd)" as the signing method, and enters Lisa's email. The system uploads the PDF to SharePoint, creates a guest user in Quill, creates the document in Quill with a webhook URL, uploads the binary, and obtains a signing URL — all behind the scenes. Sophie sees a "Wacht op handtekening" badge on the document.
-
-**Climax:** Sophie clicks "Mail versturen". Lisa receives the email through Starterskalender's SendGrid, not Quill — maintaining consistent branding. Lisa clicks the link, which takes her to the Quill signing interface. She authenticates via the itsme app on her phone and signs. Quill sends a webhook to Starterskalender. The system verifies the event, downloads the signed PDF from Quill, uploads it to SharePoint, marks the document as signed, completes the linked task, and sends Lisa a confirmation email.
-
-**Resolution:** The signed document carries the legal weight of a handwritten signature under eIDAS regulation. Sophie can see the complete audit trail: creation, email sent, itsme signature, SharePoint archival. No paper, no scanning, no courier.
-
-**Reveals requirements for:** QES signing method selection, Quill API integration (guest user, document, binary upload, send, signing URL), webhook processing, signed PDF download and archival, Quill status tracking, hybrid signing method per document.
-
----
-
-### Journey 9: Jan — Signing a Document (Starter Perspective)
-
-**Who he is:** Jan (28) is starting as a Software Developer at entity "HQ" next month. He has never used Starterskalender — he is an external signer.
-
-**Opening Scene:** Jan receives an email from Starterskalender on behalf of Sophie's organization. The email has a professional design, lists the document "Arbeidscontract", and contains a prominent "Documenten bekijken en ondertekenen" button.
-
-**Rising Action (SES):** Jan clicks the button. He sees the employment contract PDF rendered in the browser with a signature field. He types his full name, clicks "Ondertekenen", and confirms. The page shows a success message.
-
-**Rising Action (QES):** For the NDA, Jan receives a second email. This time, the button takes him to the Quill signing interface. He sees the document and a prompt to sign via itsme. He opens the itsme app, confirms his identity, and the signature is applied.
-
-**Resolution:** Jan receives two confirmation emails — one per signed document — each with a download link to the signed PDF. He never needed an account in Starterskalender. The entire process took 5 minutes on his phone.
-
-**Reveals requirements for:** Public signing page (no authentication), email template with signing link, QES redirect to Quill, confirmation email with download link, mobile-friendly signing experience.
-
----
+**Resolution:** No deployment needed when vacancies change. Bram's implementation is done once. Entity branding (logo, colors) comes from Airport config. New entities added later just need a site group assignment.
 
 ### Journey Requirements Summary
 
-| Capability Area | Journeys |
-|---|---|
-| Starter/leaver/migration registration | Sophie, Mark, System |
-| Calendar view (multi-entity, multi-period) | Sophie, Anja |
-| Automatic task generation & assignment | Sophie, System, Edge Case |
-| Task completion workflow | Mark |
-| Material provisioning & tracking | Sophie, Edge Case |
-| Email notifications (4 frequencies) | Mark, System |
-| Statistics & reporting | Sophie, Anja |
-| Role-based access control | All journeys |
-| Entity management & configuration | Tom |
-| User & role management | Tom |
-| ERP integration (growth) | Tom |
-| Error recovery & cascading updates | Edge Case |
-| Separation of technical vs HR admin | Tom, Sophie |
-| Document upload & signing (SES) | Sophie (J7), Jan (J9) |
-| Qualified electronic signature (QES/itsme) | Sophie (J8), Jan (J9) |
-| Document prerequisite chains | Sophie (J7) |
-| Signed PDF archival to SharePoint | Sophie (J7, J8), System |
-| Signing audit trail | Sophie (J7, J8) |
+| Journey | Key Capabilities Revealed |
+|---------|--------------------------|
+| Anja (happy path) | Vacancy templates, dealbreaker filter, pipeline Kanban, share button with field-level RBAC, auto-create Starter on hire |
+| Anja (edge case) | Rejection workflow, status emails, GDPR retention automation, audit logging |
+| Mark (reviewer) | Scoped candidate view, scorecard evaluation, auto-expiring access, notification system |
+| Thomas (candidate) | One-click apply, status emails per phase, candidate portal, pre-onboarding bridge |
+| Peter (management) | Dashboard widgets, per-entity metrics, funnel visualization, SLA indicators |
+| Bram (external dev) | Embeddable widget, headless API, site grouping configuration, entity branding |
+
+**MVP Coverage:** Journeys 1, 3, and 4 (core flows) fully within Wave 1. Journey 2 (GDPR) partially Wave 1 (status emails) and partially Wave 3 (auto-retention). Journey 5 (dashboard) Wave 3. Journey 6 (widget) Wave 2.
 
 ## Domain-Specific Requirements
 
 ### Compliance & Regulatory
 
-- **GDPR compliance**: Personal employee data (names, start dates, job roles, entity assignments) is processed for legitimate business purposes. Data retention follows organizational policy — records are maintained as long as they serve business operations.
-- **ISO certification requirements**: The organization is ISO certified. All system changes, user actions, and data modifications must be traceable through comprehensive audit logging. This includes who changed what, when, and from which state to which state.
-- **User confidentiality agreement**: Users with elevated access rights (HR Admin, Entity Editor, Super Admin) must sign a confidentiality agreement before gaining access to the system. The system should track agreement status and potentially restrict access until the agreement is signed.
+**GDPR — Candidate Personal Data:**
+- Candidates are external data subjects (not employees) — processing basis: legitimate interest (recruitment) with consent for extended retention (talent pool)
+- Data Processing Register (verwerkingsregister): recruitment module must be documented as a processing activity, reviewable by DPO
+- Right to access: candidate can request export of all stored personal data
+- Right to erasure: candidate can request deletion; system must support complete removal with audit trail confirmation
+- Right to rectification: candidate can update their information
+- Data breach notification: if candidate data is compromised, 72-hour notification requirement applies
 
-### Data Access & Privacy Boundaries
+**Retention Policy:**
+- Configurable retention period per system setting (not hardcoded) — organization determines appropriate duration
+- Automated retention workflow: expiry notification → consent renewal request → soft-delete → hard-delete
+- Talent pool opt-in requires explicit consent with timestamp and purpose documentation
+- DPO must be able to audit retention compliance at any time
 
-- **Strict entity scoping**: Entity Editors can only view AND modify data for entities they are explicitly assigned to. No cross-entity data leakage is permitted — this applies to starters, tasks, materials, calendar views, and statistics.
-- **Role-based data separation**: The future Super Admin role has full technical/configuration access but zero visibility into HR-content data (individual starter details, task progress, personal information). HR Admins have full HR data access but limited technical configuration capabilities.
-- **Audit trail integrity**: All audit logs must be immutable and retained according to ISO requirements. Logs must capture: actor identity, timestamp, action type, affected entity, before/after state.
+### Technical Constraints
 
-### Digital Signing & eIDAS Compliance
+**Privacy-by-Design:**
+- Field-level access control is architectural requirement, not optional feature — default is "no access," explicitly granted per field/role
+- Candidate personal data encrypted at rest (database-level or field-level for sensitive fields)
+- No candidate PII in application logs
+- Session-based access for shared views — no permanent URLs containing candidate data
 
-- **eIDAS Regulation (EU 910/2014):** The system supports two levels of electronic signature as defined by eIDAS. Simple Electronic Signatures (SES) serve as internal digital confirmations without specific legal standing. Qualified Electronic Signatures (QES) via itsme/eID carry the legal equivalence of handwritten signatures. HR selects the appropriate level per document.
-- **Quill integration (Dioss Smart Solutions):** QES signing is delegated to the Quill platform, a certified eSignature service. The integration uses Quill's API V2 for document lifecycle management, guest user creation, and signing URL generation. Quill's own email notifications are suppressed — all communication to signers flows through the platform's SendGrid setup for consistent branding.
-- **Signed document archival:** Both original and signed PDF documents are stored in the starter's SharePoint folder. Signed documents include an embedded signature (SES) or a Quill-certified signature (QES). The Quill Evidence Report (sealed audit proof) can be downloaded for legal proceedings.
-- **Signing token security:** Public signing links (SES) use cryptographically random tokens. QES signing URLs contain Quill-generated guest keys. Both are treated as sensitive data and are not exposed in logs or error messages.
-- **Document retention:** Signed documents are retained in SharePoint according to organizational retention policy. Quill retains documents according to the company's Quill document settings (configurable retention period).
+**Audit Requirements:**
+- Complete access log: who viewed which candidate fields, when, via what mechanism (direct access, share link, API)
+- Audit log immutable — append-only, no deletion or modification
+- DPO dashboard or export capability for compliance reporting
+- Retention of audit logs independent of candidate data deletion (audit survives data erasure)
 
 ### Integration Requirements
 
-- **Integration architecture**: ERP integrations are a growth feature. Target systems and protocols are TBD. Architecture supports pluggable, entity-dependent integrations.
-- **API readiness**: Internal APIs support future external consumption — consistent authentication, clear data contracts, and versioning.
-- **Identity provider integration**: Azure AD SSO serves as the foundation. Future growth includes automatic email/account provisioning via Microsoft 365 / Azure AD APIs.
+- Microsoft Graph API: mail sync must respect headhunter's "private" marking — excluded emails never stored
+- Public vacancy pages/API: no candidate data exposed — only vacancy information
+- Pre-onboarding bridge: data transfer from candidate to starter must be atomic and auditable
+- External websites (widget/API): no cookies or tracking of visitors beyond standard analytics
 
 ### Risk Mitigations
 
-| Risk | Impact | Mitigation |
-|---|---|---|
-| Cross-entity data exposure | Privacy breach, trust loss | Strict entity-scoped queries at database level, not just UI filtering |
-| Unauthorized access to HR data | Confidentiality breach | User agreement enforcement, role separation, audit logging |
-| Audit log gaps | ISO non-compliance | Immutable logging on all write operations, regular audit log reviews |
-| ERP integration data leakage | Sensitive data in wrong system | Entity-specific integration configs, data mapping validation per integration |
-| User agreement not signed | Unauthorized data access | System-level gate: block elevated access until agreement is confirmed |
-| Quill API unavailability | QES documents cannot be signed | Graceful degradation: document uploaded to SharePoint regardless; Quill setup retried via webhook |
-| Signing token/URL leakage | Unauthorized document access | Cryptographically random tokens; URLs treated as sensitive; not logged in plain text |
-| Expired QES signing links | Starter cannot sign | Quill webhooks update status to EXPIRED; HR notified to re-send |
-
-## Innovation & Novel Patterns
-
-### Detected Innovation Areas
-
-Starterskalender excels through execution of proven patterns applied to a specific niche. Several innovation trajectories emerge from the platform's unique position:
-
-1. **Single Point of Action**: Beyond being a single point of truth (data authority), the platform evolves into a single point of action — where one registration triggers zero-touch provisioning cascades across external systems (Azure AD account creation, Microsoft 365 licensing, IT asset ordering, facility management).
-
-2. **Predictive HR Operations**: Historical data on seasonal peaks, turnover rates per entity, and average lead times per job role enables the system to forecast upcoming personnel movements and proactively suggest capacity planning actions.
-
-3. **Bi-directional Onboarding**: Extending the platform from an HR-only tool to include the new employee as a participant — self-service onboarding progress tracking, document uploads, and direct communication with responsible stakeholders.
-
-4. **Entity Performance Benchmarking**: Measurable onboarding quality scores per entity (on-time task completion rate, material coverage, lead times) creating accountability and healthy competition between entities.
-
-5. **Hybrid Signing Strategy**: The platform supports both simple electronic signatures (SES) for internal confirmations and qualified electronic signatures (QES) via itsme/eID for legally binding documents. HR chooses per document (and later per template with override), enabling organizations to use the right level of legal assurance for each document type — without external signing portals or separate workflows. All signing emails flow through the platform's own branding, not the QES provider's.
-
-### Market Context & Competitive Landscape
-
-Generic HR platforms (BambooHR, Personio, Workday) assume single-entity, single-process organizations. Starterskalender's defensibility: entity-aware automation that scales with organizational complexity — a niche off-the-shelf products do not serve.
-
-### Validation Approach
-
-- **KPI Dashboard**: Build measurable validation into the product itself — on-time task completion rate, average time from registration to full onboarding completion, material coverage percentage, email notification delivery rates.
-- **Baseline establishment**: Since the Excel-era baseline was never measured, establish forward-looking KPIs from the current system and track improvement over time.
-- **Adoption metric**: Track parallel Excel file elimination as a concrete adoption indicator — target: zero parallel tracking.
+| Risk | Mitigation |
+|------|-----------|
+| Unauthorized access to candidate PII | Field-level RBAC with default-deny; auto-expiring shared views; audit logging |
+| GDPR retention violation | Configurable automated retention policy; DPO audit capability; hard-delete with confirmation |
+| Data leak via email sync | Private-marking opt-out; only emails matching candidate email address linked; headhunter explicit consent |
+| Over-sharing via share button | Explicit field selection required (no "share all"); temporary access by default; audit trail |
+| DPO compliance gap | Processing activity documentation in system; exportable audit logs; retention policy transparency |
 
 ## Web Application Specific Requirements
 
 ### Project-Type Overview
 
-Next.js 16 web application (App Router), deployed as standalone Docker container on Easypanel. Internal enterprise tool accessed exclusively via Azure AD SSO — no public-facing pages, no SEO, no offline requirements.
+The recruitment module is a hybrid Next.js application: server-rendered public-facing pages (vacancy listings, application forms) combined with highly interactive client-side interfaces (pipeline Kanban, scorecard evaluation, admin configuration). It extends the existing Starterskalender architecture — same framework, same patterns, same deployment.
 
 ### Technical Architecture Considerations
 
 **Rendering Strategy:**
-- Hybrid rendering via Next.js App Router: server components for data fetching, client components for interactive UI
-- No SSG/ISR needed — all pages are behind authentication
-- Online-only; no service worker or PWA capabilities required
+- Public vacancy pages: Server-Side Rendered (SSR) for SEO and fast first paint
+- Embeddable widget: Pre-rendered with hydration, or static JSON via headless API
+- Internal pipeline/admin: Client-side interactivity with React Server Components for data fetching
+- Follows existing App Router patterns (route groups, server actions, streaming)
 
-**Browser Support Matrix:**
+**Real-Time:**
+- Pipeline Kanban uses existing SSE event bus for live updates (candidate moved by colleague → instant reflection)
+- Notification system for share requests and evaluation completions
+- No WebSocket requirement — SSE sufficient for unidirectional updates
 
-| Browser | Support Level |
-|---|---|
-| Chrome (latest 2 versions) | Full support |
-| Edge (latest 2 versions) | Full support |
-| Firefox (latest 2 versions) | Full support |
-| Safari (latest 2 versions) | Full support |
-| Mobile browsers (iOS Safari, Chrome Android) | Full support |
+### Browser Support
 
-Cross-browser testing should cover all major rendering engines: Blink (Chrome/Edge), Gecko (Firefox), and WebKit (Safari).
+| Context | Browsers | Rationale |
+|---------|----------|-----------|
+| Internal (pipeline, admin) | Latest Chrome, Edge, Safari, Firefox | Internal users on managed devices |
+| Public (vacancy pages, apply form) | Chrome, Edge, Safari, Firefox (last 2 versions) + mobile browsers | External candidates on any device |
+| Embeddable widget | Same as host website — must not break host page styling or scripts | Isolation via Shadow DOM or iframe |
 
-### Real-Time Communication
+### SEO Strategy
 
-**Current state:** All data updates require manual page refresh or re-navigation. Task assignments, status changes, and new starter registrations are only visible after reload.
+**SEO-Required Pages:**
+- Public vacancy listing pages (per entity / per site group)
+- Individual vacancy detail pages (title, location, requirements as structured data)
+- Embeddable widget content (crawlable by search engines)
 
-**Target state:** Real-time updates for key events:
-- **Task assignments**: When Sophie assigns a task, Mark sees it appear immediately in his task list
-- **Task status changes**: When Mark completes a task, Sophie's dashboard updates live
-- **Starter registration**: New starters appear on the calendar for all relevant entity members without refresh
-- **Notification indicators**: Live badge counts for pending tasks, upcoming starters
+**SEO Implementation:**
+- Server-rendered HTML with proper meta tags (title, description, Open Graph)
+- JSON-LD structured data (JobPosting schema) per vacancy
+- Sitemap generation for active vacancies
+- Canonical URLs per vacancy (avoid duplicate content across widget and hosted page)
 
-**Technical approach considerations:**
-- **WebSocket / Server-Sent Events (SSE)**: For push-based real-time updates from server to client
-- **Scope**: Entity-scoped channels — users only receive real-time updates for entities they have access to (aligns with RBAC and privacy requirements)
-- **Graceful degradation**: If WebSocket connection drops, the application should fall back to polling or manual refresh without data loss
+**No SEO Required:**
+- Internal pipeline interface
+- Admin configuration pages
+- Candidate portal (authenticated)
 
 ### Responsive Design
 
-- Desktop-first design (primary use case is HR staff at workstations)
-- Responsive layout for tablet and mobile access (entity editors like Mark may check tasks on-the-go)
-- No dedicated mobile app required — responsive web covers mobile needs
+| Interface | Mobile Priority | Rationale |
+|-----------|----------------|-----------|
+| Public vacancy pages | Mobile-first | Candidates browse jobs on phone |
+| Application form | Mobile-first | One-click apply must work on mobile |
+| Pipeline Kanban | Desktop-primary | Headhunter works on desktop; touch drag & drop secondary |
+| Scorecard evaluation | Responsive | Reviewer might use tablet/phone |
+| Admin configuration | Desktop-only acceptable | Internal admin on workstation |
+
+### Performance Targets
+
+See [Non-Functional Requirements — Performance](#performance) for measurable performance contracts.
+
+No virtualization needed — candidate counts per vacancy remain manageable.
+
+### Accessibility
+
+**Target:** WCAG 2.1 Level AA
+
+**Priority by context:**
+- **High priority:** Public vacancy pages + application form (external users, legal exposure)
+- **Medium priority:** Pipeline Kanban, scorecard forms (internal but diverse users)
+- **Lower priority:** Admin configuration (power users, controlled environment)
+
+**Key requirements:**
+- Keyboard navigation for pipeline Kanban (arrow keys to move candidates between stages)
+- Screen reader labels for scorecard criteria and rating inputs
+- Sufficient color contrast on public pages
+- Focus management for dialogs (share button, candidate detail)
 
 ### Implementation Considerations
 
-- **SEO**: Explicitly out of scope — no meta tags, sitemaps, or crawl optimization needed
-- **Accessibility**: No formal WCAG compliance requirements, but standard usability best practices should be maintained (readable fonts, sufficient contrast, keyboard-navigable forms)
-- **Offline**: Not supported — online-only application
-- **Internationalization**: Already implemented (NL/FR) — architecture supports additional languages
+- Follows existing codebase patterns: Radix UI + shadcn/ui, Tailwind CSS, Zod validation
+- i18n: Dutch + French for internal interfaces; public vacancy pages language determined by entity/site group configuration
+- Dark mode: supported via existing next-themes setup
+- No new framework dependencies — leverage what's already in place
 
 ## Project Scoping & Phased Development
 
 ### MVP Strategy & Philosophy
 
-**MVP Approach:** Problem-solving MVP — the current production system already validates the core hypothesis that structured, entity-aware onboarding management replaces Excel chaos. The MVP is proven and adopted.
+**MVP Approach:** Problem-Solving MVP — solves a concrete, measurable problem (unjustifiable SaaS cost + insufficient access control). Validation is binary: can Recruitee be cancelled by September 2026?
 
-**Resource Model:** Development is handled as a focused initiative rather than a dedicated product team. Phased delivery must be realistic in scope per iteration and self-contained — each feature should deliver standalone value without depending on other Phase 2 features.
+**Resource Requirements:** Solo developer (Kevin), full-stack. Estimated 12–15 weeks for Wave 1. No external dependencies for MVP delivery. AI-assisted development accelerates implementation.
 
-### MVP Feature Set (Phase 1) — Current Production
+**MVP Philosophy:** Build only what the headhunter needs daily to run a complete recruitment cycle (vacancy → pipeline → evaluation → hire). Every feature must answer: "Without this, can we cancel Recruitee?"
 
-**Core User Journeys Supported:** Sophie (HR Admin), Mark (Entity Editor), Anja (Global Viewer), System (automation)
+### MVP Feature Set (Phase 1) — Deadline: August 2026
 
-**Delivered Capabilities:**
-- Starter/leaver/migration registration with entity scoping
-- Calendar view (week/month/year/custom) with entity and type filtering
-- Automatic task generation based on templates, job roles, and entities
-- Material provisioning per job role with multi-status tracking (pending, in stock, ordered, received, reserved)
-- Role-based access control (5 tiers + granular permissions) with Azure AD SSO
-- Automated email notifications (weekly, monthly, quarterly, yearly) with cron health monitoring
-- Statistics dashboard
-- Multi-language support (NL/FR)
-- Blocked periods management per entity
-- Audit logging for ISO compliance
-- Admin panel for entities, users, job roles, materials, email templates
-- Document signing (SES): PDF upload to SharePoint, signature field placement, public signing page, signed PDF archival, prerequisite document chains, signing email via SendGrid, confirmation email with download link
-- Document signing (QES): Quill by Dioss integration for itsme/eID qualified signatures, webhook-based document lifecycle, automatic signed PDF download and SharePoint archival
+**Core User Journeys Supported:**
+- Journey 1 (Anja — happy path): Full recruitment cycle
+- Journey 3 (Mark — technical reviewer): Scoped evaluation
+- Journey 4 (Thomas — candidate): Apply and receive status updates
 
-### Phase 2: Growth — Prioritized Roadmap
+**Must-Have Capabilities:**
 
-**Priority 1: Real-Time Updates**
-- WebSocket/SSE infrastructure for live data push
-- Entity-scoped channels (privacy-compliant)
-- Live task assignment and completion updates
-- Calendar auto-refresh on new starter registration
-- Notification badge indicators
-- Graceful degradation to polling on connection loss
+| Capability | Justification |
+|-----------|---------------|
+| Vacancy CRUD + template builder | Cannot post jobs without this |
+| Dealbreaker + nice-to-have configuration | Core filter mechanism, replaces manual screening |
+| Candidate intake (form + CV upload) | Cannot receive applications without this |
+| Pipeline Kanban (stages, drag & drop) | Core daily workflow for headhunter |
+| Scorecard evaluation | Technical reviewer workflow depends on this |
+| RBAC: headhunter / reviewer / share | The USP — without this, no advantage over Recruitee |
+| Internal comment thread | Replaces scattered Teams messages |
+| Status email templates | Candidate communication is non-negotiable |
+| Public vacancy page (per entity) | Candidates need somewhere to find and apply for jobs |
 
-**Priority 2: KPI Dashboard**
-- On-time task completion rate per entity
-- Average onboarding lead time (registration → all tasks complete)
-- Material coverage percentage
-- Entity performance comparison
-- Trend analysis over configurable periods
+**Explicitly Deferred from MVP:**
+- O365 mailbox sync (headhunter continues using Outlook separately)
+- Embeddable widget (start with Airport-hosted public pages)
+- Dashboard analytics (headhunter has pipeline visibility; management reporting waits)
+- CV parser (manual data entry acceptable for MVP volumes)
+- Assessment integration (external tools continue standalone)
 
-**Priority 3: Super Admin Role Separation**
-- Split current HR_ADMIN into Super Admin (broad operational) and HR Admin (HR-content specialist)
-- Super Admin: full access to current functionality — entity config, user management, materials, job roles, email templates, system settings, integration config, starters, tasks, calendar, statistics
-- HR Admin: same current access, plus exclusive access to future Phase 3 features (Employee Journey data, bi-directional onboarding portal, personal employee timelines)
-- The role separation is forward-looking: in current state both roles have identical permissions. The distinction activates when Phase 3 HR-content features are built
-- User confidentiality agreement tracking and enforcement applies to both roles
+### Post-MVP Features
 
-**Priority 4: ERP Integrations**
-- Pluggable integration architecture (entity-dependent configs)
-- First integration: automatic email/account provisioning via Azure AD / Microsoft 365
-- Subsequent: payroll system push, IT asset management triggers
-- Per-entity integration configuration (each entity may use different ERP systems)
-- Integration health monitoring and error logging
-- Reduced risk: ERP systems are internally managed, allowing close coordination
+**Phase 2 — Communication & Publication (Q4 2026):**
+- O365 mailbox sync via Graph API
+- Embeddable vacancy widget (multi-site)
+- Headless vacancy API (REST/JSON)
+- QR codes per vacancy
+- Candidate comparison side-by-side
 
-**Priority 5: Advanced Reporting**
-- Cross-entity trend reports
-- Onboarding process bottleneck identification
-- Export capabilities for board reporting
-
-### Phase 3: Vision — Future Expansion
-
-**Employee Journey Platform:**
-- Full employee timeline beyond onboarding/offboarding
-- Special period tracking: parental leave, long-term illness, secondment, training
-- Period-specific task generation and stakeholder notification
-- Lifecycle-wide dashboard per employee
-- Exclusive to HR Admin role (not accessible by Super Admin)
-
-**Predictive HR Operations:**
-- Historical pattern analysis (seasonal peaks, turnover rates)
-- Proactive capacity planning suggestions
-- Forecasting for material procurement and resource allocation
-
-**Bi-directional Onboarding:**
-- Starter self-service portal (limited access)
-- Personal onboarding checklist and progress tracking
-- Document upload capability
-- Direct communication with assigned stakeholders
-- Exclusive to HR Admin role (not accessible by Super Admin)
-
-**Bi-directional ERP Sync:**
-- Receive change events from external systems
-- Conflict resolution for simultaneous updates
-- Full data synchronization audit trail
+**Phase 3 — Intelligence & Extras (2027):**
+- Pipeline dashboard with analytics
+- Digital assessment integration
+- Employee referral system
+- CV parser (AI extraction)
+- Anonymous screening (double opt-in)
+- GDPR auto-retention with talent pool
+- Multi-channel publication
 
 ### Risk Mitigation Strategy
 
 **Technical Risks:**
 
 | Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| WebSocket complexity in Next.js | Medium | Medium | Evaluate SSE as simpler alternative; use proven libraries (Socket.io, Pusher) |
-| ERP integration variety | Low | Medium | Own systems reduce risk; pluggable architecture allows per-system adapters |
-| Role separation migration | Low | High | Phased rollout: add Super Admin alongside existing HR_ADMIN, migrate gradually |
+|------|-----------|--------|-----------|
+| Pipeline Kanban complexity (drag & drop + RBAC + real-time) | Medium | High | Use proven library (dnd-kit); implement RBAC filtering server-side; add real-time last |
+| Field-level RBAC scoping is architecturally more complex than expected | Medium | High | Start with role-based views (headhunter/reviewer/shared) before full field-level granularity; existing RBAC v2 patterns provide foundation |
+| Candidate-to-Starter bridge data mapping | Low | Medium | Start with manual "convert to starter" button; automate after core flow works |
+| Public page SEO + performance under production load | Low | Medium | Leverage Next.js SSR defaults; optimize after launch if needed |
 
 **Market Risks:**
-
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Feature request overload from HR teams | High | Medium | Formal product owner role; impact vs. effort prioritization framework |
-| Adoption plateau | Low | High | KPI dashboard creates visibility and accountability, driving continued engagement |
+- Low — this is an internal tool replacing a known SaaS. No market validation needed. The "market" is one headhunter who has explicitly stated requirements.
 
 **Resource Risks:**
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| Limited development capacity | Medium | High | Each Phase 2 feature is self-contained; can be delivered independently without blocking others |
-| Knowledge concentration | Medium | High | Document architecture decisions; PRD and technical docs serve as knowledge base |
+| Scenario | Contingency |
+|----------|-------------|
+| Timeline pressure (August deadline tight) | Defer: comment threads, candidate comparison, real-time SSE updates. Core pipeline + RBAC + public page is the absolute minimum |
+| Unexpected technical blocker | Simplify: start with fixed pipeline stages (not configurable per vacancy); add configurability post-launch |
+| Recruitee data migration complexity | Parallel run: keep Recruitee read-only for historical data; new vacancies in Airport only |
+
+**Absolute Minimum (if everything goes wrong):**
+Vacancy creation + candidate intake + pipeline (without drag & drop, use simple stage-change buttons) + basic RBAC (headhunter vs read-only) + public page. This would still allow cancelling Recruitee.
 
 ## Functional Requirements
 
-### Starter Lifecycle Management
+### Vacancy Management
 
-- **FR1:** HR Admin can register a new starter with entity, job role, start date, and personal details
-- **FR2:** HR Admin can register a leaver with entity, end date, and departure details
-- **FR3:** HR Admin can register an internal migration between entities with transfer date
-- **FR4:** HR Admin can edit a registered starter's details, including changing entity assignment
-- **FR5:** HR Admin can delete or archive a starter record
-- **FR6:** System automatically recalculates tasks and material assignments when a starter's entity or job role is changed
-- **FR7:** Entity Editor can register starters, leavers, and migrations within their assigned entities only
+- FR1: Headhunter can create a vacancy from a reusable template linked to an existing job function
+- FR2: Headhunter can build vacancy content from modular blocks (intro, team description, requirements, benefits, media)
+- FR3: Headhunter can define hard requirements (dealbreakers) per vacancy that auto-filter candidates
+- FR4: Headhunter can define weighted nice-to-have preferences per vacancy that score candidates
+- FR5: Headhunter can attach photos from a central SharePoint library to vacancy content
+- FR6: Headhunter can publish a vacancy to make it visible on the entity's public page
+- FR7: Headhunter can unpublish or close a vacancy to stop accepting applications
+- FR8: Headhunter can configure pipeline stages per vacancy (add, remove, reorder stages)
+- FR9: Admin can create and manage vacancy templates available to headhunters
 
-### Calendar & Overview
+### Candidate Management
 
-- **FR8:** Users can view all personnel movements in a calendar view with week, month, year, and custom date range perspectives
-- **FR9:** Users can filter the calendar by entity, starter type (onboarding/offboarding/migration), and date range
-- **FR10:** Calendar displays entity-specific color coding and type-based visual distinction
-- **FR11:** Global Viewer can view the calendar across all entities without modification capabilities
-- **FR12:** Entity Editor and Entity Viewer can only view calendar data for their assigned entities
+- FR10: Candidate can apply to a vacancy without creating an account (one-click apply)
+- FR11: Candidate can upload a CV document as part of their application
+- FR12: Candidate can provide optional additional information (motivation, availability)
+- FR13: System stores candidate personal data with GDPR-compliant processing basis
+- FR14: Headhunter can view a complete candidate profile with all submitted data
+- FR15: Headhunter can manually add a candidate to a vacancy (direct entry without application form)
+- FR16: System auto-filters candidates who fail dealbreaker requirements
+- FR17: System scores candidates on nice-to-have criteria with configurable weights
 
-### Task Management
+### Pipeline & Selection
 
-- **FR13:** System automatically generates tasks from templates when a starter is registered, based on job role and entity
-- **FR14:** Each generated task includes an assignee, deadline, and priority level
-- **FR15:** Assigned users can view their pending tasks filtered by status, priority, and entity
-- **FR16:** Assigned users can mark tasks as completed with completion timestamp
-- **FR17:** HR Admin can manually create, edit, and assign tasks
-- **FR18:** HR Admin can manage task templates linked to job roles and entities
-- **FR19:** System automatically cancels and regenerates tasks when a starter's entity changes
+- FR18: Headhunter can view all candidates for a vacancy in a Kanban board organized by pipeline stage
+- FR19: Headhunter can move candidates between pipeline stages via drag and drop
+- FR20: Headhunter can move a candidate to "Rejected" triggering the rejection workflow
+- FR21: Headhunter can move a candidate to "Hired" triggering the starter creation flow
+- FR22: System sends configured status email to candidate on each pipeline stage transition
+- FR23: Users see pipeline changes made by other users within 2 seconds via server-sent events
 
-### Material Provisioning
+### Evaluation & Scoring
 
-- **FR20:** HR Admin can define materials required per job role
-- **FR21:** System displays required materials for each starter based on their job role
-- **FR22:** HR Admin can track material provisioning status per starter
-- **FR23:** System warns when job roles exist without any materials assigned
-- **FR24:** HR Admin can manage the material catalog (create, edit, deactivate materials)
+- FR24: Headhunter can define a scorecard template with evaluation criteria per vacancy
+- FR25: Reviewer can score a candidate on each criterion in the scorecard
+- FR26: Reviewer can add a text recommendation alongside their scores
+- FR27: Headhunter can view aggregated scores across all reviewers for a candidate
+- FR28: Headhunter can compare multiple candidates side-by-side on scores and qualifications (Phase 2)
 
-### Automated Notifications
+### Access Control & Sharing
 
-- **FR25:** System sends automated email digests at weekly, monthly, quarterly, and yearly frequencies
-- **FR26:** Each email digest contains personalized content based on the recipient's entity memberships
-- **FR27:** Email digests distinguish between starters, leavers, and migrations
-- **FR28:** Users can configure their notification preferences per entity
-- **FR29:** HR Admin can manage email templates with dynamic placeholders
-- **FR30:** HR Admin can preview email recipients and trigger manual email sends
-- **FR31:** System logs all sent emails with delivery status for audit purposes
+- FR29: Headhunter can view and edit all candidate data for vacancies within their entities
+- FR30: Headhunter can share a candidate with a specific Airport user, selecting which data fields are visible
+- FR31: Headhunter can set shared access as temporary (auto-expiring after evaluation) or permanent when sharing a candidate
+- FR32: Technical reviewer can view only the shared fields plus the evaluation form for shared candidates
+- FR33: Shared access automatically expires after the reviewer submits their evaluation
+- FR34: System logs all candidate data access with actor, timestamp, fields viewed, and access mechanism
+- FR35: Admin can configure default access templates per reviewer role (pre-defined field sets)
 
-### Real-Time Updates (Phase 2)
+### Communication
 
-- **FR32:** Users receive live updates when tasks are assigned to them or completed by others
-- **FR33:** Calendar view auto-refreshes when new starters are registered by other users
-- **FR34:** Users see live notification indicators for pending actions
-- **FR35:** Real-time updates are scoped to the user's entity access — no cross-entity data leakage
-- **FR36:** System gracefully degrades to manual refresh if real-time connection is lost
+- FR36: System sends automatic confirmation email to candidate upon application receipt
+- FR37: Admin can configure email templates per pipeline stage with variable substitution
+- FR38: Headhunter can manually trigger or suppress status emails for individual stage transitions
+- FR39: Users can post internal comments on a candidate's profile visible only to authorized colleagues
+- FR40: O365 mailbox sync links emails to/from candidate to their profile automatically (Phase 2)
+- FR41: Headhunter can mark emails as private to exclude them from candidate file (Phase 2)
 
-### User & Access Management
+### Public Presence
 
-- **FR37:** Super Admin can create, edit, and deactivate user accounts
-- **FR38:** Super Admin can assign roles (HR Admin, Entity Editor, Entity Viewer, Global Viewer) to users
-- **FR39:** Super Admin can manage entity memberships per user
-- **FR40:** Users authenticate via Azure AD SSO
-- **FR41:** Entity-scoped users can only access data for entities they are assigned to
-- **FR42:** System tracks user confidentiality agreement status and can restrict access until agreement is confirmed
-
-### Entity & Configuration Management
-
-- **FR43:** Super Admin can create and configure entities with color coding and blocked periods
-- **FR44:** Super Admin can manage job roles per entity
-- **FR45:** Super Admin can manage blocked periods per entity (periods where no starters can be scheduled)
-- **FR46:** Super Admin can configure email templates and cron job settings
-
-### Statistics & Reporting
-
-- **FR47:** Users can view statistics dashboards showing onboarding/offboarding/migration counts per entity
-- **FR48:** HR Admin can view KPI metrics: on-time task completion rate, onboarding lead time, material coverage (Phase 2)
-- **FR49:** Global Viewer can compare performance across entities (Phase 2)
-- **FR50:** System provides trend analysis over configurable time periods (Phase 2)
+- FR42: System hosts public vacancy listing pages per entity with active vacancies
+- FR43: Candidate can view a dedicated public detail page per vacancy with structured content and apply button
+- FR44: Public pages are indexable by search engines with structured vacancy metadata (title, location, requirements)
+- FR45: Admin can configure site grouping (which entities share a public vacancy page)
+- FR46: System provides an embeddable vacancy display for external websites per site group (Phase 2)
+- FR47: System provides a headless REST/JSON API for vacancies per site group (Phase 2)
+- FR48: System generates unique QR codes linking to individual vacancy pages (Phase 2)
 
 ### Compliance & Audit
 
-- **FR51:** System logs all data modifications with actor identity, timestamp, action type, and before/after state
-- **FR52:** Audit logs are immutable and retained per ISO requirements
-- **FR53:** HR Admin can view audit log history for compliance reporting
+- FR49: Admin can configure candidate data retention period as a system setting
+- FR50: System sends retention expiry notification to candidates before deletion
+- FR51: System removes candidate data after retention period, with a configurable grace period before permanent deletion, unless consent is renewed
+- FR52: Candidate can request export of all their stored personal data (right to access)
+- FR53: Candidate can request deletion of their data (right to erasure) with audit confirmation
+- FR54: System retains audit logs as immutable, append-only records independent of candidate data deletion
+- FR55: DPO can access audit reports showing all candidate data processing activities
 
-### ERP Integration (Phase 2)
+### Integration & Flow
 
-- **FR54:** Super Admin can configure entity-dependent ERP integrations
-- **FR55:** System can push starter data to configured external systems upon registration
-- **FR56:** System can trigger automatic email/account creation via identity provider APIs
-- **FR57:** System monitors integration health and logs integration errors
+- FR56: System auto-creates a Starter record in Airport when candidate reaches "Hired" status, pre-filling from candidate data
+- FR57: System populates the created Starter with correct entity, job function, and start date from vacancy context
+- FR58: Candidate can continue using the same portal login after hire, transitioning from application status to pre-onboarding tasks
+- FR59: System integrates with existing Airport notification system for share requests and evaluation completions
+- FR60: System integrates with existing Airport RBAC v2 permission infrastructure
 
-### Internationalization
+### Dashboard & Analytics
 
-- **FR58:** All user-facing content is available in Dutch and French
-- **FR59:** System supports adding additional languages without architectural changes
-
-### Document Signing
-
-- **FR60:** HR Admin can upload PDF documents per starter for digital signing, with document title, recipient email, optional deadline, and optional prerequisite document
-- **FR61:** HR Admin can select signing method per document: SES (internal digital confirmation) or QES (qualified electronic signature via itsme/eID)
-- **FR62:** HR Admin can place signature field locations on PDF documents using a visual field placer before sending
-- **FR63:** HR Admin can define prerequisite chains between documents — a dependent document becomes signable only after its prerequisite is signed
-- **FR64:** System stores uploaded PDF documents in the starter's SharePoint folder via Microsoft Graph API
-- **FR65:** HR Admin can send a signing invitation email to the recipient via SendGrid, containing a signing link and document summary
-- **FR66:** Starters can view and sign SES documents via a public signing page accessible without authentication, using a cryptographically random token
-- **FR67:** For SES documents, the system embeds the signature in the PDF using pdf-lib, uploads the signed version to SharePoint, and stores the signed item reference
-- **FR68:** For QES documents, the system creates a Quill guest user (with notifications suppressed), creates a Quill document, uploads the PDF binary, and obtains a signing URL — all within the upload flow
-- **FR69:** For QES documents, the signing email contains the Quill signing URL instead of the internal signing page link
-- **FR70:** Starters sign QES documents via the Quill signing interface using itsme or eID authentication
-- **FR71:** System receives Quill webhook events (DOCUMENT_FULLY_SIGNED, SIGNATURE_DECLINED, DOCUMENT_EXPIRE) and updates document status accordingly
-- **FR72:** Upon QES signing completion, the system downloads the signed PDF from Quill, uploads it to SharePoint, marks the document as signed, and completes the linked task
-- **FR73:** System sends a confirmation email to the signer after successful signing (both SES and QES), including a download link for the signed document
-- **FR74:** HR Admin can view a complete audit trail per document with timestamped events: created, email sent, email delivered/opened/clicked/bounced, viewed, signed, and QES-specific events (preparing, waiting, signed, declined, expired)
-- **FR75:** Document signing progress is visible per starter with a progress bar showing signed vs. total documents
+- FR61: Management can view recruitment pipeline metrics per entity and globally on the Airport dashboard (Phase 3)
+- FR62: Management can view a funnel visualization showing candidate counts per pipeline stage (Phase 3)
+- FR63: System displays SLA indicators on vacancies where candidates exceed configured stage duration thresholds (Phase 3)
 
 ## Non-Functional Requirements
 
 ### Performance
 
-- **NFR1:** User-initiated page loads (calendar, task list, dashboard) complete within 2 seconds
-- **NFR2:** API responses return within 300ms at the 95th percentile under normal load
-- **NFR3:** Calendar view renders a full month of data (up to 50 starters) within 1 second
-- **NFR4:** Real-time event delivery from trigger to client notification within 500ms
-- **NFR5:** System supports 30 concurrent authenticated users without performance degradation
-- **NFR6:** Automated email digest generation (cron jobs) completes within 5 minutes per run, regardless of recipient count
+| Metric | Requirement | Context |
+|--------|-------------|---------|
+| Pipeline Kanban initial load | < 1 second | Headhunter opens this dozens of times daily |
+| Drag & drop visual feedback | < 100ms | Must feel instant for stage transitions |
+| Public vacancy page LCP | < 1.5 seconds | SEO ranking factor + candidate first impression |
+| Application form submission | < 500ms server response | Perceived speed prevents candidate drop-off |
+| Candidate profile load (full) | < 1 second | Headhunter reviewing candidates in sequence |
+| Shared reviewer view load | < 2 seconds | Reviewer has low patience for non-core tasks |
+| Search/filter within pipeline | < 500ms | Headhunter expects instant filtering |
 
 ### Security
 
-- **NFR7:** All data transmitted between client and server is encrypted via TLS 1.2+
-- **NFR8:** All data at rest in PostgreSQL is encrypted
-- **NFR9:** Authentication is exclusively handled via Azure AD SSO — no local password storage
-- **NFR10:** Entity-scoped data isolation is enforced at the database query level, not solely at the UI layer
-- **NFR11:** Session tokens expire after a configurable inactivity period
-- **NFR12:** All API endpoints validate user authorization before returning data
-- **NFR13:** Audit logs are append-only and cannot be modified or deleted by any user role
-- **NFR14:** Personal employee data is only accessible to users with explicit role-based authorization
+- All candidate personal data encrypted at rest (database-level encryption)
+- All data in transit encrypted via TLS 1.3
+- No candidate PII logged in application error logs or debug output
+- Session-based authentication for all internal interfaces (existing NextAuth flow)
+- Public application form protected against spam (rate limiting + honeypot, no CAPTCHA)
+- Shared candidate views use time-limited, non-guessable session tokens (no permanent URLs with data)
+- File uploads (CV documents) scanned and stored outside web-accessible paths
+- API endpoints validate input schemas at boundary — reject malformed input before processing
 
-### Scalability
+For GDPR-specific security requirements (field-level access, audit logging, data retention), see [Domain-Specific Requirements](#domain-specific-requirements).
 
-- **NFR15:** System supports 100+ starters per year across all entities without architectural changes
-- **NFR16:** Adding new entities requires only configuration changes, no code modifications
-- **NFR17:** System supports scaling to 10 entities and 100 concurrent users with infrastructure scaling only (no application changes)
-- **NFR18:** Database schema supports growing historical data (multi-year retention) without query performance degradation through proper indexing
+### Accessibility
 
-### Reliability & Availability
-
-- **NFR19:** System maintains >99% uptime measured monthly
-- **NFR20:** Automated email cron jobs execute reliably on schedule; missed executions are detected and logged
-- **NFR21:** Database backups are performed daily with point-in-time recovery capability
-- **NFR22:** Application recovers automatically after container restart without data loss
-- **NFR23:** Real-time connection loss does not cause data loss — all state changes persist via standard API calls regardless of WebSocket status
+- Public vacancy pages and application form: WCAG 2.1 Level AA compliance
+- Pipeline Kanban: keyboard operable (arrow keys for stage navigation, Enter to open candidate)
+- Scorecard evaluation form: fully accessible via screen reader and keyboard
+- All interactive elements have visible focus indicators
+- Color is never the sole indicator of state (pipeline stages use icons + labels alongside color)
+- Form validation errors announced to assistive technology
 
 ### Integration
 
-- **NFR24:** ERP integrations use retry mechanisms with exponential backoff for transient failures
-- **NFR25:** Integration failures are logged with sufficient detail for troubleshooting without exposing sensitive data
-- **NFR26:** External system unavailability does not block core application functionality (starter registration, task management)
-- **NFR27:** Azure AD SSO unavailability is handled gracefully with clear user messaging
+- Microsoft Graph API calls tolerate transient failures with retry logic (3 attempts, exponential backoff)
+- SharePoint photo library integration handles unavailability gracefully (placeholder shown, no blocking error)
+- SSE event bus connection auto-reconnects on disconnect (existing pattern)
+- Pre-onboarding bridge operates as atomic transaction — candidate-to-starter creation either succeeds completely or rolls back
+- Email delivery (SendGrid) failures logged but non-blocking — candidate status email queued for retry
 
-### Document Signing
+### Reliability
 
-- **NFR28:** SES signing tokens are cryptographically random (cuid) and unique — each token grants access to exactly one document without authentication
-- **NFR29:** Quill signing URLs are treated as sensitive data with equivalent protection to signing tokens — not logged in plain text, not exposed in API error responses
-- **NFR30:** Quill API unavailability does not block document upload to SharePoint — QES setup is retried via the DOCUMENT_PREPARING webhook when Quill becomes available
-- **NFR31:** Quill webhook processing responds with 2xx within 3 seconds to prevent Quill retry storms (Quill retries up to 5x with exponential backoff)
-- **NFR32:** Quill webhook events are verified by fetching authoritative document state from the Quill API before processing — no blind trust of webhook payloads (spoof protection per Quill recommendation)
-- **NFR33:** PDF content served via the application enforces authorization checks and sets X-Content-Type-Options: nosniff, Content-Disposition headers with sanitized filenames, and MIME type allowlisting for image/PDF content
+- System available during Belgian business hours (Mon–Fri, 08:00–18:00) with 99% uptime target
+- Database backups: daily automated with 30-day retention (existing infrastructure)
+- Zero data loss on candidate applications — submissions persisted before confirmation shown
+- Graceful degradation: if Graph API unavailable, core recruitment flow (pipeline, evaluation) continues unaffected
+- Public vacancy pages cached and served even during backend maintenance

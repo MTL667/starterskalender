@@ -1,0 +1,134 @@
+# generated: 2026-05-15
+# last_updated: 2026-05-15
+# project: Starterskalender
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-05-15
+last_updated: 2026-05-16T13:50:00
+project: Starterskalender
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Vacancy Creation & Management
+  epic-1: done
+  1-1-recruitment-module-foundation-rbac-setup: done
+  1-2-vacancy-crud-with-basic-fields: done
+  1-3-vacancy-content-block-builder: done
+  1-4-vacancy-templates: done
+  1-5-dealbreakers-nice-to-have-configuration: done
+  1-6-pipeline-stage-configuration: done
+  1-7-vacancy-publishing-lifecycle: done
+  1-8-sharepoint-photo-library-integration: done
+  epic-1-retrospective: optional
+
+  # Epic 2: Pipeline & Candidate Tracking
+  epic-2: done
+  2-1-candidate-model-manual-candidate-entry: done
+  2-2-pipeline-kanban-board: done
+  2-3-candidate-card-component: done
+  2-4-drag-drop-stage-transitions: done
+  2-5-real-time-pipeline-updates-via-sse: done
+  2-6-pipeline-keyboard-accessibility: done
+  epic-2-retrospective: optional
+
+  # Epic 3: Public Presence & Candidate Application
+  epic-3: done
+  3-1-public-vacancy-listing-page: done
+  3-2-public-vacancy-detail-page: done
+  3-3-one-click-application-form: done
+  3-4-candidate-data-processing-profile: done
+  3-5-automatic-dealbreaker-filtering-scoring: done
+  3-6-site-grouping-configuration: done
+  3-7-embeddable-vacancy-widget: done
+  3-8-headless-vacancy-api: done
+  3-9-vacancy-qr-codes: done
+  epic-3-retrospective: done
+
+  # Epic 4: Collaboration & Scoped Sharing
+  epic-4: done
+  4-1-candidateshare-model-share-api: done
+  4-2-share-dialog-template-selector: done
+  4-3-custom-field-picker: done
+  4-4-reviewer-scoped-view: done
+  4-5-access-expiration-auto-revoke: done
+  4-6-candidate-access-audit-logging: done
+  4-7-default-share-templates-admin: done
+  epic-4-retrospective: done
+
+  # Epic 5: Evaluation & Scoring
+  epic-5: done
+  5-1-scorecard-template-definition: done
+  5-2-scorecard-evaluation-form: done
+  5-3-aggregated-score-view: done
+  5-4-candidate-comparison-view: done
+  epic-5-retrospective: done
+
+  # Epic 6: Communication & Notifications
+  epic-6: done
+  6-1-email-template-configuration: done
+  6-2-automatic-status-emails-on-stage-transition: done
+  6-3-application-confirmation-email: done
+  6-4-rejection-workflow-dialog: done
+  6-5-internal-comment-threads: done
+  6-6-notification-system-integration: done
+  6-7-o365-mailbox-sync: done
+  6-8-private-email-marking: done
+  epic-6-retrospective: done
+
+  # Epic 7: Compliance & Data Lifecycle
+  epic-7: done
+  7-1-retention-period-configuration: done
+  7-2-retention-expiry-notification: done
+  7-3-automated-data-deletion: done
+  7-4-right-to-access-data-export: done
+  7-5-right-to-erasure: done
+  7-6-immutable-audit-log-system: done
+  7-7-dpo-audit-reporting: done
+  epic-7-retrospective: done
+
+  # Epic 8: Hire-to-Onboarding Bridge
+  epic-8: done
+  8-1-hire-confirmation-dialog: done
+  8-2-automatic-starter-creation: done
+  8-3-candidate-portal-transition: done
+  epic-8-retrospective: done
+
+  # Epic 9: Dashboard & Analytics (Phase 3)
+  epic-9: done
+  9-1-pipeline-metrics-dashboard: done
+  9-2-funnel-visualization: done
+  9-3-sla-indicators-on-vacancies: done
+  epic-9-retrospective: done

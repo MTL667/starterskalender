@@ -53,3 +53,9 @@ tests/support/.auth/
 /public/uploads/*
 !/public/uploads/.gitkeep
 
+# cursor local config
+.cursor/
+
+# temp files
+_tmp/
+

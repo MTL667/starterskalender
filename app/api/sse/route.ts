@@ -27,13 +27,15 @@ export async function GET() {
 
   const authUser = toAuthorizedUser(user)
   const starterScope = visibleEntityIds(authUser, 'starters:read')
+  const recruitmentScope = visibleEntityIds(authUser, 'recruitment:read')
 
   let entityIds: string[]
-  if (starterScope === 'ALL') {
+  if (starterScope === 'ALL' || recruitmentScope === 'ALL') {
     const entities = await prisma.entity.findMany({ select: { id: true } })
     entityIds = entities.map(e => e.id)
   } else {
-    entityIds = starterScope
+    const merged = new Set([...starterScope, ...recruitmentScope])
+    entityIds = [...merged]
   }
 
   if (entityIds.length === 0) {

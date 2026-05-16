@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
-import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare, Wifi, WifiOff, Package, Menu, X } from 'lucide-react'
+import { Calendar, LayoutDashboard, Users, Settings, LogOut, User, CheckSquare, Wifi, WifiOff, Package, Menu, X, Briefcase } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { NotificationBell } from '@/components/layout/notification-bell'
 import { LanguageSwitcher } from '@/components/layout/language-switcher'
@@ -70,6 +70,7 @@ export function Navbar() {
     { href: '/kalender', icon: Calendar, label: t('calendar'), show: true },
     { href: '/starters', icon: Users, label: t('starters'), show: true },
     { href: '/taken', icon: CheckSquare, label: t('tasks'), show: true },
+    { href: '/recruitment', icon: Briefcase, label: t('recruitment'), show: session?.user?.perms?.includes('recruitment:read') ?? false },
     { href: '/materialen', icon: Package, label: t('materials'), show: session?.user?.perms?.includes('materials:manage') ?? false },
     { href: '/admin', icon: Settings, label: t('admin'), show: session?.user?.perms?.includes('admin:users:manage') ?? false },
   ]
