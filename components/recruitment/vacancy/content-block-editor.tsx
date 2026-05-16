@@ -64,6 +64,7 @@ function SortableBlock({
   onDelete,
   t,
   vacancyId,
+  entityId,
 }: {
   block: ContentBlock
   editingId: string | null
