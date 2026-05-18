@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface Entity {
   id: string
   name: string
+  colorHex: string
 }
 
 interface Vacancy {
@@ -185,7 +186,7 @@ export default function VacaturesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline">{vacancy.entity.name}</Badge>
+                      <Badge variant="outline" style={{ borderColor: vacancy.entity.colorHex, color: vacancy.entity.colorHex }}>{vacancy.entity.name}</Badge>
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={STATUS_VARIANT[vacancy.status] ?? 'secondary'}>
@@ -228,7 +229,7 @@ export default function VacaturesPage() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Badge variant="outline" className="text-xs">{vacancy.entity.name}</Badge>
+                  <Badge variant="outline" className="text-xs" style={{ borderColor: vacancy.entity.colorHex, color: vacancy.entity.colorHex }}>{vacancy.entity.name}</Badge>
                   <span>{new Date(vacancy.createdAt).toLocaleDateString('nl-BE')}</span>
                 </div>
               </Link>

@@ -100,7 +100,7 @@ export default async function VacancyDetailPage({
             </Badge>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Badge variant="outline">{vacancy.entity.name}</Badge>
+            <Badge variant="outline" style={{ borderColor: vacancy.entity.colorHex, color: vacancy.entity.colorHex }}>{vacancy.entity.name}</Badge>
             {vacancy.function && (
               <span className="text-sm">{vacancy.function.title}</span>
             )}
