@@ -79,7 +79,7 @@ export function StageColumn({
       role="group"
       aria-label={t('pipeline.columnLabel', { stage: stageName, count: candidates.length })}
       className={cn(
-        'flex flex-col min-w-[220px] flex-1 rounded-lg border bg-muted/30 motion-safe:transition-all motion-safe:duration-200',
+        'flex flex-col flex-1 min-w-0 rounded-lg border bg-muted/30 motion-safe:transition-all motion-safe:duration-200',
         isDragOver && 'ring-2 ring-primary/50 border-primary/50 motion-safe:animate-pulse',
         isInvalidDrop && 'opacity-50',
         activeId && !isDragOver && !isInvalidDrop && 'opacity-75'
