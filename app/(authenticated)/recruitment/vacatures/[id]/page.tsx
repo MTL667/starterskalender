@@ -123,8 +123,8 @@ export default async function VacancyDetailPage({
         </div>
       </div>
 
-      {/* Vacancy info — constrained width */}
-      <div className="max-w-3xl space-y-6">
+      {/* Vacancy info */}
+      <div className="space-y-6">
         {/* Metadata card */}
         <Card>
           <CardContent className="pt-6">
