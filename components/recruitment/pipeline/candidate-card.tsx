@@ -3,8 +3,7 @@
 import { forwardRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Check, X, Users, Share2, MessageSquare, ExternalLink } from 'lucide-react'
+import { Check, X, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DaysCounter } from './days-counter'
 import { ScoreRing } from './score-ring'
@@ -66,55 +65,49 @@ export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
         ref={ref}
         aria-label={ariaLabel}
         className={cn(
-          'group relative rounded-lg border bg-card p-3 shadow-sm',
+          'rounded-lg border bg-card p-2.5 shadow-sm',
           'motion-safe:transition-shadow hover:shadow-md',
           isNew && 'border-l-2 border-l-blue-400',
           isFail && 'opacity-50',
           isRejected && 'opacity-60 grayscale-[30%]'
         )}
       >
-        <div className="flex items-start justify-between gap-1">
-          <div className="flex items-center gap-1.5 min-w-0">
-            {onSelectionToggle && (
-              <input
-                type="checkbox"
-                checked={isSelected ?? false}
-                onChange={(e) => {
-                  e.stopPropagation()
-                  onSelectionToggle(candidate.id)
-                }}
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-                className="h-3.5 w-3.5 shrink-0 rounded border-muted-foreground/40 accent-primary"
-                aria-label={t('comparison.checkboxLabel')}
-              />
-            )}
-            <p className="text-sm font-medium truncate">{fullName}</p>
-          </div>
-          <Badge variant="outline" className="text-[10px] shrink-0 leading-tight">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {onSelectionToggle && (
+            <input
+              type="checkbox"
+              checked={isSelected ?? false}
+              onChange={(e) => {
+                e.stopPropagation()
+                onSelectionToggle(candidate.id)
+              }}
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="h-3.5 w-3.5 shrink-0 rounded border-muted-foreground/40 accent-primary"
+              aria-label={t('comparison.checkboxLabel')}
+            />
+          )}
+          <p className="text-sm font-medium truncate" title={fullName}>{fullName}</p>
+          <Badge variant="outline" className="text-[10px] shrink-0 leading-tight ml-auto">
             {entityName}
           </Badge>
         </div>
 
-        <div className="flex items-center gap-2 mt-1.5">
+        <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
           <DaysCounter days={days} />
-          <span className="text-muted-foreground text-xs">·</span>
-          <Badge variant="outline" className="text-xs">
-            {t(sourceKey as any)}
-          </Badge>
+          <span>·</span>
+          <span>{t(sourceKey as any)}</span>
         </div>
 
-        <div className="flex items-center gap-2 mt-2 pt-2 border-t">
+        <div className="flex items-center gap-1.5 mt-1.5 pt-1.5 border-t">
           {isFail && (
             <span className="inline-flex items-center gap-0.5 text-xs text-destructive">
               <X className="h-3 w-3" />
-              {t('card.dealbreaker')}
             </span>
           )}
           {isPass && (
             <span className="inline-flex items-center gap-0.5 text-xs text-emerald-400">
               <Check className="h-3 w-3" />
-              {t('card.dealbreaker')}
             </span>
           )}
 
@@ -124,39 +117,6 @@ export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
             <Users className="h-3 w-3" />
             {reviewCount}
           </span>
-        </div>
-
-        <div className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 motion-safe:transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 min-w-[44px] min-h-[44px] -m-2"
-            aria-label={t('card.actionShare')}
-            tabIndex={-1}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Share2 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 min-w-[44px] min-h-[44px] -m-2"
-            aria-label={t('card.actionComment')}
-            tabIndex={-1}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 min-w-[44px] min-h-[44px] -m-2"
-            aria-label={t('card.actionOpen')}
-            tabIndex={-1}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <ExternalLink className="h-4 w-4" />
-          </Button>
         </div>
       </div>
     )
