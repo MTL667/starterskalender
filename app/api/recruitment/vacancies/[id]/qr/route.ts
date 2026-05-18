@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/authz'
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -32,7 +32,7 @@ export async function GET(
 
     const slug = vacancy.entity.siteGroup?.slug ?? vacancy.entityId
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
     const vacancyUrl = `${appUrl}/jobs/${slug}/${vacancy.id}`
 
     const svg = await QRCode.toString(vacancyUrl, {
