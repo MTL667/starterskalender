@@ -2,7 +2,6 @@
 
 import { forwardRef } from 'react'
 import { useTranslations } from 'next-intl'
-import { Badge } from '@/components/ui/badge'
 import { Check, X, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DaysCounter } from './days-counter'
@@ -88,9 +87,6 @@ export const CandidateCard = forwardRef<HTMLDivElement, CandidateCardProps>(
             />
           )}
           <p className="text-sm font-medium truncate" title={fullName}>{fullName}</p>
-          <Badge variant="outline" className="text-[10px] shrink-0 leading-tight ml-auto">
-            {entityName}
-          </Badge>
         </div>
 
         <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
