@@ -111,6 +111,8 @@
     "qrCode": "QR Code",
     "qrLoading": "Génération du QR code...",
     "qrDownload": "Télécharger en PNG",
+    "qrNoSiteGroup": "Cette entité n'a pas de site group configuré. Configurez un site group dans les paramètres admin.",
+    "qrError": "Impossible de générer le QR code.",
     "contentBlocks": {
       "sectionTitle": "Contenu",
       "emptyState": "Aucun contenu ajouté. Cliquez sur 'Ajouter un bloc' pour commencer.",

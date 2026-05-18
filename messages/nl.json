@@ -111,6 +111,8 @@
     "qrCode": "QR Code",
     "qrLoading": "QR code genereren...",
     "qrDownload": "Downloaden als PNG",
+    "qrNoSiteGroup": "Deze entiteit heeft geen site group geconfigureerd. Configureer een site group in de admin instellingen.",
+    "qrError": "Kon QR code niet genereren.",
     "contentBlocks": {
       "sectionTitle": "Inhoud",
       "emptyState": "Nog geen inhoud toegevoegd. Klik op 'Block toevoegen' om te beginnen.",

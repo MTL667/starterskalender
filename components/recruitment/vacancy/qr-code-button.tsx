@@ -16,6 +16,7 @@ export function QrCodeButton({ vacancyId, isPublished }: QrCodeButtonProps) {
   const [svg, setSvg] = useState<string | null>(null)
   const [url, setUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   if (!isPublished) return null
 
@@ -23,14 +24,25 @@ export function QrCodeButton({ vacancyId, isPublished }: QrCodeButtonProps) {
     setOpen(true)
     if (svg) return
     setLoading(true)
+    setError(null)
     try {
       const res = await fetch(`/api/recruitment/vacancies/${vacancyId}/qr`)
       if (res.ok) {
         const json = await res.json()
         setSvg(json.data.svg)
         setUrl(json.data.url)
+      } else {
+        const json = await res.json().catch(() => null)
+        const code = json?.error?.code
+        if (code === 'NO_SITE_GROUP') {
+          setError(t('qrNoSiteGroup'))
+        } else {
+          setError(t('qrError'))
+        }
       }
-    } catch { /* ignore */ }
+    } catch {
+      setError(t('qrError'))
+    }
     setLoading(false)
   }
 
@@ -73,6 +85,10 @@ export function QrCodeButton({ vacancyId, isPublished }: QrCodeButtonProps) {
             </div>
 
             {loading && <p className="text-sm text-muted-foreground text-center py-8">{t('qrLoading')}</p>}
+
+            {error && (
+              <p className="text-sm text-destructive text-center py-8">{error}</p>
+            )}
 
             {svg && (
               <div className="flex flex-col items-center gap-4">
