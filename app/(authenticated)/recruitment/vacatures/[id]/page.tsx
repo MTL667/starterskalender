@@ -78,7 +78,7 @@ export default async function VacancyDetailPage({
   const contentBlocks = Array.isArray(vacancy.content) ? (vacancy.content as unknown as ContentBlock[]) : []
 
   return (
-    <div className="container mx-auto py-8 max-w-6xl space-y-8">
+    <div className="container mx-auto py-8 space-y-8">
       {/* Back link */}
       <div>
         <Link
