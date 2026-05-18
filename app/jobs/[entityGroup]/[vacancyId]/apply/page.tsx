@@ -16,9 +16,18 @@ const getVacancyData = cache(async (entityGroup: string, vacancyId: string) => {
     select: { id: true, name: true, entities: { select: { id: true } } },
   })
 
-  if (!siteGroup || siteGroup.entities.length === 0) return null
+  let entityIds: string[]
 
-  const entityIds = siteGroup.entities.map((e) => e.id)
+  if (siteGroup && siteGroup.entities.length > 0) {
+    entityIds = siteGroup.entities.map((e) => e.id)
+  } else {
+    const entityById = await prisma.entity.findUnique({
+      where: { id: entityGroup },
+      select: { id: true },
+    })
+    if (!entityById) return null
+    entityIds = [entityById.id]
+  }
 
   const vacancy = await prisma.vacancy.findFirst({
     where: {
@@ -38,7 +47,9 @@ const getVacancyData = cache(async (entityGroup: string, vacancyId: string) => {
 
   if (!vacancy) return null
 
-  return { siteGroup, vacancy }
+  const groupName = siteGroup?.name ?? vacancy.entity.name
+
+  return { groupName, vacancy }
 })
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -63,7 +74,7 @@ export default async function ApplyPage({ params }: PageProps) {
     notFound()
   }
 
-  const { vacancy, siteGroup } = data
+  const { vacancy, groupName } = data
   const t = await getTranslations('public.apply')
 
   const translations = {
@@ -122,7 +133,7 @@ export default async function ApplyPage({ params }: PageProps) {
 
       <footer className="border-t border-gray-200 bg-white mt-auto">
         <div className="mx-auto max-w-[480px] px-4 py-6 text-center text-xs text-gray-500">
-          &copy; {new Date().getFullYear()} {siteGroup.name}
+          &copy; {new Date().getFullYear()} {groupName}
         </div>
       </footer>
     </>

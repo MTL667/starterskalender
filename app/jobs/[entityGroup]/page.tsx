@@ -27,9 +27,21 @@ const getSiteGroupData = cache(async (slug: string) => {
     },
   })
 
-  if (!siteGroup || siteGroup.entities.length === 0) return null
+  let entityIds: string[]
+  let groupName: string
 
-  const entityIds = siteGroup.entities.map((e) => e.id)
+  if (siteGroup && siteGroup.entities.length > 0) {
+    entityIds = siteGroup.entities.map((e) => e.id)
+    groupName = siteGroup.name
+  } else {
+    const entityById = await prisma.entity.findUnique({
+      where: { id: slug },
+      select: { id: true, name: true },
+    })
+    if (!entityById) return null
+    entityIds = [entityById.id]
+    groupName = entityById.name
+  }
 
   const vacancies = await prisma.vacancy.findMany({
     where: {
@@ -50,7 +62,7 @@ const getSiteGroupData = cache(async (slug: string) => {
     orderBy: { createdAt: 'desc' },
   })
 
-  return { siteGroup, vacancies }
+  return { groupName, vacancies }
 })
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -61,7 +73,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return { title: 'Not Found' }
   }
 
-  const orgName = data.siteGroup.name
+  const orgName = data.groupName
   const count = data.vacancies.length
 
   return {
@@ -87,14 +99,14 @@ export default async function PublicVacancyListingPage({ params }: PageProps) {
     notFound()
   }
 
-  const { siteGroup, vacancies } = data
-  const primaryEntity = siteGroup.entities[0]
+  const { groupName, vacancies } = data
+  const primaryEntity = vacancies[0]?.entity ?? { name: groupName, colorHex: '#6b7280' }
   const t = await getTranslations('public.jobs')
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: `Open positions at ${siteGroup.name}`,
+    name: `Open positions at ${groupName}`,
     numberOfItems: vacancies.length,
     itemListElement: vacancies.map((v, i) => ({
       '@type': 'ListItem',
@@ -141,7 +153,7 @@ export default async function PublicVacancyListingPage({ params }: PageProps) {
           >
             {primaryEntity.name.charAt(0)}
           </span>
-          <span className="text-sm font-medium text-gray-900">{siteGroup.name}</span>
+          <span className="text-sm font-medium text-gray-900">{groupName}</span>
           <span className="ml-auto text-sm text-gray-500">
             {t('openCount', { count: vacancies.length })}
           </span>
@@ -149,12 +161,12 @@ export default async function PublicVacancyListingPage({ params }: PageProps) {
       </nav>
 
       <main className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="sr-only">{t('title', { org: siteGroup.name })}</h1>
+        <h1 className="sr-only">{t('title', { org: groupName })}</h1>
 
         {vacancies.length === 0 ? (
           <EmptyState
             title={t('emptyTitle')}
-            description={t('emptyDescription', { org: siteGroup.name })}
+            description={t('emptyDescription', { org: groupName })}
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
@@ -185,7 +197,7 @@ export default async function PublicVacancyListingPage({ params }: PageProps) {
 
       <footer className="border-t border-gray-200 bg-white mt-auto">
         <div className="mx-auto max-w-4xl px-4 py-6 text-center text-xs text-gray-400">
-          &copy; {new Date().getFullYear()} {siteGroup.name}
+          &copy; {new Date().getFullYear()} {groupName}
         </div>
       </footer>
     </>

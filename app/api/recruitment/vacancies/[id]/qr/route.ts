@@ -16,6 +16,7 @@ export async function GET(
       select: {
         id: true,
         status: true,
+        entityId: true,
         entity: {
           select: { siteGroup: { select: { slug: true } } },
         },
@@ -29,13 +30,7 @@ export async function GET(
       )
     }
 
-    const slug = vacancy.entity.siteGroup?.slug
-    if (!slug) {
-      return NextResponse.json(
-        { error: { message: 'Vacancy has no public page (no site group)', code: 'NO_SITE_GROUP' } },
-        { status: 400 }
-      )
-    }
+    const slug = vacancy.entity.siteGroup?.slug ?? vacancy.entityId
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
     const vacancyUrl = `${appUrl}/jobs/${slug}/${vacancy.id}`

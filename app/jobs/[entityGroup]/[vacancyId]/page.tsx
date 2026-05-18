@@ -26,9 +26,18 @@ const getVacancyData = cache(async (entityGroup: string, vacancyId: string) => {
     select: { id: true, name: true, entities: { select: { id: true, name: true, colorHex: true } } },
   })
 
-  if (!siteGroup || siteGroup.entities.length === 0) return null
+  let entityIds: string[]
 
-  const entityIds = siteGroup.entities.map((e) => e.id)
+  if (siteGroup && siteGroup.entities.length > 0) {
+    entityIds = siteGroup.entities.map((e) => e.id)
+  } else {
+    const entityById = await prisma.entity.findUnique({
+      where: { id: entityGroup },
+      select: { id: true },
+    })
+    if (!entityById) return null
+    entityIds = [entityById.id]
+  }
 
   const vacancy = await prisma.vacancy.findFirst({
     where: {
@@ -51,7 +60,9 @@ const getVacancyData = cache(async (entityGroup: string, vacancyId: string) => {
 
   if (!vacancy) return null
 
-  return { siteGroup, vacancy }
+  const groupName = siteGroup?.name ?? vacancy.entity.name
+
+  return { groupName, vacancy }
 })
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -65,10 +76,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }
   }
 
-  const { vacancy, siteGroup } = data
+  const { vacancy, groupName } = data
   const descriptionText = vacancy.description
     ? vacancy.description.slice(0, 160)
-    : `${vacancy.title} at ${siteGroup.name}`
+    : `${vacancy.title} at ${groupName}`
 
   return {
     title: `${vacancy.title} — ${vacancy.entity.name}`,
@@ -93,7 +104,7 @@ export default async function PublicVacancyDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  const { vacancy, siteGroup } = data
+  const { vacancy, groupName } = data
 
   if (vacancy.status !== 'PUBLISHED') {
     notFound()
@@ -156,7 +167,7 @@ export default async function PublicVacancyDetailPage({ params }: PageProps) {
             href={`/jobs/${entityGroup}`}
             className="text-sm font-medium text-gray-900 hover:text-gray-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded"
           >
-            {siteGroup.name}
+            {groupName}
           </Link>
           <span className="text-gray-300" aria-hidden="true">/</span>
           <span className="text-sm text-gray-500 truncate">{vacancy.title}</span>
@@ -247,7 +258,7 @@ export default async function PublicVacancyDetailPage({ params }: PageProps) {
 
       <footer className="border-t border-gray-200 bg-white mt-auto">
         <div className="mx-auto max-w-[720px] px-4 py-6 text-center text-xs text-gray-400">
-          &copy; {new Date().getFullYear()} {siteGroup.name}
+          &copy; {new Date().getFullYear()} {groupName}
         </div>
       </footer>
     </>
