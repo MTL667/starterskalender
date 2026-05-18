@@ -717,7 +717,7 @@ export function PipelineKanban({ vacancyId, stages, canWrite, entityName, vacanc
         accessibility={{ announcements }}
       >
         <LayoutGroup>
-          <div id="pipeline-board" className="flex gap-3 overflow-x-auto pb-4" role="group" aria-label={t('pipeline.sectionTitle')}>
+          <div id="pipeline-board" className="flex gap-3 pb-4 overflow-x-auto" role="group" aria-label={t('pipeline.sectionTitle')}>
             {sortedStages.map((stage, index) => (
               <StageColumn
                 key={stage.id}

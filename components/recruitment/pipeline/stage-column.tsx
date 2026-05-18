@@ -79,7 +79,7 @@ export function StageColumn({
       role="group"
       aria-label={t('pipeline.columnLabel', { stage: stageName, count: candidates.length })}
       className={cn(
-        'flex flex-col w-72 shrink-0 rounded-lg border bg-muted/30 motion-safe:transition-all motion-safe:duration-200',
+        'flex flex-col min-w-[220px] flex-1 rounded-lg border bg-muted/30 motion-safe:transition-all motion-safe:duration-200',
         isDragOver && 'ring-2 ring-primary/50 border-primary/50 motion-safe:animate-pulse',
         isInvalidDrop && 'opacity-50',
         activeId && !isDragOver && !isInvalidDrop && 'opacity-75'
@@ -99,7 +99,7 @@ export function StageColumn({
         </Badge>
       </div>
 
-      <div role="listbox" aria-label={stageName} className="flex-1 overflow-y-auto p-2 space-y-2 max-h-[calc(100vh-280px)]">
+      <div role="listbox" aria-label={stageName} className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[200px] max-h-[calc(100vh-280px)]">
         {candidates.length === 0 && isFirstColumn && totalCandidates === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <p className="text-sm text-muted-foreground mb-3">

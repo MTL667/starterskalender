@@ -139,7 +139,7 @@ export default function VacaturesPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border bg-card p-12 text-center">
+        <div className="rounded-lg border bg-card p-12 text-center shadow-sm">
           <p className="text-muted-foreground mb-4">{t('noVacancies')}</p>
           <Link href="/recruitment/vacatures/nieuw">
             <Button>
@@ -151,24 +151,24 @@ export default function VacaturesPage() {
       ) : (
         <>
           {/* Desktop table */}
-          <div className="hidden md:block rounded-lg border">
+          <div className="hidden md:block rounded-lg border shadow-sm overflow-hidden">
             <table className="w-full">
               <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="text-left p-3 font-medium">{t('fieldTitle')}</th>
-                  <th className="text-left p-3 font-medium">{t('fieldEntity')}</th>
-                  <th className="text-left p-3 font-medium">{t('filterStatus')}</th>
-                  <th className="text-left p-3 font-medium">{t('createdAt')}</th>
+                <tr className="border-b bg-muted/60">
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('fieldTitle')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('fieldEntity')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('filterStatus')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('createdAt')}</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y">
                 {filtered.map((vacancy) => (
-                  <tr key={vacancy.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="p-3">
+                  <tr key={vacancy.id} className="hover:bg-muted/40 transition-colors">
+                    <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/recruitment/vacatures/${vacancy.id}`}
-                          className="font-medium hover:underline"
+                          className="font-medium hover:text-primary transition-colors"
                         >
                           {vacancy.title}
                         </Link>
@@ -184,15 +184,15 @@ export default function VacaturesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="p-3">
+                    <td className="px-4 py-3">
                       <Badge variant="outline">{vacancy.entity.name}</Badge>
                     </td>
-                    <td className="p-3">
+                    <td className="px-4 py-3">
                       <Badge variant={STATUS_VARIANT[vacancy.status] ?? 'secondary'}>
                         {statusLabel(vacancy.status)}
                       </Badge>
                     </td>
-                    <td className="p-3 text-sm text-muted-foreground">
+                    <td className="px-4 py-3 text-sm text-muted-foreground">
                       {new Date(vacancy.createdAt).toLocaleDateString('nl-BE')}
                     </td>
                   </tr>
@@ -207,7 +207,7 @@ export default function VacaturesPage() {
               <Link
                 key={vacancy.id}
                 href={`/recruitment/vacatures/${vacancy.id}`}
-                className="block rounded-lg border bg-card p-4 hover:shadow-md transition-shadow"
+                className="block rounded-lg border bg-card p-5 shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-1.5">
@@ -223,7 +223,7 @@ export default function VacaturesPage() {
                       </span>
                     )}
                   </div>
-                  <Badge variant={STATUS_VARIANT[vacancy.status] ?? 'secondary'} className="ml-2">
+                  <Badge variant={STATUS_VARIANT[vacancy.status] ?? 'secondary'} className="ml-2 shrink-0">
                     {statusLabel(vacancy.status)}
                   </Badge>
                 </div>

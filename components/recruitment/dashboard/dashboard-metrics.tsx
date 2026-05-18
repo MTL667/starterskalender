@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { Briefcase, Users, Clock, TrendingUp } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface DashboardData {
@@ -65,10 +66,12 @@ export function DashboardMetrics() {
       {loading && !data && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-lg border bg-card p-4 animate-pulse">
-              <div className="h-4 w-24 bg-muted rounded mb-2" />
-              <div className="h-8 w-16 bg-muted rounded" />
-            </div>
+            <Card key={i} className="animate-pulse">
+              <CardContent className="pt-6">
+                <div className="h-4 w-24 bg-muted rounded mb-3" />
+                <div className="h-8 w-16 bg-muted rounded" />
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
@@ -80,21 +83,29 @@ export function DashboardMetrics() {
               icon={<Briefcase className="h-5 w-5" />}
               label={t('activeVacancies')}
               value={data.activeVacancies}
+              color="text-blue-600 dark:text-blue-400"
+              borderColor="border-l-blue-500"
             />
             <MetricCard
               icon={<Users className="h-5 w-5" />}
               label={t('totalCandidates')}
               value={data.totalCandidates}
+              color="text-emerald-600 dark:text-emerald-400"
+              borderColor="border-l-emerald-500"
             />
             <MetricCard
               icon={<Clock className="h-5 w-5" />}
               label={t('avgTimeToHire')}
               value={data.avgTimeToHire !== null ? `${data.avgTimeToHire}d` : '—'}
+              color="text-amber-600 dark:text-amber-400"
+              borderColor="border-l-amber-500"
             />
             <MetricCard
               icon={<TrendingUp className="h-5 w-5" />}
               label={t('hiredRecently')}
               value={data.hiredLast6Months}
+              color="text-purple-600 dark:text-purple-400"
+              borderColor="border-l-purple-500"
             />
           </div>
 
@@ -103,15 +114,14 @@ export function DashboardMetrics() {
               <h3 className="text-sm font-medium text-muted-foreground mb-3">{t('byEntity')}</h3>
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {data.byEntity.map(entity => (
-                  <div key={entity.name} className="rounded-lg border p-3 flex items-center gap-3">
-                    <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: entity.colorHex }} />
-                    <div className="min-w-0">
+                  <Card key={entity.name} className="border-l-4 hover:shadow-sm transition-shadow" style={{ borderLeftColor: entity.colorHex }}>
+                    <CardContent className="py-3 px-4">
                       <p className="font-medium text-sm truncate">{entity.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {entity.vacancies} {t('vacanciesLabel')} · {entity.candidates} {t('candidatesLabel')}
                       </p>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </div>
@@ -122,14 +132,22 @@ export function DashboardMetrics() {
   )
 }
 
-function MetricCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+function MetricCard({ icon, label, value, color, borderColor }: {
+  icon: React.ReactNode
+  label: string
+  value: React.ReactNode
+  color: string
+  borderColor: string
+}) {
   return (
-    <div className="rounded-lg border bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground mb-1">
-        {icon}
-        <span className="text-xs font-medium">{label}</span>
-      </div>
-      <p className="text-2xl font-bold">{value}</p>
-    </div>
+    <Card className={`border-l-4 ${borderColor} hover:shadow-md transition-shadow`}>
+      <CardContent className="pt-5 pb-4">
+        <div className={`flex items-center gap-2 ${color} mb-2`}>
+          {icon}
+          <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        </div>
+        <p className="text-3xl font-bold">{value}</p>
+      </CardContent>
+    </Card>
   )
 }

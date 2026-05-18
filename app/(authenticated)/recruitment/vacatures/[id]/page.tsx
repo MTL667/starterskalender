@@ -4,9 +4,10 @@ import { redirect, notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil, MapPin, Briefcase, Calendar, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { VacancyDeleteButton } from '@/components/recruitment/vacancy/vacancy-delete-button'
 import { QrCodeButton } from '@/components/recruitment/vacancy/qr-code-button'
 import { ContentBlockRenderer } from '@/components/recruitment/vacancy/content-block-renderer'
@@ -74,19 +75,23 @@ export default async function VacancyDetailPage({
     interim: t('typeInterim'),
   }
 
+  const contentBlocks = Array.isArray(vacancy.content) ? (vacancy.content as unknown as ContentBlock[]) : []
+
   return (
-    <div className="container mx-auto py-8 max-w-3xl">
-      <div className="mb-6">
+    <div className="container mx-auto py-8 max-w-6xl space-y-8">
+      {/* Back link */}
+      <div>
         <Link
           href="/recruitment/vacatures"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           {t('backToVacancies')}
         </Link>
       </div>
 
-      <div className="flex items-start justify-between mb-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold">{vacancy.title}</h1>
@@ -102,7 +107,7 @@ export default async function VacancyDetailPage({
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <QrCodeButton vacancyId={vacancy.id} isPublished={vacancy.status === 'PUBLISHED'} />
           {canEdit && (
             <Link href={`/recruitment/vacatures/${vacancy.id}/bewerken`}>
@@ -118,67 +123,97 @@ export default async function VacancyDetailPage({
         </div>
       </div>
 
-      <div className="grid gap-6">
-        <div className="rounded-lg border bg-card p-6 space-y-4">
-          {vacancy.type && (
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">{t('type')}</dt>
-              <dd className="mt-1">{typeLabels[vacancy.type] ?? vacancy.type}</dd>
-            </div>
-          )}
+      {/* Vacancy info — constrained width */}
+      <div className="max-w-3xl space-y-6">
+        {/* Metadata card */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {vacancy.type && (
+                <div className="flex items-start gap-3">
+                  <Briefcase className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                  <div>
+                    <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('type')}</dt>
+                    <dd className="mt-0.5 text-sm font-medium">{typeLabels[vacancy.type] ?? vacancy.type}</dd>
+                  </div>
+                </div>
+              )}
 
-          {vacancy.location && (
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">{t('location')}</dt>
-              <dd className="mt-1">{vacancy.location}</dd>
-            </div>
-          )}
+              {vacancy.location && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                  <div>
+                    <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('location')}</dt>
+                    <dd className="mt-0.5 text-sm font-medium">{vacancy.location}</dd>
+                  </div>
+                </div>
+              )}
 
-          <div>
-            <dt className="text-sm font-medium text-muted-foreground">{t('description')}</dt>
-            <dd className="mt-1 whitespace-pre-wrap">
-              {vacancy.description || <span className="text-muted-foreground italic">{t('noDescription')}</span>}
-            </dd>
-          </div>
+              <div className="flex items-start gap-3">
+                <Calendar className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                <div>
+                  <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('createdAt')}</dt>
+                  <dd className="mt-0.5 text-sm font-medium">
+                    {new Date(vacancy.createdAt).toLocaleDateString('nl-BE')}
+                  </dd>
+                </div>
+              </div>
 
-          <div className="pt-4 border-t flex gap-6 text-sm text-muted-foreground">
-            <div>
-              <span className="font-medium">{t('createdAt')}:</span>{' '}
-              {new Date(vacancy.createdAt).toLocaleDateString('nl-BE')}
+              {vacancy.createdBy?.name && (
+                <div className="flex items-start gap-3">
+                  <User className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                  <div>
+                    <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('createdBy')}</dt>
+                    <dd className="mt-0.5 text-sm font-medium">{vacancy.createdBy.name}</dd>
+                  </div>
+                </div>
+              )}
             </div>
-            {vacancy.createdBy?.name && (
-              <div>
-                <span className="font-medium">{t('createdBy')}:</span>{' '}
-                {vacancy.createdBy.name}
+
+            {vacancy.description && (
+              <div className="mt-6 pt-4 border-t">
+                <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{t('description')}</dt>
+                <dd className="text-sm whitespace-pre-wrap leading-relaxed">{vacancy.description}</dd>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {(() => {
-          const contentBlocks = Array.isArray(vacancy.content) ? (vacancy.content as unknown as ContentBlock[]) : []
-          if (contentBlocks.length === 0) return null
-          return (
-            <div className="rounded-lg border bg-card p-6">
-              <h2 className="text-lg font-semibold mb-4">{t('contentBlocks.sectionTitle')}</h2>
+        {/* Content blocks */}
+        {contentBlocks.length > 0 && (
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg">{t('contentBlocks.sectionTitle')}</CardTitle>
+            </CardHeader>
+            <CardContent>
               <ContentBlockRenderer blocks={contentBlocks} vacancyId={id} />
-            </div>
-          )
-        })()}
-
-        <PipelineSection
-          vacancyId={id}
-          stages={vacancy.stages.map((s) => ({ id: s.id, name: s.name, order: s.order, isTerminal: s.isTerminal, triggersEmail: s.triggersEmail }))}
-          canWrite={canWriteCandidates}
-          entityName={vacancy.entity.name}
-          vacancyTitle={vacancy.title}
-        />
-
-        <div className="mt-8">
-          <h2 className="text-lg font-semibold mb-4">{t('funnel.title')}</h2>
-          <FunnelChart vacancyId={id} />
-        </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
+
+      {/* Pipeline — full width */}
+      <Card>
+        <CardContent className="pt-6">
+          <PipelineSection
+            vacancyId={id}
+            stages={vacancy.stages.map((s) => ({ id: s.id, name: s.name, order: s.order, isTerminal: s.isTerminal, triggersEmail: s.triggersEmail }))}
+            canWrite={canWriteCandidates}
+            entityName={vacancy.entity.name}
+            vacancyTitle={vacancy.title}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Funnel */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">{t('funnel.title')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FunnelChart vacancyId={id} />
+        </CardContent>
+      </Card>
     </div>
   )
 }
