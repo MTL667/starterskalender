@@ -180,6 +180,7 @@ export class ProvisioningEngine {
             displayName: `${starter.firstName} ${starter.lastName}`,
             mailNickname: `${starter.firstName}.${starter.lastName}`.toLowerCase().replace(/[^a-z0-9.]/g, ''),
             userPrincipalName: upn,
+            usageLocation: 'BE',
             passwordProfile: { forceChangePasswordNextSignIn: true, password },
           }),
         })
