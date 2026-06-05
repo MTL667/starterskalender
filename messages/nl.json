@@ -1700,7 +1700,20 @@
     "title": "Maandelijkse Statistieken",
     "subtitleYear": "Bewegingen per maand in {year}",
     "subtitleTotal": "Bewegingen per maand in {year} - Instroom: {onboarding}, Uitstroom: {offboarding}, Migraties: {migration}",
-    "months": ["Jan", "Feb", "Mrt", "Apr", "Mei", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"],
+    "months": [
+      "Jan",
+      "Feb",
+      "Mrt",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Dec"
+    ],
     "filterAll": "Alles",
     "filterOnboarding": "Instroom",
     "filterOffboarding": "Uitstroom",
@@ -1872,5 +1885,105 @@
     "loadingPreview": "Document laden...",
     "placeFields": "Velden plaatsen",
     "cancel": "Annuleren"
+  },
+  "entra": {
+    "connection": {
+      "title": "Entra ID Verbinding",
+      "clientId": "Client ID (Application ID)",
+      "tenantId": "Tenant ID (Directory ID)",
+      "submit": "Verbinding registreren",
+      "emptyState": "Geen Entra ID verbinding geconfigureerd",
+      "setupCta": "Verbinding instellen",
+      "clientIdRequired": "Client ID is verplicht",
+      "clientIdInvalid": "Client ID moet een geldig UUID zijn",
+      "tenantIdRequired": "Tenant ID is verplicht",
+      "tenantIdInvalid": "Tenant ID moet een geldig UUID zijn",
+      "deleteConfirm": "Weet je zeker dat je deze Entra ID verbinding wilt verwijderen?",
+      "created": "Entra ID verbinding aangemaakt"
+    },
+    "status": {
+      "unconfigured": "Niet geconfigureerd",
+      "healthy": "Verbonden",
+      "warning": "Waarschuwing",
+      "error": "Fout"
+    },
+    "certificate": {
+      "title": "Certificaat",
+      "generate": "Certificaat-keypair genereren",
+      "generateDescription": "Genereer een certificaat-keypair voor veilige authenticatie met Microsoft Graph API.",
+      "generated": "Keypair gegenereerd",
+      "download": "Certificaat downloaden (.cer)",
+      "thumbprint": "Thumbprint",
+      "expiry": "Vervaldatum",
+      "uploadInstructions": "Upload het certificaat in Azure Portal:",
+      "uploadStep1": "Ga naar App-registraties",
+      "uploadStep2": "Selecteer je app → Certificaten en geheimen",
+      "uploadStep3": "Upload het .cer bestand",
+      "uploaded": "Ik heb het certificaat geüpload",
+      "regenerate": "Certificaat vernieuwen",
+      "expiryWarning": "Certificaat verloopt binnenkort",
+      "errorMissingKey": "Configuratiefout. Neem contact op met je systeembeheerder.",
+      "errorGeneric": "Certificaat genereren mislukt. Probeer het opnieuw."
+    },
+    "validation": {
+      "validate": "Verbinding valideren",
+      "validating": "Bezig met valideren...",
+      "success": "Verbinding gevalideerd",
+      "errorAuth": "Authenticatie mislukt. Controleer of admin consent is verleend.",
+      "errorTransient": "Tijdelijke fout. Probeer het later opnieuw.",
+      "guidance": "Ga naar Azure Portal → Enterprise Applications → je app → Machtigingen → Admin consent verlenen.",
+      "licenses": "Beschikbare licenties"
+    },
+    "license": {
+      "title": "Licentietype",
+      "loading": "Laden...",
+      "selectPlaceholder": "Selecteer licentietype",
+      "businessBasic": "Business Basic",
+      "businessStandard": "Business Standard",
+      "trickleDownOverride": "Trickle-down overschrijven voor deze functie",
+      "save": "Opslaan",
+      "saved": "Opgeslagen",
+      "emptyState": "Licentiedata wordt automatisch gesynchroniseerd.",
+      "available": "beschikbaar",
+      "lastSync": "Laatste sync: {date}"
+    },
+    "trickleDown": {
+      "title": "Trickle-down beleid",
+      "description": "Als het geconfigureerde licentietype niet beschikbaar is, val terug op een lager type"
+    },
+    "password": {
+      "title": "Tijdelijk wachtwoord regels",
+      "minLength": "Min. lengte",
+      "requireUppercase": "Hoofdletters vereist",
+      "requireNumbers": "Cijfers vereist",
+      "requireSpecialChars": "Speciale tekens vereist"
+    },
+    "tenantConfig": {
+      "save": "Configuratie opslaan",
+      "saved": "Opgeslagen"
+    },
+    "provisioning": {
+      "generateMail": "Mail genereren",
+      "inProgress": "Bezig met provisioning...",
+      "success": "Mail succesvol aangemaakt",
+      "retry": "Opnieuw proberen",
+      "removeUser": "Aangemaakte gebruiker verwijderen",
+      "slowMessage": "Dit duurt langer dan verwacht. Het proces loopt door op de achtergrond.",
+      "assignedLicense": "Toegewezen licentie: {type}",
+      "steps": {
+        "LICENSE_CHECKING": "Licentie controleren",
+        "USER_CREATING": "Gebruiker aanmaken",
+        "LICENSE_ASSIGNING": "Licentie toewijzen",
+        "MAILBOX_WAITING": "Wachten op mailbox"
+      },
+      "credentialCard": {
+        "title": "Tijdelijk wachtwoord",
+        "warning": "Wordt slechts één keer getoond. Kopieer nu.",
+        "copied": "Gekopieerd"
+      }
+    },
+    "graphStatus": {
+      "unreachable": "Microsoft Graph API is momenteel onbereikbaar. Provisioning en licentiedata kunnen beïnvloed zijn."
+    }
   }
 }

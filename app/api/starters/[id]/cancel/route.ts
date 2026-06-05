@@ -7,6 +7,7 @@ import { eventBus } from '@/lib/events'
 import { getCurrentUser, hasEntityAccess } from '@/lib/auth-utils'
 import { isHRAdmin } from '@/lib/rbac'
 import { ROLE_ASSIGNMENTS_INCLUDE, toAuthorizedUser, visibleEntityIds } from '@/lib/authz'
+import { handleStarterCancellation } from '@/lib/starter-lifecycle'
 
 const CancelSchema = z.object({
   cancelReason: z.string().optional(),
@@ -82,6 +83,9 @@ export async function POST(
         cancelReason: data.cancelReason 
       },
     })
+
+    // Create IT cleanup task if starter was provisioned
+    await handleStarterCancellation(id, user.id)
 
     // Verzamel alle email ontvangers
     const recipients: string[] = []

@@ -24,6 +24,20 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+
+    /* Entra ID connection health */
+    --entra-connection-healthy: 142 71% 45%;
+    --entra-connection-warning: 38 92% 50%;
+    --entra-connection-error: 0 84% 60%;
+    --entra-connection-unconfigured: 215 14% 63%;
+    /* Entra ID provisioning states */
+    --entra-provisioning-active: 217 91% 60%;
+    --entra-provisioning-success: 142 71% 45%;
+    --entra-provisioning-failed: 0 84% 60%;
+    /* Entra ID license capacity */
+    --entra-license-healthy: 142 71% 45%;
+    --entra-license-warning: 38 92% 50%;
+    --entra-license-critical: 0 84% 60%;
   }
 
   .dark {
@@ -46,6 +60,20 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+
+    /* Entra ID connection health (dark) */
+    --entra-connection-healthy: 142 69% 58%;
+    --entra-connection-warning: 38 92% 60%;
+    --entra-connection-error: 0 84% 55%;
+    --entra-connection-unconfigured: 215 20% 50%;
+    /* Entra ID provisioning states (dark) */
+    --entra-provisioning-active: 217 91% 65%;
+    --entra-provisioning-success: 142 69% 58%;
+    --entra-provisioning-failed: 0 84% 55%;
+    /* Entra ID license capacity (dark) */
+    --entra-license-healthy: 142 69% 58%;
+    --entra-license-warning: 38 92% 60%;
+    --entra-license-critical: 0 84% 55%;
   }
 }
  

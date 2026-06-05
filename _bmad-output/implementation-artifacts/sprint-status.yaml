@@ -1,5 +1,5 @@
-# generated: 2026-05-15
-# last_updated: 2026-05-15
+# generated: 2026-06-04
+# last_updated: 2026-06-05
 # project: Starterskalender
 # project_key: NOKEY
 # tracking_system: file-system
@@ -34,8 +34,8 @@
 # - SM typically creates next story after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
-generated: 2026-05-15
-last_updated: 2026-05-16T13:50:00
+generated: 2026-06-04
+last_updated: 2026-06-05T08:20:00
 project: Starterskalender
 project_key: NOKEY
 tracking_system: file-system
@@ -132,3 +132,51 @@ development_status:
   9-2-funnel-visualization: done
   9-3-sla-indicators-on-vacancies: done
   epic-9-retrospective: done
+
+  # ============================================================
+  # Entra ID Mail Provisioning Feature (Epics 10-14)
+  # Source: epics-entra-mail-provisioning.md
+  # ============================================================
+
+  # Epic 10: Entra ID Connection & Certificate Management
+  epic-10: done
+  10-1-register-entra-id-app-connection: done
+  10-2-certificate-keypair-generation-download: done
+  10-3-graph-api-connection-validation: done
+  10-4-connection-status-health-indicator: done
+  10-5-daily-consent-sweep-admin-notifications: done
+  10-6-certificate-expiry-warning-rotation: done
+  epic-10-retrospective: optional
+
+  # Epic 11: License Configuration & Trickle-Down Policy
+  epic-11: done
+  11-1-license-type-configuration-per-job-function: done
+  11-2-tenant-wide-trickle-down-policy: done
+  11-3-temporary-password-complexity-configuration: done
+  11-4-connection-removal-safeguard-notification: done
+  epic-11-retrospective: optional
+
+  # Epic 12: Starter Mail Provisioning & Recovery
+  epic-12: done
+  12-1-generate-mail-button-conditional-visibility: done
+  12-2-provisioning-engine-m365-user-creation: done
+  12-3-license-availability-check-trickle-down: done
+  12-4-real-time-provisioning-status-via-sse: done
+  12-5-mailbox-provisioning-success-completion: done
+  12-6-conflict-detection-resolution: done
+  12-7-provisioning-failure-recovery-reconnection: done
+  epic-12-retrospective: optional
+
+  # Epic 13: Proactive License Intelligence
+  epic-13: done
+  13-1-license-cache-periodic-refresh: done
+  13-2-license-dashboard-in-admin-ui: done
+  13-3-license-demand-forecasting-it-task-creation: done
+  13-4-graph-api-status-banner: done
+  epic-13-retrospective: optional
+
+  # Epic 14: Starter Lifecycle Integration
+  epic-14: done
+  14-1-cleanup-tasks-on-starter-cancellation-entity-change: done
+  14-2-entity-migration-handling: done
+  epic-14-retrospective: optional

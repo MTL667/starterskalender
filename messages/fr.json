@@ -1699,7 +1699,20 @@
     "title": "Statistiques mensuelles",
     "subtitleYear": "Mouvements par mois en {year}",
     "subtitleTotal": "Mouvements par mois en {year} - Entrées : {onboarding}, Départs : {offboarding}, Migrations : {migration}",
-    "months": ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"],
+    "months": [
+      "Jan",
+      "Fév",
+      "Mar",
+      "Avr",
+      "Mai",
+      "Jun",
+      "Jul",
+      "Aoû",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Déc"
+    ],
     "filterAll": "Tout",
     "filterOnboarding": "Entrées",
     "filterOffboarding": "Départs",
@@ -1871,5 +1884,105 @@
     "loadingPreview": "Chargement du document...",
     "placeFields": "Placer les champs",
     "cancel": "Annuler"
+  },
+  "entra": {
+    "connection": {
+      "title": "Connexion Entra ID",
+      "clientId": "Client ID (Application ID)",
+      "tenantId": "Tenant ID (Directory ID)",
+      "submit": "Enregistrer la connexion",
+      "emptyState": "Aucune connexion Entra ID configurée",
+      "setupCta": "Configurer la connexion",
+      "clientIdRequired": "Le Client ID est obligatoire",
+      "clientIdInvalid": "Le Client ID doit être un UUID valide",
+      "tenantIdRequired": "Le Tenant ID est obligatoire",
+      "tenantIdInvalid": "Le Tenant ID doit être un UUID valide",
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette connexion Entra ID ?",
+      "created": "Connexion Entra ID créée"
+    },
+    "status": {
+      "unconfigured": "Non configuré",
+      "healthy": "Connecté",
+      "warning": "Avertissement",
+      "error": "Erreur"
+    },
+    "certificate": {
+      "title": "Certificat",
+      "generate": "Générer le certificat keypair",
+      "generateDescription": "Générez un certificat keypair pour une authentification sécurisée avec Microsoft Graph API.",
+      "generated": "Keypair généré",
+      "download": "Télécharger le certificat (.cer)",
+      "thumbprint": "Empreinte",
+      "expiry": "Date d'expiration",
+      "uploadInstructions": "Téléchargez le certificat dans Azure Portal :",
+      "uploadStep1": "Accédez aux Inscriptions d'applications",
+      "uploadStep2": "Sélectionnez votre app → Certificats et secrets",
+      "uploadStep3": "Téléchargez le fichier .cer",
+      "uploaded": "J'ai téléchargé le certificat",
+      "regenerate": "Renouveler le certificat",
+      "expiryWarning": "Le certificat expire bientôt",
+      "errorMissingKey": "Erreur de configuration. Contactez votre administrateur système.",
+      "errorGeneric": "Échec de la génération du certificat. Réessayez."
+    },
+    "validation": {
+      "validate": "Valider la connexion",
+      "validating": "Validation en cours...",
+      "success": "Connexion validée",
+      "errorAuth": "Échec de l'authentification. Vérifiez que le consentement admin est accordé.",
+      "errorTransient": "Erreur temporaire. Réessayez plus tard.",
+      "guidance": "Accédez à Azure Portal → Applications d'entreprise → votre app → Autorisations → Accorder le consentement admin.",
+      "licenses": "Licences disponibles"
+    },
+    "license": {
+      "title": "Type de licence",
+      "loading": "Chargement...",
+      "selectPlaceholder": "Sélectionner le type de licence",
+      "businessBasic": "Business Basic",
+      "businessStandard": "Business Standard",
+      "trickleDownOverride": "Remplacer le trickle-down pour cette fonction",
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "emptyState": "Les données de licence seront synchronisées automatiquement.",
+      "available": "disponible",
+      "lastSync": "Dernière synchronisation : {date}"
+    },
+    "trickleDown": {
+      "title": "Politique trickle-down",
+      "description": "Si le type de licence configuré n'est pas disponible, revenir à un type inférieur"
+    },
+    "password": {
+      "title": "Règles de mot de passe temporaire",
+      "minLength": "Longueur min.",
+      "requireUppercase": "Majuscules requises",
+      "requireNumbers": "Chiffres requis",
+      "requireSpecialChars": "Caractères spéciaux requis"
+    },
+    "tenantConfig": {
+      "save": "Enregistrer la configuration",
+      "saved": "Enregistré"
+    },
+    "provisioning": {
+      "generateMail": "Générer le mail",
+      "inProgress": "Provisionnement en cours...",
+      "success": "Mail créé avec succès",
+      "retry": "Réessayer",
+      "removeUser": "Supprimer l'utilisateur créé",
+      "slowMessage": "Cela prend plus longtemps que prévu. Le processus continue en arrière-plan.",
+      "assignedLicense": "Licence attribuée : {type}",
+      "steps": {
+        "LICENSE_CHECKING": "Vérification de la licence",
+        "USER_CREATING": "Création de l'utilisateur",
+        "LICENSE_ASSIGNING": "Attribution de la licence",
+        "MAILBOX_WAITING": "Attente de la boîte mail"
+      },
+      "credentialCard": {
+        "title": "Mot de passe temporaire",
+        "warning": "Affiché une seule fois. Copiez maintenant.",
+        "copied": "Copié"
+      }
+    },
+    "graphStatus": {
+      "unreachable": "Microsoft Graph API est actuellement inaccessible. Le provisionnement et les données de licence peuvent être affectés."
+    }
   }
 }

@@ -190,6 +190,8 @@ model Entity {
   vacancies               Vacancy[]
   vacancyTemplates        VacancyTemplate[]
   recruitmentEmailTemplates RecruitmentEmailTemplate[]
+  entraAppConnection        EntraAppConnection?
+  tenantEntraConfig         TenantEntraConfig?
   siteGroup               SiteGroup? @relation("SiteGroupEntities", fields: [siteGroupId], references: [id])
   siteGroupId             String?
 
@@ -370,6 +372,7 @@ model Starter {
   tasks            Task[] // Taken gekoppeld aan deze starter
   documents        StarterDocument[] // Documenten voor ondertekening
   hiredCandidate   Candidate?        @relation("CandidateStarter")
+  provisioningJobs ProvisioningJob[]
 
   @@unique([entityId, inspectorNumber])
   @@index([type])
@@ -394,6 +397,7 @@ model JobRole {
   materials               JobRoleMaterial[] // Materiaal gekoppeld aan deze functie
   vacancies               Vacancy[]
   vacancyTemplates        VacancyTemplate[] @relation("TemplateFunction")
+  licenseConfig           LicenseConfig?
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
 
@@ -1196,4 +1200,113 @@ model RecruitmentEmailTemplate {
   @@index([entityId])
   @@index([type])
   @@index([isActive])
+}
+
+// ============================================================
+// Entra ID Mail Provisioning
+// ============================================================
+
+enum LicenseType {
+  BUSINESS_BASIC
+  BUSINESS_STANDARD
+}
+
+enum ProvisioningState {
+  PENDING
+  LICENSE_CHECKING
+  USER_CREATING
+  LICENSE_ASSIGNING
+  MAILBOX_WAITING
+  SUCCESS
+  FAILED_AT_LICENSE_CHECK
+  FAILED_AT_USER_CREATION
+  FAILED_AT_LICENSE_ASSIGNMENT
+  FAILED_AT_MAILBOX_WAIT
+}
+
+model EntraAppConnection {
+  id                    String    @id @default(cuid())
+  entityId              String    @unique
+  entity                Entity    @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  clientId              String
+  tenantId              String
+  encryptedPrivateKey   String?   @db.Text
+  publicCertificatePem  String?   @db.Text
+  certificateExpiry     DateTime?
+  certificateThumbprint String?
+  consentStatus         String    @default("unconfigured")
+  lastConsentCheck      DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model LicenseConfig {
+  id                    String      @id @default(cuid())
+  jobRoleId             String      @unique
+  jobRole               JobRole     @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
+  requiredLicenseType   LicenseType
+  trickleDownOverride   Boolean?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+}
+
+model TenantEntraConfig {
+  id                          String  @id @default(cuid())
+  entityId                    String  @unique
+  entity                      Entity  @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  trickleDownEnabled          Boolean @default(false)
+  passwordMinLength           Int     @default(16)
+  passwordRequireUppercase    Boolean @default(true)
+  passwordRequireNumbers      Boolean @default(true)
+  passwordRequireSpecialChars Boolean @default(true)
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
+
+model ProvisioningJob {
+  id                  String            @id @default(cuid())
+  starterId           String
+  starter             Starter           @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  entityId            String
+  state               ProvisioningState @default(PENDING)
+  triggeredBy         String
+  assignedLicenseType LicenseType?
+  graphUserId         String?
+  graphApiResponses   Json?
+  temporaryPassword   String?           @db.Text
+  error               String?           @db.Text
+  startedAt           DateTime          @default(now())
+  completedAt         DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([starterId, state])
+  @@index([entityId])
+}
+
+model LicenseCache {
+  id              String   @id @default(cuid())
+  entityId        String
+  skuId           String
+  skuPartNumber   String
+  displayName     String
+  totalUnits      Int
+  consumedUnits   Int
+  availableUnits  Int
+  lastSyncedAt    DateTime @default(now())
+  syncError       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([entityId, skuId])
+  @@index([entityId])
+}
+
+model GraphApiStatus {
+  id          String   @id @default(cuid())
+  entityId    String   @unique
+  isReachable Boolean  @default(true)
+  lastCheckAt DateTime @default(now())
+  lastError   String?
+  updatedAt   DateTime @updatedAt
 }

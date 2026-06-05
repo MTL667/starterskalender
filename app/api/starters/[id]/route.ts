@@ -188,6 +188,12 @@ export async function PATCH(
 
     // CardDAV: auto-delete from old entity when entityId changes
     if (data.entityId !== undefined && existingStarter?.entityId && data.entityId !== existingStarter.entityId) {
+      // Create IT cleanup task for provisioned starters migrating entities
+      const { handleEntityMigration } = await import('@/lib/starter-lifecycle')
+      if (data.entityId) {
+        await handleEntityMigration(id, existingStarter.entityId, data.entityId, user.id)
+      }
+
       try {
         const oldStarter = await prisma.starter.findUnique({
           where: { id },

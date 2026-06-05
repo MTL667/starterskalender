@@ -10,6 +10,10 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus, Pencil, ArrowLeft, Upload, Wifi, WifiOff, RefreshCw, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { EntraConnectionForm } from '@/components/entra/EntraConnectionForm'
+import { EntraConnectionStatus } from '@/components/entra/EntraConnectionStatus'
+import { EntraCertificateSection } from '@/components/entra/EntraCertificateSection'
+import { TenantEntraConfigPanel } from '@/components/entra/TenantEntraConfigPanel'
 
 interface Entity {
   id: string
@@ -30,6 +34,7 @@ interface Entity {
 export default function EntitiesAdminPage() {
   const t = useTranslations('adminEntities')
   const tc = useTranslations('common')
+  const te = useTranslations('entra')
   const [entities, setEntities] = useState<Entity[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -55,6 +60,9 @@ export default function EntitiesAdminPage() {
   const [cardDavTestError, setCardDavTestError] = useState('')
   const [bulkSyncStatus, setBulkSyncStatus] = useState<'idle' | 'syncing' | 'done'>('idle')
   const [bulkSyncProgress, setBulkSyncProgress] = useState({ synced: 0, failed: 0, total: 0 })
+  const [entraConnection, setEntraConnection] = useState<{ id: string; clientId: string; tenantId: string; consentStatus: string; certificateExpiry: string | null; certificateThumbprint: string | null } | null>(null)
+  const [entraLoading, setEntraLoading] = useState(false)
+  const [entraLicenses, setEntraLicenses] = useState<any[]>([])
 
   useEffect(() => {
     fetchEntities()
@@ -69,6 +77,23 @@ export default function EntitiesAdminPage() {
       console.error('Error fetching entities:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchEntraConnection = async (entityId: string) => {
+    setEntraLoading(true)
+    setEntraConnection(null)
+    setEntraLicenses([])
+    try {
+      const res = await fetch(`/api/admin/entra-connection/${entityId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setEntraConnection(data)
+      }
+    } catch {
+      // No connection or error fetching — leave as null
+    } finally {
+      setEntraLoading(false)
     }
   }
 
@@ -89,6 +114,7 @@ export default function EntitiesAdminPage() {
     })
     setCardDavTestStatus('idle')
     setBulkSyncStatus('idle')
+    fetchEntraConnection(entity.id)
     setDialogOpen(true)
   }
 
@@ -109,6 +135,7 @@ export default function EntitiesAdminPage() {
     })
     setCardDavTestStatus('idle')
     setBulkSyncStatus('idle')
+    setEntraConnection(null)
     setDialogOpen(true)
   }
 
@@ -615,6 +642,63 @@ export default function EntitiesAdminPage() {
                   </div>
                 )}
               </div>
+
+              {selectedEntity && (
+                <div className="border-t pt-4 mt-4">
+                  <h3 className="text-sm font-semibold mb-3">{te('connection.title')}</h3>
+                  {entraLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {tc('loading')}
+                    </div>
+                  ) : entraConnection ? (
+                    <div className="space-y-4">
+                      <EntraConnectionStatus
+                        status={entraConnection.consentStatus as 'healthy' | 'warning' | 'error' | 'unconfigured'}
+                        certificateExpiry={entraConnection.certificateExpiry}
+                      />
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p>Client ID: {entraConnection.clientId}</p>
+                        <p>Tenant ID: {entraConnection.tenantId}</p>
+                      </div>
+                      <div className="border-t pt-3 mt-3">
+                        <h4 className="text-sm font-medium mb-2">{te('certificate.title')}</h4>
+                        <EntraCertificateSection
+                          entityId={selectedEntity.id}
+                          thumbprint={entraConnection.certificateThumbprint}
+                          certificateExpiry={entraConnection.certificateExpiry}
+                          onGenerated={(data) => setEntraConnection(prev => prev ? { ...prev, certificateThumbprint: data.thumbprint, certificateExpiry: data.expiresAt } : prev)}
+                          onValidated={(data) => {
+                            setEntraConnection(prev => prev ? { ...prev, consentStatus: data.status } : prev)
+                            if (data.licenses) setEntraLicenses(data.licenses)
+                          }}
+                        />
+                      </div>
+                      {entraLicenses.length > 0 && (
+                        <div className="border-t pt-3 mt-3">
+                          <h4 className="text-sm font-medium mb-2">{te('validation.licenses')}</h4>
+                          <ul className="text-xs text-muted-foreground space-y-1">
+                            {entraLicenses.map((lic: any) => (
+                              <li key={lic.skuId}>{lic.skuPartNumber}: {lic.prepaidUnits.enabled - lic.consumedUnits} / {lic.prepaidUnits.enabled} available</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {entraConnection.consentStatus === 'healthy' && (
+                        <div className="border-t pt-3 mt-3">
+                          <h4 className="text-sm font-medium mb-2">{te('tenantConfig.save').replace('opslaan', 'configuratie')}</h4>
+                          <TenantEntraConfigPanel entityId={selectedEntity.id} />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <EntraConnectionForm
+                      entityId={selectedEntity.id}
+                      onSuccess={(connection) => setEntraConnection(connection)}
+                    />
+                  )}
+                </div>
+              )}
             </div>
 
             <DialogFooter className="mt-6">
