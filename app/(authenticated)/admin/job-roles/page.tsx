@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Pencil, Trash2, Package, AlertTriangle } from 'lucide-react'
+import { Plus, Pencil, Trash2, Package, AlertTriangle, Mail } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { JobRoleMaterialsDialog } from '@/components/admin/job-role-materials-dialog'
 
@@ -19,6 +19,7 @@ interface Entity {
   name: string
   colorHex: string
   inspectorNumberEnabled?: boolean
+  entraAppConnection?: { consentStatus: string } | null
 }
 
 interface JobRole {
@@ -38,6 +39,9 @@ interface JobRole {
   _count?: {
     materials: number
   }
+  licenseConfig?: {
+    requiredLicenseType: string
+  } | null
 }
 
 export default function JobRolesPage() {
@@ -66,8 +70,8 @@ export default function JobRolesPage() {
 
   const loadData = () => {
     Promise.all([
-      fetch('/api/entities').then(res => res.json()),
-      fetch('/api/job-roles?withMaterialCount=true').then(res => res.json()),
+      fetch('/api/entities?includeEntra=true').then(res => res.json()),
+      fetch('/api/job-roles?withMaterialCount=true&withLicenseConfig=true').then(res => res.json()),
     ])
       .then(([entitiesData, jobRolesData]) => {
         setEntities(entitiesData)
@@ -156,6 +160,11 @@ export default function JobRolesPage() {
   const rolesWithoutMaterials = jobRoles.filter(
     r => r.isActive && r._count && r._count.materials === 0
   )
+
+  const entityHasEntra = (entityId: string) => {
+    const entity = entities.find(e => e.id === entityId)
+    return entity?.entraAppConnection?.consentStatus === 'healthy'
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -257,6 +266,13 @@ export default function JobRolesPage() {
                               <p className="text-sm text-muted-foreground mt-1">
                                 {role.description}
                               </p>
+                            )}
+                            {role.entity && entityHasEntra(role.entityId) && (
+                              <LicenseTypeSelector
+                                jobRoleId={role.id}
+                                currentType={role.licenseConfig?.requiredLicenseType || null}
+                                onUpdated={loadData}
+                              />
                             )}
                           </div>
                           <div className="flex gap-2">
@@ -398,6 +414,52 @@ export default function JobRolesPage() {
         onClose={() => setMaterialsDialogOpen(false)}
         jobRole={selectedRole}
       />
+    </div>
+  )
+}
+
+function LicenseTypeSelector({ jobRoleId, currentType, onUpdated }: {
+  jobRoleId: string
+  currentType: string | null
+  onUpdated: () => void
+}) {
+  const [value, setValue] = useState(currentType || '')
+  const [saving, setSaving] = useState(false)
+
+  const handleChange = async (newValue: string) => {
+    setValue(newValue)
+    setSaving(true)
+    try {
+      if (newValue === 'none') {
+        await fetch(`/api/admin/license-config/${jobRoleId}`, { method: 'DELETE' })
+        setValue('')
+      } else {
+        await fetch(`/api/admin/license-config/${jobRoleId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requiredLicenseType: newValue }),
+        })
+      }
+      onUpdated()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+      <Select value={value} onValueChange={handleChange}>
+        <SelectTrigger className="h-7 w-[180px] text-xs">
+          <SelectValue placeholder="Geen licentie" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">Geen licentie</SelectItem>
+          <SelectItem value="BUSINESS_BASIC">Business Basic</SelectItem>
+          <SelectItem value="BUSINESS_STANDARD">Business Standard</SelectItem>
+        </SelectContent>
+      </Select>
+      {saving && <span className="text-xs text-muted-foreground">...</span>}
     </div>
   )
 }

@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const entityId = searchParams.get('entityId')
     const withMaterialCount = searchParams.get('withMaterialCount') === 'true'
+    const withLicenseConfig = searchParams.get('withLicenseConfig') === 'true'
 
     const where: any = {}
     if (entityId) {
@@ -44,6 +45,11 @@ export async function GET(request: NextRequest) {
         ...(withMaterialCount && {
           _count: {
             select: { materials: true },
+          },
+        }),
+        ...(withLicenseConfig && {
+          licenseConfig: {
+            select: { requiredLicenseType: true },
           },
         }),
       },

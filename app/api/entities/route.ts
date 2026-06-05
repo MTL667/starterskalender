@@ -20,11 +20,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const includeEntra = searchParams.get('includeEntra') === 'true'
+
     const entities = await getVisibleEntities(user)
     const safe = entities.map(({ cardDavPasswordEnc, ...rest }) => ({
       ...rest,
       cardDavPasswordSet: !!cardDavPasswordEnc,
     }))
+
+    if (includeEntra) {
+      const entraConnections = await prisma.entraAppConnection.findMany({
+        where: { entityId: { in: entities.map(e => e.id) } },
+        select: { entityId: true, consentStatus: true },
+      })
+      const entraMap = new Map(entraConnections.map(c => [c.entityId, c]))
+      return NextResponse.json(safe.map(e => ({
+        ...e,
+        entraAppConnection: entraMap.get(e.id) || null,
+      })))
+    }
+
     return NextResponse.json(safe)
   } catch (error) {
     console.error('Error fetching entities:', error)
