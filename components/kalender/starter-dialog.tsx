@@ -23,6 +23,7 @@ import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { MaterialStatusStepper } from '@/components/materials/material-status-stepper'
 import { MaterialActionButtons } from '@/components/materials/material-action-buttons'
+import { GenerateMailButton } from '@/components/entra/GenerateMailButton'
 import { SignatureGeneratorDialog } from '@/components/signature-generator-dialog'
 import { HealthProgressBar } from '@/components/health-badge'
 import { useHealthScores } from '@/lib/use-health-scores'
@@ -152,6 +153,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [cardDavSearching, setCardDavSearching] = useState(false)
   const [cardDavLocalStatus, setCardDavLocalStatus] = useState<string | null>(null)
   const [cardDavLocalSyncedAt, setCardDavLocalSyncedAt] = useState<string | null>(null)
+  const [starterHasHealthyConnection, setStarterHasHealthyConnection] = useState(false)
+  const [starterHasLicenseConfig, setStarterHasLicenseConfig] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     firstName: '',
@@ -457,6 +460,28 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       setShowEmployeeList(false)
     }
   }, [starter, open])
+
+  useEffect(() => {
+    if (!starter?.entity?.id || !open) {
+      setStarterHasHealthyConnection(false)
+      setStarterHasLicenseConfig(false)
+      return
+    }
+    const entityId = starter.entity.id
+    fetch(`/api/admin/entra-connection/${entityId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setStarterHasHealthyConnection(data?.consentStatus === 'healthy')
+      })
+      .catch(() => setStarterHasHealthyConnection(false))
+
+    if (starter.roleTitle) {
+      fetch(`/api/admin/license-config/by-entity?entityId=${entityId}&roleTitle=${encodeURIComponent(starter.roleTitle)}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => setStarterHasLicenseConfig(!!data?.requiredLicenseType))
+        .catch(() => setStarterHasLicenseConfig(false))
+    }
+  }, [starter?.entity?.id, starter?.roleTitle, open])
 
   const handleEmployeeSelect = (employee: Employee) => {
     setSelectedEmployee(employee)
@@ -1655,6 +1680,19 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 )}
               </div>
             </div>
+
+            {/* Mail Provisioning */}
+            {isEdit && starter?.entity && formData.type === 'ONBOARDING' && (
+              <div className="border-t pt-4">
+                <GenerateMailButton
+                  starterId={starter.id}
+                  entityId={starter.entity.id}
+                  hasHealthyConnection={starterHasHealthyConnection}
+                  hasLicenseConfig={starterHasLicenseConfig}
+                  canEdit={canEdit}
+                />
+              </div>
+            )}
 
             {/* CardDAV sync sectie */}
             {isEdit && starter?.entity?.cardDavEnabled && (formData.phoneNumber || formData.desiredEmail || formData.type === 'OFFBOARDING') && (
