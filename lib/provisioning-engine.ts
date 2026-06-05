@@ -324,16 +324,35 @@ export class ProvisioningEngine {
   private async checkLicenseAvailability(entityId: string, requiredType: string, trickleDownEnabled: boolean) {
     const skus = await graphApiService.getSubscribedSkus(entityId)
 
+    const SKU_MAP: Record<string, string[]> = {
+      BUSINESS_STANDARD: [
+        'O365_BUSINESS_PREMIUM',
+        'SMB_BUSINESS',
+        'SPB',
+        'MICROSOFT_365_BUSINESS_STANDARD',
+        'M365_BUSINESS_STANDARD',
+      ],
+      BUSINESS_BASIC: [
+        'O365_BUSINESS_ESSENTIALS',
+        'SMB_BUSINESS_ESSENTIALS',
+        'MICROSOFT_365_BUSINESS_BASIC',
+        'M365_BUSINESS_BASIC',
+      ],
+    }
+
+    const validSkuPartNumbers = SKU_MAP[requiredType] || []
+
     const primarySku = skus.find(s =>
-      s.skuPartNumber.toUpperCase().includes(requiredType === 'BUSINESS_STANDARD' ? 'STANDARD' : 'BASIC') &&
+      validSkuPartNumbers.some(pn => s.skuPartNumber.toUpperCase() === pn) &&
       s.prepaidUnits.enabled - s.consumedUnits > 0
     )
 
     if (primarySku) return { skuId: primarySku.skuId, licenseType: requiredType }
 
     if (trickleDownEnabled && requiredType === 'BUSINESS_STANDARD') {
+      const basicSkuPartNumbers = SKU_MAP['BUSINESS_BASIC'] || []
       const fallbackSku = skus.find(s =>
-        s.skuPartNumber.toUpperCase().includes('BASIC') &&
+        basicSkuPartNumbers.some(pn => s.skuPartNumber.toUpperCase() === pn) &&
         s.prepaidUnits.enabled - s.consumedUnits > 0
       )
       if (fallbackSku) return { skuId: fallbackSku.skuId, licenseType: 'BUSINESS_BASIC' }
