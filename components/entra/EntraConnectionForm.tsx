@@ -40,8 +40,9 @@ export function EntraConnectionForm({ entityId, onSuccess }: EntraConnectionForm
     return Object.keys(errors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault()
+    e?.stopPropagation()
     setError('')
 
     if (!validate()) return
@@ -79,7 +80,7 @@ export function EntraConnectionForm({ entityId, onSuccess }: EntraConnectionForm
         <CardTitle className="text-base">{t('connection.title')}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="entra-client-id">{t('connection.clientId')}</Label>
             <Input
@@ -112,11 +113,11 @@ export function EntraConnectionForm({ entityId, onSuccess }: EntraConnectionForm
             <p className="text-sm text-destructive">{error}</p>
           )}
 
-          <Button type="submit" disabled={saving}>
+          <Button type="button" onClick={handleSubmit} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t('connection.submit')}
           </Button>
-        </form>
+        </div>
       </CardContent>
     </Card>
   )
