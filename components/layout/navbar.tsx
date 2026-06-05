@@ -23,6 +23,11 @@ export function Navbar() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [logoLoading, setLogoLoading] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [moduleFlags, setModuleFlags] = useState<Record<string, boolean>>({
+    recruitment: true,
+    entra: true,
+    materials: true,
+  })
   const t = useTranslations('navbar')
 
   const isActive = (path: string) => pathname === path
@@ -65,13 +70,20 @@ export function Navbar() {
       })
   }, [])
 
+  useEffect(() => {
+    fetch('/api/system/module-flags')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setModuleFlags(data) })
+      .catch(() => {})
+  }, [])
+
   const navLinks = [
     { href: '/dashboard', icon: LayoutDashboard, label: t('dashboard'), show: true },
     { href: '/kalender', icon: Calendar, label: t('calendar'), show: true },
     { href: '/starters', icon: Users, label: t('starters'), show: true },
     { href: '/taken', icon: CheckSquare, label: t('tasks'), show: true },
-    { href: '/recruitment', icon: Briefcase, label: t('recruitment'), show: session?.user?.perms?.includes('recruitment:read') ?? false },
-    { href: '/materialen', icon: Package, label: t('materials'), show: session?.user?.perms?.includes('materials:manage') ?? false },
+    { href: '/recruitment', icon: Briefcase, label: t('recruitment'), show: moduleFlags.recruitment && (session?.user?.perms?.includes('recruitment:read') ?? false) },
+    { href: '/materialen', icon: Package, label: t('materials'), show: moduleFlags.materials && (session?.user?.perms?.includes('materials:manage') ?? false) },
     { href: '/admin', icon: Settings, label: t('admin'), show: session?.user?.perms?.includes('admin:users:manage') ?? false },
   ]
 

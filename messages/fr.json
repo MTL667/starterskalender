@@ -1133,7 +1133,14 @@
     "kpiDashboard": "Tableau de bord KPI",
     "kpiDashboardDescription": "Consultez les indicateurs de performance par entité",
     "documentSigning": "Signature de documents",
-    "documentSigningDescription": "Téléchargez et gérez les documents à signer par les starters"
+    "documentSigningDescription": "Téléchargez et gérez les documents à signer par les starters",
+    "modules": "Modules",
+    "modulesDescription": "Activer ou désactiver les modules de l'application"
+  },
+  "adminModules": {
+    "title": "Modules",
+    "description": "Activez ou désactivez les modules de l'application. Les modules désactivés ne sont pas visibles dans la navigation.",
+    "backToAdmin": "← Retour à l'admin"
   },
   "adminDocuments": {
     "title": "Signature de documents",

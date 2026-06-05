@@ -1133,7 +1133,14 @@
     "kpiDashboard": "KPI Dashboard",
     "kpiDashboardDescription": "Bekijk prestatie-indicatoren per entiteit",
     "documentSigning": "Document Ondertekening",
-    "documentSigningDescription": "Upload en beheer documenten voor ondertekening door starters"
+    "documentSigningDescription": "Upload en beheer documenten voor ondertekening door starters",
+    "modules": "Modules",
+    "modulesDescription": "Activeer of deactiveer applicatie-modules"
+  },
+  "adminModules": {
+    "title": "Modules",
+    "description": "Activeer of deactiveer applicatie-modules. Uitgeschakelde modules zijn niet zichtbaar in de navigatie.",
+    "backToAdmin": "← Terug naar admin"
   },
   "adminDocuments": {
     "title": "Document Ondertekening",
