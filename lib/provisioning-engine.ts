@@ -61,7 +61,12 @@ export class ProvisioningEngine {
       meta: { starterId, entityId: starter.entityId },
     })
 
-    return this.executeProvisioning(job.id, starter)
+    // Fire and forget - provisioning runs async, SSE endpoint tracks progress
+    this.executeProvisioning(job.id, starter).catch((err) => {
+      console.error(`Provisioning job ${job.id} failed unexpectedly:`, err)
+    })
+
+    return { jobId: job.id, state: 'PENDING' as ProvisioningState }
   }
 
   async retryProvisioning(jobId: string, triggeredBy: string): Promise<ProvisioningResult> {
@@ -93,7 +98,11 @@ export class ProvisioningEngine {
       meta: { retryOf: jobId, starterId: failedJob.starterId },
     })
 
-    return this.executeProvisioning(newJob.id, starter, failedJob.state, failedJob.graphUserId)
+    this.executeProvisioning(newJob.id, starter, failedJob.state, failedJob.graphUserId).catch((err) => {
+      console.error(`Provisioning retry job ${newJob.id} failed unexpectedly:`, err)
+    })
+
+    return { jobId: newJob.id, state: 'PENDING' as ProvisioningState }
   }
 
   async removeCreatedUser(jobId: string, triggeredBy: string): Promise<void> {

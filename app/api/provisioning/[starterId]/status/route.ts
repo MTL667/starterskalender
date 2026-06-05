@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { requirePermission } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
+import { decryptEntra } from '@/lib/encryption'
 
 export async function GET(
   req: NextRequest,
@@ -18,7 +19,7 @@ export async function GET(
   }
 
   try {
-    await requirePermission('entity:view', { entityId: starter.entityId })
+    await requirePermission('starters:read', { entityId: starter.entityId })
   } catch {
     return new Response('Unauthorized', { status: 403 })
   }
@@ -35,7 +36,7 @@ export async function GET(
           const job = await prisma.provisioningJob.findFirst({
             where: { starterId },
             orderBy: { createdAt: 'desc' },
-            select: { id: true, state: true, error: true, assignedLicenseType: true, completedAt: true },
+            select: { id: true, state: true, error: true, assignedLicenseType: true, completedAt: true, temporaryPassword: true },
           })
 
           if (!job) {
@@ -46,7 +47,19 @@ export async function GET(
 
           if (job.state !== lastState) {
             lastState = job.state
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify(job)}\n\n`))
+            const payload: Record<string, unknown> = {
+              id: job.id,
+              state: job.state,
+              error: job.error,
+              assignedLicenseType: job.assignedLicenseType,
+              completedAt: job.completedAt,
+            }
+            if (job.state === 'SUCCESS' && job.temporaryPassword) {
+              try {
+                payload.temporaryPassword = decryptEntra(job.temporaryPassword)
+              } catch {}
+            }
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`))
           }
 
           if (['SUCCESS', 'FAILED_AT_LICENSE_CHECK', 'FAILED_AT_USER_CREATION', 'FAILED_AT_LICENSE_ASSIGNMENT', 'FAILED_AT_MAILBOX_WAIT'].includes(job.state)) {

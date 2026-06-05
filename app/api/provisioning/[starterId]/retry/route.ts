@@ -26,7 +26,7 @@ export async function POST(
 
   let user
   try {
-    user = await requirePermission('entity:edit', { entityId: starter.entityId })
+    user = await requirePermission('starters:update', { entityId: starter.entityId })
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }

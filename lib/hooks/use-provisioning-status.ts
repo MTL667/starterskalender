@@ -21,6 +21,7 @@ interface ProvisioningStatus {
   error?: string | null
   assignedLicenseType?: string | null
   completedAt?: string | null
+  temporaryPassword?: string | null
 }
 
 interface UseProvisioningStatusReturn {
@@ -52,6 +53,7 @@ export function useProvisioningStatus(starterId: string | null): UseProvisioning
   const [status, setStatus] = useState<ProvisioningStatus>({ state: 'NONE' })
   const [startedAt, setStartedAt] = useState<Date | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const startedAtRef = useRef<Date | null>(null)
 
   const connect = useCallback(() => {
     if (!starterId) return
@@ -65,24 +67,29 @@ export function useProvisioningStatus(starterId: string | null): UseProvisioning
       try {
         const data = JSON.parse(event.data) as ProvisioningStatus
         setStatus(data)
-        if (!startedAt && ACTIVE_STATES.includes(data.state)) {
-          setStartedAt(new Date())
+        if (ACTIVE_STATES.includes(data.state) && !startedAtRef.current) {
+          const now = new Date()
+          startedAtRef.current = now
+          setStartedAt(now)
+        }
+        if (data.state === 'NONE' || TERMINAL_STATES.includes(data.state)) {
+          es.close()
+          eventSourceRef.current = null
         }
       } catch {}
     }
 
     es.onerror = () => {
       es.close()
-      setTimeout(() => connect(), 3000)
+      eventSourceRef.current = null
     }
-  }, [starterId, startedAt])
+  }, [starterId])
 
   useEffect(() => {
-    connect()
     return () => {
       eventSourceRef.current?.close()
     }
-  }, [connect])
+  }, [])
 
   const reconnect = useCallback(() => {
     connect()

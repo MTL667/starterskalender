@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Mail, Loader2, CheckCircle2, Copy, RotateCcw, Trash2 } from 'lucide-react'
@@ -29,6 +29,15 @@ export function GenerateMailButton({
 
   const { status, isActive, isFailed, isSuccess, startedAt, reconnect } = useProvisioningStatus(starterId)
 
+  useEffect(() => {
+    if (isActive || isFailed || isSuccess) {
+      setTriggering(false)
+    }
+    if (isSuccess && status.temporaryPassword) {
+      setTempPassword(status.temporaryPassword)
+    }
+  }, [isActive, isFailed, isSuccess, status.temporaryPassword])
+
   const handleGenerate = useCallback(async () => {
     setTriggering(true)
     try {
@@ -37,10 +46,13 @@ export function GenerateMailButton({
         const data = await res.json()
         throw new Error(data.error || 'Failed to start provisioning')
       }
+      const data = await res.json()
+      if (data.temporaryPassword) {
+        setTempPassword(data.temporaryPassword)
+      }
       reconnect()
     } catch (err: any) {
-      console.error(err)
-    } finally {
+      console.error('Provisioning error:', err)
       setTriggering(false)
     }
   }, [starterId, reconnect])
