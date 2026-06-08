@@ -54,11 +54,17 @@ export function useProvisioningStatus(starterId: string | null): UseProvisioning
   const [startedAt, setStartedAt] = useState<Date | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
   const startedAtRef = useRef<Date | null>(null)
+  const lastStateRef = useRef<ProvisioningState>('NONE')
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const connect = useCallback(() => {
     if (!starterId) return
 
     eventSourceRef.current?.close()
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current)
+      retryTimeoutRef.current = null
+    }
 
     const es = new EventSource(`/api/provisioning/${starterId}/status`)
     eventSourceRef.current = es
@@ -67,6 +73,7 @@ export function useProvisioningStatus(starterId: string | null): UseProvisioning
       try {
         const data = JSON.parse(event.data) as ProvisioningStatus
         setStatus(data)
+        lastStateRef.current = data.state
         if (ACTIVE_STATES.includes(data.state) && !startedAtRef.current) {
           const now = new Date()
           startedAtRef.current = now
@@ -82,16 +89,21 @@ export function useProvisioningStatus(starterId: string | null): UseProvisioning
     es.onerror = () => {
       es.close()
       eventSourceRef.current = null
+      if (ACTIVE_STATES.includes(lastStateRef.current)) {
+        retryTimeoutRef.current = setTimeout(() => connect(), 2000)
+      }
     }
   }, [starterId])
 
   useEffect(() => {
     return () => {
       eventSourceRef.current?.close()
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
     }
   }, [])
 
   const reconnect = useCallback(() => {
+    lastStateRef.current = 'PENDING'
     connect()
   }, [connect])
 
