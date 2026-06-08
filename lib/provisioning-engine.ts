@@ -4,7 +4,7 @@ import { encryptEntra } from '@/lib/encryption'
 import { createAuditLog } from '@/lib/audit'
 import { randomBytes } from 'crypto'
 
-type ProvisioningState = 'PENDING' | 'LICENSE_CHECKING' | 'USER_CREATING' | 'LICENSE_ASSIGNING' | 'MAILBOX_WAITING' | 'SUCCESS' | 'FAILED_AT_LICENSE_CHECK' | 'FAILED_AT_USER_CREATION' | 'FAILED_AT_LICENSE_ASSIGNMENT' | 'FAILED_AT_MAILBOX_WAIT'
+type ProvisioningState = 'PENDING' | 'LICENSE_CHECKING' | 'USER_CREATING' | 'LICENSE_ASSIGNING' | 'TAP_CREATING' | 'MAILBOX_WAITING' | 'SUCCESS' | 'FAILED_AT_LICENSE_CHECK' | 'FAILED_AT_USER_CREATION' | 'FAILED_AT_LICENSE_ASSIGNMENT' | 'FAILED_AT_TAP' | 'FAILED_AT_MAILBOX_WAIT'
 
 interface ProvisioningResult {
   jobId: string
@@ -36,7 +36,7 @@ export class ProvisioningEngine {
     const activeJob = await prisma.provisioningJob.findFirst({
       where: {
         starterId,
-        state: { notIn: ['SUCCESS', 'FAILED_AT_LICENSE_CHECK', 'FAILED_AT_USER_CREATION', 'FAILED_AT_LICENSE_ASSIGNMENT', 'FAILED_AT_MAILBOX_WAIT'] },
+        state: { notIn: ['SUCCESS', 'FAILED_AT_LICENSE_CHECK', 'FAILED_AT_USER_CREATION', 'FAILED_AT_LICENSE_ASSIGNMENT', 'FAILED_AT_TAP', 'FAILED_AT_MAILBOX_WAIT'] },
       },
     })
 
@@ -238,29 +238,42 @@ export class ProvisioningEngine {
         }
       }
 
-      // Step 4: Mailbox Waiting
-      await this.updateState(jobId, 'MAILBOX_WAITING')
+      // Step 4: Create Temporary Access Pass (TAP)
+      if (!resumeFrom || ['FAILED_AT_LICENSE_CHECK', 'FAILED_AT_USER_CREATION', 'FAILED_AT_LICENSE_ASSIGNMENT', 'FAILED_AT_TAP'].includes(resumeFrom)) {
+        await this.updateState(jobId, 'TAP_CREATING')
 
-      // Mailbox provisioning typically takes 30-60s. Poll a few times.
-      const job = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
-      let mailboxReady = false
-      for (let i = 0; i < 6; i++) {
-        await new Promise(r => setTimeout(r, 10000))
-        const { token } = await graphApiService.getAuthenticatedClient(entityId)
-        const res = await fetch(`https://graph.microsoft.com/v1.0/users/${job?.graphUserId}/mailboxSettings`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        if (res.ok) {
-          mailboxReady = true
-          break
+        const job = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
+        if (!job?.graphUserId) {
+          return this.failJob(jobId, 'FAILED_AT_TAP', 'No Graph user ID available for TAP creation')
         }
-      }
 
-      if (!mailboxReady) {
-        return this.failJob(jobId, 'FAILED_AT_MAILBOX_WAIT', 'Mailbox not ready after 60 seconds')
+        const { token } = await graphApiService.getAuthenticatedClient(entityId)
+
+        const tapRes = await fetch(
+          `https://graph.microsoft.com/v1.0/users/${job.graphUserId}/authentication/temporaryAccessPassMethods`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isUsableOnce: true, lifetimeInMinutes: 60 }),
+          }
+        )
+
+        if (!tapRes.ok) {
+          const body = await tapRes.json().catch(() => ({}))
+          return this.failJob(jobId, 'FAILED_AT_TAP', body.error?.message || `TAP creation failed: ${tapRes.status}`)
+        }
+
+        const tapData = await tapRes.json()
+
+        await prisma.provisioningJob.update({
+          where: { id: jobId },
+          data: { temporaryPassword: encryptEntra(tapData.temporaryAccessPass) },
+        })
       }
 
       // Success!
+      const job = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
+
       await prisma.provisioningJob.update({
         where: { id: jobId },
         data: { state: 'SUCCESS', completedAt: new Date() },
@@ -298,6 +311,7 @@ export class ProvisioningEngine {
       'LICENSE_CHECKING': 'FAILED_AT_LICENSE_CHECK',
       'USER_CREATING': 'FAILED_AT_USER_CREATION',
       'LICENSE_ASSIGNING': 'FAILED_AT_LICENSE_ASSIGNMENT',
+      'TAP_CREATING': 'FAILED_AT_TAP',
       'MAILBOX_WAITING': 'FAILED_AT_MAILBOX_WAIT',
     }
     return map[currentState] || 'FAILED_AT_LICENSE_CHECK'

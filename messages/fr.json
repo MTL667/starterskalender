@@ -1980,12 +1980,13 @@
         "LICENSE_CHECKING": "Vérification de la licence",
         "USER_CREATING": "Création de l'utilisateur",
         "LICENSE_ASSIGNING": "Attribution de la licence",
-        "MAILBOX_WAITING": "Attente de la boîte mail"
+        "TAP_CREATING": "Création du pass d'accès"
       },
       "credentialCard": {
-        "title": "Mot de passe temporaire",
-        "warning": "Affiché une seule fois. Copiez maintenant.",
-        "copied": "Copié"
+        "title": "Temporary Access Pass",
+        "warning": "Usage unique, valide pendant 60 minutes. Copiez maintenant et transmettez au starter.",
+        "copied": "Copié",
+        "mailboxInfo": "La boîte mail sera active dans ~5 minutes."
       }
     },
     "graphStatus": {

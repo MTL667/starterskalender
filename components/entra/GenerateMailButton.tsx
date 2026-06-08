@@ -119,6 +119,7 @@ export function GenerateMailButton({
               </Button>
             </div>
             <p className="text-xs text-amber-600">{t('credentialCard.warning')}</p>
+            <p className="text-xs text-blue-600">{t('credentialCard.mailboxInfo')}</p>
           </div>
         )}
       </div>

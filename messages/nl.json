@@ -1981,12 +1981,13 @@
         "LICENSE_CHECKING": "Licentie controleren",
         "USER_CREATING": "Gebruiker aanmaken",
         "LICENSE_ASSIGNING": "Licentie toewijzen",
-        "MAILBOX_WAITING": "Wachten op mailbox"
+        "TAP_CREATING": "Access Pass aanmaken"
       },
       "credentialCard": {
-        "title": "Tijdelijk wachtwoord",
-        "warning": "Wordt slechts één keer getoond. Kopieer nu.",
-        "copied": "Gekopieerd"
+        "title": "Temporary Access Pass",
+        "warning": "Eenmalig gebruik, geldig voor 60 minuten. Kopieer nu en geef door aan de starter.",
+        "copied": "Gekopieerd",
+        "mailboxInfo": "De mailbox is actief binnen ~5 minuten."
       }
     },
     "graphStatus": {

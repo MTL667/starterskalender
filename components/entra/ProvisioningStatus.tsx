@@ -9,11 +9,13 @@ type ProvisioningState =
   | 'LICENSE_CHECKING'
   | 'USER_CREATING'
   | 'LICENSE_ASSIGNING'
+  | 'TAP_CREATING'
   | 'MAILBOX_WAITING'
   | 'SUCCESS'
   | 'FAILED_AT_LICENSE_CHECK'
   | 'FAILED_AT_USER_CREATION'
   | 'FAILED_AT_LICENSE_ASSIGNMENT'
+  | 'FAILED_AT_TAP'
   | 'FAILED_AT_MAILBOX_WAIT'
 
 interface ProvisioningStatusProps {
@@ -27,7 +29,7 @@ const STEPS = [
   { key: 'LICENSE_CHECKING', failKey: 'FAILED_AT_LICENSE_CHECK' },
   { key: 'USER_CREATING', failKey: 'FAILED_AT_USER_CREATION' },
   { key: 'LICENSE_ASSIGNING', failKey: 'FAILED_AT_LICENSE_ASSIGNMENT' },
-  { key: 'MAILBOX_WAITING', failKey: 'FAILED_AT_MAILBOX_WAIT' },
+  { key: 'TAP_CREATING', failKey: 'FAILED_AT_TAP' },
 ] as const
 
 function getStepStatus(stepKey: string, failKey: string, currentState: ProvisioningState) {
