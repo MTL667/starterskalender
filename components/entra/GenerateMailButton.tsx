@@ -137,16 +137,16 @@ export function GenerateMailButton({
           <span className="font-medium">{t('alreadyProvisioned')}</span>
         </div>
         {tempPassword && (
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
-            <p className="text-sm font-medium text-amber-800">{t('credentialCard.title')}</p>
+          <div className="rounded-md border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 p-3 space-y-2">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">{t('credentialCard.title')}</p>
             <div className="flex items-center gap-2">
-              <code className="bg-white px-2 py-1 rounded text-sm font-mono">{tempPassword}</code>
-              <Button size="sm" variant="ghost" onClick={handleCopy}>
+              <code className="bg-white dark:bg-gray-800 px-2 py-1 rounded text-sm font-mono text-gray-900 dark:text-gray-100">{tempPassword}</code>
+              <Button size="sm" variant="outline" onClick={handleCopy}>
                 {copied ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-amber-600">{t('credentialCard.warning')}</p>
-            <p className="text-xs text-blue-600">{t('credentialCard.mailboxInfo')}</p>
+            <p className="text-xs text-amber-600 dark:text-amber-300">{t('credentialCard.warning')}</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400">{t('credentialCard.mailboxInfo')}</p>
           </div>
         )}
         <Button onClick={handleNewTap} disabled={generatingTap} variant="outline">
