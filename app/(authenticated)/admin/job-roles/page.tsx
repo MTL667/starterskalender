@@ -491,9 +491,11 @@ function LicenseTypeSelector({ jobRoleId, entityId, currentSkuId, currentDisplay
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">Geen licentie</SelectItem>
+          {value && value !== 'none' && !skus.find(s => s.skuId === value) && (
+            <SelectItem value={value}>{currentDisplayName || value}</SelectItem>
+          )}
           {loading && <SelectItem value="__loading" disabled>Laden...</SelectItem>}
           {error && <SelectItem value="__error" disabled>Fout bij laden</SelectItem>}
-          {!loading && !error && skus.length === 0 && <SelectItem value="__empty" disabled>Geen licenties gevonden</SelectItem>}
           {skus.map(sku => (
             <SelectItem key={sku.skuId} value={sku.skuId}>
               <span>{sku.displayName}</span>
