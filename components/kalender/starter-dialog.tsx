@@ -955,7 +955,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   return (
     <>
       <Dialog open={open} onOpenChange={() => onClose()}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {isEdit 
@@ -1024,27 +1024,46 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="type">{t('labelType')}</Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION') => {
-                  setFormData({ ...formData, type: value, fromEntityId: '', fromRoleTitle: '' })
-                  setSelectedEmployee(null)
-                  setManualEntry(false)
-                  setEmployeeSearch('')
-                }}
-                disabled={isEdit}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ONBOARDING">{t('typeOnboarding')}</SelectItem>
-                  <SelectItem value="OFFBOARDING">{t('typeOffboarding')}</SelectItem>
-                  <SelectItem value="MIGRATION">{t('typeMigration')}</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="type">{t('labelType')}</Label>
+                <Select
+                  value={formData.type}
+                  onValueChange={(value: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION') => {
+                    setFormData({ ...formData, type: value, fromEntityId: '', fromRoleTitle: '' })
+                    setSelectedEmployee(null)
+                    setManualEntry(false)
+                    setEmployeeSearch('')
+                  }}
+                  disabled={isEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ONBOARDING">{t('typeOnboarding')}</SelectItem>
+                    <SelectItem value="OFFBOARDING">{t('typeOffboarding')}</SelectItem>
+                    <SelectItem value="MIGRATION">{t('typeMigration')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="language">{t('labelLanguage')}</Label>
+                <Select
+                  value={formData.language}
+                  onValueChange={(value) => setFormData({ ...formData, language: value })}
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NL">{t('optionNL')}</SelectItem>
+                    <SelectItem value="FR">{t('optionFR')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
@@ -1187,23 +1206,6 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               )}
             </div>
 
-            <div>
-              <Label htmlFor="language">{t('labelLanguage')}</Label>
-              <Select
-                value={formData.language}
-                onValueChange={(value) => setFormData({ ...formData, language: value })}
-                disabled={!canEdit}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="NL">{t('optionNL')}</SelectItem>
-                  <SelectItem value="FR">{t('optionFR')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {formData.type === 'MIGRATION' && (formData.fromEntityId || formData.fromRoleTitle) && (
               <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3 space-y-1">
                 <Label className="text-xs font-semibold text-orange-700 dark:text-orange-300">{t('labelFromEntity')}</Label>
@@ -1214,64 +1216,105 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
             )}
 
-            <div>
-              <Label htmlFor="entityId">
-                {formData.type === 'MIGRATION' ? t('labelToEntity') : t('labelEntity')}
-              </Label>
-              <Select
-                value={formData.entityId || undefined}
-                onValueChange={(value) => setFormData({ ...formData, entityId: value, roleTitle: '' })}
-                disabled={!canEdit}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('placeholderEntity')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {entities.map(entity => (
-                    <SelectItem key={entity.id} value={entity.id}>
-                      {entity.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="roleTitle">{formData.type === 'MIGRATION' ? t('labelToRole') : t('labelRole')}</Label>
-              {formData.entityId && jobRoles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="entityId">
+                  {formData.type === 'MIGRATION' ? t('labelToEntity') : t('labelEntity')}
+                </Label>
                 <Select
-                  value={formData.roleTitle || undefined}
-                  onValueChange={(value) => setFormData({ ...formData, roleTitle: value })}
+                  value={formData.entityId || undefined}
+                  onValueChange={(value) => setFormData({ ...formData, entityId: value, roleTitle: '' })}
                   disabled={!canEdit}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('placeholderRole')} />
+                    <SelectValue placeholder={t('placeholderEntity')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {jobRoles.map(role => (
-                      <SelectItem key={role.id} value={role.title}>
-                        {role.title}
+                    {entities.map(entity => (
+                      <SelectItem key={entity.id} value={entity.id}>
+                        {entity.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              ) : (
-                <Input
-                  id="roleTitle"
-                  value={formData.roleTitle}
-                  onChange={(e) => setFormData({ ...formData, roleTitle: e.target.value })}
-                  placeholder={formData.entityId ? t('placeholderNoRoles') : t('placeholderSelectEntityFirst')}
-                  disabled={!formData.entityId || !canEdit}
-                />
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                {formData.entityId 
-                  ? (jobRoles.length > 0 ? t('hintChooseRole') : t('hintNoRoles'))
-                  : t('hintEntityFirst')}
-              </p>
+              </div>
+
+              <div>
+                <Label htmlFor="roleTitle">{formData.type === 'MIGRATION' ? t('labelToRole') : t('labelRole')}</Label>
+                {formData.entityId && jobRoles.length > 0 ? (
+                  <Select
+                    value={formData.roleTitle || undefined}
+                    onValueChange={(value) => setFormData({ ...formData, roleTitle: value })}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('placeholderRole')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {jobRoles.map(role => (
+                        <SelectItem key={role.id} value={role.title}>
+                          {role.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="roleTitle"
+                    value={formData.roleTitle}
+                    onChange={(e) => setFormData({ ...formData, roleTitle: e.target.value })}
+                    placeholder={formData.entityId ? t('placeholderNoRoles') : t('placeholderSelectEntityFirst')}
+                    disabled={!formData.entityId || !canEdit}
+                  />
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formData.entityId 
+                    ? (jobRoles.length > 0 ? t('hintChooseRole') : t('hintNoRoles'))
+                    : t('hintEntityFirst')}
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${formData.type === 'ONBOARDING' ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-1 md:grid-cols-3'}`}>
+              {formData.type === 'ONBOARDING' && (
+                <div>
+                  <Label htmlFor="contractSignedOn">{t('labelContractSigned')}</Label>
+                  <Input
+                    id="contractSignedOn"
+                    type="date"
+                    value={formData.contractSignedOn}
+                    onChange={(e) => setFormData({ ...formData, contractSignedOn: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t('hintContract')}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="startDate">
+                  {formData.type === 'MIGRATION' ? t('labelMigrationDate') : formData.type === 'OFFBOARDING' ? t('labelDepartureDate') : t('labelStartDate')}
+                  {formData.type === 'ONBOARDING' && !isEdit && (
+                    <span className="text-xs text-muted-foreground ml-1 font-normal">({t('optionalPending')})</span>
+                  )}
+                </Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  required={formData.type !== 'ONBOARDING'}
+                  disabled={!canEdit}
+                />
+                {starter?.isPendingBoarding && (
+                  <div className="flex items-center gap-1.5 mt-1.5 text-amber-600 dark:text-amber-400">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span className="text-xs font-medium">{t('pendingBoardingStatus')}</span>
+                  </div>
+                )}
+              </div>
+
               <div>
                 <Label htmlFor="region">{t('labelRegion')}</Label>
                 <Input
@@ -1429,47 +1472,6 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 </div>
               )
             })()}
-
-            <div className={`grid gap-4 ${formData.type === 'ONBOARDING' ? 'grid-cols-2' : 'grid-cols-1'}`}>
-              {formData.type === 'ONBOARDING' && (
-                <div>
-                  <Label htmlFor="contractSignedOn">{t('labelContractSigned')}</Label>
-                  <Input
-                    id="contractSignedOn"
-                    type="date"
-                    value={formData.contractSignedOn}
-                    onChange={(e) => setFormData({ ...formData, contractSignedOn: e.target.value })}
-                    disabled={!canEdit}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t('hintContract')}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <Label htmlFor="startDate">
-                  {formData.type === 'MIGRATION' ? t('labelMigrationDate') : formData.type === 'OFFBOARDING' ? t('labelDepartureDate') : t('labelStartDate')}
-                  {formData.type === 'ONBOARDING' && !isEdit && (
-                    <span className="text-xs text-muted-foreground ml-1 font-normal">({t('optionalPending')})</span>
-                  )}
-                </Label>
-                <Input
-                  id="startDate"
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  required={formData.type !== 'ONBOARDING'}
-                  disabled={!canEdit}
-                />
-                {starter?.isPendingBoarding && (
-                  <div className="flex items-center gap-1.5 mt-1.5 text-amber-600 dark:text-amber-400">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span className="text-xs font-medium">{t('pendingBoardingStatus')}</span>
-                  </div>
-                )}
-              </div>
-            </div>
 
             {formData.type === 'OFFBOARDING' && (
               <div>
