@@ -238,6 +238,13 @@ export default function JobRolesPage() {
                       <span className="text-sm text-muted-foreground">
                         {roles.length} {t('roleCount')}
                       </span>
+                      {entityHasEntra(entityId) && (
+                        <BulkLicenseSelector
+                          entityId={entityId}
+                          roleIds={roles.map(r => r.id)}
+                          onUpdated={loadData}
+                        />
+                      )}
                     </div>
                     <div className="space-y-2">
                       {roles.map(role => (
@@ -496,6 +503,76 @@ function LicenseTypeSelector({ jobRoleId, entityId, currentSkuId, currentDisplay
         </SelectContent>
       </Select>
       {saving && <span className="text-xs text-muted-foreground">...</span>}
+    </div>
+  )
+}
+
+function BulkLicenseSelector({ entityId, roleIds, onUpdated }: {
+  entityId: string
+  roleIds: string[]
+  onUpdated: () => void
+}) {
+  const [saving, setSaving] = useState(false)
+  const [skus, setSkus] = useState<{ skuId: string; displayName: string; availableUnits: number; totalUnits: number }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  const loadSkus = async () => {
+    if (skus.length > 0 && !error) return
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await fetch(`/api/admin/available-skus/${entityId}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setSkus(data.skus || [])
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleChange = async (newValue: string) => {
+    if (newValue === '__placeholder') return
+    setSaving(true)
+    try {
+      const sku = skus.find(s => s.skuId === newValue)
+      await Promise.all(roleIds.map(roleId =>
+        newValue === 'none'
+          ? fetch(`/api/admin/license-config/${roleId}`, { method: 'DELETE' })
+          : fetch(`/api/admin/license-config/${roleId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ skuId: newValue, skuDisplayName: sku?.displayName || newValue }),
+            })
+      ))
+      onUpdated()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 ml-auto">
+      <Select value="__placeholder" onValueChange={handleChange} onOpenChange={(isOpen) => { if (isOpen) loadSkus() }}>
+        <SelectTrigger className="h-7 w-[200px] text-xs">
+          <SelectValue placeholder="Alle rollen instellen..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__placeholder" disabled>Alle rollen instellen...</SelectItem>
+          <SelectItem value="none">Geen licentie</SelectItem>
+          {loading && <SelectItem value="__loading" disabled>Laden...</SelectItem>}
+          {error && <SelectItem value="__error" disabled>Fout bij laden</SelectItem>}
+          {skus.map(sku => (
+            <SelectItem key={sku.skuId} value={sku.skuId}>
+              <span>{sku.displayName}</span>
+              <span className="ml-2 text-muted-foreground">({sku.availableUnits}/{sku.totalUnits})</span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {saving && <span className="text-xs text-muted-foreground">Opslaan...</span>}
     </div>
   )
 }
