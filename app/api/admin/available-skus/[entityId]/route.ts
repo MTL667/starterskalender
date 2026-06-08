@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requirePermission } from '@/lib/authz'
+import { requirePermission, can } from '@/lib/authz'
 import { graphApiService } from '@/lib/graph-api-service'
 import { prisma } from '@/lib/prisma'
 
@@ -16,7 +16,6 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
-  const { can } = await import('@/lib/authz')
   if (!can(user, 'admin:entities:manage', { entityId })) {
     return NextResponse.json({ error: 'No access to this entity' }, { status: 403 })
   }

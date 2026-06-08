@@ -478,11 +478,9 @@ function LicenseTypeSelector({ jobRoleId, entityId, currentSkuId, currentDisplay
   return (
     <div className="flex items-center gap-2 mt-1">
       <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-      <Select value={value} onValueChange={handleChange} onOpenChange={(isOpen) => { if (isOpen) loadSkus() }}>
+      <Select value={value || 'none'} onValueChange={handleChange} onOpenChange={(isOpen) => { if (isOpen) loadSkus() }}>
         <SelectTrigger className="h-7 w-[220px] text-xs">
-          <SelectValue placeholder="Geen licentie">
-            {currentDisplayName || 'Geen licentie'}
-          </SelectValue>
+          <SelectValue placeholder="Geen licentie" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">Geen licentie</SelectItem>
