@@ -536,23 +536,32 @@ function BulkLicenseSelector({ entityId, roleIds, onUpdated }: {
   const handleChange = async (newValue: string) => {
     if (newValue === '__placeholder') return
     setSaving(true)
+    let successCount = 0
     try {
       const sku = skus.find(s => s.skuId === newValue)
       for (const roleId of roleIds) {
         try {
+          let res: Response
           if (newValue === 'none') {
-            await fetch(`/api/admin/license-config/${roleId}`, { method: 'DELETE' })
+            res = await fetch(`/api/admin/license-config/${roleId}`, { method: 'DELETE' })
           } else {
-            await fetch(`/api/admin/license-config/${roleId}`, {
+            res = await fetch(`/api/admin/license-config/${roleId}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ skuId: newValue, skuDisplayName: sku?.displayName || newValue }),
             })
           }
+          if (res.ok) {
+            successCount++
+          } else {
+            const body = await res.json().catch(() => ({}))
+            console.error(`License config update failed for role ${roleId}:`, res.status, body)
+          }
         } catch (err) {
           console.error(`Failed to update license for role ${roleId}:`, err)
         }
       }
+      console.log(`Bulk license update: ${successCount}/${roleIds.length} succeeded`)
       onUpdated()
     } finally {
       setSaving(false)
