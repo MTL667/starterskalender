@@ -279,6 +279,9 @@ export class ProvisioningEngine {
         data: { state: 'SUCCESS', completedAt: new Date() },
       })
 
+      // Auto-complete the "mailadres" task for this starter
+      await this.completeEmailTask(starter.id)
+
       await createAuditLog({
         actorId: (await prisma.provisioningJob.findUnique({ where: { id: jobId } }))?.triggeredBy || 'system',
         action: 'UPDATE',
@@ -370,6 +373,27 @@ export class ProvisioningEngine {
     }
 
     return chars.join('')
+  }
+
+  private async completeEmailTask(starterId: string): Promise<void> {
+    try {
+      const emailTask = await prisma.task.findFirst({
+        where: {
+          starterId,
+          type: 'IT_SETUP',
+          title: { contains: 'mailadres', mode: 'insensitive' },
+          status: { not: 'COMPLETED' },
+        },
+      })
+      if (emailTask) {
+        await prisma.task.update({
+          where: { id: emailTask.id },
+          data: { status: 'COMPLETED', completedAt: new Date() },
+        })
+      }
+    } catch (err) {
+      console.error('Failed to auto-complete email task:', err)
+    }
   }
 }
 
