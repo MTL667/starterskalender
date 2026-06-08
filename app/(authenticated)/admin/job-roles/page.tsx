@@ -71,12 +71,12 @@ export default function JobRolesPage() {
 
   const loadData = () => {
     Promise.all([
-      fetch('/api/entities?includeEntra=true').then(res => res.json()),
-      fetch('/api/job-roles?withMaterialCount=true&withLicenseConfig=true').then(res => res.json()),
+      fetch('/api/entities?includeEntra=true').then(res => res.ok ? res.json() : []),
+      fetch('/api/job-roles?withMaterialCount=true&withLicenseConfig=true').then(res => res.ok ? res.json() : []),
     ])
       .then(([entitiesData, jobRolesData]) => {
-        setEntities(entitiesData)
-        setJobRoles(jobRolesData)
+        setEntities(Array.isArray(entitiesData) ? entitiesData : [])
+        setJobRoles(Array.isArray(jobRolesData) ? jobRolesData : [])
         setLoading(false)
       })
       .catch(error => {
