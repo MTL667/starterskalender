@@ -478,7 +478,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     if (starter.roleTitle) {
       fetch(`/api/admin/license-config/by-entity?entityId=${entityId}&roleTitle=${encodeURIComponent(starter.roleTitle)}`)
         .then(res => res.ok ? res.json() : null)
-        .then(data => setStarterHasLicenseConfig(!!data?.requiredLicenseType))
+        .then(data => setStarterHasLicenseConfig(!!data?.skuId))
         .catch(() => setStarterHasLicenseConfig(false))
     }
   }, [starter?.entity?.id, starter?.roleTitle, open])

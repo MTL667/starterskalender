@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const UpdateTenantConfigSchema = z.object({
-  trickleDownEnabled: z.boolean().optional(),
   passwordMinLength: z.number().min(8).max(64).optional(),
   passwordRequireUppercase: z.boolean().optional(),
   passwordRequireNumbers: z.boolean().optional(),
@@ -30,7 +29,6 @@ export async function GET(
     if (!config) {
       return NextResponse.json({
         entityId,
-        trickleDownEnabled: false,
         passwordMinLength: 16,
         passwordRequireUppercase: true,
         passwordRequireNumbers: true,

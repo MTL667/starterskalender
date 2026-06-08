@@ -92,7 +92,7 @@ async function checkLicenseDemand() {
       where: { entityId: entity.id },
     })
 
-    const demandByType: Record<string, number> = {}
+    const demandBySku: Record<string, { count: number; displayName: string }> = {}
     for (const starter of pendingStarters) {
       if (!starter.roleTitle) continue
       const jobRole = await prisma.jobRole.findFirst({
@@ -100,22 +100,23 @@ async function checkLicenseDemand() {
         include: { licenseConfig: true },
       })
       if (jobRole?.licenseConfig) {
-        const type = jobRole.licenseConfig.requiredLicenseType
-        demandByType[type] = (demandByType[type] || 0) + 1
+        const skuId = jobRole.licenseConfig.skuId
+        if (!demandBySku[skuId]) {
+          demandBySku[skuId] = { count: 0, displayName: jobRole.licenseConfig.skuDisplayName }
+        }
+        demandBySku[skuId].count++
       }
     }
 
-    for (const [licenseType, demand] of Object.entries(demandByType)) {
-      const cache = cachedLicenses.find(c =>
-        c.skuPartNumber.toUpperCase().includes(licenseType === 'BUSINESS_STANDARD' ? 'STANDARD' : 'BASIC')
-      )
+    for (const [skuId, { count: demand, displayName }] of Object.entries(demandBySku)) {
+      const cache = cachedLicenses.find(c => c.skuId === skuId)
       const available = cache?.availableUnits ?? 0
 
       if (demand > available) {
         const existingTask = await prisma.task.findFirst({
           where: {
             entityId: entity.id,
-            title: { contains: `License shortage: ${licenseType}` },
+            title: { contains: `License shortage: ${displayName}` },
             status: { in: ['PENDING', 'IN_PROGRESS'] },
           },
         })
@@ -129,7 +130,7 @@ async function checkLicenseDemand() {
             data: {
               type: 'IT_SETUP',
               entityId: entity.id,
-              title: `License shortage: ${licenseType}`,
+              title: `License shortage: ${displayName}`,
               description: `Available: ${available}, Required: ${demand}. Affected starters: ${affectedStarters.join(', ')}`,
               status: 'PENDING',
               priority: 'HIGH',

@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         }),
         ...(withLicenseConfig && {
           licenseConfig: {
-            select: { requiredLicenseType: true },
+            select: { skuId: true, skuDisplayName: true },
           },
         }),
       },

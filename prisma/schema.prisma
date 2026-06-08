@@ -1206,11 +1206,6 @@ model RecruitmentEmailTemplate {
 // Entra ID Mail Provisioning
 // ============================================================
 
-enum LicenseType {
-  BUSINESS_BASIC
-  BUSINESS_STANDARD
-}
-
 enum ProvisioningState {
   PENDING
   LICENSE_CHECKING
@@ -1244,8 +1239,8 @@ model LicenseConfig {
   id                    String      @id @default(cuid())
   jobRoleId             String      @unique
   jobRole               JobRole     @relation(fields: [jobRoleId], references: [id], onDelete: Cascade)
-  requiredLicenseType   LicenseType
-  trickleDownOverride   Boolean?
+  skuId                 String
+  skuDisplayName        String
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
 }
@@ -1254,7 +1249,6 @@ model TenantEntraConfig {
   id                          String  @id @default(cuid())
   entityId                    String  @unique
   entity                      Entity  @relation(fields: [entityId], references: [id], onDelete: Cascade)
-  trickleDownEnabled          Boolean @default(false)
   passwordMinLength           Int     @default(16)
   passwordRequireUppercase    Boolean @default(true)
   passwordRequireNumbers      Boolean @default(true)
@@ -1270,7 +1264,7 @@ model ProvisioningJob {
   entityId            String
   state               ProvisioningState @default(PENDING)
   triggeredBy         String
-  assignedLicenseType LicenseType?
+  assignedLicenseType String?
   graphUserId         String?
   graphApiResponses   Json?
   temporaryPassword   String?           @db.Text

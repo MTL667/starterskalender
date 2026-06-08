@@ -4,8 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 const UpdateLicenseConfigSchema = z.object({
-  requiredLicenseType: z.enum(['BUSINESS_BASIC', 'BUSINESS_STANDARD']),
-  trickleDownOverride: z.boolean().nullable().optional(),
+  skuId: z.string().min(1),
+  skuDisplayName: z.string().min(1),
 })
 
 export async function GET(

@@ -15,10 +15,11 @@ export async function GET(req: NextRequest) {
   })
 
   if (!jobRole?.licenseConfig) {
-    return NextResponse.json({ requiredLicenseType: null })
+    return NextResponse.json({ skuId: null, skuDisplayName: null })
   }
 
   return NextResponse.json({
-    requiredLicenseType: jobRole.licenseConfig.requiredLicenseType,
+    skuId: jobRole.licenseConfig.skuId,
+    skuDisplayName: jobRole.licenseConfig.skuDisplayName,
   })
 }

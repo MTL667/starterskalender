@@ -40,7 +40,8 @@ interface JobRole {
     materials: number
   }
   licenseConfig?: {
-    requiredLicenseType: string
+    skuId: string
+    skuDisplayName: string
   } | null
 }
 
@@ -270,7 +271,9 @@ export default function JobRolesPage() {
                             {role.entity && entityHasEntra(role.entityId) && (
                               <LicenseTypeSelector
                                 jobRoleId={role.id}
-                                currentType={role.licenseConfig?.requiredLicenseType || null}
+                                entityId={role.entityId}
+                                currentSkuId={role.licenseConfig?.skuId || null}
+                                currentDisplayName={role.licenseConfig?.skuDisplayName || null}
                                 onUpdated={loadData}
                               />
                             )}
@@ -418,27 +421,53 @@ export default function JobRolesPage() {
   )
 }
 
-function LicenseTypeSelector({ jobRoleId, currentType, onUpdated }: {
+function LicenseTypeSelector({ jobRoleId, entityId, currentSkuId, currentDisplayName, onUpdated }: {
   jobRoleId: string
-  currentType: string | null
+  entityId: string
+  currentSkuId: string | null
+  currentDisplayName: string | null
   onUpdated: () => void
 }) {
-  const [value, setValue] = useState(currentType || '')
+  const [value, setValue] = useState(currentSkuId || '')
   const [saving, setSaving] = useState(false)
+  const [skus, setSkus] = useState<{ skuId: string; displayName: string; availableUnits: number; totalUnits: number }[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    setValue(currentSkuId || '')
+  }, [currentSkuId])
+
+  const loadSkus = async () => {
+    if (skus.length > 0 && !error) return
+    setLoading(true)
+    setError(false)
+    try {
+      const res = await fetch(`/api/admin/available-skus/${entityId}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setSkus(data.skus || [])
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleChange = async (newValue: string) => {
-    setValue(newValue)
     setSaving(true)
     try {
       if (newValue === 'none') {
-        await fetch(`/api/admin/license-config/${jobRoleId}`, { method: 'DELETE' })
-        setValue('')
+        const res = await fetch(`/api/admin/license-config/${jobRoleId}`, { method: 'DELETE' })
+        if (res.ok) setValue('')
       } else {
-        await fetch(`/api/admin/license-config/${jobRoleId}`, {
+        const sku = skus.find(s => s.skuId === newValue)
+        const res = await fetch(`/api/admin/license-config/${jobRoleId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ requiredLicenseType: newValue }),
+          body: JSON.stringify({ skuId: newValue, skuDisplayName: sku?.displayName || newValue }),
         })
+        if (res.ok) setValue(newValue)
       }
       onUpdated()
     } finally {
@@ -449,14 +478,23 @@ function LicenseTypeSelector({ jobRoleId, currentType, onUpdated }: {
   return (
     <div className="flex items-center gap-2 mt-1">
       <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-      <Select value={value} onValueChange={handleChange}>
-        <SelectTrigger className="h-7 w-[180px] text-xs">
-          <SelectValue placeholder="Geen licentie" />
+      <Select value={value} onValueChange={handleChange} onOpenChange={(isOpen) => { if (isOpen) loadSkus() }}>
+        <SelectTrigger className="h-7 w-[220px] text-xs">
+          <SelectValue placeholder="Geen licentie">
+            {currentDisplayName || 'Geen licentie'}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">Geen licentie</SelectItem>
-          <SelectItem value="BUSINESS_BASIC">Business Basic</SelectItem>
-          <SelectItem value="BUSINESS_STANDARD">Business Standard</SelectItem>
+          {loading && <SelectItem value="__loading" disabled>Laden...</SelectItem>}
+          {error && <SelectItem value="__error" disabled>Fout bij laden</SelectItem>}
+          {!loading && !error && skus.length === 0 && <SelectItem value="__empty" disabled>Geen licenties gevonden</SelectItem>}
+          {skus.map(sku => (
+            <SelectItem key={sku.skuId} value={sku.skuId}>
+              <span>{sku.displayName}</span>
+              <span className="ml-2 text-muted-foreground">({sku.availableUnits}/{sku.totalUnits})</span>
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       {saving && <span className="text-xs text-muted-foreground">...</span>}

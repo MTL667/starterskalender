@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { LicenseType } from '@prisma/client'
-import { graphApiService, GraphAuthError, GraphTransientError, GraphRateLimitError, GraphApiError } from '@/lib/graph-api-service'
+import { graphApiService } from '@/lib/graph-api-service'
 import { encryptEntra } from '@/lib/encryption'
 import { createAuditLog } from '@/lib/audit'
 import { randomBytes } from 'crypto'
@@ -150,14 +149,17 @@ export class ProvisioningEngine {
           return this.failJob(jobId, 'FAILED_AT_LICENSE_CHECK', 'No license configuration found for this function')
         }
 
-        const skuId = await this.checkLicenseAvailability(entityId, licenseConfig.requiredLicenseType, licenseConfig.trickleDownEnabled)
-        if (!skuId) {
-          return this.failJob(jobId, 'FAILED_AT_LICENSE_CHECK', `No ${licenseConfig.requiredLicenseType} licenses available`)
+        const skuCheck = await this.checkSkuAvailability(entityId, licenseConfig.skuId)
+        if (skuCheck === 'not_found') {
+          return this.failJob(jobId, 'FAILED_AT_LICENSE_CHECK', `License "${licenseConfig.skuDisplayName}" is no longer available in the tenant subscription`)
+        }
+        if (skuCheck === 'no_capacity') {
+          return this.failJob(jobId, 'FAILED_AT_LICENSE_CHECK', `No available units for ${licenseConfig.skuDisplayName}`)
         }
 
         await prisma.provisioningJob.update({
           where: { id: jobId },
-          data: { assignedLicenseType: skuId.licenseType as LicenseType },
+          data: { assignedLicenseType: licenseConfig.skuDisplayName },
         })
       }
 
@@ -217,18 +219,17 @@ export class ProvisioningEngine {
           return this.failJob(jobId, 'FAILED_AT_LICENSE_ASSIGNMENT', 'No Graph user ID available')
         }
 
-        const { token } = await graphApiService.getAuthenticatedClient(entityId)
-        const skus = await graphApiService.getSubscribedSkus(entityId)
-        const targetSku = skus.find(s => s.prepaidUnits.enabled - s.consumedUnits > 0)
-
-        if (!targetSku) {
-          return this.failJob(jobId, 'FAILED_AT_LICENSE_ASSIGNMENT', 'No available licenses')
+        const licenseConfig = await this.getLicenseConfig(entityId, starter.roleTitle)
+        if (!licenseConfig) {
+          return this.failJob(jobId, 'FAILED_AT_LICENSE_ASSIGNMENT', 'License configuration no longer found')
         }
+
+        const { token } = await graphApiService.getAuthenticatedClient(entityId)
 
         const res = await fetch(`https://graph.microsoft.com/v1.0/users/${job.graphUserId}/assignLicense`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ addLicenses: [{ skuId: targetSku.skuId }], removeLicenses: [] }),
+          body: JSON.stringify({ addLicenses: [{ skuId: licenseConfig.skuId }], removeLicenses: [] }),
         })
 
         if (!res.ok) {
@@ -312,53 +313,17 @@ export class ProvisioningEngine {
 
     if (!jobRole?.licenseConfig) return null
 
-    const tenantConfig = await prisma.tenantEntraConfig.findUnique({ where: { entityId } })
-    const trickleDownEnabled = jobRole.licenseConfig.trickleDownOverride ?? tenantConfig?.trickleDownEnabled ?? false
-
     return {
-      requiredLicenseType: jobRole.licenseConfig.requiredLicenseType,
-      trickleDownEnabled,
+      skuId: jobRole.licenseConfig.skuId,
+      skuDisplayName: jobRole.licenseConfig.skuDisplayName,
     }
   }
 
-  private async checkLicenseAvailability(entityId: string, requiredType: string, trickleDownEnabled: boolean) {
+  private async checkSkuAvailability(entityId: string, skuId: string): Promise<'available' | 'not_found' | 'no_capacity'> {
     const skus = await graphApiService.getSubscribedSkus(entityId)
-
-    const SKU_MAP: Record<string, string[]> = {
-      BUSINESS_STANDARD: [
-        'O365_BUSINESS_PREMIUM',
-        'SMB_BUSINESS',
-        'SPB',
-        'MICROSOFT_365_BUSINESS_STANDARD',
-        'M365_BUSINESS_STANDARD',
-      ],
-      BUSINESS_BASIC: [
-        'O365_BUSINESS_ESSENTIALS',
-        'SMB_BUSINESS_ESSENTIALS',
-        'MICROSOFT_365_BUSINESS_BASIC',
-        'M365_BUSINESS_BASIC',
-      ],
-    }
-
-    const validSkuPartNumbers = SKU_MAP[requiredType] || []
-
-    const primarySku = skus.find(s =>
-      validSkuPartNumbers.some(pn => s.skuPartNumber.toUpperCase() === pn) &&
-      s.prepaidUnits.enabled - s.consumedUnits > 0
-    )
-
-    if (primarySku) return { skuId: primarySku.skuId, licenseType: requiredType }
-
-    if (trickleDownEnabled && requiredType === 'BUSINESS_STANDARD') {
-      const basicSkuPartNumbers = SKU_MAP['BUSINESS_BASIC'] || []
-      const fallbackSku = skus.find(s =>
-        basicSkuPartNumbers.some(pn => s.skuPartNumber.toUpperCase() === pn) &&
-        s.prepaidUnits.enabled - s.consumedUnits > 0
-      )
-      if (fallbackSku) return { skuId: fallbackSku.skuId, licenseType: 'BUSINESS_BASIC' }
-    }
-
-    return null
+    const target = skus.find(s => s.skuId === skuId)
+    if (!target) return 'not_found'
+    return target.prepaidUnits.enabled - target.consumedUnits > 0 ? 'available' : 'no_capacity'
   }
 
   private async generatePassword(entityId: string): Promise<string> {

@@ -13,7 +13,6 @@ interface TenantEntraConfigPanelProps {
 }
 
 interface TenantConfig {
-  trickleDownEnabled: boolean
   passwordMinLength: number
   passwordRequireUppercase: boolean
   passwordRequireNumbers: boolean
@@ -23,7 +22,6 @@ interface TenantConfig {
 export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps) {
   const t = useTranslations('entra')
   const [config, setConfig] = useState<TenantConfig>({
-    trickleDownEnabled: false,
     passwordMinLength: 16,
     passwordRequireUppercase: true,
     passwordRequireNumbers: true,
@@ -72,17 +70,6 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
 
   return (
     <div className="space-y-4">
-      <div className="space-y-3 p-3 border rounded-md">
-        <Label className="text-sm font-medium">{t('trickleDown.title')}</Label>
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{t('trickleDown.description')}</span>
-          <Switch
-            checked={config.trickleDownEnabled}
-            onCheckedChange={(checked) => setConfig(prev => ({ ...prev, trickleDownEnabled: checked }))}
-          />
-        </div>
-      </div>
-
       <div className="space-y-3 p-3 border rounded-md">
         <Label className="text-sm font-medium">{t('password.title')}</Label>
         <div className="space-y-2">
