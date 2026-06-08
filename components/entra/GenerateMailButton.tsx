@@ -33,10 +33,10 @@ export function GenerateMailButton({
 
   useEffect(() => {
     if (!starterId) return
-    fetch(`/api/provisioning/${starterId}`)
+    fetch(`/api/provisioning/${starterId}/verify`)
       .then(res => res.json())
       .then(data => {
-        if (data.jobs?.some((j: any) => j.state === 'SUCCESS')) {
+        if (data.provisioned && data.exists) {
           setAlreadyProvisioned(true)
         }
       })
