@@ -14,7 +14,9 @@ export async function GET(req: Request) {
     where: {
       type: 'OFFBOARDING',
       startDate: { lte: threeDaysFromNow, gte: now },
-      graphUserId: { not: null },
+      provisioningJobs: {
+        some: { state: 'COMPLETED', graphUserId: { not: null } },
+      },
       offboardingJobs: {
         none: { state: 'COMPLETED' },
       },
