@@ -1348,6 +1348,7 @@ model OffboardingJob {
   entityId              String
   state                 OffboardingState @default(PENDING)
   triggeredBy           String
+  graphUserId           String?
   currentStep           Int?
   error                 String?          @db.Text
   graphApiResponses     Json?

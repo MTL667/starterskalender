@@ -70,11 +70,23 @@ export class OffboardingEngine {
   async startOffboarding(starterId: string, triggeredBy: string): Promise<{ jobId: string }> {
     const starter = await prisma.starter.findUnique({
       where: { id: starterId },
-      select: { id: true, entityId: true, firstName: true, lastName: true, graphUserId: true },
+      select: {
+        id: true,
+        entityId: true,
+        firstName: true,
+        lastName: true,
+        provisioningJobs: {
+          where: { state: 'SUCCESS', graphUserId: { not: null } },
+          select: { graphUserId: true },
+          orderBy: { completedAt: 'desc' },
+          take: 1,
+        },
+      },
     })
 
-    if (!starter?.entityId || !starter.graphUserId) {
-      throw new Error('Starter not found or has no entity/graphUserId')
+    const graphUserId = starter?.provisioningJobs?.[0]?.graphUserId
+    if (!starter?.entityId || !graphUserId) {
+      throw new Error('Starter not found or has no entity/provisioned mailbox')
     }
 
     const activeJob = await prisma.offboardingJob.findFirst({
@@ -94,6 +106,7 @@ export class OffboardingEngine {
         entityId: starter.entityId,
         state: 'PENDING',
         triggeredBy,
+        graphUserId,
       },
     })
 
@@ -113,7 +126,7 @@ export class OffboardingEngine {
       jobId: job.id,
       entityId: starter.entityId,
       starterId,
-      graphUserId: starter.graphUserId,
+      graphUserId,
       triggeredBy,
     }
 
@@ -137,12 +150,7 @@ export class OffboardingEngine {
     const stepIndex = STEP_ORDER.indexOf(stepName)
     if (stepIndex === -1) throw new Error('Invalid blocked state')
 
-    const starter = await prisma.starter.findUnique({
-      where: { id: job.starterId },
-      select: { graphUserId: true },
-    })
-
-    if (!starter?.graphUserId) throw new Error('Starter has no graphUserId')
+    if (!job.graphUserId) throw new Error('Job has no graphUserId')
 
     await createAuditLog({
       actorId: triggeredBy,
@@ -155,7 +163,7 @@ export class OffboardingEngine {
       jobId,
       entityId: job.entityId,
       starterId: job.starterId,
-      graphUserId: starter.graphUserId,
+      graphUserId: job.graphUserId,
       triggeredBy,
     }
 

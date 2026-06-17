@@ -11,10 +11,19 @@ export async function GET(
 
   const starter = await prisma.starter.findUnique({
     where: { id: starterId },
-    select: { entityId: true, graphUserId: true },
+    select: {
+      entityId: true,
+      provisioningJobs: {
+        where: { state: 'SUCCESS', graphUserId: { not: null } },
+        select: { graphUserId: true },
+        orderBy: { completedAt: 'desc' },
+        take: 1,
+      },
+    },
   })
 
-  if (!starter?.entityId || !starter.graphUserId) {
+  const graphUserId = starter?.provisioningJobs?.[0]?.graphUserId
+  if (!starter?.entityId || !graphUserId) {
     return NextResponse.json({ error: 'Starter not found or no mailbox' }, { status: 404 })
   }
 
@@ -24,7 +33,7 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const groups = await graphApiService.getUserOwnedGroups(starter.entityId, starter.graphUserId)
+  const groups = await graphApiService.getUserOwnedGroups(starter.entityId, graphUserId)
   return NextResponse.json({ groups, entityId: starter.entityId })
 }
 

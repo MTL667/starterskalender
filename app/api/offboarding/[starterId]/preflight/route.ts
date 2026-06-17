@@ -11,7 +11,15 @@ export async function GET(
 
   const starter = await prisma.starter.findUnique({
     where: { id: starterId },
-    select: { entityId: true, graphUserId: true },
+    select: {
+      entityId: true,
+      provisioningJobs: {
+        where: { state: 'SUCCESS', graphUserId: { not: null } },
+        select: { graphUserId: true },
+        orderBy: { completedAt: 'desc' },
+        take: 1,
+      },
+    },
   })
 
   if (!starter?.entityId) {
@@ -24,10 +32,11 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  if (!starter.graphUserId) {
+  const graphUserId = starter.provisioningJobs?.[0]?.graphUserId
+  if (!graphUserId) {
     return NextResponse.json({ error: 'Starter has no provisioned mailbox' }, { status: 400 })
   }
 
-  const result = await runPreFlightChecks(starter.entityId, starterId, starter.graphUserId)
+  const result = await runPreFlightChecks(starter.entityId, starterId, graphUserId)
   return NextResponse.json(result)
 }

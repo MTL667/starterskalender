@@ -18,12 +18,13 @@ export async function GET(req: Request) {
     where: {
       state: 'COMPLETED',
       completedAt: { lte: oneDayAgo },
+      graphUserId: { not: null },
     },
-    include: { starter: { select: { firstName: true, lastName: true, graphUserId: true } } },
+    include: { starter: { select: { firstName: true, lastName: true } } },
   })
 
   for (const job of jobsToRename) {
-    if (!job.starter?.graphUserId) continue
+    if (!job.graphUserId) continue
 
     const responses = (job.graphApiResponses as any[]) || []
     if (responses.some((r) => r.step === 'LIFECYCLE_RENAMED')) continue
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
     let domain = 'onmicrosoft.com'
     try {
       const { token } = await graphApiService.getAuthenticatedClient(job.entityId)
-      const userRes = await fetch(`https://graph.microsoft.com/v1.0/users/${job.starter.graphUserId}?$select=userPrincipalName`, {
+      const userRes = await fetch(`https://graph.microsoft.com/v1.0/users/${job.graphUserId}?$select=userPrincipalName`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (userRes.ok) {
@@ -43,10 +44,10 @@ export async function GET(req: Request) {
       }
     } catch {}
 
-    const newUpn = `ZZ-Archived-${job.starter.lastName}-${date}@${domain}`
+    const newUpn = `ZZ-Archived-${job.starter?.lastName || 'unknown'}-${date}@${domain}`
 
     try {
-      await graphApiService.renameMailbox(job.entityId, job.starter.graphUserId, newUpn)
+      await graphApiService.renameMailbox(job.entityId, job.graphUserId, newUpn)
 
       responses.push({ step: 'LIFECYCLE_RENAMED', success: true, timestamp: now.toISOString() })
       await prisma.offboardingJob.update({
@@ -71,20 +72,18 @@ export async function GET(req: Request) {
     where: {
       state: 'COMPLETED',
       completedAt: { lte: oneYearAgo },
+      graphUserId: { not: null },
     },
-    include: { starter: { select: { graphUserId: true } } },
   })
 
   for (const job of jobsToDelete) {
-    if (!job.starter?.graphUserId) continue
-
     const responses = (job.graphApiResponses as any[]) || []
     if (responses.some((r) => r.step === 'LIFECYCLE_DELETED')) continue
     if (!responses.some((r) => r.step === 'LIFECYCLE_RENAMED')) continue
 
     try {
       const { token } = await graphApiService.getAuthenticatedClient(job.entityId)
-      await fetch(`https://graph.microsoft.com/v1.0/users/${job.starter.graphUserId}`, {
+      await fetch(`https://graph.microsoft.com/v1.0/users/${job.graphUserId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
