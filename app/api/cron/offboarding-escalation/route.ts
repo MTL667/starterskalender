@@ -12,7 +12,8 @@ export async function GET(req: Request) {
 
   const starters = await prisma.starter.findMany({
     where: {
-      exitDate: { lte: threeDaysFromNow, gte: now },
+      type: 'OFFBOARDING',
+      startDate: { lte: threeDaysFromNow, gte: now },
       graphUserId: { not: null },
       offboardingJobs: {
         none: { state: 'COMPLETED' },
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
       entityId: true,
       firstName: true,
       lastName: true,
-      exitDate: true,
+      startDate: true,
       offboardingJobs: {
         where: { state: { notIn: ['COMPLETED', 'ROLLED_BACK'] } },
         select: { id: true, state: true },
@@ -41,7 +42,7 @@ export async function GET(req: Request) {
     const existingEscalation = await prisma.task.findFirst({
       where: {
         starterId: starter.id,
-        type: 'offboarding_escalation',
+        type: 'OFFBOARDING_ESCALATION',
         completedAt: null,
       },
     })
@@ -50,19 +51,19 @@ export async function GET(req: Request) {
 
     await prisma.task.create({
       data: {
-        type: 'offboarding_escalation',
+        type: 'OFFBOARDING_ESCALATION',
         starterId: starter.id,
         entityId: starter.entityId,
         title: `Offboarding escalatie: ${starter.firstName} ${starter.lastName}`,
-        description: `Mailbox offboarding niet afgerond voor uitdiensttredingsdatum ${starter.exitDate?.toLocaleDateString('nl-BE')}`,
-        priority: 'high',
+        description: `Mailbox offboarding niet afgerond voor uitdiensttredingsdatum ${starter.startDate?.toLocaleDateString('nl-BE')}`,
+        priority: 'HIGH',
       },
     })
 
     await createAuditLog({
       action: 'entra.offboarding.escalated',
       target: `Starter:${starter.id}`,
-      meta: { entityId: starter.entityId, exitDate: starter.exitDate },
+      meta: { entityId: starter.entityId, startDate: starter.startDate },
     })
 
     escalated++

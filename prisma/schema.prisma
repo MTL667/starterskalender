@@ -56,6 +56,7 @@ enum TaskType {
   MARKETING_BADGE // Badge bestellen
   MARKETING_NFC // SIMA NFC badge bestellen
   MARKETING_SIGNATURE // Emailhandtekening aanmaken (fase 2)
+  OFFBOARDING_ESCALATION // Escalatie: mailbox offboarding niet afgerond
 }
 
 enum CardDavStatus {
