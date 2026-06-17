@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-04
-last_updated: 2026-06-05T08:20:00
+last_updated: 2026-06-17T14:49:00
 project: Starterskalender
 project_key: NOKEY
 tracking_system: file-system
@@ -180,3 +180,47 @@ development_status:
   14-1-cleanup-tasks-on-starter-cancellation-entity-change: done
   14-2-entity-migration-handling: done
   epic-14-retrospective: optional
+
+  # ============================================================
+  # Entra ID Email Offboarding Feature (Epics 15-19)
+  # Source: epics-email-offboarding.md
+  # ============================================================
+
+  # Epic 15: OOO Template Configuration
+  epic-15: done
+  15-1-ooo-template-crud-api: done
+  15-2-ooo-template-editor-ui: done
+  15-3-ooo-template-preview: done
+  epic-15-retrospective: optional
+
+  # Epic 16: Offboarding Readiness & Pre-flight
+  epic-16: done
+  16-1-offboardingjob-data-model-rbac-permission: done
+  16-2-offboarding-task-auto-creation-escalation: done
+  16-3-graphapiservice-pre-flight-methods: done
+  16-4-pre-flight-check-service-api: done
+  16-5-handle-mailbox-button-pre-flight-panel-ui: done
+  16-6-audit-trail-integration: done
+  epic-16-retrospective: optional
+
+  # Epic 17: Teams Ownership Transfer
+  epic-17: done
+  17-1-teams-ownership-api-routes: done
+  17-2-teams-ownership-transfer-page: done
+  17-3-teams-ownership-execution-via-graph-api: done
+  epic-17-retrospective: optional
+
+  # Epic 18: Offboarding Execution
+  epic-18: done
+  18-1-graphapiservice-offboarding-methods: done
+  18-2-offboarding-engine-state-machine: done
+  18-3-sse-endpoint-real-time-status-hook: done
+  18-4-offboarding-execution-ui: done
+  18-5-retry-from-failed-step: done
+  epic-18-retrospective: optional
+
+  # Epic 19: Lifecycle Management & Rollback
+  epic-19: done
+  19-1-shared-mailbox-lifecycle-cron: done
+  19-2-manual-rollback: done
+  epic-19-retrospective: optional

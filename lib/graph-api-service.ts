@@ -139,6 +139,233 @@ export class GraphApiService {
     })
   }
 
+  // ─── Offboarding Pre-flight Methods ──────────────────────────────────────────
+
+  async checkLitigationHold(entityId: string, userId: string): Promise<boolean> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    return this.fetchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/mailboxSettings`,
+      token,
+      async (data) => data.archiveFolder != null // litigation hold indicator
+    )
+  }
+
+  async getMailboxStatistics(entityId: string, userId: string): Promise<{ mailboxSizeMb: number }> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    return this.fetchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/mailFolders/inbox?$select=totalItemCount,sizeInBytes`,
+      token,
+      async (data) => ({
+        mailboxSizeMb: Math.round((data.sizeInBytes || 0) / (1024 * 1024)),
+      })
+    )
+  }
+
+  async getUserOwnedGroups(entityId: string, userId: string): Promise<{ groupId: string; groupName: string }[]> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    return this.fetchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/ownedObjects/microsoft.graph.group?$select=id,displayName`,
+      token,
+      async (data) =>
+        (data.value || []).map((g: any) => ({
+          groupId: g.id,
+          groupName: g.displayName,
+        }))
+    )
+  }
+
+  // ─── Offboarding Execution Methods ─────────────────────────────────────────
+
+  async setOutOfOffice(entityId: string, userId: string, internalMessage: string, externalMessage: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.patchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/mailboxSettings`,
+      token,
+      {
+        automaticRepliesSetting: {
+          status: 'alwaysEnabled',
+          internalReplyMessage: internalMessage,
+          externalReplyMessage: externalMessage,
+        },
+      }
+    )
+  }
+
+  async disableUser(entityId: string, userId: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.patchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}`,
+      token,
+      { accountEnabled: false }
+    )
+  }
+
+  async revokeSignInSessions(entityId: string, userId: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.postWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/revokeSignInSessions`,
+      token,
+      {}
+    )
+  }
+
+  async getUserCalendarEvents(entityId: string, userId: string): Promise<{ id: string; subject: string }[]> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    const now = new Date().toISOString()
+    return this.fetchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/events?$filter=start/dateTime ge '${now}' and isOrganizer eq true&$select=id,subject&$top=999`,
+      token,
+      async (data) =>
+        (data.value || []).map((e: any) => ({ id: e.id, subject: e.subject }))
+    )
+  }
+
+  async cancelCalendarEvent(entityId: string, userId: string, eventId: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.postWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/events/${eventId}/cancel`,
+      token,
+      { comment: 'This meeting has been cancelled due to the organizer leaving the organization.' }
+    )
+  }
+
+  async transferGroupOwnership(entityId: string, groupId: string, fromUserId: string, toUserId: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.postWithRetry(
+      `${GRAPH_BASE_URL}/groups/${groupId}/owners/$ref`,
+      token,
+      { '@odata.id': `${GRAPH_BASE_URL}/users/${toUserId}` }
+    )
+    await this.deleteWithRetry(
+      `${GRAPH_BASE_URL}/groups/${groupId}/owners/${fromUserId}/$ref`,
+      token
+    )
+  }
+
+  async removeGroupMember(entityId: string, groupId: string, userId: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.deleteWithRetry(
+      `${GRAPH_BASE_URL}/groups/${groupId}/members/${userId}/$ref`,
+      token
+    )
+  }
+
+  async getUserMailRules(entityId: string, userId: string): Promise<{ id: string; displayName: string }[]> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    return this.fetchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/mailFolders/inbox/messageRules?$select=id,displayName`,
+      token,
+      async (data) =>
+        (data.value || []).map((r: any) => ({ id: r.id, displayName: r.displayName }))
+    )
+  }
+
+  async deleteMailRule(entityId: string, userId: string, ruleId: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.deleteWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/mailFolders/inbox/messageRules/${ruleId}`,
+      token
+    )
+  }
+
+  async convertToSharedMailbox(entityId: string, userId: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.patchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}`,
+      token,
+      { mailboxSettings: { userPurpose: 'shared' } }
+    )
+  }
+
+  async removeLicense(entityId: string, userId: string, skuId: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.postWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}/assignLicense`,
+      token,
+      { addLicenses: [], removeLicenses: [skuId] }
+    )
+  }
+
+  async renameMailbox(entityId: string, userId: string, newUpn: string): Promise<void> {
+    const { token } = await this.getAuthenticatedClient(entityId)
+    await this.patchWithRetry(
+      `${GRAPH_BASE_URL}/users/${userId}`,
+      token,
+      { userPrincipalName: newUpn }
+    )
+  }
+
+  // ─── HTTP helpers ──────────────────────────────────────────────────────────
+
+  private async patchWithRetry(url: string, token: string, body: any, attempt: number = 1): Promise<void> {
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    } catch (err: any) {
+      throw new GraphTransientError(`Network error: ${err.message}`)
+    }
+    if (response.ok || response.status === 204) return
+    await this.handleErrorResponse(response, url, attempt, () => this.patchWithRetry(url, token, body, attempt + 1))
+  }
+
+  private async postWithRetry(url: string, token: string, body: any, attempt: number = 1): Promise<any> {
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    } catch (err: any) {
+      throw new GraphTransientError(`Network error: ${err.message}`)
+    }
+    if (response.ok || response.status === 204) {
+      if (response.headers.get('content-type')?.includes('json')) {
+        return response.json()
+      }
+      return
+    }
+    await this.handleErrorResponse(response, url, attempt, () => this.postWithRetry(url, token, body, attempt + 1))
+  }
+
+  private async deleteWithRetry(url: string, token: string, attempt: number = 1): Promise<void> {
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } catch (err: any) {
+      throw new GraphTransientError(`Network error: ${err.message}`)
+    }
+    if (response.ok || response.status === 204) return
+    await this.handleErrorResponse(response, url, attempt, () => this.deleteWithRetry(url, token, attempt + 1))
+  }
+
+  private async handleErrorResponse(response: Response, url: string, attempt: number, retryFn: () => Promise<any>): Promise<never> {
+    if (response.status === 401 || response.status === 403) {
+      const body = await response.json().catch(() => ({}))
+      throw new GraphAuthError(body.error?.message || `Graph API ${response.status}`)
+    }
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '5', 10)
+      if (attempt >= MAX_RETRY_ATTEMPTS) {
+        throw new GraphRateLimitError(`Rate limited after ${MAX_RETRY_ATTEMPTS} attempts`, retryAfter * 1000)
+      }
+      await new Promise((resolve) => setTimeout(resolve, retryAfter * 1000))
+      return retryFn() as never
+    }
+    if (response.status >= 500) {
+      throw new GraphTransientError(`Graph API server error: ${response.status}`)
+    }
+    const body = await response.json().catch(() => ({}))
+    throw new GraphApiError(body.error?.message || `Unexpected response: ${response.status} at ${url}`)
+  }
+
   private async fetchWithRetry<T>(
     url: string,
     token: string,

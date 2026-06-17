@@ -192,6 +192,7 @@ model Entity {
   recruitmentEmailTemplates RecruitmentEmailTemplate[]
   entraAppConnection        EntraAppConnection?
   tenantEntraConfig         TenantEntraConfig?
+  oooTemplates              OooTemplate[]
   siteGroup               SiteGroup? @relation("SiteGroupEntities", fields: [siteGroupId], references: [id])
   siteGroupId             String?
 
@@ -373,6 +374,7 @@ model Starter {
   documents        StarterDocument[] // Documenten voor ondertekening
   hiredCandidate   Candidate?        @relation("CandidateStarter")
   provisioningJobs ProvisioningJob[]
+  offboardingJobs  OffboardingJob[]
 
   @@unique([entityId, inspectorNumber])
   @@index([type])
@@ -398,6 +400,7 @@ model JobRole {
   vacancies               Vacancy[]
   vacancyTemplates        VacancyTemplate[] @relation("TemplateFunction")
   licenseConfig           LicenseConfig?
+  oooTemplates            OooTemplate[]
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
 
@@ -1305,4 +1308,72 @@ model GraphApiStatus {
   lastCheckAt DateTime @default(now())
   lastError   String?
   updatedAt   DateTime @updatedAt
+}
+
+enum OffboardingState {
+  PENDING
+  READY
+  TEAMS_TRANSFER_PENDING
+  EXECUTING_OOO
+  EXECUTING_LOGIN_BLOCK
+  EXECUTING_REVOKE_SESSIONS
+  EXECUTING_CALENDAR
+  EXECUTING_TEAMS_TRANSFER
+  EXECUTING_GROUPS
+  EXECUTING_FORWARDING
+  EXECUTING_DELEGATES
+  EXECUTING_SIZE_CHECK
+  EXECUTING_CONVERSION
+  EXECUTING_LICENSE_REMOVAL
+  BLOCKED_AT_OOO
+  BLOCKED_AT_LOGIN_BLOCK
+  BLOCKED_AT_REVOKE_SESSIONS
+  BLOCKED_AT_CALENDAR
+  BLOCKED_AT_TEAMS_TRANSFER
+  BLOCKED_AT_GROUPS
+  BLOCKED_AT_FORWARDING
+  BLOCKED_AT_DELEGATES
+  BLOCKED_AT_SIZE_CHECK
+  BLOCKED_AT_CONVERSION
+  BLOCKED_AT_LICENSE_REMOVAL
+  COMPLETED
+  ROLLED_BACK
+}
+
+model OffboardingJob {
+  id                    String           @id @default(cuid())
+  starterId             String
+  starter               Starter          @relation(fields: [starterId], references: [id], onDelete: Cascade)
+  entityId              String
+  state                 OffboardingState @default(PENDING)
+  triggeredBy           String
+  currentStep           Int?
+  error                 String?          @db.Text
+  graphApiResponses     Json?
+  teamsOwnershipMapping Json?
+  preFlightResults      Json?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([starterId, state])
+  @@index([entityId])
+}
+
+model OooTemplate {
+  id                 String   @id @default(cuid())
+  entityId           String
+  entity             Entity   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  jobRoleId          String?
+  jobRole            JobRole? @relation(fields: [jobRoleId], references: [id], onDelete: SetNull)
+  templateNl         String   @db.Text
+  templateFr         String   @db.Text
+  templateEn         String   @db.Text
+  generalMailAddress String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([entityId, jobRoleId])
+  @@index([entityId])
 }

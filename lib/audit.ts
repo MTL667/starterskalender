@@ -45,6 +45,18 @@ export type AuditAction =
   | 'CANDIDATE_ERASURE_REQUESTED'
   | 'CANDIDATE_DATA_EXPORTED'
   | 'AUDIT_REPORT_EXPORTED'
+  | 'entra.offboarding.ooo_template_updated'
+  | 'entra.offboarding.task_created'
+  | 'entra.offboarding.preflight_checked'
+  | 'entra.offboarding.started'
+  | 'entra.offboarding.step_completed'
+  | 'entra.offboarding.blocked'
+  | 'entra.offboarding.completed'
+  | 'entra.offboarding.retried'
+  | 'entra.offboarding.rolled_back'
+  | 'entra.offboarding.escalated'
+  | 'entra.offboarding.lifecycle_renamed'
+  | 'entra.offboarding.lifecycle_deleted'
 
 export interface AuditLogInput {
   actorId?: string

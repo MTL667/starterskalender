@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Plus, Pencil, Trash2, Package, AlertTriangle, Mail } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { JobRoleMaterialsDialog } from '@/components/admin/job-role-materials-dialog'
+import { OooTemplateEditor } from '@/components/offboarding/OooTemplateEditor'
 
 interface Entity {
   id: string
@@ -286,6 +287,13 @@ export default function JobRolesPage() {
                             )}
                           </div>
                           <div className="flex gap-2">
+                            {entityHasEntra(role.entityId) && (
+                              <OooTemplateEditor
+                                entityId={role.entityId}
+                                jobRoleId={role.id}
+                                jobRoleTitle={role.title}
+                              />
+                            )}
                             <Button
                               variant="outline"
                               size="sm"

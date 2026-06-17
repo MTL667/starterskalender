@@ -1995,5 +1995,29 @@
     "graphStatus": {
       "unreachable": "Microsoft Graph API is momenteel onbereikbaar. Provisioning en licentiedata kunnen beïnvloed zijn."
     }
+  },
+  "offboarding": {
+    "handleMailbox": "Mailbox afhandelen",
+    "inProgress": "Bezig met offboarding...",
+    "completed": "Offboarding voltooid",
+    "retry": "Opnieuw proberen",
+    "allStepsCompleted": "Alle stappen voltooid",
+    "checkingReadiness": "Gereedheid controleren...",
+    "readyForOffboarding": "Klaar voor offboarding",
+    "graphApiUnavailable": "Graph API onbereikbaar",
+    "litigationHoldDetected": "Litigation hold gedetecteerd — offboarding niet mogelijk totdat de hold is opgeheven.",
+    "mailboxTooLarge": "Mailbox is {sizeMb} MB — overschrijdt de 50GB shared mailbox limiet.",
+    "teamsOwnershipRequired": "{count} Teams groepen vereisen eigendomsoverdracht.",
+    "configureTeamsTransfer": "Teams overdracht configureren",
+    "teamsOwnershipTransfer": "Teams Eigendomsoverdracht",
+    "teamsOwnershipDescription": "Selecteer een nieuwe eigenaar voor elk van de {count} Teams groepen.",
+    "loadingTeams": "Teams groepen laden...",
+    "back": "Terug",
+    "searchNewOwner": "Zoek nieuwe eigenaar...",
+    "change": "Wijzigen",
+    "confirmMapping": "Bevestigen",
+    "selectAllOwners": "Nog {remaining} groepen zonder eigenaar",
+    "rollback": "Rollback",
+    "rollbackConfirm": "Weet je zeker dat je de offboarding wilt terugdraaien?"
   }
 }

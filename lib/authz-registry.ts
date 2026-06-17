@@ -15,6 +15,7 @@ export type PermissionCategory =
   | 'admin'
   | 'reporting'
   | 'recruitment'
+  | 'offboarding'
 
 export interface PermissionDefinition {
   key: string
@@ -81,6 +82,9 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   { key: 'candidate:read', category: 'recruitment', description: 'Kandidaat-profielen bekijken' },
   { key: 'candidate:write', category: 'recruitment', description: 'Kandidaten toevoegen en bewerken' },
   { key: 'candidate:share', category: 'recruitment', description: 'Kandidaatdata delen met reviewers' },
+
+  // ── Offboarding ─────────────────────────────────────────────────────────────
+  { key: 'mail:offboarding', category: 'offboarding', description: 'Mailbox offboarding uitvoeren (OOO templates, pre-flight, executie)' },
 ]
 
 export type PermissionKey = string
