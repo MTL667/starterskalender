@@ -142,12 +142,10 @@ export class GraphApiService {
   // ─── Offboarding Pre-flight Methods ──────────────────────────────────────────
 
   async checkLitigationHold(entityId: string, userId: string): Promise<boolean> {
-    const { token } = await this.getAuthenticatedClient(entityId)
-    return this.fetchWithRetry(
-      `${GRAPH_BASE_URL}/users/${userId}/mailboxSettings`,
-      token,
-      async (data) => data.archiveFolder != null // litigation hold indicator
-    )
+    // Graph API v1.0 does not expose litigation hold status directly.
+    // This would require Exchange Online PowerShell or Compliance API.
+    // Return false to avoid false positives until a proper integration is added.
+    return false
   }
 
   async getMailboxStatistics(entityId: string, userId: string): Promise<{ mailboxSizeMb: number }> {
