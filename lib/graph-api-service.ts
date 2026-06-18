@@ -276,11 +276,59 @@ export class GraphApiService {
   }
 
   async convertToSharedMailbox(entityId: string, userId: string): Promise<void> {
-    // Converting to shared mailbox requires Exchange Online PowerShell
-    // (Set-Mailbox -Type Shared), which is not available via Graph API.
-    // When all Exchange licenses are removed, the mailbox is retained for
-    // 30 days. Shared conversion should be done via Exchange admin if needed.
-    console.warn(`[Offboarding] Shared mailbox conversion for ${userId} requires Exchange Online admin action`)
+    const connection = await prisma.entraAppConnection.findUnique({
+      where: { entityId },
+      select: { clientId: true, tenantId: true, encryptedPrivateKey: true, certificateThumbprint: true },
+    })
+    if (!connection?.encryptedPrivateKey || !connection.certificateThumbprint) {
+      throw new GraphApiError('No Entra connection for Exchange Online')
+    }
+
+    const privateKey = decryptEntra(connection.encryptedPrivateKey)
+    const cca = new ConfidentialClientApplication({
+      auth: {
+        clientId: connection.clientId,
+        authority: `https://login.microsoftonline.com/${connection.tenantId}`,
+        clientCertificate: { thumbprint: connection.certificateThumbprint, privateKey },
+      },
+    })
+
+    const tokenResult = await cca.acquireTokenByClientCredential({
+      scopes: ['https://outlook.office365.com/.default'],
+    })
+    if (!tokenResult?.accessToken) {
+      throw new GraphApiError('Failed to acquire Exchange Online token')
+    }
+
+    const userRes = await fetch(`https://graph.microsoft.com/v1.0/users/${userId}?$select=userPrincipalName`, {
+      headers: { Authorization: `Bearer ${(await this.getAuthenticatedClient(entityId)).token}` },
+    })
+    const userData = userRes.ok ? await userRes.json() : null
+    const upn = userData?.userPrincipalName || userId
+
+    const res = await fetch(
+      `https://outlook.office365.com/adminapi/beta/${connection.tenantId}/InvokeCommand`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${tokenResult.accessToken}`,
+          'Content-Type': 'application/json',
+          'X-AnchorMailbox': `UPN:${upn}`,
+          'X-ResponseFormat': 'json',
+        },
+        body: JSON.stringify({
+          CmdletInput: {
+            CmdletName: 'Set-Mailbox',
+            Parameters: { Identity: upn, Type: 'Shared' },
+          },
+        }),
+      }
+    )
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new GraphApiError(`Exchange Online Set-Mailbox failed: ${text}`)
+    }
   }
 
   async removeLicense(entityId: string, userId: string, skuId: string): Promise<void> {
