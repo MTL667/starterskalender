@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mail Offboarding Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      padding: 2rem;
+      width: 100%;
+      max-width: 480px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .header svg { color: #64748b; }
+    .header span { font-size: 0.875rem; font-weight: 500; color: #1e293b; }
+    .preflight {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      transition: all 0.3s;
+    }
+    .preflight.ready { color: #16a34a; }
+    .preflight.checking { color: #64748b; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-destructive { background: #dc2626; color: white; }
+    .btn-destructive:hover { background: #b91c1c; }
+    .btn-destructive:disabled { background: #fca5a5; cursor: not-allowed; }
+    .btn-progress { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; cursor: default; }
+    .steps { margin-top: 1.25rem; }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0;
+      font-size: 0.875rem;
+      transition: all 0.3s;
+    }
+    .step.done { color: #64748b; }
+    .step.active { color: #1e293b; font-weight: 500; }
+    .step.pending { color: #cbd5e1; }
+    .step .icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .icon-done { color: #16a34a; }
+    .icon-active { color: #3b82f6; animation: spin 1s linear infinite; }
+    .icon-pending { color: #e2e8f0; }
+    .completed-banner {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #16a34a;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-top: 1rem;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    .completed-banner.visible { opacity: 1; }
+    .completed-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #16a34a;
+      font-size: 0.875rem;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    .completed-btn.visible { opacity: 1; }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .controls {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 0.75rem;
+      background: #1e293b;
+      padding: 0.75rem 1.25rem;
+      border-radius: 9999px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+    .controls button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .controls button:hover { background: #2563eb; }
+    .controls button.reset { background: #64748b; }
+    .controls button.reset:hover { background: #475569; }
+    .controls span { color: #94a3b8; font-size: 0.75rem; align-self: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      <span>Mail Offboarding</span>
+    </div>
+
+    <div class="preflight checking" id="preflight">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="preflight-icon"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+      <span id="preflight-text">Gereedheid controleren...</span>
+    </div>
+
+    <div id="btn-container">
+      <button class="btn btn-destructive" id="start-btn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+        Mailbox afhandelen
+      </button>
+    </div>
+
+    <div class="steps" id="steps" style="display:none;"></div>
+
+    <div class="completed-banner" id="completed-banner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+      Alle stappen voltooid
+    </div>
+  </div>
+
+  <div class="controls">
+    <span>Demo:</span>
+    <button onclick="startDemo()">▶ Start</button>
+    <button class="reset" onclick="resetDemo()">↺ Reset</button>
+  </div>
+
+  <script>
+    const STEPS = [
+      'Out of Office',
+      'Login blokkeren',
+      'Sessies intrekken',
+      'Agenda annuleren',
+      'Teams overdracht',
+      'Groepen verwijderen',
+      'Doorstuurregels',
+      'Machtigingen',
+      'Grootte controle',
+      'Shared mailbox',
+      'Licentie verwijderen',
+    ];
+
+    const STEP_DELAYS = [1200, 800, 600, 1000, 900, 1100, 700, 600, 500, 1400, 900];
+
+    let running = false;
+
+    function iconDone() {
+      return `<svg class="icon icon-done" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>`;
+    }
+    function iconActive() {
+      return `<svg class="icon icon-active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>`;
+    }
+    function iconPending() {
+      return `<svg class="icon icon-pending" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>`;
+    }
+
+    function renderSteps(currentStep) {
+      const container = document.getElementById('steps');
+      container.innerHTML = STEPS.map((label, i) => {
+        let cls = 'pending';
+        let icon = iconPending();
+        if (i < currentStep) { cls = 'done'; icon = iconDone(); }
+        else if (i === currentStep) { cls = 'active'; icon = iconActive(); }
+        return `<div class="step ${cls}">${icon}<span>${label}</span></div>`;
+      }).join('');
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    async function startDemo() {
+      if (running) return;
+      running = true;
+      resetDemo();
+
+      await sleep(800);
+      const preflight = document.getElementById('preflight');
+      const preflightText = document.getElementById('preflight-text');
+      preflight.className = 'preflight ready';
+      preflightText.textContent = 'Klaar voor offboarding';
+
+      await sleep(600);
+      const startBtn = document.getElementById('start-btn');
+      startBtn.disabled = false;
+
+      await sleep(1000);
+      // Simulate click
+      document.getElementById('btn-container').innerHTML = `
+        <button class="btn btn-progress" disabled>
+          <svg class="icon icon-active" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Bezig met offboarding...
+        </button>
+      `;
+
+      const stepsContainer = document.getElementById('steps');
+      stepsContainer.style.display = 'block';
+      renderSteps(0);
+
+      for (let i = 0; i < STEPS.length; i++) {
+        await sleep(STEP_DELAYS[i]);
+        renderSteps(i + 1);
+      }
+
+      await sleep(500);
+      document.getElementById('btn-container').innerHTML = `
+        <div class="completed-btn visible">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          Offboarding voltooid
+        </div>
+      `;
+
+      document.getElementById('completed-banner').classList.add('visible');
+      running = false;
+    }
+
+    function resetDemo() {
+      running = false;
+      const preflight = document.getElementById('preflight');
+      const preflightText = document.getElementById('preflight-text');
+      preflight.className = 'preflight checking';
+      preflightText.textContent = 'Gereedheid controleren...';
+
+      document.getElementById('btn-container').innerHTML = `
+        <button class="btn btn-destructive" id="start-btn" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+          Mailbox afhandelen
+        </button>
+      `;
+
+      document.getElementById('steps').style.display = 'none';
+      document.getElementById('steps').innerHTML = '';
+      document.getElementById('completed-banner').classList.remove('visible');
+    }
+  </script>
+</body>
+</html>
