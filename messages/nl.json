@@ -1997,6 +1997,7 @@
     }
   },
   "offboarding": {
+    "sectionTitle": "Mail Offboarding",
     "handleMailbox": "Mailbox afhandelen",
     "inProgress": "Bezig met offboarding...",
     "completed": "Offboarding voltooid",

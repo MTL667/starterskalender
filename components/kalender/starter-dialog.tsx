@@ -29,6 +29,7 @@ import { HealthProgressBar } from '@/components/health-badge'
 import { useHealthScores } from '@/lib/use-health-scores'
 import { StarterAvatar } from '@/components/kalender/starter-avatar'
 import { PhotoPickerDialog } from '@/components/kalender/photo-picker-dialog'
+import { OffboardingSection } from '@/components/offboarding/OffboardingSection'
 
 interface Starter {
   id: string
@@ -1692,6 +1693,16 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   hasHealthyConnection={starterHasHealthyConnection}
                   hasLicenseConfig={starterHasLicenseConfig}
                   canEdit={canEdit}
+                />
+              </div>
+            )}
+
+            {/* Mail Offboarding */}
+            {isEdit && starter?.entity && formData.type === 'OFFBOARDING' && starterHasHealthyConnection && (
+              <div className="border-t pt-4">
+                <OffboardingSection
+                  starterId={starter.id}
+                  hasPermission={userPerms.includes('mail:offboarding') || isAdmin}
                 />
               </div>
             )}

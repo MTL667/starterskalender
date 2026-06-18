@@ -1996,6 +1996,7 @@
     }
   },
   "offboarding": {
+    "sectionTitle": "Mail Offboarding",
     "handleMailbox": "Gérer la boîte mail",
     "inProgress": "Offboarding en cours...",
     "completed": "Offboarding terminé",
