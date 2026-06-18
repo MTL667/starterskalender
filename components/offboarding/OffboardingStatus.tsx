@@ -24,15 +24,20 @@ interface OffboardingStatusProps {
   starterId: string
   autoConnect?: boolean
   onRetry?: () => void
+  onStateChange?: (state: string) => void
 }
 
-export function OffboardingStatus({ starterId, autoConnect = false, onRetry }: OffboardingStatusProps) {
+export function OffboardingStatus({ starterId, autoConnect = false, onRetry, onStateChange }: OffboardingStatusProps) {
   const { status, isActive, isBlocked, isCompleted, reconnect } = useOffboardingStatus(starterId)
   const t = useTranslations('offboarding')
 
   useEffect(() => {
     if (autoConnect) reconnect()
   }, [autoConnect, reconnect])
+
+  useEffect(() => {
+    if (status?.state) onStateChange?.(status.state)
+  }, [status?.state, onStateChange])
 
   if (!status) return null
 

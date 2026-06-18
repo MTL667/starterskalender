@@ -27,6 +27,10 @@ export function OffboardingSection({ starterId, hasPermission }: OffboardingSect
     setCurrentState('EXECUTING_OOO')
   }
 
+  const handleStateChange = useCallback((state: string) => {
+    setCurrentState(state)
+  }, [])
+
   useEffect(() => {
     fetch(`/api/offboarding/${starterId}`)
       .then(res => res.json())
@@ -61,7 +65,7 @@ export function OffboardingSection({ starterId, hasPermission }: OffboardingSect
       </div>
 
       {showStatus && (
-        <OffboardingStatus starterId={starterId} autoConnect={currentState?.startsWith('EXECUTING_')} />
+        <OffboardingStatus starterId={starterId} autoConnect={currentState?.startsWith('EXECUTING_')} onStateChange={handleStateChange} />
       )}
     </div>
   )
