@@ -257,14 +257,23 @@ export class OffboardingEngine {
   private async executeOoo(ctx: OffboardingContext): Promise<void> {
     const starter = await prisma.starter.findUnique({
       where: { id: ctx.starterId },
-      select: { firstName: true, lastName: true, jobRole: { select: { id: true } } },
+      select: { firstName: true, lastName: true, roleTitle: true, entityId: true },
     })
+
+    let jobRoleId: string | undefined
+    if (starter?.roleTitle && starter.entityId) {
+      const jobRole = await prisma.jobRole.findFirst({
+        where: { entityId: starter.entityId, title: starter.roleTitle },
+        select: { id: true },
+      })
+      jobRoleId = jobRole?.id
+    }
 
     const template = await prisma.oooTemplate.findFirst({
       where: {
         entityId: ctx.entityId,
         OR: [
-          { jobRoleId: starter?.jobRole?.id },
+          ...(jobRoleId ? [{ jobRoleId }] : []),
           { jobRoleId: null },
         ],
       },
@@ -334,7 +343,7 @@ export class OffboardingEngine {
   private async executeForwarding(ctx: OffboardingContext): Promise<void> {
     const rules = await graphApiService.getUserMailRules(ctx.entityId, ctx.graphUserId)
     for (const rule of rules) {
-      await graphApiService.deleteMailRule(ctx.entityId, rule.id)
+      await graphApiService.deleteMailRule(ctx.entityId, ctx.graphUserId, rule.id)
     }
   }
 
@@ -342,7 +351,7 @@ export class OffboardingEngine {
     const rules = await graphApiService.getUserMailRules(ctx.entityId, ctx.graphUserId)
     const delegateRules = rules.filter((r: any) => r.actions?.forwardTo || r.actions?.redirectTo)
     for (const rule of delegateRules) {
-      await graphApiService.deleteMailRule(ctx.entityId, rule.id)
+      await graphApiService.deleteMailRule(ctx.entityId, ctx.graphUserId, rule.id)
     }
   }
 

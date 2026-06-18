@@ -26,7 +26,15 @@ export async function POST(
   }
 
   const job = await prisma.offboardingJob.findFirst({
-    where: { starterId, state: { startsWith: 'BLOCKED_AT_' } },
+    where: {
+      starterId,
+      state: { in: [
+        'BLOCKED_AT_OOO', 'BLOCKED_AT_LOGIN_BLOCK', 'BLOCKED_AT_REVOKE_SESSIONS',
+        'BLOCKED_AT_CALENDAR', 'BLOCKED_AT_TEAMS_TRANSFER', 'BLOCKED_AT_GROUPS',
+        'BLOCKED_AT_FORWARDING', 'BLOCKED_AT_DELEGATES', 'BLOCKED_AT_SIZE_CHECK',
+        'BLOCKED_AT_CONVERSION', 'BLOCKED_AT_LICENSE_REMOVAL',
+      ] },
+    },
     orderBy: { createdAt: 'desc' },
   })
 
