@@ -2019,6 +2019,14 @@
     "confirmMapping": "Bevestigen",
     "selectAllOwners": "Nog {remaining} groepen zonder eigenaar",
     "rollback": "Rollback",
-    "rollbackConfirm": "Weet je zeker dat je de offboarding wilt terugdraaien?"
+    "rollbackConfirm": "Weet je zeker dat je de offboarding wilt terugdraaien?",
+    "oooTemplateMissing": "Geen Out of Office template geconfigureerd voor deze functie.",
+    "configureOooTemplate": "Template instellen",
+    "oooTemplateDialogTitle": "Out of Office Template",
+    "oooTemplateDialogDescription": "Stel het automatisch antwoord in voor de functie \"{role}\". Dit bericht wordt getoond aan iedereen die een e-mail stuurt naar de medewerker.",
+    "oooGeneralMailAddress": "Algemeen e-mailadres (vervanging)",
+    "oooTemplateSave": "Opslaan",
+    "oooTemplateSaved": "OOO template opgeslagen",
+    "oooVariablesHint": "Variabelen: {voornaam}, {achternaam}, {algemeen_mailadres}"
   }
 }

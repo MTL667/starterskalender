@@ -9,20 +9,42 @@ export interface PreFlightResult {
   teamsOwnerships: { groupId: string; groupName: string }[]
   graphApiHealthy: boolean
   graphApiError?: string
+  oooTemplateConfigured: boolean
   checkedAt: string
   allClear: boolean
 }
 
-export async function runPreFlightChecks(entityId: string, starterId: string, graphUserId: string): Promise<PreFlightResult> {
+export async function runPreFlightChecks(entityId: string, starterId: string, graphUserId: string, roleTitle?: string | null): Promise<PreFlightResult> {
   const job = await prisma.offboardingJob.findFirst({
     where: { starterId, state: { not: 'ROLLED_BACK' } },
     orderBy: { createdAt: 'desc' },
   })
 
+  let jobRoleId: string | undefined
+  if (roleTitle) {
+    const jobRole = await prisma.jobRole.findFirst({
+      where: { entityId, title: roleTitle },
+      select: { id: true },
+    })
+    jobRoleId = jobRole?.id
+  }
+
+  const oooTemplate = await prisma.oooTemplate.findFirst({
+    where: {
+      entityId,
+      OR: [
+        ...(jobRoleId ? [{ jobRoleId }] : []),
+        { jobRoleId: null },
+      ],
+    },
+    select: { id: true },
+  })
+  const oooTemplateConfigured = !!oooTemplate
+
   if (job?.preFlightResults) {
     const cached = job.preFlightResults as unknown as PreFlightResult
     const age = Date.now() - new Date(cached.checkedAt).getTime()
-    if (age < CACHE_TTL_MS) return cached
+    if (age < CACHE_TTL_MS) return { ...cached, oooTemplateConfigured }
   }
 
   let litigationHold = false
@@ -52,6 +74,7 @@ export async function runPreFlightChecks(entityId: string, starterId: string, gr
     teamsOwnerships,
     graphApiHealthy,
     graphApiError,
+    oooTemplateConfigured,
     checkedAt: new Date().toISOString(),
     allClear: graphApiHealthy && !litigationHold && mailboxSizeMb < 50000,
   }

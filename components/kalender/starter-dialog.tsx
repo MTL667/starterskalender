@@ -1703,6 +1703,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 <OffboardingSection
                   starterId={starter.id}
                   hasPermission={userPerms.includes('mail:offboarding') || isAdmin}
+                  entityId={starter.entity.id}
+                  jobRoleId={jobRoles.find(r => r.title === formData.roleTitle)?.id}
+                  jobRoleTitle={formData.roleTitle || undefined}
                 />
               </div>
             )}

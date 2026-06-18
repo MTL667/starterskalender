@@ -12,7 +12,7 @@ export async function GET(
 
   const starter = await prisma.starter.findUnique({
     where: { id: starterId },
-    select: { entityId: true, firstName: true, lastName: true, desiredEmail: true },
+    select: { entityId: true, firstName: true, lastName: true, desiredEmail: true, roleTitle: true },
   })
 
   if (!starter?.entityId) {
@@ -30,6 +30,6 @@ export async function GET(
     return NextResponse.json({ error: 'Starter has no provisioned mailbox' }, { status: 400 })
   }
 
-  const result = await runPreFlightChecks(starter.entityId, starterId, graphUserId)
+  const result = await runPreFlightChecks(starter.entityId, starterId, graphUserId, starter.roleTitle)
   return NextResponse.json(result)
 }

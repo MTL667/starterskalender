@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { AlertTriangle, CheckCircle2, XCircle, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { OooTemplateDialog } from './OooTemplateDialog'
 
 interface PreFlightResult {
   litigationHold: boolean
@@ -12,38 +14,45 @@ interface PreFlightResult {
   teamsOwnerships: { groupId: string; groupName: string }[]
   graphApiHealthy: boolean
   graphApiError?: string
+  oooTemplateConfigured?: boolean
   checkedAt: string
   allClear: boolean
 }
 
 interface PreFlightPanelProps {
   starterId: string
+  entityId?: string
+  jobRoleId?: string
+  jobRoleTitle?: string
+  hasPermission?: boolean
   onResult: (result: PreFlightResult) => void
 }
 
-export function PreFlightPanel({ starterId, onResult }: PreFlightPanelProps) {
+export function PreFlightPanel({ starterId, entityId, jobRoleId, jobRoleTitle, hasPermission, onResult }: PreFlightPanelProps) {
   const [result, setResult] = useState<PreFlightResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const [oooDialogOpen, setOooDialogOpen] = useState(false)
   const onResultRef = useRef(onResult)
   onResultRef.current = onResult
   const t = useTranslations('offboarding')
 
-  useEffect(() => {
-    const fetchPreflight = async () => {
-      setLoading(true)
-      try {
-        const res = await fetch(`/api/offboarding/${starterId}/preflight`)
-        if (res.ok) {
-          const data = await res.json()
-          setResult(data)
-          onResultRef.current(data)
-        }
-      } finally {
-        setLoading(false)
+  const fetchPreflight = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/offboarding/${starterId}/preflight`)
+      if (res.ok) {
+        const data = await res.json()
+        setResult(data)
+        onResultRef.current(data)
       }
+    } finally {
+      setLoading(false)
     }
-    fetchPreflight()
   }, [starterId])
+
+  useEffect(() => {
+    fetchPreflight()
+  }, [fetchPreflight])
 
   if (loading) {
     return (
@@ -56,7 +65,9 @@ export function PreFlightPanel({ starterId, onResult }: PreFlightPanelProps) {
 
   if (!result) return null
 
-  if (result.allClear) {
+  const showOooWarning = result.oooTemplateConfigured === false
+
+  if (result.allClear && !showOooWarning) {
     return (
       <div className="flex items-center gap-2 text-green-600 text-sm">
         <CheckCircle2 className="h-4 w-4" />
@@ -103,6 +114,31 @@ export function PreFlightPanel({ starterId, onResult }: PreFlightPanelProps) {
             </Link>
           </AlertDescription>
         </Alert>
+      )}
+
+      {showOooWarning && (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="flex items-center gap-2">
+            {t('oooTemplateMissing')}
+            {hasPermission && entityId && jobRoleId && (
+              <Button variant="link" size="sm" className="h-auto p-0 font-medium" onClick={() => setOooDialogOpen(true)}>
+                {t('configureOooTemplate')}
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {entityId && jobRoleId && (
+        <OooTemplateDialog
+          open={oooDialogOpen}
+          onOpenChange={setOooDialogOpen}
+          entityId={entityId}
+          jobRoleId={jobRoleId}
+          jobRoleTitle={jobRoleTitle || ''}
+          onSaved={fetchPreflight}
+        />
       )}
     </div>
   )

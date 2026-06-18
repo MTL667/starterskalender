@@ -10,9 +10,12 @@ import { OffboardingStatus } from './OffboardingStatus'
 interface OffboardingSectionProps {
   starterId: string
   hasPermission: boolean
+  entityId?: string
+  jobRoleId?: string
+  jobRoleTitle?: string
 }
 
-export function OffboardingSection({ starterId, hasPermission }: OffboardingSectionProps) {
+export function OffboardingSection({ starterId, hasPermission, entityId, jobRoleId, jobRoleTitle }: OffboardingSectionProps) {
   const t = useTranslations('offboarding')
   const [allClear, setAllClear] = useState(false)
   const [currentState, setCurrentState] = useState<string | null>(null)
@@ -52,7 +55,14 @@ export function OffboardingSection({ starterId, hasPermission }: OffboardingSect
         <span className="text-sm font-medium">{t('sectionTitle')}</span>
       </div>
 
-      <PreFlightPanel starterId={starterId} onResult={handlePreFlightResult} />
+      <PreFlightPanel
+        starterId={starterId}
+        entityId={entityId}
+        jobRoleId={jobRoleId}
+        jobRoleTitle={jobRoleTitle}
+        hasPermission={hasPermission}
+        onResult={handlePreFlightResult}
+      />
 
       <div className="flex items-center gap-3">
         <HandleMailboxButton

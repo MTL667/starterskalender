@@ -2018,6 +2018,14 @@
     "confirmMapping": "Confirmer",
     "selectAllOwners": "Encore {remaining} groupes sans propriétaire",
     "rollback": "Annuler",
-    "rollbackConfirm": "Êtes-vous sûr de vouloir annuler l'offboarding ?"
+    "rollbackConfirm": "Êtes-vous sûr de vouloir annuler l'offboarding ?",
+    "oooTemplateMissing": "Aucun modèle Out of Office configuré pour cette fonction.",
+    "configureOooTemplate": "Configurer le modèle",
+    "oooTemplateDialogTitle": "Modèle Out of Office",
+    "oooTemplateDialogDescription": "Configurez la réponse automatique pour la fonction \"{role}\". Ce message sera affiché à toute personne envoyant un e-mail à l'employé.",
+    "oooGeneralMailAddress": "Adresse e-mail générale (remplacement)",
+    "oooTemplateSave": "Enregistrer",
+    "oooTemplateSaved": "Modèle OOO enregistré",
+    "oooVariablesHint": "Variables : {voornaam}, {achternaam}, {algemeen_mailadres}"
   }
 }
