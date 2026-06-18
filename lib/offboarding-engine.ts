@@ -90,7 +90,9 @@ export class OffboardingEngine {
       },
     })
 
-    if (activeJob && !['PENDING', 'READY', 'TEAMS_TRANSFER_PENDING'].includes(activeJob.state)) {
+    const allowedRestartStates = ['PENDING', 'READY', 'TEAMS_TRANSFER_PENDING']
+    const isBlocked = (activeJob?.state as string)?.startsWith('BLOCKED_AT_')
+    if (activeJob && !allowedRestartStates.includes(activeJob.state) && !isBlocked) {
       throw new Error('Offboarding already in progress for this starter')
     }
 
@@ -290,7 +292,7 @@ export class OffboardingEngine {
 
     const combinedMessage = [renderedNl, renderedFr, renderedEn]
       .filter(Boolean)
-      .join('\n\n---\n\n')
+      .join('<br><br><hr><br>')
 
     await graphApiService.setOutOfOffice(ctx.entityId, ctx.graphUserId, combinedMessage, combinedMessage)
   }
