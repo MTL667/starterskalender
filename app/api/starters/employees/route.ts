@@ -51,7 +51,12 @@ export async function GET(request: NextRequest) {
       distinct: ['firstName', 'lastName'],
     })
 
-    return NextResponse.json(starters)
+    const result = starters.map(s => ({
+      ...s,
+      name: `${s.firstName} ${s.lastName}`,
+    }))
+
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Error fetching employees:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
