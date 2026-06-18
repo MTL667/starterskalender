@@ -276,12 +276,11 @@ export class GraphApiService {
   }
 
   async convertToSharedMailbox(entityId: string, userId: string): Promise<void> {
-    const { token } = await this.getAuthenticatedClient(entityId)
-    await this.patchWithRetry(
-      `${GRAPH_BASE_URL}/users/${userId}`,
-      token,
-      { mailboxSettings: { userPurpose: 'shared' } }
-    )
+    // Converting to shared mailbox requires Exchange Online PowerShell
+    // (Set-Mailbox -Type Shared), which is not available via Graph API.
+    // When all Exchange licenses are removed, the mailbox is retained for
+    // 30 days. Shared conversion should be done via Exchange admin if needed.
+    console.warn(`[Offboarding] Shared mailbox conversion for ${userId} requires Exchange Online admin action`)
   }
 
   async removeLicense(entityId: string, userId: string, skuId: string): Promise<void> {
