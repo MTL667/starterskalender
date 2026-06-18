@@ -250,6 +250,9 @@
       running = false;
     }
 
+    // Auto-start on page load
+    window.addEventListener('load', () => setTimeout(startDemo, 500));
+
     function resetDemo() {
       running = false;
       const preflight = document.getElementById('preflight');
