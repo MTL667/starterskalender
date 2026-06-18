@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
 import { graphApiService } from '@/lib/graph-api-service'
+import { findGraphUserIdForStarter } from '@/lib/offboarding-utils'
 
 export async function GET(
   req: NextRequest,
@@ -11,26 +12,22 @@ export async function GET(
 
   const starter = await prisma.starter.findUnique({
     where: { id: starterId },
-    select: {
-      entityId: true,
-      provisioningJobs: {
-        where: { state: 'SUCCESS', graphUserId: { not: null } },
-        select: { graphUserId: true },
-        orderBy: { completedAt: 'desc' },
-        take: 1,
-      },
-    },
+    select: { entityId: true, firstName: true, lastName: true, desiredEmail: true },
   })
 
-  const graphUserId = starter?.provisioningJobs?.[0]?.graphUserId
-  if (!starter?.entityId || !graphUserId) {
-    return NextResponse.json({ error: 'Starter not found or no mailbox' }, { status: 404 })
+  if (!starter?.entityId) {
+    return NextResponse.json({ error: 'Starter not found' }, { status: 404 })
   }
 
   try {
     await requirePermission('mail:offboarding', { entityId: starter.entityId })
   } catch {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const graphUserId = await findGraphUserIdForStarter(starterId, starter.entityId, starter.firstName, starter.lastName, starter.desiredEmail)
+  if (!graphUserId) {
+    return NextResponse.json({ error: 'No provisioned mailbox found' }, { status: 400 })
   }
 
   const groups = await graphApiService.getUserOwnedGroups(starter.entityId, graphUserId)

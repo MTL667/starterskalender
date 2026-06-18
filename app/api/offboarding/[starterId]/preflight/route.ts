@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
 import { runPreFlightChecks } from '@/lib/offboarding-preflight'
+import { findGraphUserIdForStarter } from '@/lib/offboarding-utils'
 
 export async function GET(
   req: NextRequest,
@@ -11,15 +12,7 @@ export async function GET(
 
   const starter = await prisma.starter.findUnique({
     where: { id: starterId },
-    select: {
-      entityId: true,
-      provisioningJobs: {
-        where: { state: 'SUCCESS', graphUserId: { not: null } },
-        select: { graphUserId: true },
-        orderBy: { completedAt: 'desc' },
-        take: 1,
-      },
-    },
+    select: { entityId: true, firstName: true, lastName: true, desiredEmail: true },
   })
 
   if (!starter?.entityId) {
@@ -32,7 +25,7 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const graphUserId = starter.provisioningJobs?.[0]?.graphUserId
+  const graphUserId = await findGraphUserIdForStarter(starterId, starter.entityId, starter.firstName, starter.lastName, starter.desiredEmail)
   if (!graphUserId) {
     return NextResponse.json({ error: 'Starter has no provisioned mailbox' }, { status: 400 })
   }

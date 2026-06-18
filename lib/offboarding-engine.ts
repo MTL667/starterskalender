@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { graphApiService, GraphApiError } from '@/lib/graph-api-service'
 import { createAuditLog } from '@/lib/audit'
+import { findGraphUserIdForStarter } from '@/lib/offboarding-utils'
 import { OffboardingState } from '@prisma/client'
 
 type StepName =
@@ -70,23 +71,16 @@ export class OffboardingEngine {
   async startOffboarding(starterId: string, triggeredBy: string): Promise<{ jobId: string }> {
     const starter = await prisma.starter.findUnique({
       where: { id: starterId },
-      select: {
-        id: true,
-        entityId: true,
-        firstName: true,
-        lastName: true,
-        provisioningJobs: {
-          where: { state: 'SUCCESS', graphUserId: { not: null } },
-          select: { graphUserId: true },
-          orderBy: { completedAt: 'desc' },
-          take: 1,
-        },
-      },
+      select: { id: true, entityId: true, firstName: true, lastName: true, desiredEmail: true },
     })
 
-    const graphUserId = starter?.provisioningJobs?.[0]?.graphUserId
-    if (!starter?.entityId || !graphUserId) {
-      throw new Error('Starter not found or has no entity/provisioned mailbox')
+    if (!starter?.entityId) {
+      throw new Error('Starter not found or has no entity')
+    }
+
+    const graphUserId = await findGraphUserIdForStarter(starterId, starter.entityId, starter.firstName, starter.lastName, starter.desiredEmail)
+    if (!graphUserId) {
+      throw new Error('Starter not found or has no provisioned mailbox')
     }
 
     const activeJob = await prisma.offboardingJob.findFirst({
