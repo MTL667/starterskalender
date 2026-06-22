@@ -1531,6 +1531,7 @@
     "selectResponsible": "Selecteer een verantwoordelijke",
     "responsibleSaved": "Verantwoordelijke opgeslagen!",
     "responsibleDeleted": "Verantwoordelijke verwijderd",
+    "responsibleUpdated": "Verantwoordelijke bijgewerkt!",
     "confirmDeleteAssignment": "Weet je zeker dat je deze assignment wilt verwijderen?",
     "newAssignment": "Nieuwe Verantwoordelijke Toewijzen",
     "newAssignmentDescription": "Voeg een nieuwe taak verantwoordelijke toe voor een specifieke entiteit of globaal",

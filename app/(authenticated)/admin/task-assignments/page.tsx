@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Info, Save, Trash2 } from 'lucide-react'
+import { Check, Info, Pencil, Save, Trash2, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { UserCombobox } from '@/components/ui/user-combobox'
 
@@ -64,6 +64,11 @@ export default function TaskAssignmentsPage() {
   const [users, setUsers] = useState<any[]>([])
   const [entities, setEntities] = useState<any[]>([])
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // Inline edit state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editUserId, setEditUserId] = useState<string>('')
+  const [editChannel, setEditChannel] = useState<string>('BOTH')
 
   // Form state voor nieuwe assignment
   const [selectedEntity, setSelectedEntity] = useState<string>('global')
@@ -154,6 +159,49 @@ export default function TaskAssignmentsPage() {
     }
   }
 
+  const startEditing = (assignment: any) => {
+    setEditingId(assignment.id)
+    setEditUserId(assignment.assignedToId)
+    setEditChannel(assignment.notifyChannel)
+  }
+
+  const cancelEditing = () => {
+    setEditingId(null)
+    setEditUserId('')
+    setEditChannel('BOTH')
+  }
+
+  const handleUpdate = async (id: string) => {
+    if (!editUserId) return
+
+    setSaving(true)
+    setMessage(null)
+
+    try {
+      const res = await fetch(`/api/admin/task-assignments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assignedToId: editUserId,
+          notifyChannel: editChannel,
+        }),
+      })
+
+      if (res.ok) {
+        setMessage({ type: 'success', text: t('responsibleUpdated') })
+        cancelEditing()
+        fetchData()
+      } else {
+        const data = await res.json()
+        setMessage({ type: 'error', text: `${tc('errorSaving')}: ${data.details || data.error || tc('unknown')}` })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: `${tc('errorSaving')}: ${(error as Error).message}` })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm(t('confirmDeleteAssignment'))) {
       return
@@ -179,6 +227,99 @@ export default function TaskAssignmentsPage() {
       entity,
       assignments: assignments.filter((a) => a.entityId === entity.id),
     })),
+  }
+
+  const renderAssignmentRow = (assignment: any) => {
+    const isEditing = editingId === assignment.id
+
+    if (isEditing) {
+      return (
+        <div key={assignment.id} className="p-3 border rounded-lg space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{taskTypeLabels[assignment.taskType]}</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1">{t('responsible')}</Label>
+              <UserCombobox
+                users={users}
+                value={editUserId}
+                onChange={setEditUserId}
+                placeholder={t('selectUser')}
+                emptyLabel={t('noUsersFound')}
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground mb-1">{t('notificationChannel')}</Label>
+              <Select value={editChannel} onValueChange={setEditChannel}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(notifyChannelLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => handleUpdate(assignment.id)}
+              disabled={saving || !editUserId}
+            >
+              <Check className="h-3.5 w-3.5 mr-1" />
+              {saving ? tc('saving') : tc('save')}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={cancelEditing}
+              disabled={saving}
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              {tc('cancel')}
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div
+        key={assignment.id}
+        className="flex items-center justify-between p-3 border rounded-lg"
+      >
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{taskTypeLabels[assignment.taskType]}</span>
+            <Badge variant="outline">{notifyChannelLabels[assignment.notifyChannel]}</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {assignment.assignee?.name || assignment.assignee?.email}
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => startEditing(assignment)}
+          >
+            <Pencil className="h-4 w-4 text-muted-foreground" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleDelete(assignment.id)}
+          >
+            <Trash2 className="h-4 w-4 text-red-500" />
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -302,33 +443,7 @@ export default function TaskAssignmentsPage() {
               <p className="text-muted-foreground">{t('noGlobalResponsibles')}</p>
             ) : (
               <div className="space-y-2">
-                {groupedAssignments.global.map((assignment) => (
-                  <div
-                    key={assignment.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">
-                          {taskTypeLabels[assignment.taskType]}
-                        </span>
-                        <Badge variant="outline">
-                          {notifyChannelLabels[assignment.notifyChannel]}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {assignment.assignee?.name || assignment.assignee?.email}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(assignment.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
-                ))}
+                {groupedAssignments.global.map(renderAssignmentRow)}
               </div>
             )}
           </CardContent>
@@ -356,33 +471,7 @@ export default function TaskAssignmentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {group.assignments.map((assignment) => (
-                    <div
-                      key={assignment.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {taskTypeLabels[assignment.taskType]}
-                          </span>
-                          <Badge variant="outline">
-                            {notifyChannelLabels[assignment.notifyChannel]}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {assignment.assignee?.name || assignment.assignee?.email}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(assignment.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ))}
+                  {group.assignments.map(renderAssignmentRow)}
                 </div>
               </CardContent>
             </Card>
