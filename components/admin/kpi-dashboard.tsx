@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSession } from 'next-auth/react'
 import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -390,7 +391,7 @@ function OperationalTab() {
 
 type OffboardingPeriod = 'year' | 'quarter' | 'month'
 
-function OffboardingTab() {
+function OffboardingTab({ canManageReasons }: { canManageReasons: boolean }) {
   const t = useTranslations('kpi')
   const [stats, setStats] = useState<OffboardingStats | null>(null)
   const [reasons, setReasons] = useState<LeaveReasonAdmin[]>([])
@@ -415,18 +416,22 @@ function OffboardingTab() {
       if (period === 'quarter') params.set('quarter', String(quarter))
       if (period === 'month') params.set('month', String(month))
 
-      const [statsRes, reasonsRes] = await Promise.all([
+      const fetches: Promise<Response>[] = [
         fetch(`/api/stats/offboarding?${params}`),
-        fetch('/api/admin/leave-reasons'),
-      ])
-      if (statsRes.ok) setStats(await statsRes.json())
-      if (reasonsRes.ok) setReasons(await reasonsRes.json())
+      ]
+      if (canManageReasons) {
+        fetches.push(fetch('/api/admin/leave-reasons'))
+      }
+
+      const results = await Promise.all(fetches)
+      if (results[0].ok) setStats(await results[0].json())
+      if (canManageReasons && results[1]?.ok) setReasons(await results[1].json())
     } catch (error) {
       console.error('Error fetching offboarding data:', error)
     } finally {
       setLoading(false)
     }
-  }, [year, period, quarter, month])
+  }, [year, period, quarter, month, canManageReasons])
 
   useEffect(() => {
     fetchData()
@@ -712,7 +717,7 @@ function OffboardingTab() {
         </Card>
       )}
 
-      <Card>
+      {canManageReasons && <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -828,13 +833,17 @@ function OffboardingTab() {
             <p className="text-center text-muted-foreground py-4">{t('noReasonsYet')}</p>
           )}
         </CardContent>
-      </Card>
+      </Card>}
     </div>
   )
 }
 
 export function KpiDashboard() {
   const t = useTranslations('kpi')
+  const { data: session } = useSession()
+  const userPerms: string[] = (session?.user as any)?.perms ?? []
+  const canSeeOffboarding = userPerms.includes('admin:users:manage') || userPerms.includes('starters:read:leavereason')
+  const canManageReasons = userPerms.includes('admin:users:manage') || userPerms.includes('offboarding:reasons:manage')
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -846,16 +855,20 @@ export function KpiDashboard() {
       <Tabs defaultValue="operational" className="space-y-6">
         <TabsList>
           <TabsTrigger value="operational">{t('tabOperational')}</TabsTrigger>
-          <TabsTrigger value="offboarding">{t('tabOffboarding')}</TabsTrigger>
+          {canSeeOffboarding && (
+            <TabsTrigger value="offboarding">{t('tabOffboarding')}</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="operational">
           <OperationalTab />
         </TabsContent>
 
-        <TabsContent value="offboarding">
-          <OffboardingTab />
-        </TabsContent>
+        {canSeeOffboarding && (
+          <TabsContent value="offboarding">
+            <OffboardingTab canManageReasons={canManageReasons} />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )

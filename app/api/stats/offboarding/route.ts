@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/auth-utils'
+import { requirePermission } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requirePermission('starters:read:leavereason')
 
     const { searchParams } = new URL(request.url)
     const yearParam = searchParams.get('year')

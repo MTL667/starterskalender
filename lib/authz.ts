@@ -205,6 +205,10 @@ export const FIELD_PERMISSIONS: Record<string, Record<string, string>> = {
     salary: 'starters:read:salary',
     salaryCurrency: 'starters:read:salary',
     bankAccount: 'starters:read:bankaccount',
+    terminationInitiator: 'starters:read:leavereason',
+    leaveReasonId: 'starters:read:leavereason',
+    leaveReason: 'starters:read:leavereason',
+    leaveReasonNote: 'starters:read:leavereason',
   },
 }
 

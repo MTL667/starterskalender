@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getCurrentUser } from '@/lib/auth-utils'
+import { requirePermission } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -9,10 +9,7 @@ const CreateSchema = z.object({
 
 export async function GET() {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requirePermission('starters:read:leavereason')
 
     const reasons = await prisma.leaveReason.findMany({
       where: { isActive: true },
@@ -21,7 +18,10 @@ export async function GET() {
     })
 
     return NextResponse.json(reasons)
-  } catch (error) {
+  } catch (error: any) {
+    if (error?.message?.includes('Unauthorized') || error?.message?.includes('Forbidden')) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error('Error fetching leave reasons:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
@@ -29,10 +29,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requirePermission('offboarding:reasons:manage')
 
     const body = await request.json()
     const data = CreateSchema.parse(body)
@@ -61,6 +58,9 @@ export async function POST(request: NextRequest) {
     }
     if (error?.code === 'P2002') {
       return NextResponse.json({ error: 'Reason already exists' }, { status: 409 })
+    }
+    if (error?.message?.includes('Unauthorized') || error?.message?.includes('Forbidden')) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
     }
     console.error('Error creating leave reason:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

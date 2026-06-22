@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { requireAdmin } from '@/lib/auth-utils'
+import { requirePermission } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
@@ -13,7 +13,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin()
+    await requirePermission('offboarding:reasons:manage')
     const { id } = await params
     const body = await request.json()
     const data = UpdateSchema.parse(body)
@@ -47,7 +47,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin()
+    await requirePermission('offboarding:reasons:manage')
     const { id } = await params
 
     const reason = await prisma.leaveReason.findUnique({

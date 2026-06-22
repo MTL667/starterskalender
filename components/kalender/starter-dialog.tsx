@@ -223,6 +223,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     leaveReasonNote: '',
   })
 
+  const userPerms: string[] = (session?.user as any)?.perms ?? []
+  const isAdmin = userPerms.includes('admin:users:manage')
+  const canSeeLeaveReason = isAdmin || userPerms.includes('starters:read:leavereason')
+  const canManageReasons = isAdmin || userPerms.includes('offboarding:reasons:manage')
+
   // Check if user can edit extra info (notes)
   // Everyone except no-permission users can edit notes for entities they have access to
   const canEditExtraInfo = (() => {
@@ -368,13 +373,13 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   }, [formData.type, employeeSearch, isEdit, manualEntry])
 
   useEffect(() => {
-    if (formData.type === 'OFFBOARDING' && open) {
+    if (formData.type === 'OFFBOARDING' && open && canSeeLeaveReason) {
       fetch('/api/leave-reasons')
-        .then(res => res.json())
+        .then(res => res.ok ? res.json() : [])
         .then(data => setLeaveReasons(Array.isArray(data) ? data : []))
         .catch(() => setLeaveReasons([]))
     }
-  }, [formData.type, open])
+  }, [formData.type, open, canSeeLeaveReason])
 
   // Laad job roles voor de gekozen entiteit
   useEffect(() => {
@@ -687,7 +692,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       return
     }
 
-    if (formData.type === 'OFFBOARDING' && !formData.terminationInitiator) {
+    if (formData.type === 'OFFBOARDING' && canSeeLeaveReason && !formData.terminationInitiator) {
       return
     }
 
@@ -854,7 +859,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         data.legalForm = formData.legalForm || null
       }
 
-      if (formData.type === 'OFFBOARDING') {
+      if (formData.type === 'OFFBOARDING' && canSeeLeaveReason) {
         data.terminationInitiator = formData.terminationInitiator || null
         data.leaveReasonId = formData.leaveReasonId || null
         data.leaveReasonNote = formData.leaveReasonNote || null
@@ -1123,8 +1128,6 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
-  const userPerms: string[] = session?.user?.perms ?? []
-  const isAdmin = userPerms.includes('admin:users:manage')
   const isMaterialMgr =
     userPerms.includes('materials:manage') || userPerms.includes('admin:users:manage')
   const canManagePhoto = isAdmin || userPerms.includes('starters:photo:manage')
@@ -1868,7 +1871,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
             )}
 
-            {formData.type === 'OFFBOARDING' && (
+            {formData.type === 'OFFBOARDING' && canSeeLeaveReason && (
               <>
                 <div>
                   <Label htmlFor="terminationInitiator">{t('labelTerminationInitiator')} *</Label>
@@ -1910,9 +1913,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                           {leaveReasons.map((r) => (
                             <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
                           ))}
-                          <SelectItem value="__new__" className="text-blue-600 font-medium">
-                            + {t('addNewReason')}
-                          </SelectItem>
+                          {canManageReasons && (
+                            <SelectItem value="__new__" className="text-blue-600 font-medium">
+                              + {t('addNewReason')}
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>

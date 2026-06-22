@@ -57,10 +57,7 @@ const StarterSchema = z.object({
   terminationInitiator: z.enum(VALID_TERMINATION_INITIATORS).nullable().optional(),
   leaveReasonId: z.string().nullable().optional(),
   leaveReasonNote: z.string().nullable().optional(),
-}).refine(
-  (d) => d.type !== 'OFFBOARDING' || d.terminationInitiator != null,
-  { message: 'terminationInitiator is required for offboarding', path: ['terminationInitiator'] }
-)
+})
 
 // GET - List starters met filtering
 export async function GET(request: NextRequest) {
@@ -194,6 +191,13 @@ export async function POST(request: NextRequest) {
     })
     if (dropped.length > 0) {
       console.log(`🔒 Dropped protected fields on create: ${dropped.join(', ')}`)
+    }
+
+    if (data.type === 'OFFBOARDING' && !dropped.includes('terminationInitiator') && data.terminationInitiator == null) {
+      return NextResponse.json(
+        { error: 'terminationInitiator is required for offboarding' },
+        { status: 400 },
+      )
     }
 
     const isPending = data.isPendingBoarding || !data.startDate

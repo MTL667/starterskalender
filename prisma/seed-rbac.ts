@@ -39,20 +39,21 @@ const SYSTEM_ROLES: SystemRoleSpec[] = [
     key: 'global-viewer',
     name: 'Globale lezer',
     description:
-      'Kan alle data bekijken over alle entiteiten heen, maar niets wijzigen. Geen toegang tot salaris/bankgegevens.',
+      'Kan alle data bekijken over alle entiteiten heen, maar niets wijzigen. Geen toegang tot salaris/bank/vertrekreden-gegevens.',
     bypassEntityScope: true,
     permissions: {
       match: (k: string) =>
         k.includes(':read') &&
         !k.includes(':read:salary') &&
-        !k.includes(':read:bankaccount'),
+        !k.includes(':read:bankaccount') &&
+        !k.includes(':read:leavereason'),
     },
   },
   {
     key: 'entity-editor',
     name: 'Entiteit-beheerder',
     description:
-      'Kan starters, taken en materialen beheren voor de toegewezen entiteiten. Geen toegang tot salaris- of bankgegevens.',
+      'Kan starters, taken en materialen beheren voor de toegewezen entiteiten. Incl. vertrekredenen. Geen toegang tot salaris- of bankgegevens.',
     bypassEntityScope: false,
     permissions: {
       match: (k: string) =>
@@ -62,7 +63,8 @@ const SYSTEM_ROLES: SystemRoleSpec[] = [
           k === 'materials:assign' ||
           k === 'reporting:kpi:read' ||
           k === 'carddav:sync' ||
-          k === 'carddav:delete') &&
+          k === 'carddav:delete' ||
+          k === 'offboarding:reasons:manage') &&
         !k.includes(':read:salary') &&
         !k.includes(':read:bankaccount'),
     },
@@ -79,7 +81,8 @@ const SYSTEM_ROLES: SystemRoleSpec[] = [
           k === 'tasks:read' ||
           k === 'materials:read') &&
         !k.includes(':read:salary') &&
-        !k.includes(':read:bankaccount'),
+        !k.includes(':read:bankaccount') &&
+        !k.includes(':read:leavereason'),
     },
   },
   {
