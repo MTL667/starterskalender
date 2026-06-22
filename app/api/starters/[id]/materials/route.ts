@@ -55,6 +55,7 @@ export async function POST(
         id: true,
         roleTitle: true,
         entityId: true,
+        employmentType: true,
       },
     })
 
@@ -117,6 +118,7 @@ export async function POST(
             starterId: starter.id,
             materialId: jrm.materialId,
             notes: jrm.notes,
+            materialProvision: starter.employmentType === 'SUBCONTRACTOR' ? 'SELF_PROVIDED' : 'ENTITY_PROVIDED',
           },
           include: {
             material: true,

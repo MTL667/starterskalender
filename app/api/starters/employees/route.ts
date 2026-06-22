@@ -39,6 +39,11 @@ export async function GET(request: NextRequest) {
         region: true,
         phoneNumber: true,
         desiredEmail: true,
+        employmentType: true,
+        companyName: true,
+        vatNumber: true,
+        companyAddress: true,
+        legalForm: true,
         entity: {
           select: {
             id: true,

@@ -45,6 +45,9 @@ export async function GET(request: NextRequest) {
     const migrationCount = await prisma.starter.count({
       where: { ...baseWhere, type: 'MIGRATION' },
     })
+    const subcontractorCount = await prisma.starter.count({
+      where: { ...baseWhere, employmentType: 'SUBCONTRACTOR' },
+    })
 
     const entityStats = await Promise.all(
       visibleEntities.map(async (entity) => {
@@ -70,6 +73,7 @@ export async function GET(request: NextRequest) {
       onboardingCount,
       offboardingCount,
       migrationCount,
+      subcontractorCount,
       entities: entityStats.filter(e => e.count > 0),
     })
   } catch (error) {

@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon, Cloud, CloudOff } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon, Cloud, CloudOff, Building2 } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { MaterialStatusStepper } from '@/components/materials/material-status-stepper'
@@ -105,6 +105,11 @@ interface Employee {
   region: string | null
   phoneNumber: string | null
   desiredEmail: string | null
+  employmentType: 'EMPLOYEE' | 'SUBCONTRACTOR' | null
+  companyName: string | null
+  vatNumber: string | null
+  companyAddress: string | null
+  legalForm: string | null
   entity: {
     id: string
     name: string
@@ -515,6 +520,19 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     setSelectedEmployee(employee)
     setShowEmployeeList(false)
     setEmployeeSearch('')
+    const companyFields = employee.employmentType === 'SUBCONTRACTOR' ? {
+      employmentType: 'SUBCONTRACTOR' as const,
+      companyName: employee.companyName || '',
+      vatNumber: employee.vatNumber || '',
+      companyAddress: employee.companyAddress || '',
+      legalForm: employee.legalForm || '',
+    } : {
+      employmentType: 'EMPLOYEE' as const,
+      companyName: '',
+      vatNumber: '',
+      companyAddress: '',
+      legalForm: '',
+    }
     if (formData.type === 'MIGRATION') {
       setFormData(prev => ({
         ...prev,
@@ -528,6 +546,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         desiredEmail: employee.desiredEmail || '',
         entityId: '',
         roleTitle: '',
+        ...companyFields,
       }))
     } else {
       setFormData(prev => ({
@@ -540,6 +559,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         region: employee.region || '',
         phoneNumber: employee.phoneNumber || '',
         desiredEmail: employee.desiredEmail || '',
+        ...companyFields,
       }))
     }
   }
@@ -833,6 +853,26 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     } catch (error) {
       console.error('Error updating material status:', error)
       alert(t('errorMaterial'))
+    }
+  }
+
+  const handleMaterialProvisionToggle = async (materialId: string, currentProvision: string) => {
+    if (!starter) return
+    const newProvision = currentProvision === 'SELF_PROVIDED' ? 'ENTITY_PROVIDED' : 'SELF_PROVIDED'
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/materials/${materialId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ materialProvision: newProvision }),
+      })
+      if (res.ok) {
+        const materialsRes = await fetch(`/api/starters/${starter.id}/materials`)
+        if (materialsRes.ok) {
+          setStarterMaterials(await materialsRes.json())
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling material provision:', error)
     }
   }
 
@@ -1137,7 +1177,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     setVatLookupError(null)
                     setVatLookupSuccess(false)
                   }}
-                  disabled={isEdit}
+                  disabled={isEdit || !!selectedEmployee}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -1295,7 +1335,14 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                                 onClick={() => handleEmployeeSelect(emp)}
                               >
                                 <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate">{emp.name}</div>
+                                  <div className="font-medium truncate flex items-center gap-1">
+                                    {emp.name}
+                                    {emp.employmentType === 'SUBCONTRACTOR' && (
+                                      <span title={t('subcontractor')}>
+                                        <Building2 className="h-3 w-3 text-orange-500 shrink-0" />
+                                      </span>
+                                    )}
+                                  </div>
                                   {emp.roleTitle && (
                                     <div className="text-xs text-muted-foreground truncate">{emp.roleTitle}</div>
                                   )}
@@ -2122,6 +2169,23 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                               {sm.material.category && (
                                 <Badge variant="outline" className="text-xs">
                                   {sm.material.category}
+                                </Badge>
+                              )}
+                              {canEdit && isMaterialMgr ? (
+                                <Badge
+                                  variant={sm.materialProvision === 'SELF_PROVIDED' ? 'secondary' : 'default'}
+                                  className="text-xs cursor-pointer select-none"
+                                  onClick={() => handleMaterialProvisionToggle(sm.materialId, sm.materialProvision || 'ENTITY_PROVIDED')}
+                                  title={t('toggleProvision')}
+                                >
+                                  {sm.materialProvision === 'SELF_PROVIDED' ? t('selfProvided') : t('entityProvided')}
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant={sm.materialProvision === 'SELF_PROVIDED' ? 'secondary' : 'outline'}
+                                  className="text-xs"
+                                >
+                                  {sm.materialProvision === 'SELF_PROVIDED' ? t('selfProvided') : t('entityProvided')}
                                 </Badge>
                               )}
                             </div>

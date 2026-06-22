@@ -47,6 +47,11 @@
 
 ## Deferred from: subcontractor starter type — spec-subcontractor-starter-type (2026-06-22)
 
-- **Material provision toggle for subcontractors** — Add `materialProvision` enum (ENTITY_PROVIDED, SELF_PROVIDED) to StarterMaterial. Subcontractors default to SELF_PROVIDED. UI toggle per material in starter dialog to override.
-- **Subcontractor offboarding flow** — Extend employee picker (`/api/starters/employees`) to include existing subcontractors with employment type indicator. Pre-fill company data from onboarding record.
-- **Stats integration** — Add subcontractor counts to YTD stats endpoint (`/api/stats/ytd`), dashboard charts, and starters table employment type column/filter.
+- ~~**Material provision toggle for subcontractors**~~ — DONE in phase 2.
+- ~~**Subcontractor offboarding flow**~~ — DONE in phase 2.
+- ~~**Stats integration**~~ — DONE in phase 2.
+
+## Deferred from: subcontractor phase 2 — spec-subcontractor-phase-2 (2026-06-22)
+
+- **Backfill legacy subcontractor materials** — Existing StarterMaterial records for subcontractor starters still have `materialProvision=ENTITY_PROVIDED` (schema default). A one-time data migration script should set them to `SELF_PROVIDED`.
+- **employmentType editable after create** — Currently employmentType cannot be changed via PATCH on an existing starter. If a starter is misclassified, materials won't follow. Consider adding employmentType to UpdateStarterSchema.

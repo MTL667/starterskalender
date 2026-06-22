@@ -333,6 +333,7 @@ export async function PATCH(
                     starterId: id,
                     materialId: jrm.materialId,
                     notes: jrm.notes,
+                    materialProvision: starter.employmentType === 'SUBCONTRACTOR' ? 'SELF_PROVIDED' : 'ENTITY_PROVIDED',
                   },
                 })
                 assigned++

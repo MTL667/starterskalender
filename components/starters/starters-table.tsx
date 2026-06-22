@@ -43,6 +43,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
   const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState<'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR'>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
   const [sortColumn, setSortColumn] = useState<SortColumn>('startDate')
@@ -132,6 +133,11 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
       if (starterTypeFilter !== 'ALL') {
         const type = starter.type || 'ONBOARDING'
         if (type !== starterTypeFilter) return false
+      }
+
+      if (employmentTypeFilter !== 'ALL') {
+        const empType = starter.employmentType || 'EMPLOYEE'
+        if (empType !== employmentTypeFilter) return false
       }
 
       if (periodMode === 'custom') {
@@ -452,6 +458,17 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
               </SelectContent>
             </Select>
 
+            <Select value={employmentTypeFilter} onValueChange={(v: 'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR') => setEmploymentTypeFilter(v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t('filterAllEmploymentTypes')}</SelectItem>
+                <SelectItem value="EMPLOYEE">{t('filterEmployees')}</SelectItem>
+                <SelectItem value="SUBCONTRACTOR">{t('filterSubcontractors')}</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-[200px] justify-start font-normal">
@@ -601,7 +618,16 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                         )}
                       </span>
                     </td>
-                    <td className="py-3 font-medium">{starter.firstName} {starter.lastName}</td>
+                    <td className="py-3 font-medium">
+                      <span className="inline-flex items-center gap-1">
+                        {starter.firstName} {starter.lastName}
+                        {starter.employmentType === 'SUBCONTRACTOR' && (
+                          <span title={t('filterSubcontractors')}>
+                            <Building2 className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                          </span>
+                        )}
+                      </span>
+                    </td>
                     <td className="py-3 text-sm font-mono text-muted-foreground">
                       {starter.inspectorNumber || ''}
                     </td>

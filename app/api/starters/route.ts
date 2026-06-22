@@ -286,7 +286,12 @@ export async function POST(request: NextRequest) {
             await prisma.starterMaterial.upsert({
               where: { starterId_materialId: { starterId: starter.id, materialId: jrm.materialId } },
               update: {},
-              create: { starterId: starter.id, materialId: jrm.materialId, notes: jrm.notes },
+              create: {
+                starterId: starter.id,
+                materialId: jrm.materialId,
+                notes: jrm.notes,
+                materialProvision: data.employmentType === 'SUBCONTRACTOR' ? 'SELF_PROVIDED' : 'ENTITY_PROVIDED',
+              },
             })
           }
           if (activeMaterials.length > 0) {

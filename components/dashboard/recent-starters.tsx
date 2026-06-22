@@ -9,7 +9,7 @@ import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
 import { StarterDialog } from '@/components/kalender/starter-dialog'
 import { useSession } from 'next-auth/react'
-import { PlaneLanding, PlaneTakeoff, ArrowLeftRight } from 'lucide-react'
+import { PlaneLanding, PlaneTakeoff, ArrowLeftRight, Building2 } from 'lucide-react'
 import { HealthDot } from '@/components/health-badge'
 import { useHealthScores } from '@/lib/use-health-scores'
 
@@ -18,6 +18,7 @@ type BoardMode = 'arrivals' | 'departures'
 interface Starter {
   id: string
   type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
+  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR'
   firstName: string
   lastName: string
   language?: string
@@ -285,6 +286,11 @@ export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps)
                         <PlaneLanding className="h-4 w-4 text-green-500 shrink-0" />
                       )}
                       <div className="font-medium">{starter.firstName} {starter.lastName}</div>
+                      {starter.employmentType === 'SUBCONTRACTOR' && (
+                        <span title={starterCardT('subcontractor')}>
+                          <Building2 className="h-3.5 w-3.5 text-orange-500 shrink-0" />
+                        </span>
+                      )}
                       {healthScores[starter.id] && (
                         <HealthDot level={healthScores[starter.id].level} />
                       )}

@@ -6,9 +6,10 @@ import { createAuditLog } from '@/lib/audit'
 import { isMaterialManager } from '@/lib/rbac'
 
 const UpdateMaterialStatusSchema = z.object({
-  status: z.enum(['PENDING', 'IN_STOCK', 'ORDERED', 'RECEIVED', 'RESERVED']),
+  status: z.enum(['PENDING', 'IN_STOCK', 'ORDERED', 'RECEIVED', 'RESERVED']).optional(),
   expectedDeliveryDate: z.string().datetime().optional().nullable(),
   notes: z.string().optional().nullable(),
+  materialProvision: z.enum(['ENTITY_PROVIDED', 'SELF_PROVIDED']).optional(),
 })
 
 export async function PATCH(
@@ -30,47 +31,60 @@ export async function PATCH(
     const data = UpdateMaterialStatusSchema.parse(body)
 
     const now = new Date()
-    const statusData: any = {
-      status: data.status,
-      isProvided: data.status === 'RESERVED',
-      notes: data.notes !== undefined ? data.notes : undefined,
+    const statusData: any = {}
+
+    if (data.notes !== undefined) {
+      statusData.notes = data.notes
     }
 
-    switch (data.status) {
-      case 'PENDING':
-        statusData.orderedAt = null
-        statusData.expectedDeliveryDate = null
-        statusData.receivedAt = null
-        statusData.reservedAt = null
-        statusData.reservedBy = null
-        statusData.providedAt = null
-        statusData.providedBy = null
-        break
-      case 'IN_STOCK':
-        statusData.orderedAt = null
-        statusData.expectedDeliveryDate = null
-        statusData.receivedAt = null
-        break
-      case 'ORDERED':
-        statusData.orderedAt = now
-        statusData.expectedDeliveryDate = data.expectedDeliveryDate
-          ? new Date(data.expectedDeliveryDate)
-          : null
-        statusData.receivedAt = null
-        statusData.reservedAt = null
-        statusData.reservedBy = null
-        break
-      case 'RECEIVED':
-        statusData.receivedAt = now
-        statusData.reservedAt = null
-        statusData.reservedBy = null
-        break
-      case 'RESERVED':
-        statusData.reservedAt = now
-        statusData.reservedBy = user.id
-        statusData.providedAt = now
-        statusData.providedBy = user.id
-        break
+    if (data.materialProvision) {
+      statusData.materialProvision = data.materialProvision
+    }
+
+    if (Object.keys(statusData).length === 0 && !data.status) {
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
+    }
+
+    if (data.status) {
+      statusData.status = data.status
+      statusData.isProvided = data.status === 'RESERVED'
+
+      switch (data.status) {
+        case 'PENDING':
+          statusData.orderedAt = null
+          statusData.expectedDeliveryDate = null
+          statusData.receivedAt = null
+          statusData.reservedAt = null
+          statusData.reservedBy = null
+          statusData.providedAt = null
+          statusData.providedBy = null
+          break
+        case 'IN_STOCK':
+          statusData.orderedAt = null
+          statusData.expectedDeliveryDate = null
+          statusData.receivedAt = null
+          break
+        case 'ORDERED':
+          statusData.orderedAt = now
+          statusData.expectedDeliveryDate = data.expectedDeliveryDate
+            ? new Date(data.expectedDeliveryDate)
+            : null
+          statusData.receivedAt = null
+          statusData.reservedAt = null
+          statusData.reservedBy = null
+          break
+        case 'RECEIVED':
+          statusData.receivedAt = now
+          statusData.reservedAt = null
+          statusData.reservedBy = null
+          break
+        case 'RESERVED':
+          statusData.reservedAt = now
+          statusData.reservedBy = user.id
+          statusData.providedAt = now
+          statusData.providedBy = user.id
+          break
+      }
     }
 
     const starterMaterial = await prisma.starterMaterial.update({
@@ -96,7 +110,8 @@ export async function PATCH(
       meta: {
         starter: `${starterMaterial.starter.firstName} ${starterMaterial.starter.lastName}`,
         material: starterMaterial.material.name,
-        status: data.status,
+        ...(data.status ? { status: data.status } : {}),
+        ...(data.materialProvision ? { materialProvision: data.materialProvision } : {}),
       },
     })
 

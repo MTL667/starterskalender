@@ -1,5 +1,6 @@
 export type StarterType = 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 export type EmploymentType = 'EMPLOYEE' | 'SUBCONTRACTOR'
+export type MaterialProvisionType = 'ENTITY_PROVIDED' | 'SELF_PROVIDED'
 export type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 
 export interface EntityRef {

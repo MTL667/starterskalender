@@ -11,6 +11,7 @@ interface YTDData {
   onboardingCount: number
   offboardingCount: number
   migrationCount: number
+  subcontractorCount: number
   entities: Array<{
     entityId: string
     entityName: string
@@ -67,7 +68,7 @@ export function YTDStats({ year }: { year: number }) {
       <CardContent>
         <div className="space-y-6">
           {/* Totaal met onboarding/offboarding breakdown */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div className="border-l-4 border-primary pl-4">
               <div className="text-sm font-medium text-muted-foreground mb-1">
                 {t('total')}
@@ -92,6 +93,14 @@ export function YTDStats({ year }: { year: number }) {
               </div>
               <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{data.migrationCount}</div>
             </div>
+            {data.subcontractorCount > 0 && (
+              <div className="border-l-4 border-amber-500 pl-4">
+                <div className="text-sm font-medium text-muted-foreground mb-1">
+                  {t('totalSubcontractors')}
+                </div>
+                <div className="text-3xl font-bold text-amber-600 dark:text-amber-400">{data.subcontractorCount}</div>
+              </div>
+            )}
           </div>
 
           {/* Per entiteit */}

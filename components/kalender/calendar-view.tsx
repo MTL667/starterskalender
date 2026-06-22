@@ -47,6 +47,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
   const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState<'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR'>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
   const [deepLinkHandled, setDeepLinkHandled] = useState(false)
@@ -173,6 +174,9 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
       const type = starter.type || 'ONBOARDING'
       if (type !== starterTypeFilter) return false
     }
+    if (employmentTypeFilter !== 'ALL') {
+      if ((starter.employmentType || 'EMPLOYEE') !== employmentTypeFilter) return false
+    }
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       return (
@@ -191,6 +195,10 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
     if (starterTypeFilter !== 'ALL') {
       const type = starter.type || 'ONBOARDING'
       if (type !== starterTypeFilter) return false
+    }
+
+    if (employmentTypeFilter !== 'ALL') {
+      if ((starter.employmentType || 'EMPLOYEE') !== employmentTypeFilter) return false
     }
 
     if (viewMode !== 'year') {
@@ -478,6 +486,17 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                 <SelectItem value="ONBOARDING">{t('filterArrivals')}</SelectItem>
                 <SelectItem value="OFFBOARDING">{t('filterDepartures')}</SelectItem>
                 <SelectItem value="MIGRATION">{t('filterMigrations')}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={employmentTypeFilter} onValueChange={(v: 'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR') => setEmploymentTypeFilter(v)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{t('filterAllEmploymentTypes')}</SelectItem>
+                <SelectItem value="EMPLOYEE">{t('filterEmployees')}</SelectItem>
+                <SelectItem value="SUBCONTRACTOR">{t('filterSubcontractors')}</SelectItem>
               </SelectContent>
             </Select>
 
