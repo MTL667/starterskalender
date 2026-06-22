@@ -63,6 +63,11 @@ interface Starter {
   cardDavStatus?: string | null
   fromEntityId?: string | null
   fromRoleTitle?: string | null
+  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR'
+  companyName?: string | null
+  vatNumber?: string | null
+  companyAddress?: string | null
+  legalForm?: string | null
   entity?: {
     id: string
     name?: string
@@ -156,8 +161,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [cardDavLocalSyncedAt, setCardDavLocalSyncedAt] = useState<string | null>(null)
   const [starterHasHealthyConnection, setStarterHasHealthyConnection] = useState(false)
   const [starterHasLicenseConfig, setStarterHasLicenseConfig] = useState(false)
+  const [vatLookupLoading, setVatLookupLoading] = useState(false)
+  const [vatLookupError, setVatLookupError] = useState<string | null>(null)
+  const [vatLookupSuccess, setVatLookupSuccess] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
+    employmentType: 'EMPLOYEE' as 'EMPLOYEE' | 'SUBCONTRACTOR',
     firstName: '',
     lastName: '',
     language: 'NL',
@@ -177,6 +186,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     experienceEntity: '',
     phoneNumber: '',
     desiredEmail: '',
+    companyName: '',
+    vatNumber: '',
+    companyAddress: '',
+    legalForm: '',
   })
 
   // Check if user can edit extra info (notes)
@@ -412,6 +425,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     if (starter) {
       setFormData({
         type: starter.type || 'ONBOARDING',
+        employmentType: starter.employmentType || 'EMPLOYEE',
         firstName: starter.firstName,
         lastName: starter.lastName,
         language: starter.language || 'NL',
@@ -431,10 +445,17 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         experienceEntity: starter.experienceEntity || '',
         phoneNumber: starter.phoneNumber || '',
         desiredEmail: starter.desiredEmail || '',
+        companyName: starter.companyName || '',
+        vatNumber: starter.vatNumber || '',
+        companyAddress: starter.companyAddress || '',
+        legalForm: starter.legalForm || '',
       })
+      setVatLookupError(null)
+      setVatLookupSuccess(false)
     } else {
       setFormData({
         type: 'ONBOARDING',
+        employmentType: 'EMPLOYEE',
         firstName: '',
         lastName: '',
         language: 'NL',
@@ -454,7 +475,13 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         experienceEntity: '',
         phoneNumber: '',
         desiredEmail: '',
+        companyName: '',
+        vatNumber: '',
+        companyAddress: '',
+        legalForm: '',
       })
+      setVatLookupError(null)
+      setVatLookupSuccess(false)
       setManualEntry(false)
       setSelectedEmployee(null)
       setEmployeeSearch('')
@@ -586,6 +613,37 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     await submitStarter(false)
   }
 
+  const handleVatLookup = async () => {
+    const vatNumber = formData.vatNumber.trim()
+    if (!vatNumber) return
+
+    setVatLookupLoading(true)
+    setVatLookupError(null)
+    setVatLookupSuccess(false)
+
+    try {
+      const res = await fetch(`/api/vat-lookup?vatNumber=${encodeURIComponent(vatNumber)}`)
+      const result = await res.json()
+
+      if (!result.valid) {
+        setVatLookupError(result.error === 'Invalid VAT number' ? t('vatLookupInvalid') : t('vatLookupError'))
+        return
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        companyName: result.companyName || prev.companyName,
+        companyAddress: result.address || prev.companyAddress,
+        legalForm: result.legalForm || prev.legalForm,
+      }))
+      setVatLookupSuccess(true)
+    } catch {
+      setVatLookupError(t('vatLookupError'))
+    } finally {
+      setVatLookupLoading(false)
+    }
+  }
+
   const submitStarter = async (isPendingBoarding: boolean) => {
     setLoading(true)
 
@@ -649,6 +707,21 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         experienceEntity: formData.type === 'ONBOARDING' && formData.hasExperience ? (formData.experienceEntity || null) : null,
         phoneNumber: formData.phoneNumber || null,
         desiredEmail: formData.desiredEmail || null,
+      }
+
+      if (!isEdit) {
+        data.employmentType = formData.employmentType
+        if (formData.employmentType === 'SUBCONTRACTOR') {
+          data.companyName = formData.companyName || null
+          data.vatNumber = formData.vatNumber || null
+          data.companyAddress = formData.companyAddress || null
+          data.legalForm = formData.legalForm || null
+        }
+      } else if (formData.employmentType === 'SUBCONTRACTOR') {
+        data.companyName = formData.companyName || null
+        data.vatNumber = formData.vatNumber || null
+        data.companyAddress = formData.companyAddress || null
+        data.legalForm = formData.legalForm || null
       }
 
       const url = isEdit ? `/api/starters/${starter.id}` : '/api/starters'
@@ -1050,6 +1123,33 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
 
               <div>
+                <Label htmlFor="employmentType">{t('employmentType')}</Label>
+                <Select
+                  value={formData.employmentType}
+                  onValueChange={(value: 'EMPLOYEE' | 'SUBCONTRACTOR') => {
+                    setFormData({
+                      ...formData,
+                      employmentType: value,
+                      ...(value === 'EMPLOYEE'
+                        ? { companyName: '', vatNumber: '', companyAddress: '', legalForm: '' }
+                        : {}),
+                    })
+                    setVatLookupError(null)
+                    setVatLookupSuccess(false)
+                  }}
+                  disabled={isEdit}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="EMPLOYEE">{t('employee')}</SelectItem>
+                    <SelectItem value="SUBCONTRACTOR">{t('subcontractor')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="language">{t('labelLanguage')}</Label>
                 <Select
                   value={formData.language}
@@ -1066,6 +1166,77 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 </Select>
               </div>
             </div>
+
+            {formData.employmentType === 'SUBCONTRACTOR' && (
+              <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
+                <div className="text-sm font-medium">{t('companyDetails')}</div>
+                <div>
+                  <Label htmlFor="vatNumber">{t('vatNumber')}</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="vatNumber"
+                      value={formData.vatNumber}
+                      onChange={(e) => {
+                        setFormData({ ...formData, vatNumber: e.target.value })
+                        setVatLookupError(null)
+                        setVatLookupSuccess(false)
+                      }}
+                      placeholder="BE0123456789"
+                      disabled={!canEdit}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleVatLookup}
+                      disabled={!canEdit || vatLookupLoading || !formData.vatNumber.trim()}
+                    >
+                      {vatLookupLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        t('vatLookup')
+                      )}
+                    </Button>
+                  </div>
+                  {vatLookupLoading && (
+                    <p className="text-xs text-muted-foreground mt-1">{t('vatLookupLoading')}</p>
+                  )}
+                  {vatLookupError && (
+                    <p className="text-xs text-destructive mt-1">{vatLookupError}</p>
+                  )}
+                  {vatLookupSuccess && !vatLookupError && (
+                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('vatLookupSuccess')}</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="companyName">{t('companyName')}</Label>
+                  <Input
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="companyAddress">{t('companyAddress')}</Label>
+                  <Textarea
+                    id="companyAddress"
+                    value={formData.companyAddress}
+                    onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
+                    rows={2}
+                    disabled={!canEdit}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="legalForm">{t('legalForm')}</Label>
+                  <Input
+                    id="legalForm"
+                    value={formData.legalForm}
+                    onChange={(e) => setFormData({ ...formData, legalForm: e.target.value })}
+                    disabled={!canEdit}
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               {(formData.type === 'OFFBOARDING' || formData.type === 'MIGRATION') && !isEdit && !manualEntry ? (

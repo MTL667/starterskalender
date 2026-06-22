@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
 import { useLocale } from 'next-intl'
 import { getDateLocale } from '@/lib/date-locale'
-import { PlaneLanding, PlaneTakeoff, ArrowLeftRight, Clock } from 'lucide-react'
+import { PlaneLanding, PlaneTakeoff, ArrowLeftRight, Clock, Building2 } from 'lucide-react'
 import { HealthDot } from '@/components/health-badge'
 
 interface Starter {
@@ -23,6 +23,7 @@ interface Starter {
   materialReturnDate?: string | null
   isPendingBoarding?: boolean
   isCancelled?: boolean
+  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR'
   entity?: {
     id: string
     name: string
@@ -55,6 +56,11 @@ export function StarterCard({ starter, onClick, healthLevel }: { starter: Starte
           <div className={`font-medium text-sm truncate ${starter.isCancelled ? 'line-through text-muted-foreground' : ''}`}>
             {starter.firstName} {starter.lastName}
           </div>
+          {starter.employmentType === 'SUBCONTRACTOR' && (
+            <span title={t('subcontractor')}>
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            </span>
+          )}
           {healthLevel && !starter.isCancelled && (
             <HealthDot level={healthLevel} />
           )}

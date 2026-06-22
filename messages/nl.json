@@ -938,7 +938,20 @@
     "cardDavHardDelete": "Definitief verwijderen",
     "cardDavAutoDeleteNotice": "Contact wordt automatisch verwijderd rond {date}",
     "cardDavSearch": "Zoek in adresboek",
-    "cardDavSearchNotFound": "Geen contact gevonden met deze naam in het adresboek"
+    "cardDavSearchNotFound": "Geen contact gevonden met deze naam in het adresboek",
+    "employmentType": "Type dienstverband",
+    "employee": "Werknemer",
+    "subcontractor": "Onderaannemer",
+    "companyName": "Bedrijfsnaam",
+    "vatNumber": "BTW-nummer",
+    "companyAddress": "Adres",
+    "legalForm": "Rechtsvorm",
+    "vatLookup": "Opzoeken",
+    "vatLookupLoading": "BTW-gegevens ophalen...",
+    "vatLookupError": "BTW-gegevens konden niet worden opgehaald. Vul de velden handmatig in.",
+    "vatLookupInvalid": "Ongeldig BTW-nummer",
+    "vatLookupSuccess": "Bedrijfsgegevens gevonden",
+    "companyDetails": "Bedrijfsgegevens"
   },
   "starterCard": {
     "languageNL": "Nederlands",
@@ -955,7 +968,8 @@
     "badgeOffboarding": "Uitstroom",
     "badgeMigration": "Migratie",
     "pendingBoarding": "Startdatum onbekend",
-    "labelMaterialReturn": "Inlevering:"
+    "labelMaterialReturn": "Inlevering:",
+    "subcontractor": "Onderaannemer"
   },
   "tasks": {
     "title": "Taken",

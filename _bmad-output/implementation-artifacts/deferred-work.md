@@ -44,3 +44,9 @@
 - **Tab pill vs underline style** — UX spec calls for underline tabs with entity-colored active indicator. Default shadcn tabs use pill/segmented style. Cosmetic. [candidate-detail-dialog.tsx]
 - **Date locale forced to nl-BE** — formatDate/formatShortDate always use nl-BE locale regardless of active language. Broader i18n concern. [candidate-detail-dialog.tsx]
 - **Graph error type narrowing via message substring** — Documents route checks error?.statusCode without verifying it originates from Microsoft Graph. Pre-existing pattern. [documents/route.ts]
+
+## Deferred from: subcontractor starter type — spec-subcontractor-starter-type (2026-06-22)
+
+- **Material provision toggle for subcontractors** — Add `materialProvision` enum (ENTITY_PROVIDED, SELF_PROVIDED) to StarterMaterial. Subcontractors default to SELF_PROVIDED. UI toggle per material in starter dialog to override.
+- **Subcontractor offboarding flow** — Extend employee picker (`/api/starters/employees`) to include existing subcontractors with employment type indicator. Pre-fill company data from onboarding record.
+- **Stats integration** — Add subcontractor counts to YTD stats endpoint (`/api/stats/ytd`), dashboard charts, and starters table employment type column/filter.

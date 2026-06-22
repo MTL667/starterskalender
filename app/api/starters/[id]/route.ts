@@ -36,6 +36,10 @@ const UpdateStarterSchema = z.object({
     .transform((v) => (v === null || v === undefined || v === '' ? null : Number(v))),
   salaryCurrency: z.string().length(3).nullable().optional(),
   bankAccount: z.string().nullable().optional(),
+  companyName: z.string().nullable().optional(),
+  vatNumber: z.string().nullable().optional(),
+  companyAddress: z.string().nullable().optional(),
+  legalForm: z.string().nullable().optional(),
 })
 
 // GET - Get single starter
@@ -151,6 +155,10 @@ export async function PATCH(
     if (data.salaryCurrency !== undefined) updateData.salaryCurrency = data.salaryCurrency ?? null
     if (data.bankAccount !== undefined) updateData.bankAccount = normalizeString(data.bankAccount)
     if (data.inspectorNumber !== undefined) updateData.inspectorNumber = data.inspectorNumber
+    if (data.companyName !== undefined) updateData.companyName = normalizeString(data.companyName)
+    if (data.vatNumber !== undefined) updateData.vatNumber = normalizeString(data.vatNumber)
+    if (data.companyAddress !== undefined) updateData.companyAddress = data.companyAddress ?? null
+    if (data.legalForm !== undefined) updateData.legalForm = normalizeString(data.legalForm)
 
     const isActivatingPending = existingStarter?.isPendingBoarding && data.startDate
 

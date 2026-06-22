@@ -103,6 +103,11 @@ enum StarterType {
   MIGRATION // Interne mutatie tussen entiteiten
 }
 
+enum EmploymentType {
+  EMPLOYEE
+  SUBCONTRACTOR
+}
+
 enum SigningMethod {
   SES // Simple Electronic Signature (click-to-sign)
   QES // Qualified Electronic Signature (Itsme)
@@ -334,6 +339,12 @@ model Starter {
   cancelledAt       DateTime? // Wanneer geannuleerd
   cancelledBy       String? // User ID die annuleerde
   cancelReason      String?     @db.Text // Reden van annulering
+
+  employmentType EmploymentType @default(EMPLOYEE)
+  companyName    String?
+  vatNumber      String?
+  companyAddress String?        @db.Text
+  legalForm      String?
 
   // Ervaring velden (relevant voor onboarding)
   hasExperience    Boolean   @default(false) // Heeft de starter relevante werkervaring?

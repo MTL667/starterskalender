@@ -1,4 +1,5 @@
 export type StarterType = 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
+export type EmploymentType = 'EMPLOYEE' | 'SUBCONTRACTOR'
 export type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 
 export interface EntityRef {
@@ -30,6 +31,11 @@ export interface Starter {
   phoneNumber?: string | null
   desiredEmail?: string | null
   inspectorNumber?: number | null
+  employmentType?: EmploymentType
+  companyName?: string | null
+  vatNumber?: string | null
+  companyAddress?: string | null
+  legalForm?: string | null
   entity?: EntityRef | null
 }
 

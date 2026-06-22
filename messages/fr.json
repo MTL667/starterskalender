@@ -938,7 +938,20 @@
     "cardDavHardDelete": "Supprimer définitivement",
     "cardDavAutoDeleteNotice": "Le contact sera automatiquement supprimé vers le {date}",
     "cardDavSearch": "Rechercher dans le carnet",
-    "cardDavSearchNotFound": "Aucun contact trouvé avec ce nom dans le carnet d'adresses"
+    "cardDavSearchNotFound": "Aucun contact trouvé avec ce nom dans le carnet d'adresses",
+    "employmentType": "Type de contrat",
+    "employee": "Employé",
+    "subcontractor": "Sous-traitant",
+    "companyName": "Nom de l'entreprise",
+    "vatNumber": "Numéro de TVA",
+    "companyAddress": "Adresse",
+    "legalForm": "Forme juridique",
+    "vatLookup": "Rechercher",
+    "vatLookupLoading": "Récupération des données TVA...",
+    "vatLookupError": "Les données TVA n'ont pas pu être récupérées. Remplissez les champs manuellement.",
+    "vatLookupInvalid": "Numéro de TVA invalide",
+    "vatLookupSuccess": "Données d'entreprise trouvées",
+    "companyDetails": "Données de l'entreprise"
   },
   "starterCard": {
     "languageNL": "Néerlandais",
@@ -955,7 +968,8 @@
     "badgeOffboarding": "Départ",
     "badgeMigration": "Migration",
     "pendingBoarding": "Date de début inconnue",
-    "labelMaterialReturn": "Restitution :"
+    "labelMaterialReturn": "Restitution :",
+    "subcontractor": "Sous-traitant"
   },
   "tasks": {
     "title": "Tâches",

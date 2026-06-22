@@ -11,9 +11,11 @@ import { createAutomaticTasks } from '@/lib/task-automation'
 import { eventBus } from '@/lib/events'
 
 const VALID_TYPES = ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'] as const
+const VALID_EMPLOYMENT_TYPES = ['EMPLOYEE', 'SUBCONTRACTOR'] as const
 
 const StarterSchema = z.object({
   type: z.enum(VALID_TYPES).default('ONBOARDING'),
+  employmentType: z.enum(VALID_EMPLOYMENT_TYPES).default('EMPLOYEE'),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   language: z.enum(['NL', 'FR']).default('NL'),
@@ -42,6 +44,10 @@ const StarterSchema = z.object({
     .transform((v) => (v === null || v === undefined || v === '' ? null : Number(v))),
   salaryCurrency: z.string().length(3).nullable().optional(),
   bankAccount: z.string().nullable().optional(),
+  companyName: z.string().nullable().optional(),
+  vatNumber: z.string().nullable().optional(),
+  companyAddress: z.string().nullable().optional(),
+  legalForm: z.string().nullable().optional(),
 })
 
 // GET - List starters met filtering
@@ -216,6 +222,11 @@ export async function POST(request: NextRequest) {
         salary: data.salary ?? null,
         salaryCurrency: data.salaryCurrency ?? (data.salary != null ? 'EUR' : null),
         bankAccount: normalizeString(data.bankAccount ?? null),
+        employmentType: data.employmentType,
+        companyName: normalizeString(data.companyName),
+        vatNumber: normalizeString(data.vatNumber),
+        companyAddress: data.companyAddress ?? null,
+        legalForm: normalizeString(data.legalForm),
         createdBy: user.id,
       },
       include: {
