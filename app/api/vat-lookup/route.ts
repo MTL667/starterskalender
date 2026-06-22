@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-utils'
 
-const TIMEOUT_MS = 5000
+const TIMEOUT_MS = 8000
+const MAX_RETRIES = 2
 
 interface ParsedAddress {
   street?: string
@@ -62,34 +63,44 @@ function parseVatInput(raw: string): { countryCode: string; vatNumber: string } 
 }
 
 async function lookupVies(countryCode: string, vatNumber: string): Promise<VatLookupResult> {
-  const res = await fetchWithTimeout(
-    'https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ countryCode, vatNumber }),
-    },
-  )
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetchWithTimeout(
+        'https://ec.europa.eu/taxation_customs/vies/rest-api/check-vat-number',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ countryCode, vatNumber }),
+        },
+      )
 
-  if (!res.ok) {
-    return { valid: false, error: 'VIES service unavailable' }
+      if (!res.ok) {
+        if (attempt < MAX_RETRIES - 1) continue
+        return { valid: false, error: 'VIES service unavailable' }
+      }
+
+      const data = await res.json()
+
+      if (!data.valid) {
+        return { valid: false, error: 'Invalid VAT number' }
+      }
+
+      const rawAddress = typeof data.address === 'string'
+        ? data.address.replace(/\\n/g, '\n').trim()
+        : undefined
+
+      return {
+        valid: true,
+        companyName: data.name?.trim() || undefined,
+        address: rawAddress ? parseAddress(rawAddress, countryCode) : undefined,
+      }
+    } catch {
+      if (attempt < MAX_RETRIES - 1) continue
+      return { valid: false, error: 'VIES service timeout' }
+    }
   }
 
-  const data = await res.json()
-
-  if (!data.valid) {
-    return { valid: false, error: 'Invalid VAT number' }
-  }
-
-  const rawAddress = typeof data.address === 'string'
-    ? data.address.replace(/\\n/g, '\n').trim()
-    : undefined
-
-  return {
-    valid: true,
-    companyName: data.name?.trim() || undefined,
-    address: rawAddress ? parseAddress(rawAddress, countryCode) : undefined,
-  }
+  return { valid: false, error: 'VIES service unavailable' }
 }
 
 async function lookupKboLegalForm(enterpriseNumber: string): Promise<string | undefined> {
@@ -102,18 +113,17 @@ async function lookupKboLegalForm(enterpriseNumber: string): Promise<string | un
 
   const html = await res.text()
 
+  // KBO page structure: <td class="QL">Rechtsvorm:\n</td><td class="QL" colspan="3">\nVZW\n<br/><span class="upd">Sinds ...</span></td>
   const patterns = [
-    /Rechtsvorm[^<]*<[^>]*>\s*([^<]+)/i,
-    /Forme juridique[^<]*<[^>]*>\s*([^<]+)/i,
-    /class="field"[^>]*>\s*Rechtsvorm[\s\S]*?<td[^>]*>\s*([^<]+)/i,
-    /Rechtsvorm[\s\S]{0,200}?<span[^>]*>([^<]+)<\/span>/i,
+    /Rechtsvorm:\s*<\/td>\s*<td[^>]*>\s*([^<\n]+)/i,
+    /Forme juridique:\s*<\/td>\s*<td[^>]*>\s*([^<\n]+)/i,
   ]
 
   for (const pattern of patterns) {
     const match = html.match(pattern)
     if (match?.[1]) {
       const value = match[1].trim()
-      if (value && value.length < 100) return value
+      if (value && value.length < 100 && !value.match(/^Sinds\s/i)) return value
     }
   }
 
