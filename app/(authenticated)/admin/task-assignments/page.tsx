@@ -13,7 +13,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Check, Info, Pencil, Save, Trash2, X } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Check, Info, Pencil, RefreshCw, Save, Trash2, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { UserCombobox } from '@/components/ui/user-combobox'
 
@@ -69,6 +77,15 @@ export default function TaskAssignmentsPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editUserId, setEditUserId] = useState<string>('')
   const [editChannel, setEditChannel] = useState<string>('BOTH')
+
+  // Reroute dialog state
+  const [rerouteDialog, setRerouteDialog] = useState<{
+    open: boolean
+    assignmentId: string
+    assigneeName: string
+    openTaskCount: number
+  }>({ open: false, assignmentId: '', assigneeName: '', openTaskCount: 0 })
+  const [rerouting, setRerouting] = useState(false)
 
   // Form state voor nieuwe assignment
   const [selectedEntity, setSelectedEntity] = useState<string>('global')
@@ -188,9 +205,20 @@ export default function TaskAssignmentsPage() {
       })
 
       if (res.ok) {
+        const data = await res.json()
         setMessage({ type: 'success', text: t('responsibleUpdated') })
         cancelEditing()
         fetchData()
+
+        if (data.openTaskCount > 0) {
+          const assigneeName = data.assignee?.name || data.assignee?.email || ''
+          setRerouteDialog({
+            open: true,
+            assignmentId: id,
+            assigneeName,
+            openTaskCount: data.openTaskCount,
+          })
+        }
       } else {
         const data = await res.json()
         setMessage({ type: 'error', text: `${tc('errorSaving')}: ${data.details || data.error || tc('unknown')}` })
@@ -199,6 +227,38 @@ export default function TaskAssignmentsPage() {
       setMessage({ type: 'error', text: `${tc('errorSaving')}: ${(error as Error).message}` })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleReroute = async () => {
+    setRerouting(true)
+    try {
+      const res = await fetch(`/api/admin/task-assignments/${rerouteDialog.assignmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rerouteTasks: true }),
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.reroutedCount > 0) {
+          setMessage({
+            type: 'success',
+            text: t('tasksRerouted', { count: data.reroutedCount }),
+          })
+        } else {
+          setMessage({ type: 'success', text: t('noTasksToReroute') })
+        }
+        fetchData()
+        setRerouteDialog({ open: false, assignmentId: '', assigneeName: '', openTaskCount: 0 })
+      } else {
+        const data = await res.json()
+        setMessage({ type: 'error', text: `${tc('errorSaving')}: ${data.details || data.error || tc('unknown')}` })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: `${tc('errorSaving')}: ${(error as Error).message}` })
+    } finally {
+      setRerouting(false)
     }
   }
 
@@ -477,6 +537,40 @@ export default function TaskAssignmentsPage() {
             </Card>
           ))}
       </div>
+
+      <Dialog
+        open={rerouteDialog.open}
+        onOpenChange={(open) => {
+          if (!open && !rerouting) {
+            setRerouteDialog({ open: false, assignmentId: '', assigneeName: '', openTaskCount: 0 })
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('rerouteDialogTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('rerouteDialogDescription', {
+                count: rerouteDialog.openTaskCount,
+                name: rerouteDialog.assigneeName,
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setRerouteDialog({ open: false, assignmentId: '', assigneeName: '', openTaskCount: 0 })}
+              disabled={rerouting}
+            >
+              {t('rerouteNo')}
+            </Button>
+            <Button onClick={handleReroute} disabled={rerouting}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${rerouting ? 'animate-spin' : ''}`} />
+              {rerouting ? tc('saving') : t('rerouteYes')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -956,6 +956,127 @@ export async function sendTaskReassignmentEmail(task: any, reassignedByName: str
 
 
 /**
+ * Verstuur één gegroepeerde email bij bulk-hertoewijzing van taken
+ * (wanneer een TaskAssignment verantwoordelijke wijzigt)
+ */
+export async function sendBulkRerouteEmail(
+  tasks: any[],
+  newAssignee: { name?: string | null; email: string },
+  reassignerName: string,
+  notifyChannel: string
+) {
+  if (notifyChannel === 'IN_APP') return
+  if (!newAssignee.email || tasks.length === 0) return
+
+  const assigneeName = newAssignee.name || newAssignee.email
+  const taskTypeLabels = TASK_TYPE_LABELS
+  const priorityLabels: Record<string, string> = {
+    LOW: 'Laag',
+    MEDIUM: 'Normaal',
+    HIGH: 'Hoog',
+    URGENT: 'Urgent',
+  }
+
+  const tasksByStarter = new Map<string, { starterName: string; entityName: string; tasks: any[] }>()
+  for (const task of tasks) {
+    const starterName = task.starter
+      ? `${task.starter.firstName} ${task.starter.lastName}`
+      : 'Algemeen'
+    const key = task.starterId || 'no-starter'
+    if (!tasksByStarter.has(key)) {
+      tasksByStarter.set(key, {
+        starterName,
+        entityName: task.entity?.name || '—',
+        tasks: [],
+      })
+    }
+    tasksByStarter.get(key)!.tasks.push(task)
+  }
+
+  const groupsHtml = Array.from(tasksByStarter.values())
+    .map(
+      (group) => `
+      <div style="margin-bottom: 20px;">
+        <h3 style="margin: 0 0 8px 0; color: #333; font-size: 15px;">
+          ${group.starterName} <span style="font-weight: normal; color: #888; font-size: 13px;">(${group.entityName})</span>
+        </h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <thead>
+            <tr style="background: #f4f4f5; text-align: left;">
+              <th style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">Taak</th>
+              <th style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">Type</th>
+              <th style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">Prioriteit</th>
+              <th style="padding: 8px 10px; border-bottom: 1px solid #e2e8f0;">Deadline</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${group.tasks
+              .map(
+                (t: any) => `
+              <tr>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f0f0f0;">${t.title}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f0f0f0;">${taskTypeLabels[t.type] || t.type}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f0f0f0;">${priorityLabels[t.priority] || t.priority}</td>
+                <td style="padding: 8px 10px; border-bottom: 1px solid #f0f0f0;">${t.dueDate ? new Date(t.dueDate).toLocaleDateString('nl-BE') : '—'}</td>
+              </tr>`
+              )
+              .join('')}
+          </tbody>
+        </table>
+      </div>`
+    )
+    .join('')
+
+  const subject = `${tasks.length} ${tasks.length === 1 ? 'taak' : 'taken'} aan jou toegewezen`
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 650px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+    .footer { text-align: center; margin-top: 30px; color: #888; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🔄 Taken Toegewezen</h1>
+      <p style="margin: 0; opacity: 0.9;">${tasks.length} ${tasks.length === 1 ? 'taak' : 'taken'} herverdeeld</p>
+    </div>
+    <div class="content">
+      <p>Hallo ${assigneeName},</p>
+      <p><strong>${reassignerName}</strong> heeft de standaard verantwoordelijke gewijzigd, waardoor de volgende taken aan jou zijn toegewezen:</p>
+
+      ${groupsHtml}
+
+      <center>
+        <a href="${process.env.NEXTAUTH_URL}/taken" class="button">
+          Bekijk Taken
+        </a>
+      </center>
+
+      <div class="footer">
+        <p>Deze email is automatisch gegenereerd door Airport.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `
+
+  try {
+    await sendEmail({ to: newAssignee.email, subject, html })
+  } catch (error) {
+    console.error('Failed to send bulk reroute email:', error)
+  }
+}
+
+/**
  * Stuur email naar assignee wanneer een taak is unblocked
  */
 async function sendTaskUnblockedEmail(task: any) {
