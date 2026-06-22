@@ -478,7 +478,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
             </div>
 
             <Select value={starterTypeFilter} onValueChange={(v: StarterFilter) => setStarterTypeFilter(v)}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[130px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -490,7 +490,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
             </Select>
 
             <Select value={employmentTypeFilter} onValueChange={(v: 'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR') => setEmploymentTypeFilter(v)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[150px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -502,7 +502,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[200px] justify-start font-normal">
+                <Button variant="outline" className="w-[180px] justify-start font-normal">
                   <Building2 className="h-4 w-4 mr-2 shrink-0" />
                   <span className="truncate">
                     {selectedEntities.size === 0

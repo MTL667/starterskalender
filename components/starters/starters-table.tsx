@@ -405,7 +405,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
           </CardTitle>
           <div className="flex gap-2 flex-wrap items-center">
             <Select value={periodMode} onValueChange={(v: 'year' | 'custom') => setPeriodMode(v)}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[130px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -416,7 +416,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
             {periodMode === 'year' ? (
               <Select value={year.toString()} onValueChange={(v) => setYear(parseInt(v))}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className="w-[90px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -447,7 +447,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
             )}
             
             <Select value={starterTypeFilter} onValueChange={(v: StarterFilter) => setStarterTypeFilter(v)}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[130px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -459,7 +459,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
             </Select>
 
             <Select value={employmentTypeFilter} onValueChange={(v: 'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR') => setEmploymentTypeFilter(v)}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[150px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -471,7 +471,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="w-[200px] justify-start font-normal">
+                <Button variant="outline" className="w-[180px] justify-start font-normal">
                   <Building2 className="h-4 w-4 mr-2 shrink-0" />
                   <span className="truncate">
                     {selectedEntities.size === 0
