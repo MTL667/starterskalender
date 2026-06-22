@@ -20,14 +20,18 @@ export async function PATCH(
       return NextResponse.json({ error: 'Assignment not found' }, { status: 404 })
     }
 
-    const updateData: Record<string, string> = {}
-    if (body.assignedToId) updateData.assignedToId = body.assignedToId
-    if (body.notifyChannel) updateData.notifyChannel = body.notifyChannel
-
     const updated = await prisma.taskAssignment.update({
       where: { id },
-      data: updateData,
-      include: { assignee: { select: { id: true, name: true, email: true } } },
+      data: {
+        ...(body.assignedToId && { assignedToId: body.assignedToId }),
+        ...(body.notifyChannel && { notifyChannel: body.notifyChannel }),
+        updatedAt: new Date(),
+      },
+    })
+
+    const assignee = await prisma.user.findUnique({
+      where: { id: updated.assignedToId },
+      select: { id: true, name: true, email: true },
     })
 
     await prisma.auditLog.create({
@@ -37,12 +41,13 @@ export async function PATCH(
         target: `TaskAssignment:${id}`,
         meta: {
           assignmentId: id,
-          changes: updateData,
+          assignedToId: updated.assignedToId,
+          notifyChannel: updated.notifyChannel,
         },
       },
     })
 
-    return NextResponse.json(updated)
+    return NextResponse.json({ ...updated, assignee })
   } catch (error) {
     console.error('Error updating task assignment:', error)
     return NextResponse.json(
