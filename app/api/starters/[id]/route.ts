@@ -38,7 +38,12 @@ const UpdateStarterSchema = z.object({
   bankAccount: z.string().nullable().optional(),
   companyName: z.string().nullable().optional(),
   vatNumber: z.string().nullable().optional(),
-  companyAddress: z.string().nullable().optional(),
+  companyStreet: z.string().nullable().optional(),
+  companyNumber: z.string().nullable().optional(),
+  companyBus: z.string().nullable().optional(),
+  companyPostalCode: z.string().nullable().optional(),
+  companyCity: z.string().nullable().optional(),
+  companyCountry: z.string().nullable().optional(),
   legalForm: z.string().nullable().optional(),
 })
 
@@ -157,7 +162,12 @@ export async function PATCH(
     if (data.inspectorNumber !== undefined) updateData.inspectorNumber = data.inspectorNumber
     if (data.companyName !== undefined) updateData.companyName = normalizeString(data.companyName)
     if (data.vatNumber !== undefined) updateData.vatNumber = normalizeString(data.vatNumber)
-    if (data.companyAddress !== undefined) updateData.companyAddress = data.companyAddress ?? null
+    if (data.companyStreet !== undefined) updateData.companyStreet = normalizeString(data.companyStreet)
+    if (data.companyNumber !== undefined) updateData.companyNumber = normalizeString(data.companyNumber)
+    if (data.companyBus !== undefined) updateData.companyBus = normalizeString(data.companyBus)
+    if (data.companyPostalCode !== undefined) updateData.companyPostalCode = normalizeString(data.companyPostalCode)
+    if (data.companyCity !== undefined) updateData.companyCity = normalizeString(data.companyCity)
+    if (data.companyCountry !== undefined) updateData.companyCountry = normalizeString(data.companyCountry)
     if (data.legalForm !== undefined) updateData.legalForm = normalizeString(data.legalForm)
 
     const isActivatingPending = existingStarter?.isPendingBoarding && data.startDate

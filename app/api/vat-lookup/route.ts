@@ -3,12 +3,49 @@ import { requireAuth } from '@/lib/auth-utils'
 
 const TIMEOUT_MS = 5000
 
+interface ParsedAddress {
+  street?: string
+  number?: string
+  postalCode?: string
+  city?: string
+  country?: string
+}
+
 interface VatLookupResult {
   valid: boolean
   companyName?: string
-  address?: string
+  address?: ParsedAddress
   legalForm?: string
   error?: string
+}
+
+function parseAddress(raw: string, countryCode: string): ParsedAddress {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean)
+  const result: ParsedAddress = { country: countryCode }
+
+  if (lines.length >= 2) {
+    const streetLine = lines[0]
+    const streetMatch = streetLine.match(/^(.+?)\s+(\d+\S*)$/)
+    if (streetMatch) {
+      result.street = streetMatch[1]
+      result.number = streetMatch[2]
+    } else {
+      result.street = streetLine
+    }
+
+    const cityLine = lines[lines.length - 1]
+    const cityMatch = cityLine.match(/^(\d{4,6})\s+(.+)$/)
+    if (cityMatch) {
+      result.postalCode = cityMatch[1]
+      result.city = cityMatch[2]
+    } else {
+      result.city = cityLine
+    }
+  } else if (lines.length === 1) {
+    result.street = lines[0]
+  }
+
+  return result
 }
 
 function fetchWithTimeout(url: string, options: RequestInit = {}): Promise<Response> {
@@ -44,14 +81,14 @@ async function lookupVies(countryCode: string, vatNumber: string): Promise<VatLo
     return { valid: false, error: 'Invalid VAT number' }
   }
 
-  const address = typeof data.address === 'string'
+  const rawAddress = typeof data.address === 'string'
     ? data.address.replace(/\\n/g, '\n').trim()
     : undefined
 
   return {
     valid: true,
     companyName: data.name?.trim() || undefined,
-    address: address || undefined,
+    address: rawAddress ? parseAddress(rawAddress, countryCode) : undefined,
   }
 }
 

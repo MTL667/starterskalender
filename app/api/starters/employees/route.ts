@@ -42,7 +42,12 @@ export async function GET(request: NextRequest) {
         employmentType: true,
         companyName: true,
         vatNumber: true,
-        companyAddress: true,
+        companyStreet: true,
+        companyNumber: true,
+        companyBus: true,
+        companyPostalCode: true,
+        companyCity: true,
+        companyCountry: true,
         legalForm: true,
         entity: {
           select: {

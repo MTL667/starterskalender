@@ -348,7 +348,12 @@ model Starter {
   employmentType EmploymentType @default(EMPLOYEE)
   companyName    String?
   vatNumber      String?
-  companyAddress String?        @db.Text
+  companyStreet     String?
+  companyNumber     String?
+  companyBus        String?
+  companyPostalCode String?
+  companyCity       String?
+  companyCountry    String?
   legalForm      String?
 
   // Ervaring velden (relevant voor onboarding)

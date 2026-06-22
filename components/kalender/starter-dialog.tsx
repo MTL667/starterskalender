@@ -66,7 +66,12 @@ interface Starter {
   employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR'
   companyName?: string | null
   vatNumber?: string | null
-  companyAddress?: string | null
+  companyStreet?: string | null
+  companyNumber?: string | null
+  companyBus?: string | null
+  companyPostalCode?: string | null
+  companyCity?: string | null
+  companyCountry?: string | null
   legalForm?: string | null
   entity?: {
     id: string
@@ -108,7 +113,12 @@ interface Employee {
   employmentType: 'EMPLOYEE' | 'SUBCONTRACTOR' | null
   companyName: string | null
   vatNumber: string | null
-  companyAddress: string | null
+  companyStreet: string | null
+  companyNumber: string | null
+  companyBus: string | null
+  companyPostalCode: string | null
+  companyCity: string | null
+  companyCountry: string | null
   legalForm: string | null
   entity: {
     id: string
@@ -193,7 +203,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     desiredEmail: '',
     companyName: '',
     vatNumber: '',
-    companyAddress: '',
+    companyStreet: '',
+    companyNumber: '',
+    companyBus: '',
+    companyPostalCode: '',
+    companyCity: '',
+    companyCountry: '',
     legalForm: '',
   })
 
@@ -452,7 +467,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         desiredEmail: starter.desiredEmail || '',
         companyName: starter.companyName || '',
         vatNumber: starter.vatNumber || '',
-        companyAddress: starter.companyAddress || '',
+        companyStreet: starter.companyStreet || '',
+        companyNumber: starter.companyNumber || '',
+        companyBus: starter.companyBus || '',
+        companyPostalCode: starter.companyPostalCode || '',
+        companyCity: starter.companyCity || '',
+        companyCountry: starter.companyCountry || '',
         legalForm: starter.legalForm || '',
       })
       setVatLookupError(null)
@@ -482,7 +502,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         desiredEmail: '',
         companyName: '',
         vatNumber: '',
-        companyAddress: '',
+        companyStreet: '',
+        companyNumber: '',
+        companyBus: '',
+        companyPostalCode: '',
+        companyCity: '',
+        companyCountry: '',
         legalForm: '',
       })
       setVatLookupError(null)
@@ -524,13 +549,23 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       employmentType: 'SUBCONTRACTOR' as const,
       companyName: employee.companyName || '',
       vatNumber: employee.vatNumber || '',
-      companyAddress: employee.companyAddress || '',
+      companyStreet: employee.companyStreet || '',
+      companyNumber: employee.companyNumber || '',
+      companyBus: employee.companyBus || '',
+      companyPostalCode: employee.companyPostalCode || '',
+      companyCity: employee.companyCity || '',
+      companyCountry: employee.companyCountry || '',
       legalForm: employee.legalForm || '',
     } : {
       employmentType: 'EMPLOYEE' as const,
       companyName: '',
       vatNumber: '',
-      companyAddress: '',
+      companyStreet: '',
+      companyNumber: '',
+      companyBus: '',
+      companyPostalCode: '',
+      companyCity: '',
+      companyCountry: '',
       legalForm: '',
     }
     if (formData.type === 'MIGRATION') {
@@ -653,7 +688,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       setFormData(prev => ({
         ...prev,
         companyName: result.companyName || prev.companyName,
-        companyAddress: result.address || prev.companyAddress,
+        companyStreet: result.address?.street || prev.companyStreet,
+        companyNumber: result.address?.number || prev.companyNumber,
+        companyPostalCode: result.address?.postalCode || prev.companyPostalCode,
+        companyCity: result.address?.city || prev.companyCity,
+        companyCountry: result.address?.country || prev.companyCountry,
         legalForm: result.legalForm || prev.legalForm,
       }))
       setVatLookupSuccess(true)
@@ -734,13 +773,23 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         if (formData.employmentType === 'SUBCONTRACTOR') {
           data.companyName = formData.companyName || null
           data.vatNumber = formData.vatNumber || null
-          data.companyAddress = formData.companyAddress || null
+          data.companyStreet = formData.companyStreet || null
+          data.companyNumber = formData.companyNumber || null
+          data.companyBus = formData.companyBus || null
+          data.companyPostalCode = formData.companyPostalCode || null
+          data.companyCity = formData.companyCity || null
+          data.companyCountry = formData.companyCountry || null
           data.legalForm = formData.legalForm || null
         }
       } else if (formData.employmentType === 'SUBCONTRACTOR') {
         data.companyName = formData.companyName || null
         data.vatNumber = formData.vatNumber || null
-        data.companyAddress = formData.companyAddress || null
+        data.companyStreet = formData.companyStreet || null
+        data.companyNumber = formData.companyNumber || null
+        data.companyBus = formData.companyBus || null
+        data.companyPostalCode = formData.companyPostalCode || null
+        data.companyCity = formData.companyCity || null
+        data.companyCountry = formData.companyCountry || null
         data.legalForm = formData.legalForm || null
       }
 
@@ -1171,7 +1220,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       ...formData,
                       employmentType: value,
                       ...(value === 'EMPLOYEE'
-                        ? { companyName: '', vatNumber: '', companyAddress: '', legalForm: '' }
+                        ? { companyName: '', vatNumber: '', companyStreet: '', companyNumber: '', companyBus: '', companyPostalCode: '', companyCity: '', companyCountry: '', legalForm: '' }
                         : {}),
                     })
                     setVatLookupError(null)
@@ -1256,15 +1305,62 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                     disabled={!canEdit}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="companyAddress">{t('companyAddress')}</Label>
-                  <Textarea
-                    id="companyAddress"
-                    value={formData.companyAddress}
-                    onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                    rows={2}
-                    disabled={!canEdit}
-                  />
+                <div className="grid grid-cols-6 gap-2">
+                  <div className="col-span-3">
+                    <Label htmlFor="companyStreet">{t('companyStreet')}</Label>
+                    <Input
+                      id="companyStreet"
+                      value={formData.companyStreet}
+                      onChange={(e) => setFormData({ ...formData, companyStreet: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="companyNumber">{t('companyNumber')}</Label>
+                    <Input
+                      id="companyNumber"
+                      value={formData.companyNumber}
+                      onChange={(e) => setFormData({ ...formData, companyNumber: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Label htmlFor="companyBus">{t('companyBus')}</Label>
+                    <Input
+                      id="companyBus"
+                      value={formData.companyBus}
+                      placeholder={t('companyBusPlaceholder')}
+                      onChange={(e) => setFormData({ ...formData, companyBus: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="companyPostalCode">{t('companyPostalCode')}</Label>
+                    <Input
+                      id="companyPostalCode"
+                      value={formData.companyPostalCode}
+                      onChange={(e) => setFormData({ ...formData, companyPostalCode: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="companyCity">{t('companyCity')}</Label>
+                    <Input
+                      id="companyCity"
+                      value={formData.companyCity}
+                      onChange={(e) => setFormData({ ...formData, companyCity: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="companyCountry">{t('companyCountry')}</Label>
+                    <Input
+                      id="companyCountry"
+                      value={formData.companyCountry}
+                      onChange={(e) => setFormData({ ...formData, companyCountry: e.target.value })}
+                      disabled={!canEdit}
+                    />
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="legalForm">{t('legalForm')}</Label>

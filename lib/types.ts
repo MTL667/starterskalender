@@ -35,7 +35,12 @@ export interface Starter {
   employmentType?: EmploymentType
   companyName?: string | null
   vatNumber?: string | null
-  companyAddress?: string | null
+  companyStreet?: string | null
+  companyNumber?: string | null
+  companyBus?: string | null
+  companyPostalCode?: string | null
+  companyCity?: string | null
+  companyCountry?: string | null
   legalForm?: string | null
   entity?: EntityRef | null
 }
