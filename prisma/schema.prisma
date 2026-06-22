@@ -108,6 +108,12 @@ enum EmploymentType {
   SUBCONTRACTOR
 }
 
+enum TerminationInitiator {
+  ENTITY_TERMINATED // De entiteit heeft de samenwerking verbroken
+  MUTUAL_AGREEMENT  // Onderling overleg
+  EMPLOYEE_RESIGNED // De werknemer zelf
+}
+
 enum SigningMethod {
   SES // Simple Electronic Signature (click-to-sign)
   QES // Qualified Electronic Signature (Itsme)
@@ -345,6 +351,12 @@ model Starter {
   cancelledBy       String? // User ID die annuleerde
   cancelReason      String?     @db.Text // Reden van annulering
 
+  // Offboarding: reden van vertrek
+  terminationInitiator TerminationInitiator?
+  leaveReasonId        String?
+  leaveReason          LeaveReason? @relation(fields: [leaveReasonId], references: [id], onDelete: SetNull)
+  leaveReasonNote      String?      @db.Text
+
   employmentType EmploymentType @default(EMPLOYEE)
   companyName    String?
   vatNumber      String?
@@ -406,6 +418,17 @@ model Starter {
   @@index([weekNumber, year])
   @@index([isCancelled])
   @@index([isPendingBoarding])
+  @@index([leaveReasonId])
+  @@index([terminationInitiator])
+}
+
+model LeaveReason {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  starters  Starter[]
 }
 
 model JobRole {

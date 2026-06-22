@@ -45,6 +45,9 @@ const UpdateStarterSchema = z.object({
   companyCity: z.string().nullable().optional(),
   companyCountry: z.string().nullable().optional(),
   legalForm: z.string().nullable().optional(),
+  terminationInitiator: z.enum(['ENTITY_TERMINATED', 'MUTUAL_AGREEMENT', 'EMPLOYEE_RESIGNED']).nullable().optional(),
+  leaveReasonId: z.string().nullable().optional(),
+  leaveReasonNote: z.string().nullable().optional(),
 })
 
 // GET - Get single starter
@@ -64,6 +67,7 @@ export async function GET(
       include: {
         entity: true,
         fromEntity: true,
+        leaveReason: { select: { id: true, name: true } },
       },
     })
 
@@ -169,6 +173,11 @@ export async function PATCH(
     if (data.companyCity !== undefined) updateData.companyCity = normalizeString(data.companyCity)
     if (data.companyCountry !== undefined) updateData.companyCountry = normalizeString(data.companyCountry)
     if (data.legalForm !== undefined) updateData.legalForm = normalizeString(data.legalForm)
+    if (existingStarter?.type === 'OFFBOARDING') {
+      if (data.terminationInitiator !== undefined) updateData.terminationInitiator = data.terminationInitiator
+      if (data.leaveReasonId !== undefined) updateData.leaveReasonId = data.leaveReasonId || null
+      if (data.leaveReasonNote !== undefined) updateData.leaveReasonNote = data.leaveReasonNote
+    }
 
     const isActivatingPending = existingStarter?.isPendingBoarding && data.startDate
 
@@ -189,6 +198,7 @@ export async function PATCH(
       include: {
         entity: true,
         fromEntity: true,
+        leaveReason: { select: { id: true, name: true } },
       },
     })
 

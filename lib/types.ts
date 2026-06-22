@@ -1,6 +1,7 @@
 export type StarterType = 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 export type EmploymentType = 'EMPLOYEE' | 'SUBCONTRACTOR'
 export type MaterialProvisionType = 'ENTITY_PROVIDED' | 'SELF_PROVIDED'
+export type TerminationInitiator = 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED'
 export type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 
 export interface EntityRef {
@@ -42,6 +43,10 @@ export interface Starter {
   companyCity?: string | null
   companyCountry?: string | null
   legalForm?: string | null
+  terminationInitiator?: TerminationInitiator | null
+  leaveReasonId?: string | null
+  leaveReason?: { id: string; name: string } | null
+  leaveReasonNote?: string | null
   entity?: EntityRef | null
 }
 

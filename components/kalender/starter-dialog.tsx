@@ -73,6 +73,10 @@ interface Starter {
   companyCity?: string | null
   companyCountry?: string | null
   legalForm?: string | null
+  terminationInitiator?: 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED' | null
+  leaveReasonId?: string | null
+  leaveReason?: { id: string; name: string } | null
+  leaveReasonNote?: string | null
   entity?: {
     id: string
     name?: string
@@ -179,6 +183,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [vatLookupLoading, setVatLookupLoading] = useState(false)
   const [vatLookupError, setVatLookupError] = useState<string | null>(null)
   const [vatLookupSuccess, setVatLookupSuccess] = useState(false)
+  const [leaveReasons, setLeaveReasons] = useState<{ id: string; name: string }[]>([])
+  const [newReasonName, setNewReasonName] = useState('')
+  const [addingReason, setAddingReason] = useState(false)
+  const [showNewReasonInput, setShowNewReasonInput] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     employmentType: 'EMPLOYEE' as 'EMPLOYEE' | 'SUBCONTRACTOR',
@@ -210,6 +218,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     companyCity: '',
     companyCountry: '',
     legalForm: '',
+    terminationInitiator: '' as '' | 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED',
+    leaveReasonId: '',
+    leaveReasonNote: '',
   })
 
   // Check if user can edit extra info (notes)
@@ -356,6 +367,15 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }, [formData.type, employeeSearch, isEdit, manualEntry])
 
+  useEffect(() => {
+    if (formData.type === 'OFFBOARDING' && open) {
+      fetch('/api/leave-reasons')
+        .then(res => res.json())
+        .then(data => setLeaveReasons(Array.isArray(data) ? data : []))
+        .catch(() => setLeaveReasons([]))
+    }
+  }, [formData.type, open])
+
   // Laad job roles voor de gekozen entiteit
   useEffect(() => {
     if (formData.entityId) {
@@ -474,6 +494,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         companyCity: starter.companyCity || '',
         companyCountry: starter.companyCountry || '',
         legalForm: starter.legalForm || '',
+        terminationInitiator: starter.terminationInitiator || '' as any,
+        leaveReasonId: starter.leaveReasonId || '',
+        leaveReasonNote: starter.leaveReasonNote || '',
       })
       setVatLookupError(null)
       setVatLookupSuccess(false)
@@ -509,6 +532,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         companyCity: '',
         companyCountry: '',
         legalForm: '',
+        terminationInitiator: '' as any,
+        leaveReasonId: '',
+        leaveReasonNote: '',
       })
       setVatLookupError(null)
       setVatLookupSuccess(false)
@@ -516,6 +542,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       setSelectedEmployee(null)
       setEmployeeSearch('')
       setShowEmployeeList(false)
+      setShowNewReasonInput(false)
+      setNewReasonName('')
     }
   }, [starter, open])
 
@@ -659,6 +687,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       return
     }
 
+    if (formData.type === 'OFFBOARDING' && !formData.terminationInitiator) {
+      return
+    }
+
     // For new ONBOARDING starters without startDate, show pending boarding confirmation
     if (!isEdit && formData.type === 'ONBOARDING' && !formData.startDate) {
       setPendingConfirmOpen(true)
@@ -666,6 +698,35 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
 
     await submitStarter(false)
+  }
+
+  const handleAddNewReason = async () => {
+    const name = newReasonName.trim()
+    if (!name) return
+    setAddingReason(true)
+    try {
+      const res = await fetch('/api/leave-reasons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      })
+      if (res.ok) {
+        const reason = await res.json()
+        setLeaveReasons(prev => [...prev, { id: reason.id, name: reason.name }].sort((a, b) => a.name.localeCompare(b.name)))
+        setFormData(prev => ({ ...prev, leaveReasonId: reason.id }))
+        setShowNewReasonInput(false)
+        setNewReasonName('')
+      } else if (res.status === 409) {
+        setNewReasonName('')
+        setShowNewReasonInput(false)
+        const updated = await fetch('/api/leave-reasons').then(r => r.json())
+        if (Array.isArray(updated)) setLeaveReasons(updated)
+      }
+    } catch (err) {
+      console.error('Error creating leave reason:', err)
+    } finally {
+      setAddingReason(false)
+    }
   }
 
   const handleVatLookup = async () => {
@@ -791,6 +852,12 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         data.companyCity = formData.companyCity || null
         data.companyCountry = formData.companyCountry || null
         data.legalForm = formData.legalForm || null
+      }
+
+      if (formData.type === 'OFFBOARDING') {
+        data.terminationInitiator = formData.terminationInitiator || null
+        data.leaveReasonId = formData.leaveReasonId || null
+        data.leaveReasonNote = formData.leaveReasonNote || null
       }
 
       const url = isEdit ? `/api/starters/${starter.id}` : '/api/starters'
@@ -1799,6 +1866,102 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   disabled={!canEdit}
                 />
               </div>
+            )}
+
+            {formData.type === 'OFFBOARDING' && (
+              <>
+                <div>
+                  <Label htmlFor="terminationInitiator">{t('labelTerminationInitiator')} *</Label>
+                  <Select
+                    value={formData.terminationInitiator}
+                    onValueChange={(v) => setFormData({ ...formData, terminationInitiator: v as any })}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger id="terminationInitiator">
+                      <SelectValue placeholder={t('selectTerminationInitiator')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ENTITY_TERMINATED">{t('entityTerminated')}</SelectItem>
+                      <SelectItem value="MUTUAL_AGREEMENT">{t('mutualAgreement')}</SelectItem>
+                      <SelectItem value="EMPLOYEE_RESIGNED">{t('employeeResigned')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="leaveReasonId">{t('labelLeaveReason')}</Label>
+                  {!showNewReasonInput ? (
+                    <div className="flex gap-2">
+                      <Select
+                        value={formData.leaveReasonId}
+                        onValueChange={(v) => {
+                          if (v === '__new__') {
+                            setShowNewReasonInput(true)
+                          } else {
+                            setFormData({ ...formData, leaveReasonId: v })
+                          }
+                        }}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger id="leaveReasonId" className="flex-1">
+                          <SelectValue placeholder={t('selectLeaveReason')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {leaveReasons.map((r) => (
+                            <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                          ))}
+                          <SelectItem value="__new__" className="text-blue-600 font-medium">
+                            + {t('addNewReason')}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        value={newReasonName}
+                        onChange={(e) => setNewReasonName(e.target.value)}
+                        placeholder={t('newReasonPlaceholder')}
+                        className="flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            handleAddNewReason()
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAddNewReason}
+                        disabled={addingReason || !newReasonName.trim()}
+                      >
+                        {addingReason ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => { setShowNewReasonInput(false); setNewReasonName('') }}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="leaveReasonNote">{t('labelLeaveReasonNote')}</Label>
+                  <Textarea
+                    id="leaveReasonNote"
+                    value={formData.leaveReasonNote}
+                    onChange={(e) => setFormData({ ...formData, leaveReasonNote: e.target.value })}
+                    rows={2}
+                    disabled={!canEdit}
+                    placeholder={t('placeholderLeaveReasonNote')}
+                  />
+                </div>
+              </>
             )}
 
             <div>

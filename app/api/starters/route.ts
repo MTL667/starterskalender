@@ -12,6 +12,7 @@ import { eventBus } from '@/lib/events'
 
 const VALID_TYPES = ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'] as const
 const VALID_EMPLOYMENT_TYPES = ['EMPLOYEE', 'SUBCONTRACTOR'] as const
+const VALID_TERMINATION_INITIATORS = ['ENTITY_TERMINATED', 'MUTUAL_AGREEMENT', 'EMPLOYEE_RESIGNED'] as const
 
 const StarterSchema = z.object({
   type: z.enum(VALID_TYPES).default('ONBOARDING'),
@@ -53,7 +54,13 @@ const StarterSchema = z.object({
   companyCity: z.string().nullable().optional(),
   companyCountry: z.string().nullable().optional(),
   legalForm: z.string().nullable().optional(),
-})
+  terminationInitiator: z.enum(VALID_TERMINATION_INITIATORS).nullable().optional(),
+  leaveReasonId: z.string().nullable().optional(),
+  leaveReasonNote: z.string().nullable().optional(),
+}).refine(
+  (d) => d.type !== 'OFFBOARDING' || d.terminationInitiator != null,
+  { message: 'terminationInitiator is required for offboarding', path: ['terminationInitiator'] }
+)
 
 // GET - List starters met filtering
 export async function GET(request: NextRequest) {
@@ -140,6 +147,9 @@ export async function GET(request: NextRequest) {
             name: true,
             colorHex: true,
           },
+        },
+        leaveReason: {
+          select: { id: true, name: true },
         },
       },
       orderBy: [{ startDate: 'asc' }, { lastName: 'asc' }],
@@ -237,11 +247,15 @@ export async function POST(request: NextRequest) {
         companyCity: normalizeString(data.companyCity),
         companyCountry: normalizeString(data.companyCountry),
         legalForm: normalizeString(data.legalForm),
+        terminationInitiator: data.type === 'OFFBOARDING' ? (data.terminationInitiator ?? null) : null,
+        leaveReasonId: data.type === 'OFFBOARDING' ? (data.leaveReasonId || null) : null,
+        leaveReasonNote: data.type === 'OFFBOARDING' ? (data.leaveReasonNote ?? null) : null,
         createdBy: user.id,
       },
       include: {
         entity: true,
         fromEntity: true,
+        leaveReason: { select: { id: true, name: true } },
       },
     })
 
@@ -335,7 +349,7 @@ export async function POST(request: NextRequest) {
 
     // Refetch if inspector number was assigned (so the response includes it)
     const response = inspectorNumberAssigned
-      ? await prisma.starter.findUnique({ where: { id: starter.id }, include: { entity: { select: { id: true, name: true, colorHex: true, inspectorNumberEnabled: true, inspectorNumberLabel: true, cardDavEnabled: true } }, fromEntity: { select: { id: true, name: true, colorHex: true } } } })
+      ? await prisma.starter.findUnique({ where: { id: starter.id }, include: { entity: { select: { id: true, name: true, colorHex: true, inspectorNumberEnabled: true, inspectorNumberLabel: true, cardDavEnabled: true } }, fromEntity: { select: { id: true, name: true, colorHex: true } }, leaveReason: { select: { id: true, name: true } } } })
       : starter
 
     return NextResponse.json(response, { status: 201 })

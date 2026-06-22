@@ -82,8 +82,8 @@ export default async function AdminPage() {
       href: '/admin/blocked-periods',
     },
     {
-      title: t('kpiDashboard'),
-      description: t('kpiDashboardDescription'),
+      title: t('statisticsDashboard'),
+      description: t('statisticsDashboardDescription'),
       icon: BarChart3,
       href: '/admin/kpi',
     },
