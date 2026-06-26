@@ -187,6 +187,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [newReasonName, setNewReasonName] = useState('')
   const [addingReason, setAddingReason] = useState(false)
   const [showNewReasonInput, setShowNewReasonInput] = useState(false)
+  const [showValidationErrors, setShowValidationErrors] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
     employmentType: 'EMPLOYEE' as 'EMPLOYEE' | 'SUBCONTRACTOR',
@@ -548,6 +549,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       setEmployeeSearch('')
       setShowEmployeeList(false)
       setShowNewReasonInput(false)
+      setShowValidationErrors(false)
       setNewReasonName('')
     }
   }, [starter, open])
@@ -693,6 +695,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
 
     if (formData.type === 'OFFBOARDING' && canSeeLeaveReason && !formData.terminationInitiator) {
+      setShowValidationErrors(true)
+      document.getElementById('terminationInitiator')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
     }
 
@@ -1877,10 +1881,13 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   <Label htmlFor="terminationInitiator">{t('labelTerminationInitiator')} *</Label>
                   <Select
                     value={formData.terminationInitiator}
-                    onValueChange={(v) => setFormData({ ...formData, terminationInitiator: v as any })}
+                    onValueChange={(v) => {
+                      setFormData({ ...formData, terminationInitiator: v as any })
+                      setShowValidationErrors(false)
+                    }}
                     disabled={!canEdit}
                   >
-                    <SelectTrigger id="terminationInitiator">
+                    <SelectTrigger id="terminationInitiator" className={showValidationErrors && !formData.terminationInitiator ? 'border-red-500 ring-red-500' : ''}>
                       <SelectValue placeholder={t('selectTerminationInitiator')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1889,6 +1896,9 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       <SelectItem value="EMPLOYEE_RESIGNED">{t('employeeResigned')}</SelectItem>
                     </SelectContent>
                   </Select>
+                  {showValidationErrors && !formData.terminationInitiator && (
+                    <p className="text-xs text-red-500 mt-1">{t('terminationInitiatorRequired')}</p>
+                  )}
                 </div>
 
                 <div>

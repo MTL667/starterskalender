@@ -860,6 +860,7 @@
     "entityTerminated": "L'entité a mis fin à la collaboration",
     "mutualAgreement": "Accord mutuel",
     "employeeResigned": "Le collaborateur a démissionné",
+    "terminationInitiatorRequired": "Ce champ est obligatoire pour sauvegarder",
     "labelLeaveReason": "Raison du départ",
     "selectLeaveReason": "Sélectionner une raison...",
     "addNewReason": "Ajouter une nouvelle raison",

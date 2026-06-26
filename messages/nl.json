@@ -860,6 +860,7 @@
     "entityTerminated": "Entiteit heeft samenwerking verbroken",
     "mutualAgreement": "Onderling overleg",
     "employeeResigned": "Werknemer zelf opgezegd",
+    "terminationInitiatorRequired": "Dit veld is verplicht om op te slaan",
     "labelLeaveReason": "Reden van vertrek",
     "selectLeaveReason": "Selecteer een reden...",
     "addNewReason": "Nieuwe reden toevoegen",
