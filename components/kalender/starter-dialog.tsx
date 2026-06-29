@@ -73,7 +73,7 @@ interface Starter {
   companyCity?: string | null
   companyCountry?: string | null
   legalForm?: string | null
-  terminationInitiator?: 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED' | null
+  terminationInitiator?: 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED' | 'FORCE_MAJEURE' | null
   leaveReasonId?: string | null
   leaveReason?: { id: string; name: string } | null
   leaveReasonNote?: string | null
@@ -219,7 +219,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     companyCity: '',
     companyCountry: '',
     legalForm: '',
-    terminationInitiator: '' as '' | 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED',
+    terminationInitiator: '' as '' | 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED' | 'FORCE_MAJEURE',
     leaveReasonId: '',
     leaveReasonNote: '',
   })
@@ -1894,6 +1894,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                       <SelectItem value="ENTITY_TERMINATED">{t('entityTerminated')}</SelectItem>
                       <SelectItem value="MUTUAL_AGREEMENT">{t('mutualAgreement')}</SelectItem>
                       <SelectItem value="EMPLOYEE_RESIGNED">{t('employeeResigned')}</SelectItem>
+                      <SelectItem value="FORCE_MAJEURE">{t('forceMajeure')}</SelectItem>
                     </SelectContent>
                   </Select>
                   {showValidationErrors && !formData.terminationInitiator && (

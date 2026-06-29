@@ -112,6 +112,7 @@ enum TerminationInitiator {
   ENTITY_TERMINATED // De entiteit heeft de samenwerking verbroken
   MUTUAL_AGREEMENT  // Onderling overleg
   EMPLOYEE_RESIGNED // De werknemer zelf
+  FORCE_MAJEURE     // Overmacht
 }
 
 enum SigningMethod {

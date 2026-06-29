@@ -1,7 +1,7 @@
 export type StarterType = 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 export type EmploymentType = 'EMPLOYEE' | 'SUBCONTRACTOR'
 export type MaterialProvisionType = 'ENTITY_PROVIDED' | 'SELF_PROVIDED'
-export type TerminationInitiator = 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED'
+export type TerminationInitiator = 'ENTITY_TERMINATED' | 'MUTUAL_AGREEMENT' | 'EMPLOYEE_RESIGNED' | 'FORCE_MAJEURE'
 export type StarterFilter = 'ALL' | 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
 
 export interface EntityRef {

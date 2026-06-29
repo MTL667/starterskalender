@@ -45,7 +45,7 @@ const UpdateStarterSchema = z.object({
   companyCity: z.string().nullable().optional(),
   companyCountry: z.string().nullable().optional(),
   legalForm: z.string().nullable().optional(),
-  terminationInitiator: z.enum(['ENTITY_TERMINATED', 'MUTUAL_AGREEMENT', 'EMPLOYEE_RESIGNED']).nullable().optional(),
+  terminationInitiator: z.enum(['ENTITY_TERMINATED', 'MUTUAL_AGREEMENT', 'EMPLOYEE_RESIGNED', 'FORCE_MAJEURE']).nullable().optional(),
   leaveReasonId: z.string().nullable().optional(),
   leaveReasonNote: z.string().nullable().optional(),
 })
