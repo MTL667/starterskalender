@@ -29,7 +29,6 @@ const STEPS = [
   { key: 'LICENSE_CHECKING', failKey: 'FAILED_AT_LICENSE_CHECK' },
   { key: 'USER_CREATING', failKey: 'FAILED_AT_USER_CREATION' },
   { key: 'LICENSE_ASSIGNING', failKey: 'FAILED_AT_LICENSE_ASSIGNMENT' },
-  { key: 'TAP_CREATING', failKey: 'FAILED_AT_TAP' },
 ] as const
 
 function getStepStatus(stepKey: string, failKey: string, currentState: ProvisioningState) {

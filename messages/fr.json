@@ -2034,11 +2034,16 @@
       "description": "Si le type de licence configuré n'est pas disponible, revenir à un type inférieur"
     },
     "password": {
-      "title": "Règles de mot de passe temporaire",
+      "title": "Règles de mot de passe (fallback)",
       "minLength": "Longueur min.",
       "requireUppercase": "Majuscules requises",
       "requireNumbers": "Chiffres requis",
       "requireSpecialChars": "Caractères spéciaux requis"
+    },
+    "fixedPassword": {
+      "title": "Mot de passe initial fixe",
+      "description": "Ce mot de passe sera utilisé lors de la création de tous les nouveaux utilisateurs de cette entité. Laissez vide pour générer un mot de passe aléatoire.",
+      "placeholder": "Entrez un mot de passe fixe..."
     },
     "tenantConfig": {
       "save": "Enregistrer la configuration",
@@ -2061,8 +2066,8 @@
         "TAP_CREATING": "Création du pass d'accès"
       },
       "credentialCard": {
-        "title": "Temporary Access Pass",
-        "warning": "Usage unique, valide pendant 60 minutes. Copiez maintenant et transmettez au starter.",
+        "title": "Mot de passe initial",
+        "warning": "L'utilisateur doit changer le mot de passe lors de la première connexion. Copiez maintenant et transmettez au starter.",
         "copied": "Copié",
         "mailboxInfo": "La boîte mail sera active dans ~5 minutes."
       }

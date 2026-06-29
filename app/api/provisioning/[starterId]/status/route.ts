@@ -62,7 +62,7 @@ export async function GET(
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`))
           }
 
-          if (['SUCCESS', 'FAILED_AT_LICENSE_CHECK', 'FAILED_AT_USER_CREATION', 'FAILED_AT_LICENSE_ASSIGNMENT', 'FAILED_AT_MAILBOX_WAIT'].includes(job.state)) {
+          if (['SUCCESS', 'FAILED_AT_LICENSE_CHECK', 'FAILED_AT_USER_CREATION', 'FAILED_AT_LICENSE_ASSIGNMENT', 'FAILED_AT_TAP', 'FAILED_AT_MAILBOX_WAIT'].includes(job.state)) {
             controller.close()
             return
           }

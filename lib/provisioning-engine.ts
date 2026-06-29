@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { graphApiService } from '@/lib/graph-api-service'
-import { encryptEntra } from '@/lib/encryption'
+import { encryptEntra, decryptEntra } from '@/lib/encryption'
 import { createAuditLog } from '@/lib/audit'
 import { randomBytes } from 'crypto'
 
@@ -238,39 +238,6 @@ export class ProvisioningEngine {
         }
       }
 
-      // Step 4: Create Temporary Access Pass (TAP)
-      if (!resumeFrom || ['FAILED_AT_LICENSE_CHECK', 'FAILED_AT_USER_CREATION', 'FAILED_AT_LICENSE_ASSIGNMENT', 'FAILED_AT_TAP'].includes(resumeFrom)) {
-        await this.updateState(jobId, 'TAP_CREATING')
-
-        const job = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
-        if (!job?.graphUserId) {
-          return this.failJob(jobId, 'FAILED_AT_TAP', 'No Graph user ID available for TAP creation')
-        }
-
-        const { token } = await graphApiService.getAuthenticatedClient(entityId)
-
-        const tapRes = await fetch(
-          `https://graph.microsoft.com/v1.0/users/${job.graphUserId}/authentication/temporaryAccessPassMethods`,
-          {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ isUsableOnce: true, lifetimeInMinutes: 60 }),
-          }
-        )
-
-        if (!tapRes.ok) {
-          const body = await tapRes.json().catch(() => ({}))
-          return this.failJob(jobId, 'FAILED_AT_TAP', body.error?.message || `TAP creation failed: ${tapRes.status}`)
-        }
-
-        const tapData = await tapRes.json()
-
-        await prisma.provisioningJob.update({
-          where: { id: jobId },
-          data: { temporaryPassword: encryptEntra(tapData.temporaryAccessPass) },
-        })
-      }
-
       // Success!
       const job = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
 
@@ -345,6 +312,15 @@ export class ProvisioningEngine {
 
   private async generatePassword(entityId: string): Promise<string> {
     const config = await prisma.tenantEntraConfig.findUnique({ where: { entityId } })
+
+    if (config?.fixedInitialPassword) {
+      try {
+        return decryptEntra(config.fixedInitialPassword)
+      } catch (err) {
+        throw new Error('Fixed initial password could not be decrypted. Please re-save it in the Entra configuration.')
+      }
+    }
+
     const minLength = config?.passwordMinLength || 16
     const requireUpper = config?.passwordRequireUppercase ?? true
     const requireNumbers = config?.passwordRequireNumbers ?? true

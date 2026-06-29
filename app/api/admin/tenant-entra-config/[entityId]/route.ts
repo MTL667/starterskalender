@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission, can } from '@/lib/authz'
 import { prisma } from '@/lib/prisma'
+import { encryptEntra, decryptEntra } from '@/lib/encryption'
 import { z } from 'zod'
 
 const UpdateTenantConfigSchema = z.object({
@@ -8,6 +9,7 @@ const UpdateTenantConfigSchema = z.object({
   passwordRequireUppercase: z.boolean().optional(),
   passwordRequireNumbers: z.boolean().optional(),
   passwordRequireSpecialChars: z.boolean().optional(),
+  fixedInitialPassword: z.string().max(256).optional().nullable().transform(v => v?.trim() || null),
 })
 
 export async function GET(
@@ -33,10 +35,20 @@ export async function GET(
         passwordRequireUppercase: true,
         passwordRequireNumbers: true,
         passwordRequireSpecialChars: true,
+        fixedInitialPassword: null,
       })
     }
 
-    return NextResponse.json(config)
+    const response: any = { ...config }
+    if (config.fixedInitialPassword) {
+      try {
+        response.fixedInitialPassword = decryptEntra(config.fixedInitialPassword)
+      } catch {
+        response.fixedInitialPassword = null
+      }
+    }
+
+    return NextResponse.json(response)
   } catch (error: any) {
     if (error.message?.includes('Unauthorized')) {
       return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Not authenticated' }, { status: 401 })
@@ -63,13 +75,29 @@ export async function PUT(
       return NextResponse.json({ error: 'VALIDATION_ERROR', message: result.error.errors[0].message }, { status: 400 })
     }
 
+    const data: any = { ...result.data }
+    if ('fixedInitialPassword' in data) {
+      data.fixedInitialPassword = data.fixedInitialPassword
+        ? encryptEntra(data.fixedInitialPassword)
+        : null
+    }
+
     const config = await prisma.tenantEntraConfig.upsert({
       where: { entityId },
-      create: { entityId, ...result.data },
-      update: result.data,
+      create: { entityId, ...data },
+      update: data,
     })
 
-    return NextResponse.json(config)
+    const response: any = { ...config }
+    if (config.fixedInitialPassword) {
+      try {
+        response.fixedInitialPassword = decryptEntra(config.fixedInitialPassword)
+      } catch {
+        response.fixedInitialPassword = null
+      }
+    }
+
+    return NextResponse.json(response)
   } catch (error: any) {
     if (error.message?.includes('Unauthorized')) {
       return NextResponse.json({ error: 'UNAUTHORIZED', message: 'Not authenticated' }, { status: 401 })

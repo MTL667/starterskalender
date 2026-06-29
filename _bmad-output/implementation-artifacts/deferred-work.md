@@ -55,3 +55,9 @@
 
 - **Backfill legacy subcontractor materials** — Existing StarterMaterial records for subcontractor starters still have `materialProvision=ENTITY_PROVIDED` (schema default). A one-time data migration script should set them to `SELF_PROVIDED`.
 - **employmentType editable after create** — Currently employmentType cannot be changed via PATCH on an existing starter. If a starter is misclassified, materials won't follow. Consider adding employmentType to UpdateStarterSchema.
+
+## Deferred from: fixed initial password — spec-fixed-initial-password (2026-06-29)
+
+- **Migrate orphaned TAP_CREATING/MAILBOX_WAITING jobs** — After removing the TAP step, in-flight jobs stuck in these states will never transition. A one-time migration script should set them to `FAILED_AT_TAP` or `SUCCESS` as appropriate.
+- **Audit trail for fixed password changes** — PUT on `fixedInitialPassword` has no audit log entry. Add `createAuditLog` call on password set/clear (never log the password value).
+- **Decrypt failure can silently wipe saved password** — If GET fails to decrypt (key rotation), it returns null. Admin saving any field then PUTs null back, clearing the encrypted value. Consider PATCH semantics or a `passwordDirty` flag.

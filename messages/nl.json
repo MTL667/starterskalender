@@ -2035,11 +2035,16 @@
       "description": "Als het geconfigureerde licentietype niet beschikbaar is, val terug op een lager type"
     },
     "password": {
-      "title": "Tijdelijk wachtwoord regels",
+      "title": "Wachtwoord regels (fallback)",
       "minLength": "Min. lengte",
       "requireUppercase": "Hoofdletters vereist",
       "requireNumbers": "Cijfers vereist",
       "requireSpecialChars": "Speciale tekens vereist"
+    },
+    "fixedPassword": {
+      "title": "Vast initieel wachtwoord",
+      "description": "Dit wachtwoord wordt gebruikt bij het aanmaken van alle nieuwe gebruikers voor deze entiteit. Laat leeg om een willekeurig wachtwoord te genereren.",
+      "placeholder": "Voer een vast wachtwoord in..."
     },
     "tenantConfig": {
       "save": "Configuratie opslaan",
@@ -2062,8 +2067,8 @@
         "TAP_CREATING": "Access Pass aanmaken"
       },
       "credentialCard": {
-        "title": "Temporary Access Pass",
-        "warning": "Eenmalig gebruik, geldig voor 60 minuten. Kopieer nu en geef door aan de starter.",
+        "title": "Initieel Wachtwoord",
+        "warning": "Gebruiker moet wachtwoord wijzigen bij eerste aanmelding. Kopieer nu en geef door aan de starter.",
         "copied": "Gekopieerd",
         "mailboxInfo": "De mailbox is actief binnen ~5 minuten."
       }

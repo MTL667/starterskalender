@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff } from 'lucide-react'
 
 interface TenantEntraConfigPanelProps {
   entityId: string
@@ -17,6 +17,7 @@ interface TenantConfig {
   passwordRequireUppercase: boolean
   passwordRequireNumbers: boolean
   passwordRequireSpecialChars: boolean
+  fixedInitialPassword: string | null
 }
 
 export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps) {
@@ -26,10 +27,12 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
     passwordRequireUppercase: true,
     passwordRequireNumbers: true,
     passwordRequireSpecialChars: true,
+    fixedInitialPassword: null,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     fetchConfig()
@@ -105,6 +108,31 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
               checked={config.passwordRequireSpecialChars}
               onCheckedChange={(checked) => setConfig(prev => ({ ...prev, passwordRequireSpecialChars: checked }))}
             />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 p-3 border rounded-md">
+        <Label className="text-sm font-medium">{t('fixedPassword.title')}</Label>
+        <p className="text-xs text-muted-foreground">{t('fixedPassword.description')}</p>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Input
+              type={showPassword ? 'text' : 'password'}
+              value={config.fixedInitialPassword || ''}
+              onChange={(e) => setConfig(prev => ({ ...prev, fixedInitialPassword: e.target.value || null }))}
+              placeholder={t('fixedPassword.placeholder')}
+              className="pr-10"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
       </div>

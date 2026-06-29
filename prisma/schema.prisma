@@ -1304,6 +1304,7 @@ model TenantEntraConfig {
   passwordRequireUppercase    Boolean @default(true)
   passwordRequireNumbers      Boolean @default(true)
   passwordRequireSpecialChars Boolean @default(true)
+  fixedInitialPassword        String?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 }

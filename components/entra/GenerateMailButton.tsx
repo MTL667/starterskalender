@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { Mail, Loader2, CheckCircle2, Copy, RotateCcw, Trash2, KeyRound } from 'lucide-react'
+import { Mail, Loader2, CheckCircle2, Copy, RotateCcw, Trash2 } from 'lucide-react'
 import { ProvisioningStatus } from './ProvisioningStatus'
 import { useProvisioningStatus } from '@/lib/hooks/use-provisioning-status'
 
@@ -27,7 +27,6 @@ export function GenerateMailButton({
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [alreadyProvisioned, setAlreadyProvisioned] = useState(false)
-  const [generatingTap, setGeneratingTap] = useState(false)
 
   const { status, isActive, isFailed, isSuccess, startedAt, reconnect } = useProvisioningStatus(starterId)
 
@@ -67,25 +66,6 @@ export function GenerateMailButton({
       setTriggering(false)
     }
   }, [starterId, reconnect])
-
-  const handleNewTap = useCallback(async () => {
-    setGeneratingTap(true)
-    setTempPassword(null)
-    setCopied(false)
-    try {
-      const res = await fetch(`/api/provisioning/${starterId}/new-tap`, { method: 'POST' })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to create TAP')
-      }
-      const data = await res.json()
-      setTempPassword(data.temporaryAccessPass)
-    } catch (err: any) {
-      console.error('New TAP error:', err)
-    } finally {
-      setGeneratingTap(false)
-    }
-  }, [starterId])
 
   const handleRetry = useCallback(async () => {
     if (!status.id) return
@@ -128,7 +108,7 @@ export function GenerateMailButton({
     return null
   }
 
-  // Already provisioned: show "New TAP" UI
+  // Already provisioned: show credential if available
   if (alreadyProvisioned && !isActive && !isFailed) {
     return (
       <div className="space-y-3">
@@ -149,14 +129,6 @@ export function GenerateMailButton({
             <p className="text-xs text-blue-600 dark:text-blue-400">{t('credentialCard.mailboxInfo')}</p>
           </div>
         )}
-        <Button onClick={handleNewTap} disabled={generatingTap} variant="outline">
-          {generatingTap ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : (
-            <KeyRound className="h-4 w-4 mr-2" />
-          )}
-          {t('newTap')}
-        </Button>
       </div>
     )
   }
