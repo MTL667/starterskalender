@@ -2054,7 +2054,6 @@
       "inProgress": "Provisionnement en cours...",
       "success": "Mail créé avec succès",
       "alreadyProvisioned": "Adresse mail créée",
-      "newTap": "Générer un nouveau pass d'accès",
       "retry": "Réessayer",
       "removeUser": "Supprimer l'utilisateur créé",
       "slowMessage": "Cela prend plus longtemps que prévu. Le processus continue en arrière-plan.",

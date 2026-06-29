@@ -55,13 +55,15 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
     setSaving(true)
     setSaved(false)
     try {
-      await fetch(`/api/admin/tenant-entra-config/${entityId}`, {
+      const res = await fetch(`/api/admin/tenant-entra-config/${entityId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      if (res.ok) {
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      }
     } catch { /* ignore */ } finally {
       setSaving(false)
     }

@@ -61,3 +61,6 @@
 - **Migrate orphaned TAP_CREATING/MAILBOX_WAITING jobs** — After removing the TAP step, in-flight jobs stuck in these states will never transition. A one-time migration script should set them to `FAILED_AT_TAP` or `SUCCESS` as appropriate.
 - **Audit trail for fixed password changes** — PUT on `fixedInitialPassword` has no audit log entry. Add `createAuditLog` call on password set/clear (never log the password value).
 - **Decrypt failure can silently wipe saved password** — If GET fails to decrypt (key rotation), it returns null. Admin saving any field then PUTs null back, clearing the encrypted value. Consider PATCH semantics or a `passwordDirty` flag.
+- **Credential card empty after page reload** — Once SSE completes, the password is only in local state. Refresh clears it. Pre-existing limitation (was same with TAP). Fix: extend `/verify` to return decrypted password, or auto-reconnect SSE.
+- **FAILED_AT_TAP renders all steps as pending in UI** — Legacy jobs in `FAILED_AT_TAP` have no corresponding step in the new STEPS array; all steps appear pending. Map legacy failure states to a visible fallback.
+- **Fixed password not validated against entity complexity rules** — API accepts any password up to 256 chars; Graph API rejects weak passwords at creation. Validate against toggle settings before encrypt/store for better UX.

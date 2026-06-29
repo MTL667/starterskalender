@@ -112,3 +112,14 @@ context: []
 
 - French: mirror translations
   [`fr.json:2037`](../../messages/fr.json#L2037)
+
+### Review Findings
+
+- [x] [Review][Patch] Retry from FAILED_AT_TAP doesn't copy temporaryPassword — new retry job skips user creation and has no password stored; credential card is empty [`lib/provisioning-engine.ts:82`]
+- [x] [Review][Patch] handleSave shows "saved" without checking HTTP status — admin may think config persisted while PUT failed [`components/entra/TenantEntraConfigPanel.tsx:54`]
+- [x] [Review][Patch] Dead i18n key `newTap` remains in nl.json and fr.json — button was removed [`messages/nl.json:2058`, `messages/fr.json:2057`]
+- [x] [Review][Defer] Stuck TAP_CREATING/MAILBOX_WAITING jobs block new provisioning — deferred, requires data migration
+- [x] [Review][Defer] Silent decrypt failure on GET can lead to accidental password wipe on next save — deferred, complex fix (dirty tracking / PATCH semantics)
+- [x] [Review][Defer] Credential card empty after page reload (pre-existing UX limitation) — deferred, not caused by this change
+- [x] [Review][Defer] FAILED_AT_TAP renders all steps as pending in ProvisioningStatus UI — deferred, legacy state display
+- [x] [Review][Defer] Fixed password not validated against entity complexity rules before save — deferred, Graph API rejects weak passwords at creation

@@ -2055,7 +2055,6 @@
       "inProgress": "Bezig met provisioning...",
       "success": "Mail succesvol aangemaakt",
       "alreadyProvisioned": "Mailadres aangemaakt",
-      "newTap": "Nieuwe Access Pass genereren",
       "retry": "Opnieuw proberen",
       "removeUser": "Aangemaakte gebruiker verwijderen",
       "slowMessage": "Dit duurt langer dan verwacht. Het proces loopt door op de achtergrond.",

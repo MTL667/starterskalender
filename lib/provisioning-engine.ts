@@ -87,6 +87,7 @@ export class ProvisioningEngine {
         triggeredBy,
         graphUserId: failedJob.graphUserId,
         assignedLicenseType: failedJob.assignedLicenseType,
+        temporaryPassword: failedJob.temporaryPassword,
       },
     })
 
