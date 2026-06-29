@@ -2042,7 +2042,7 @@
       "requireSpecialChars": "Speciale tekens vereist"
     },
     "fixedPassword": {
-      "title": "Vast initieel wachtwoord",
+      "title": "Vast wachtwoord",
       "description": "Dit wachtwoord wordt gebruikt bij het aanmaken van alle nieuwe gebruikers voor deze entiteit. Laat leeg om een willekeurig wachtwoord te genereren.",
       "placeholder": "Voer een vast wachtwoord in...",
       "show": "Tonen",
@@ -2073,8 +2073,8 @@
         "TAP_CREATING": "Access Pass aanmaken"
       },
       "credentialCard": {
-        "title": "Initieel Wachtwoord",
-        "warning": "Gebruiker moet wachtwoord wijzigen bij eerste aanmelding. Kopieer nu en geef door aan de starter.",
+        "title": "Wachtwoord",
+        "warning": "Kopieer het wachtwoord nu en geef het door aan de starter.",
         "copied": "Gekopieerd",
         "mailboxInfo": "De mailbox is actief binnen ~5 minuten."
       }
