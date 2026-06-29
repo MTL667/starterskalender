@@ -2043,7 +2043,14 @@
     "fixedPassword": {
       "title": "Mot de passe initial fixe",
       "description": "Ce mot de passe sera utilisé lors de la création de tous les nouveaux utilisateurs de cette entité. Laissez vide pour générer un mot de passe aléatoire.",
-      "placeholder": "Entrez un mot de passe fixe..."
+      "placeholder": "Entrez un mot de passe fixe...",
+      "show": "Afficher",
+      "hide": "Masquer",
+      "edit": "Modifier",
+      "clear": "Supprimer",
+      "save": "Enregistrer le mot de passe",
+      "cancel": "Annuler",
+      "confirmClear": "Êtes-vous sûr de vouloir supprimer le mot de passe fixe ? Les nouveaux utilisateurs recevront un mot de passe aléatoire."
     },
     "tenantConfig": {
       "save": "Enregistrer la configuration",

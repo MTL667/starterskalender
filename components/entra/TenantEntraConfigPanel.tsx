@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { Loader2, Eye, EyeOff } from 'lucide-react'
+import { Loader2, Eye, EyeOff, Pencil, Trash2 } from 'lucide-react'
 
 interface TenantEntraConfigPanelProps {
   entityId: string
@@ -32,7 +32,12 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  const [hasStoredPassword, setHasStoredPassword] = useState(false)
+  const [isEditingPassword, setIsEditingPassword] = useState(false)
+  const [passwordDraft, setPasswordDraft] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [savingPassword, setSavingPassword] = useState(false)
 
   useEffect(() => {
     fetchConfig()
@@ -45,6 +50,7 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
       if (res.ok) {
         const data = await res.json()
         setConfig(data)
+        setHasStoredPassword(!!data.fixedInitialPassword)
       }
     } catch { /* ignore */ } finally {
       setLoading(false)
@@ -55,12 +61,16 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
     setSaving(true)
     setSaved(false)
     try {
+      const { fixedInitialPassword, ...configWithoutPassword } = config
       const res = await fetch(`/api/admin/tenant-entra-config/${entityId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        body: JSON.stringify(configWithoutPassword),
       })
       if (res.ok) {
+        const data = await res.json()
+        setConfig(data)
+        setHasStoredPassword(!!data.fixedInitialPassword)
         setSaved(true)
         setTimeout(() => setSaved(false), 3000)
       }
@@ -68,6 +78,49 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
       setSaving(false)
     }
   }
+
+  async function handleSavePassword() {
+    setSavingPassword(true)
+    try {
+      const res = await fetch(`/api/admin/tenant-entra-config/${entityId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fixedInitialPassword: passwordDraft || null }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setConfig(data)
+        setHasStoredPassword(!!data.fixedInitialPassword)
+        setIsEditingPassword(false)
+        setPasswordDraft('')
+        setShowPassword(false)
+      }
+    } catch { /* ignore */ } finally {
+      setSavingPassword(false)
+    }
+  }
+
+  async function handleClearPassword() {
+    if (!window.confirm(t('fixedPassword.confirmClear'))) return
+    setSavingPassword(true)
+    try {
+      const res = await fetch(`/api/admin/tenant-entra-config/${entityId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fixedInitialPassword: null }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setConfig(data)
+        setHasStoredPassword(false)
+        setShowPassword(false)
+      }
+    } catch { /* ignore */ } finally {
+      setSavingPassword(false)
+    }
+  }
+
+  const isBusy = saving || savingPassword
 
   if (loading) {
     return <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /></div>
@@ -117,30 +170,101 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
       <div className="space-y-3 p-3 border rounded-md">
         <Label className="text-sm font-medium">{t('fixedPassword.title')}</Label>
         <p className="text-xs text-muted-foreground">{t('fixedPassword.description')}</p>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Input
-              type={showPassword ? 'text' : 'password'}
-              value={config.fixedInitialPassword || ''}
-              onChange={(e) => setConfig(prev => ({ ...prev, fixedInitialPassword: e.target.value || null }))}
-              placeholder={t('fixedPassword.placeholder')}
-              className="pr-10"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+
+        {hasStoredPassword && !isEditingPassword ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-sm bg-muted px-3 py-2 rounded-md font-mono">
+                {showPassword ? config.fixedInitialPassword : '••••••••••••'}
+              </code>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? t('fixedPassword.hide') : t('fixedPassword.show')}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setPasswordDraft(config.fixedInitialPassword || '')
+                  setIsEditingPassword(true)
+                }}
+                title={t('fixedPassword.edit')}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearPassword}
+                disabled={isBusy}
+                title={t('fixedPassword.clear')}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  value={isEditingPassword ? passwordDraft : ''}
+                  onChange={(e) => setPasswordDraft(e.target.value)}
+                  placeholder={t('fixedPassword.placeholder')}
+                  maxLength={256}
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSavePassword}
+                disabled={isBusy || !passwordDraft.trim()}
+              >
+                {savingPassword && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                {t('fixedPassword.save')}
+              </Button>
+              {isEditingPassword && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsEditingPassword(false)
+                    setPasswordDraft('')
+                    setShowPassword(false)
+                  }}
+                >
+                  {t('fixedPassword.cancel')}
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button size="sm" onClick={handleSave} disabled={isBusy}>
           {saving && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
           {t('tenantConfig.save')}
         </Button>

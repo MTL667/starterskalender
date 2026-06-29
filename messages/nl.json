@@ -2044,7 +2044,14 @@
     "fixedPassword": {
       "title": "Vast initieel wachtwoord",
       "description": "Dit wachtwoord wordt gebruikt bij het aanmaken van alle nieuwe gebruikers voor deze entiteit. Laat leeg om een willekeurig wachtwoord te genereren.",
-      "placeholder": "Voer een vast wachtwoord in..."
+      "placeholder": "Voer een vast wachtwoord in...",
+      "show": "Tonen",
+      "hide": "Verbergen",
+      "edit": "Wijzigen",
+      "clear": "Verwijderen",
+      "save": "Wachtwoord opslaan",
+      "cancel": "Annuleren",
+      "confirmClear": "Weet je zeker dat je het vaste wachtwoord wilt verwijderen? Nieuwe gebruikers krijgen dan een willekeurig wachtwoord."
     },
     "tenantConfig": {
       "save": "Configuratie opslaan",
