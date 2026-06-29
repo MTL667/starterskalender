@@ -2114,6 +2114,16 @@
     "oooGeneralMailAddress": "Algemeen e-mailadres (vervanging)",
     "oooTemplateSave": "Opslaan",
     "oooTemplateSaved": "OOO template opgeslagen",
-    "oooVariablesHint": "Variabelen: {voornaam}, {achternaam}, {algemeen_mailadres}"
+    "oooVariablesHint": "Variabelen: {voornaam}, {achternaam}, {algemeen_mailadres}",
+    "writeOooForStarter": "OOO schrijven",
+    "editOooForStarter": "OOO bericht bewerken",
+    "oooEditorDescription": "Schrijf een persoonlijk Out of Office bericht voor deze medewerker. Dit wordt niet opgeslagen als template voor de functie.",
+    "oooGeneralMailAddressLabel": "Algemeen e-mailadres",
+    "oooPlaceholderNl": "Beste, {voornaam} {achternaam} is niet langer werkzaam bij ons. Voor vragen contacteer {algemeen_mailadres}.",
+    "oooPlaceholderFr": "Bonjour, {voornaam} {achternaam} ne travaille plus chez nous. Pour toute question, contactez {algemeen_mailadres}.",
+    "oooPlaceholderEn": "Hello, {voornaam} {achternaam} is no longer with our organization. Please contact {algemeen_mailadres}.",
+    "oooSaveButton": "OOO opslaan",
+    "oooClearButton": "OOO wissen",
+    "oooSaved": "OOO opgeslagen"
   }
 }

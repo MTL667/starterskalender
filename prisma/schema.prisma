@@ -357,6 +357,12 @@ model Starter {
   leaveReason          LeaveReason? @relation(fields: [leaveReasonId], references: [id], onDelete: SetNull)
   leaveReasonNote      String?      @db.Text
 
+  // Offboarding: per-starter OOO (overrides OooTemplate when filled)
+  oooMessageNl         String?      @db.Text
+  oooMessageFr         String?      @db.Text
+  oooMessageEn         String?      @db.Text
+  oooGeneralMailAddress String?
+
   employmentType EmploymentType @default(EMPLOYEE)
   companyName    String?
   vatNumber      String?

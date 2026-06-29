@@ -29,17 +29,24 @@ export async function runPreFlightChecks(entityId: string, starterId: string, gr
     jobRoleId = jobRole?.id
   }
 
-  const oooTemplate = await prisma.oooTemplate.findFirst({
-    where: {
-      entityId,
-      OR: [
-        ...(jobRoleId ? [{ jobRoleId }] : []),
-        { jobRoleId: null },
-      ],
-    },
-    select: { id: true },
-  })
-  const oooTemplateConfigured = !!oooTemplate
+  const [oooTemplate, starter] = await Promise.all([
+    prisma.oooTemplate.findFirst({
+      where: {
+        entityId,
+        OR: [
+          ...(jobRoleId ? [{ jobRoleId }] : []),
+          { jobRoleId: null },
+        ],
+      },
+      select: { id: true },
+    }),
+    prisma.starter.findUnique({
+      where: { id: starterId },
+      select: { oooMessageNl: true, oooMessageFr: true, oooMessageEn: true },
+    }),
+  ])
+  const hasPerStarterOoo = !!(starter?.oooMessageNl || starter?.oooMessageFr || starter?.oooMessageEn)
+  const oooTemplateConfigured = !!oooTemplate || hasPerStarterOoo
 
   if (job?.preFlightResults) {
     const cached = job.preFlightResults as unknown as PreFlightResult

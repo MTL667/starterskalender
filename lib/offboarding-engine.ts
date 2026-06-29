@@ -253,46 +253,68 @@ export class OffboardingEngine {
   private async executeOoo(ctx: OffboardingContext): Promise<void> {
     const starter = await prisma.starter.findUnique({
       where: { id: ctx.starterId },
-      select: { firstName: true, lastName: true, roleTitle: true, entityId: true },
-    })
-
-    let jobRoleId: string | undefined
-    if (starter?.roleTitle && starter.entityId) {
-      const jobRole = await prisma.jobRole.findFirst({
-        where: { entityId: starter.entityId, title: starter.roleTitle },
-        select: { id: true },
-      })
-      jobRoleId = jobRole?.id
-    }
-
-    const template = await prisma.oooTemplate.findFirst({
-      where: {
-        entityId: ctx.entityId,
-        OR: [
-          ...(jobRoleId ? [{ jobRoleId }] : []),
-          { jobRoleId: null },
-        ],
+      select: {
+        firstName: true, lastName: true, roleTitle: true, entityId: true,
+        oooMessageNl: true, oooMessageFr: true, oooMessageEn: true, oooGeneralMailAddress: true,
       },
-      orderBy: { jobRoleId: 'desc' },
     })
 
-    if (!template) {
-      throw new Error('No OOO template configured for this entity/function')
+    const hasPerStarterOoo = !!(starter?.oooMessageNl || starter?.oooMessageFr || starter?.oooMessageEn)
+
+    let messageNl: string
+    let messageFr: string
+    let messageEn: string
+    let generalMailAddress: string
+
+    if (hasPerStarterOoo) {
+      messageNl = starter!.oooMessageNl || ''
+      messageFr = starter!.oooMessageFr || ''
+      messageEn = starter!.oooMessageEn || ''
+      generalMailAddress = starter!.oooGeneralMailAddress || ''
+    } else {
+      let jobRoleId: string | undefined
+      if (starter?.roleTitle && starter.entityId) {
+        const jobRole = await prisma.jobRole.findFirst({
+          where: { entityId: starter.entityId, title: starter.roleTitle },
+          select: { id: true },
+        })
+        jobRoleId = jobRole?.id
+      }
+
+      const template = await prisma.oooTemplate.findFirst({
+        where: {
+          entityId: ctx.entityId,
+          OR: [
+            ...(jobRoleId ? [{ jobRoleId }] : []),
+            { jobRoleId: null },
+          ],
+        },
+        orderBy: { jobRoleId: 'desc' },
+      })
+
+      if (!template) {
+        throw new Error('No OOO template configured for this entity/function')
+      }
+
+      messageNl = template.templateNl
+      messageFr = template.templateFr
+      messageEn = template.templateEn
+      generalMailAddress = template.generalMailAddress
     }
 
-    const renderTemplate = (text: string) =>
+    const renderText = (text: string) =>
       text
         .replace(/\{voornaam\}/g, starter?.firstName || '')
         .replace(/\{achternaam\}/g, starter?.lastName || '')
-        .replace(/\{algemeen_mailadres\}/g, template.generalMailAddress || '')
+        .replace(/\{algemeen_mailadres\}/g, generalMailAddress)
 
-    const renderedNl = renderTemplate(template.templateNl)
-    const renderedFr = renderTemplate(template.templateFr)
-    const renderedEn = renderTemplate(template.templateEn)
-
-    const combinedMessage = [renderedNl, renderedFr, renderedEn]
+    const combinedMessage = [renderText(messageNl), renderText(messageFr), renderText(messageEn)]
       .filter(Boolean)
       .join('<br><br><hr><br>')
+
+    if (!combinedMessage) {
+      throw new Error('OOO message is empty after rendering — cannot set blank auto-reply')
+    }
 
     await graphApiService.setOutOfOffice(ctx.entityId, ctx.graphUserId, combinedMessage, combinedMessage)
   }

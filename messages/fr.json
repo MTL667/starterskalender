@@ -2113,6 +2113,16 @@
     "oooGeneralMailAddress": "Adresse e-mail générale (remplacement)",
     "oooTemplateSave": "Enregistrer",
     "oooTemplateSaved": "Modèle OOO enregistré",
-    "oooVariablesHint": "Variables : {voornaam}, {achternaam}, {algemeen_mailadres}"
+    "oooVariablesHint": "Variables : {voornaam}, {achternaam}, {algemeen_mailadres}",
+    "writeOooForStarter": "Écrire OOO",
+    "editOooForStarter": "Modifier le message OOO",
+    "oooEditorDescription": "Rédigez un message Out of Office personnel pour cet employé. Il ne sera pas enregistré comme modèle pour la fonction.",
+    "oooGeneralMailAddressLabel": "Adresse e-mail générale",
+    "oooPlaceholderNl": "Beste, {voornaam} {achternaam} is niet langer werkzaam bij ons. Voor vragen contacteer {algemeen_mailadres}.",
+    "oooPlaceholderFr": "Bonjour, {voornaam} {achternaam} ne travaille plus chez nous. Pour toute question, contactez {algemeen_mailadres}.",
+    "oooPlaceholderEn": "Hello, {voornaam} {achternaam} is no longer with our organization. Please contact {algemeen_mailadres}.",
+    "oooSaveButton": "Enregistrer OOO",
+    "oooClearButton": "Effacer OOO",
+    "oooSaved": "OOO enregistré"
   }
 }
