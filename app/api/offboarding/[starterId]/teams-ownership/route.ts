@@ -12,7 +12,7 @@ export async function GET(
 
   const starter = await prisma.starter.findUnique({
     where: { id: starterId },
-    select: { entityId: true, firstName: true, lastName: true, desiredEmail: true },
+    select: { entityId: true, firstName: true, lastName: true, desiredEmail: true, teamsOwnershipMapping: true },
   })
 
   if (!starter?.entityId) {
@@ -31,7 +31,8 @@ export async function GET(
   }
 
   const groups = await graphApiService.getUserOwnedGroups(starter.entityId, graphUserId)
-  return NextResponse.json({ groups, entityId: starter.entityId })
+  const savedMapping = (starter.teamsOwnershipMapping as any[]) || []
+  return NextResponse.json({ groups, entityId: starter.entityId, savedMapping })
 }
 
 export async function POST(
@@ -73,11 +74,15 @@ export async function POST(
   })
 
   if (job) {
+    const safeStates = ['PENDING', 'READY', 'TEAMS_TRANSFER_PENDING']
+    const isBlocked = (job.state as string).startsWith('BLOCKED_AT_')
+    const canUpdateState = safeStates.includes(job.state) || isBlocked
+
     await prisma.offboardingJob.update({
       where: { id: job.id },
       data: {
         teamsOwnershipMapping: mapping,
-        state: 'TEAMS_TRANSFER_PENDING',
+        ...(canUpdateState ? { state: 'TEAMS_TRANSFER_PENDING' } : {}),
       },
     })
   }

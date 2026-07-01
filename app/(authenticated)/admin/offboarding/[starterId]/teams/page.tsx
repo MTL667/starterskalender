@@ -42,6 +42,14 @@ export default function TeamsOwnershipTransferPage() {
         const data = await res.json()
         setGroups(data.groups || [])
         setEntityId(data.entityId || null)
+        const saved = (data.savedMapping || []) as OwnerMapping[]
+        if (saved.length > 0) {
+          const restored = new Map<string, { newOwnerId: string; newOwnerName: string }>()
+          for (const item of saved) {
+            restored.set(item.groupId, { newOwnerId: item.newOwnerId, newOwnerName: item.newOwnerName })
+          }
+          setMapping(restored)
+        }
       }
       setLoading(false)
     }
