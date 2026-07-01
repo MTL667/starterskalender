@@ -365,6 +365,9 @@ model Starter {
   oooMessageEn         String?      @db.Text
   oooGeneralMailAddress String?
 
+  // Offboarding: Teams ownership transfer mapping (set before job starts)
+  teamsOwnershipMapping Json?
+
   employmentType EmploymentType @default(EMPLOYEE)
   companyName    String?
   vatNumber      String?

@@ -62,22 +62,25 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid mapping format' }, { status: 400 })
   }
 
+  await prisma.starter.update({
+    where: { id: starterId },
+    data: { teamsOwnershipMapping: mapping },
+  })
+
   const job = await prisma.offboardingJob.findFirst({
     where: { starterId, state: { notIn: ['COMPLETED', 'ROLLED_BACK'] } },
     orderBy: { createdAt: 'desc' },
   })
 
-  if (!job) {
-    return NextResponse.json({ error: 'No active offboarding job' }, { status: 400 })
+  if (job) {
+    await prisma.offboardingJob.update({
+      where: { id: job.id },
+      data: {
+        teamsOwnershipMapping: mapping,
+        state: 'TEAMS_TRANSFER_PENDING',
+      },
+    })
   }
 
-  await prisma.offboardingJob.update({
-    where: { id: job.id },
-    data: {
-      teamsOwnershipMapping: mapping,
-      state: 'TEAMS_TRANSFER_PENDING',
-    },
-  })
-
-  return NextResponse.json({ success: true, jobId: job.id })
+  return NextResponse.json({ success: true })
 }

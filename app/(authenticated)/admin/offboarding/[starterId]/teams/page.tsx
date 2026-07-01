@@ -31,6 +31,7 @@ export default function TeamsOwnershipTransferPage() {
   const [mapping, setMapping] = useState<Map<string, { newOwnerId: string; newOwnerName: string }>>(new Map())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<Map<string, { userId: string; displayName: string }[]>>(new Map())
   const [searchQueries, setSearchQueries] = useState<Map<string, string>>(new Map())
 
@@ -71,6 +72,7 @@ export default function TeamsOwnershipTransferPage() {
     if (mapping.size < groups.length) return
 
     setSaving(true)
+    setSaveError(null)
     const mappingArray: OwnerMapping[] = groups.map((g) => ({
       groupId: g.groupId,
       groupName: g.groupName,
@@ -86,6 +88,9 @@ export default function TeamsOwnershipTransferPage() {
 
     if (res.ok) {
       router.back()
+    } else {
+      const data = await res.json().catch(() => ({}))
+      setSaveError(data.error || `Opslaan mislukt (${res.status})`)
     }
     setSaving(false)
   }
@@ -180,6 +185,9 @@ export default function TeamsOwnershipTransferPage() {
               <AlertTriangle className="h-4 w-4" />
               {t('selectAllOwners', { remaining: groups.length - mapping.size })}
             </span>
+          )}
+          {saveError && (
+            <span className="text-sm text-destructive">{saveError}</span>
           )}
         </div>
       )}

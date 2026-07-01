@@ -70,6 +70,16 @@ export async function runPreFlightChecks(entityId: string, starterId: string, gr
     litigationHold = holdResult
     mailboxSizeMb = statsResult.mailboxSizeMb
     teamsOwnerships = groupsResult
+
+    const starterData = await prisma.starter.findUnique({
+      where: { id: starterId },
+      select: { teamsOwnershipMapping: true },
+    })
+    const existingMapping = (starterData?.teamsOwnershipMapping as any[]) || []
+    if (existingMapping.length > 0) {
+      const mappedGroupIds = new Set(existingMapping.map((m: any) => m.groupId))
+      teamsOwnerships = teamsOwnerships.filter(g => !mappedGroupIds.has(g.groupId))
+    }
   } catch (err: any) {
     graphApiHealthy = false
     graphApiError = err instanceof GraphApiError ? err.message : 'Graph API unreachable'

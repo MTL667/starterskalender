@@ -32,11 +32,18 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await res.json()
-    const users = (data.value || []).map((u: any) => ({
-      userId: u.id,
-      displayName: u.displayName,
-      mail: u.mail,
-    }))
+    const seen = new Set<string>()
+    const users = (data.value || [])
+      .filter((u: any) => {
+        if (seen.has(u.id)) return false
+        seen.add(u.id)
+        return true
+      })
+      .map((u: any) => ({
+        userId: u.id,
+        displayName: u.displayName,
+        mail: u.mail,
+      }))
 
     return NextResponse.json({ users })
   } catch {

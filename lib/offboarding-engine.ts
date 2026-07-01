@@ -71,7 +71,7 @@ export class OffboardingEngine {
   async startOffboarding(starterId: string, triggeredBy: string): Promise<{ jobId: string }> {
     const starter = await prisma.starter.findUnique({
       where: { id: starterId },
-      select: { id: true, entityId: true, firstName: true, lastName: true, desiredEmail: true },
+      select: { id: true, entityId: true, firstName: true, lastName: true, desiredEmail: true, teamsOwnershipMapping: true },
     })
 
     if (!starter?.entityId) {
@@ -103,6 +103,7 @@ export class OffboardingEngine {
         state: 'PENDING',
         triggeredBy,
         graphUserId,
+        teamsOwnershipMapping: starter.teamsOwnershipMapping ?? undefined,
       },
     })
 
@@ -336,7 +337,15 @@ export class OffboardingEngine {
 
   private async executeTeamsTransfer(ctx: OffboardingContext): Promise<void> {
     const job = await prisma.offboardingJob.findUnique({ where: { id: ctx.jobId } })
-    const mapping = (job?.teamsOwnershipMapping as any[]) || []
+    let mapping = (job?.teamsOwnershipMapping as any[]) || []
+
+    if (mapping.length === 0) {
+      const starter = await prisma.starter.findUnique({
+        where: { id: ctx.starterId },
+        select: { teamsOwnershipMapping: true },
+      })
+      mapping = (starter?.teamsOwnershipMapping as any[]) || []
+    }
 
     for (const item of mapping) {
       await graphApiService.transferGroupOwnership(ctx.entityId, item.groupId, ctx.graphUserId, item.newOwnerId)
