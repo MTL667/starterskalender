@@ -32,7 +32,7 @@ export default function TeamsOwnershipTransferPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [searchResults, setSearchResults] = useState<Map<string, { userId: string; displayName: string }[]>>(new Map())
+  const [searchResults, setSearchResults] = useState<Map<string, { userId: string; displayName: string; mail?: string }[]>>(new Map())
   const [searchQueries, setSearchQueries] = useState<Map<string, string>>(new Map())
 
   useEffect(() => {
@@ -161,7 +161,8 @@ export default function TeamsOwnershipTransferPage() {
                             className="w-full px-3 py-2 text-left text-sm hover:bg-accent"
                             onClick={() => handleSelectOwner(group.groupId, group.groupName, user.userId, user.displayName)}
                           >
-                            {user.displayName}
+                            <span className="font-medium">{user.displayName}</span>
+                            {user.mail && <span className="text-muted-foreground ml-2">{user.mail}</span>}
                           </button>
                         ))}
                       </div>
