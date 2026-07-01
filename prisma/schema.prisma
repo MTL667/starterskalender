@@ -106,6 +106,7 @@ enum StarterType {
 enum EmploymentType {
   EMPLOYEE
   SUBCONTRACTOR
+  CONSULTANT
 }
 
 enum TerminationInitiator {

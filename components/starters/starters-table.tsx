@@ -43,7 +43,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
   const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
-  const [employmentTypeFilter, setEmploymentTypeFilter] = useState<'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR'>('ALL')
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState<'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT'>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
   const [sortColumn, setSortColumn] = useState<SortColumn>('startDate')
@@ -458,7 +458,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
               </SelectContent>
             </Select>
 
-            <Select value={employmentTypeFilter} onValueChange={(v: 'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR') => setEmploymentTypeFilter(v)}>
+            <Select value={employmentTypeFilter} onValueChange={(v: 'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT') => setEmploymentTypeFilter(v)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue />
               </SelectTrigger>
@@ -466,6 +466,7 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                 <SelectItem value="ALL">{t('filterAllEmploymentTypes')}</SelectItem>
                 <SelectItem value="EMPLOYEE">{t('filterEmployees')}</SelectItem>
                 <SelectItem value="SUBCONTRACTOR">{t('filterSubcontractors')}</SelectItem>
+                <SelectItem value="CONSULTANT">{t('filterConsultants')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -621,8 +622,8 @@ export function StartersTable({ initialYear, canEdit }: { initialYear: number; c
                     <td className="py-3 font-medium">
                       <span className="inline-flex items-center gap-1">
                         {starter.firstName} {starter.lastName}
-                        {starter.employmentType === 'SUBCONTRACTOR' && (
-                          <span title={t('filterSubcontractors')}>
+                        {(starter.employmentType === 'SUBCONTRACTOR' || starter.employmentType === 'CONSULTANT') && (
+                          <span title={starter.employmentType === 'CONSULTANT' ? t('filterConsultants') : t('filterSubcontractors')}>
                             <Building2 className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                           </span>
                         )}

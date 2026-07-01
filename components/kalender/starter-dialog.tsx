@@ -63,7 +63,7 @@ interface Starter {
   cardDavStatus?: string | null
   fromEntityId?: string | null
   fromRoleTitle?: string | null
-  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR'
+  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT'
   companyName?: string | null
   vatNumber?: string | null
   companyStreet?: string | null
@@ -114,7 +114,7 @@ interface Employee {
   region: string | null
   phoneNumber: string | null
   desiredEmail: string | null
-  employmentType: 'EMPLOYEE' | 'SUBCONTRACTOR' | null
+  employmentType: 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT' | null
   companyName: string | null
   vatNumber: string | null
   companyStreet: string | null
@@ -190,7 +190,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [showValidationErrors, setShowValidationErrors] = useState(false)
   const [formData, setFormData] = useState({
     type: 'ONBOARDING' as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
-    employmentType: 'EMPLOYEE' as 'EMPLOYEE' | 'SUBCONTRACTOR',
+    employmentType: 'EMPLOYEE' as 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT',
     firstName: '',
     lastName: '',
     language: 'NL',
@@ -580,8 +580,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     setSelectedEmployee(employee)
     setShowEmployeeList(false)
     setEmployeeSearch('')
-    const companyFields = employee.employmentType === 'SUBCONTRACTOR' ? {
-      employmentType: 'SUBCONTRACTOR' as const,
+    const companyFields = (employee.employmentType === 'SUBCONTRACTOR' || employee.employmentType === 'CONSULTANT') ? {
+      employmentType: employee.employmentType as 'SUBCONTRACTOR' | 'CONSULTANT',
       companyName: employee.companyName || '',
       vatNumber: employee.vatNumber || '',
       companyStreet: employee.companyStreet || '',
@@ -840,7 +840,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
 
       if (!isEdit) {
         data.employmentType = formData.employmentType
-        if (formData.employmentType === 'SUBCONTRACTOR') {
+        if (formData.employmentType === 'SUBCONTRACTOR' || formData.employmentType === 'CONSULTANT') {
           data.companyName = formData.companyName || null
           data.vatNumber = formData.vatNumber || null
           data.companyStreet = formData.companyStreet || null
@@ -851,7 +851,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
           data.companyCountry = formData.companyCountry || null
           data.legalForm = formData.legalForm || null
         }
-      } else if (formData.employmentType === 'SUBCONTRACTOR') {
+      } else if (formData.employmentType === 'SUBCONTRACTOR' || formData.employmentType === 'CONSULTANT') {
         data.companyName = formData.companyName || null
         data.vatNumber = formData.vatNumber || null
         data.companyStreet = formData.companyStreet || null
@@ -1289,7 +1289,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 <Label htmlFor="employmentType">{t('employmentType')}</Label>
                 <Select
                   value={formData.employmentType}
-                  onValueChange={(value: 'EMPLOYEE' | 'SUBCONTRACTOR') => {
+                  onValueChange={(value: 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT') => {
                     setFormData({
                       ...formData,
                       employmentType: value,
@@ -1308,6 +1308,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   <SelectContent>
                     <SelectItem value="EMPLOYEE">{t('employee')}</SelectItem>
                     <SelectItem value="SUBCONTRACTOR">{t('subcontractor')}</SelectItem>
+                    <SelectItem value="CONSULTANT">{t('consultant')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1330,7 +1331,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
             </div>
 
-            {formData.employmentType === 'SUBCONTRACTOR' && (
+            {(formData.employmentType === 'SUBCONTRACTOR' || formData.employmentType === 'CONSULTANT') && (
               <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
                 <div className="text-sm font-medium">{t('companyDetails')}</div>
                 <div>
@@ -1507,8 +1508,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                                 <div className="flex-1 min-w-0">
                                   <div className="font-medium truncate flex items-center gap-1">
                                     {emp.name}
-                                    {emp.employmentType === 'SUBCONTRACTOR' && (
-                                      <span title={t('subcontractor')}>
+                                    {(emp.employmentType === 'SUBCONTRACTOR' || emp.employmentType === 'CONSULTANT') && (
+                                      <span title={emp.employmentType === 'CONSULTANT' ? t('consultant') : t('subcontractor')}>
                                         <Building2 className="h-3 w-3 text-orange-500 shrink-0" />
                                       </span>
                                     )}

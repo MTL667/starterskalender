@@ -744,6 +744,7 @@
     "filterAllEmploymentTypes": "Tous les types",
     "filterEmployees": "Employés",
     "filterSubcontractors": "Sous-traitants",
+    "filterConsultants": "Consultants",
     "exportName": "Nom",
     "exportFirstName": "Prénom",
     "exportLastName": "Nom de famille",
@@ -794,6 +795,7 @@
     "filterAllEmploymentTypes": "Tous les types",
     "filterEmployees": "Employés",
     "filterSubcontractors": "Sous-traitants",
+    "filterConsultants": "Consultants",
     "columnType": "Type",
     "columnDate": "Date",
     "columnEmail": "E-mail",
@@ -964,6 +966,7 @@
     "employmentType": "Type de contrat",
     "employee": "Employé",
     "subcontractor": "Sous-traitant",
+    "consultant": "Consultant",
     "companyName": "Nom de l'entreprise",
     "vatNumber": "Numéro de TVA",
     "companyStreet": "Rue",
@@ -997,7 +1000,8 @@
     "badgeMigration": "Migration",
     "pendingBoarding": "Date de début inconnue",
     "labelMaterialReturn": "Restitution :",
-    "subcontractor": "Sous-traitant"
+    "subcontractor": "Sous-traitant",
+    "consultant": "Consultant"
   },
   "tasks": {
     "title": "Tâches",

@@ -47,7 +47,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedEntities, setSelectedEntities] = useState<Set<string>>(new Set())
   const [starterTypeFilter, setStarterTypeFilter] = useState<StarterFilter>('ALL')
-  const [employmentTypeFilter, setEmploymentTypeFilter] = useState<'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR'>('ALL')
+  const [employmentTypeFilter, setEmploymentTypeFilter] = useState<'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT'>('ALL')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStarter, setSelectedStarter] = useState<Starter | null>(null)
   const [deepLinkHandled, setDeepLinkHandled] = useState(false)
@@ -489,7 +489,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
               </SelectContent>
             </Select>
 
-            <Select value={employmentTypeFilter} onValueChange={(v: 'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR') => setEmploymentTypeFilter(v)}>
+            <Select value={employmentTypeFilter} onValueChange={(v: 'ALL' | 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT') => setEmploymentTypeFilter(v)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue />
               </SelectTrigger>
@@ -497,6 +497,7 @@ export function CalendarView({ initialYear, canEdit }: { initialYear: number; ca
                 <SelectItem value="ALL">{t('filterAllEmploymentTypes')}</SelectItem>
                 <SelectItem value="EMPLOYEE">{t('filterEmployees')}</SelectItem>
                 <SelectItem value="SUBCONTRACTOR">{t('filterSubcontractors')}</SelectItem>
+                <SelectItem value="CONSULTANT">{t('filterConsultants')}</SelectItem>
               </SelectContent>
             </Select>
 

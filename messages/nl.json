@@ -744,6 +744,7 @@
     "filterAllEmploymentTypes": "Alle types",
     "filterEmployees": "Werknemers",
     "filterSubcontractors": "Onderaannemers",
+    "filterConsultants": "Consultants",
     "exportName": "Naam",
     "exportFirstName": "Voornaam",
     "exportLastName": "Achternaam",
@@ -794,6 +795,7 @@
     "filterAllEmploymentTypes": "Alle types",
     "filterEmployees": "Werknemers",
     "filterSubcontractors": "Onderaannemers",
+    "filterConsultants": "Consultants",
     "columnType": "Type",
     "columnDate": "Datum",
     "columnEmail": "E-mail",
@@ -964,6 +966,7 @@
     "employmentType": "Type dienstverband",
     "employee": "Werknemer",
     "subcontractor": "Onderaannemer",
+    "consultant": "Consultant",
     "companyName": "Bedrijfsnaam",
     "vatNumber": "BTW-nummer",
     "companyStreet": "Straat",
@@ -997,7 +1000,8 @@
     "badgeMigration": "Migratie",
     "pendingBoarding": "Startdatum onbekend",
     "labelMaterialReturn": "Inlevering:",
-    "subcontractor": "Onderaannemer"
+    "subcontractor": "Onderaannemer",
+    "consultant": "Consultant"
   },
   "tasks": {
     "title": "Taken",

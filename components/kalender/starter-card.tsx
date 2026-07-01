@@ -23,7 +23,7 @@ interface Starter {
   materialReturnDate?: string | null
   isPendingBoarding?: boolean
   isCancelled?: boolean
-  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR'
+  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT'
   entity?: {
     id: string
     name: string
@@ -56,8 +56,8 @@ export function StarterCard({ starter, onClick, healthLevel }: { starter: Starte
           <div className={`font-medium text-sm truncate ${starter.isCancelled ? 'line-through text-muted-foreground' : ''}`}>
             {starter.firstName} {starter.lastName}
           </div>
-          {starter.employmentType === 'SUBCONTRACTOR' && (
-            <span title={t('subcontractor')}>
+          {(starter.employmentType === 'SUBCONTRACTOR' || starter.employmentType === 'CONSULTANT') && (
+            <span title={starter.employmentType === 'CONSULTANT' ? t('consultant') : t('subcontractor')}>
               <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             </span>
           )}

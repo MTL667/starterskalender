@@ -18,7 +18,7 @@ type BoardMode = 'arrivals' | 'departures'
 interface Starter {
   id: string
   type?: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
-  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR'
+  employmentType?: 'EMPLOYEE' | 'SUBCONTRACTOR' | 'CONSULTANT'
   firstName: string
   lastName: string
   language?: string
@@ -286,8 +286,8 @@ export function RecentStarters({ year, mode = 'arrivals' }: RecentStartersProps)
                         <PlaneLanding className="h-4 w-4 text-green-500 shrink-0" />
                       )}
                       <div className="font-medium">{starter.firstName} {starter.lastName}</div>
-                      {starter.employmentType === 'SUBCONTRACTOR' && (
-                        <span title={starterCardT('subcontractor')}>
+                      {(starter.employmentType === 'SUBCONTRACTOR' || starter.employmentType === 'CONSULTANT') && (
+                        <span title={starter.employmentType === 'CONSULTANT' ? starterCardT('consultant') : starterCardT('subcontractor')}>
                           <Building2 className="h-3.5 w-3.5 text-orange-500 shrink-0" />
                         </span>
                       )}

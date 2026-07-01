@@ -11,7 +11,7 @@ import { createAutomaticTasks } from '@/lib/task-automation'
 import { eventBus } from '@/lib/events'
 
 const VALID_TYPES = ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'] as const
-const VALID_EMPLOYMENT_TYPES = ['EMPLOYEE', 'SUBCONTRACTOR'] as const
+const VALID_EMPLOYMENT_TYPES = ['EMPLOYEE', 'SUBCONTRACTOR', 'CONSULTANT'] as const
 const VALID_TERMINATION_INITIATORS = ['ENTITY_TERMINATED', 'MUTUAL_AGREEMENT', 'EMPLOYEE_RESIGNED', 'FORCE_MAJEURE'] as const
 
 const StarterSchema = z.object({
@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
                 starterId: starter.id,
                 materialId: jrm.materialId,
                 notes: jrm.notes,
-                materialProvision: data.employmentType === 'SUBCONTRACTOR' ? 'SELF_PROVIDED' : 'ENTITY_PROVIDED',
+                materialProvision: (data.employmentType === 'SUBCONTRACTOR' || data.employmentType === 'CONSULTANT') ? 'SELF_PROVIDED' : 'ENTITY_PROVIDED',
               },
             })
           }
