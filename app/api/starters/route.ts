@@ -339,7 +339,7 @@ export async function POST(request: NextRequest) {
           where: { id: data.sourceStarterId },
           select: { entityId: true, type: true, isCancelled: true },
         })
-        if (sourceStarter && sourceStarter.entityId === starter.entityId && !sourceStarter.isCancelled) {
+        if (sourceStarter && sourceStarter.entityId && sourceStarter.entityId === starter.entityId && !sourceStarter.isCancelled && (sourceStarter.type === 'ONBOARDING' || sourceStarter.type === 'MIGRATION')) {
           const sourceMaterials = await prisma.starterMaterial.findMany({
             where: { starterId: data.sourceStarterId },
             select: { materialId: true, notes: true, materialProvision: true },
