@@ -912,6 +912,7 @@
     "taskAssignedTo": "Toegewezen aan:",
     "taskDeadline": "Deadline:",
     "taskCompleted": "Voltooid",
+    "completeTask": "Taak afmelden",
     "taskInProgress": "Bezig",
     "taskBlocked": "Geblokkeerd",
     "taskQueued": "In wachtrij",

@@ -912,6 +912,7 @@
     "taskAssignedTo": "Assigné à :",
     "taskDeadline": "Échéance :",
     "taskCompleted": "Terminé",
+    "completeTask": "Marquer comme terminé",
     "taskInProgress": "En cours",
     "taskBlocked": "Bloqué",
     "taskQueued": "En attente",

@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon, Cloud, CloudOff, Building2 } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon, Cloud, CloudOff, Building2, CheckCircle2 } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { MaterialStatusStepper } from '@/components/materials/material-status-stepper'
@@ -166,6 +166,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [emailTaskToggling, setEmailTaskToggling] = useState(false)
   const [phoneTaskToggling, setPhoneTaskToggling] = useState(false)
   const [regeneratingTasks, setRegeneratingTasks] = useState(false)
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null)
   const [pendingConfirmOpen, setPendingConfirmOpen] = useState(false)
   const [assigningMaterials, setAssigningMaterials] = useState(false)
   const [photoPickerOpen, setPhotoPickerOpen] = useState(false)
@@ -1176,6 +1177,25 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       console.error('Error regenerating tasks:', error)
     } finally {
       setRegeneratingTasks(false)
+    }
+  }
+
+  const handleCompleteTask = async (taskId: string) => {
+    if (completingTaskId) return
+    setCompletingTaskId(taskId)
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completionNotes: '' }),
+      })
+      if (res.ok) {
+        setTasks(prev => prev.map((t: any) => t.id === taskId ? { ...t, status: 'COMPLETED', completedAt: new Date().toISOString() } : t))
+      }
+    } catch (error) {
+      console.error('Error completing task:', error)
+    } finally {
+      setCompletingTaskId(null)
     }
   }
 
@@ -2591,14 +2611,30 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                           </p>
                         )}
                       </div>
-                      <Badge
-                        variant={task.status === 'COMPLETED' ? 'outline' : 'default'}
-                        className="text-xs"
-                      >
-                        {task.status === 'COMPLETED' ? t('taskCompleted') :
-                         task.status === 'IN_PROGRESS' ? t('taskInProgress') :
-                         task.status === 'BLOCKED' ? t('taskBlocked') : t('taskQueued')}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        {task.status !== 'COMPLETED' && task.status !== 'BLOCKED' && (isAdmin || task.assignedTo?.id === session?.user?.id) && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-green-600"
+                            aria-label={t('completeTask')}
+                            title={t('completeTask')}
+                            onClick={() => handleCompleteTask(task.id)}
+                            disabled={completingTaskId === task.id}
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Badge
+                          variant={task.status === 'COMPLETED' ? 'outline' : 'default'}
+                          className="text-xs"
+                        >
+                          {task.status === 'COMPLETED' ? t('taskCompleted') :
+                           task.status === 'IN_PROGRESS' ? t('taskInProgress') :
+                           task.status === 'BLOCKED' ? t('taskBlocked') : t('taskQueued')}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                   {tasks.length > 5 && (
