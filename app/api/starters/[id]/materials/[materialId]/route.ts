@@ -6,7 +6,7 @@ import { createAuditLog } from '@/lib/audit'
 import { isMaterialManager } from '@/lib/rbac'
 
 const UpdateMaterialStatusSchema = z.object({
-  status: z.enum(['PENDING', 'IN_STOCK', 'ORDERED', 'RECEIVED', 'RESERVED']).optional(),
+  status: z.enum(['PENDING', 'IN_STOCK', 'ORDERED', 'RECEIVED', 'RESERVED', 'COLLECTED']).optional(),
   expectedDeliveryDate: z.string().datetime().optional().nullable(),
   notes: z.string().optional().nullable(),
   materialProvision: z.enum(['ENTITY_PROVIDED', 'SELF_PROVIDED']).optional(),
@@ -46,8 +46,19 @@ export async function PATCH(
     }
 
     if (data.status) {
+      const starter = await prisma.starter.findUnique({
+        where: { id },
+        select: { type: true },
+      })
+      if (data.status === 'COLLECTED' && starter?.type !== 'OFFBOARDING') {
+        return NextResponse.json({ error: 'COLLECTED status is only valid for offboarding materials' }, { status: 400 })
+      }
+      if (data.status === 'RESERVED' && starter?.type === 'OFFBOARDING') {
+        return NextResponse.json({ error: 'RESERVED status is not valid for offboarding materials. Use COLLECTED instead.' }, { status: 400 })
+      }
+
       statusData.status = data.status
-      statusData.isProvided = data.status === 'RESERVED'
+      statusData.isProvided = data.status === 'RESERVED' || data.status === 'COLLECTED'
 
       switch (data.status) {
         case 'PENDING':
@@ -81,6 +92,12 @@ export async function PATCH(
         case 'RESERVED':
           statusData.reservedAt = now
           statusData.reservedBy = user.id
+          statusData.providedAt = now
+          statusData.providedBy = user.id
+          break
+        case 'COLLECTED':
+          statusData.reservedAt = null
+          statusData.reservedBy = null
           statusData.providedAt = now
           statusData.providedBy = user.id
           break

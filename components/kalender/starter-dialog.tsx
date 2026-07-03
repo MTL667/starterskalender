@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
-import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon, Cloud, CloudOff, Building2, CheckCircle2 } from 'lucide-react'
+import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon, Cloud, CloudOff, Building2, CheckCircle2, Undo2 } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
 import { MaterialStatusStepper } from '@/components/materials/material-status-stepper'
@@ -2511,14 +2511,42 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                           </div>
                           {canEdit && isMaterialMgr && (
                             <div className="flex items-center gap-1 shrink-0">
-                              <MaterialActionButtons
-                                status={sm.status}
-                                materialId={sm.materialId}
-                                onStatusChange={(status, deliveryDate) =>
-                                  handleMaterialStatusChange(sm.materialId, status, deliveryDate)
-                                }
-                              />
-                              {sm.status !== 'RESERVED' && (
+                              {formData.type === 'OFFBOARDING' ? (
+                                sm.status === 'COLLECTED' ? (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-xs text-green-600">✓ Ingezameld</span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                                      title="Ongedaan maken"
+                                      onClick={() => handleMaterialStatusChange(sm.materialId, 'PENDING')}
+                                    >
+                                      <Undo2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs"
+                                    onClick={() => handleMaterialStatusChange(sm.materialId, 'COLLECTED')}
+                                  >
+                                    <Check className="h-3 w-3 mr-1" /> Ingezameld
+                                  </Button>
+                                )
+                              ) : (
+                                <MaterialActionButtons
+                                  status={sm.status}
+                                  materialId={sm.materialId}
+                                  onStatusChange={(status, deliveryDate) =>
+                                    handleMaterialStatusChange(sm.materialId, status, deliveryDate)
+                                  }
+                                />
+                              )}
+                              {sm.status !== 'RESERVED' && sm.status !== 'COLLECTED' && (
                                 <Button
                                   type="button"
                                   variant="ghost"

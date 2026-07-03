@@ -7,7 +7,7 @@ import { isMaterialManager } from '@/lib/rbac'
 
 const BulkUpdateSchema = z.object({
   ids: z.array(z.string()).min(1),
-  status: z.enum(['PENDING', 'IN_STOCK', 'ORDERED', 'RECEIVED', 'RESERVED']),
+  status: z.enum(['PENDING', 'IN_STOCK', 'ORDERED', 'RECEIVED', 'RESERVED', 'COLLECTED']),
   expectedDeliveryDate: z.string().datetime().optional().nullable(),
 })
 
@@ -25,8 +25,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { ids, status, expectedDeliveryDate } = BulkUpdateSchema.parse(body)
 
+    if (status === 'COLLECTED' || status === 'RESERVED') {
+      const materials = await prisma.starterMaterial.findMany({
+        where: { id: { in: ids } },
+        select: { starter: { select: { type: true } } },
+      })
+      const hasOffboarding = materials.some(m => m.starter.type === 'OFFBOARDING')
+      const hasOnboarding = materials.some(m => m.starter.type !== 'OFFBOARDING')
+      if (status === 'COLLECTED' && hasOnboarding) {
+        return NextResponse.json({ error: 'COLLECTED status is only valid for offboarding materials' }, { status: 400 })
+      }
+      if (status === 'RESERVED' && hasOffboarding) {
+        return NextResponse.json({ error: 'RESERVED status is not valid for offboarding materials. Use COLLECTED instead.' }, { status: 400 })
+      }
+    }
+
     const now = new Date()
-    const updateData: any = { status, isProvided: status === 'RESERVED' }
+    const updateData: any = { status, isProvided: status === 'RESERVED' || status === 'COLLECTED' }
 
     switch (status) {
       case 'PENDING':
@@ -60,6 +75,12 @@ export async function POST(request: NextRequest) {
       case 'RESERVED':
         updateData.reservedAt = now
         updateData.reservedBy = user.id
+        updateData.providedAt = now
+        updateData.providedBy = user.id
+        break
+      case 'COLLECTED':
+        updateData.reservedAt = null
+        updateData.reservedBy = null
         updateData.providedAt = now
         updateData.providedBy = user.id
         break

@@ -22,7 +22,7 @@ import {
 import { MaterialStatusStepper, getStatusLabel, getStatusColor } from '@/components/materials/material-status-stepper'
 import { Package, ShoppingCart, Truck, Check, Clock, AlertTriangle, Filter, Loader2, Trash2, Undo2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
-type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED'
+type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED' | 'COLLECTED'
 type SortColumn = 'startDate' | 'entity' | 'deliveryDate' | null
 type SortDirection = 'asc' | 'desc'
 
@@ -257,8 +257,8 @@ export default function MaterialenDashboard() {
       </div>
 
       {/* Status cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        {(['PENDING', 'IN_STOCK', 'ORDERED', 'RECEIVED', 'RESERVED'] as MaterialStatus[]).map(s => (
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+        {(['PENDING', 'IN_STOCK', 'ORDERED', 'RECEIVED', 'RESERVED', 'COLLECTED'] as MaterialStatus[]).map(s => (
           <button
             key={s}
             onClick={() => { setStatusFilter(s); setOverdueOnly(false) }}
@@ -478,7 +478,7 @@ export default function MaterialenDashboard() {
                       <div>
                         {item.starter.firstName} {item.starter.lastName}
                       </div>
-                      {item.starter.type === 'OFFBOARDING' && item.status !== 'RESERVED' && (
+                      {item.starter.type === 'OFFBOARDING' && item.status !== 'COLLECTED' && (
                         <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">In te leveren</span>
                       )}
                     </td>
@@ -500,8 +500,8 @@ export default function MaterialenDashboard() {
                     </td>
                     <td className="p-3">
                       {item.starter.type === 'OFFBOARDING' ? (
-                        <Badge variant={item.status === 'RESERVED' ? 'default' : 'outline'} className="text-xs">
-                          {item.status === 'RESERVED' ? 'Ingezameld' : 'In te leveren'}
+                        <Badge variant={item.status === 'COLLECTED' ? 'default' : 'outline'} className="text-xs">
+                          {item.status === 'COLLECTED' ? 'Ingezameld' : 'In te leveren'}
                         </Badge>
                       ) : (
                         <MaterialStatusStepper
@@ -525,7 +525,7 @@ export default function MaterialenDashboard() {
                     <td className="p-3 text-right">
                       <div className="flex items-center gap-1 justify-end">
                         <QuickAction item={item} onUpdate={handleSingleUpdate} />
-                        {item.status !== 'RESERVED' && (
+                        {item.status !== 'RESERVED' && item.status !== 'COLLECTED' && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -558,11 +558,11 @@ function QuickAction({ item, onUpdate }: { item: StarterMaterialItem; onUpdate: 
     switch (item.status) {
       case 'PENDING':
         return (
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RESERVED')}>
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'COLLECTED')}>
             <Check className="h-3 w-3 mr-1" /> Ingezameld
           </Button>
         )
-      case 'RESERVED':
+      case 'COLLECTED':
         return (
           <div className="flex items-center gap-1 justify-end">
             <span className="text-xs text-green-600">✓</span>
@@ -573,7 +573,7 @@ function QuickAction({ item, onUpdate }: { item: StarterMaterialItem; onUpdate: 
         )
       default:
         return (
-          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RESERVED')}>
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'COLLECTED')}>
             <Check className="h-3 w-3 mr-1" /> Ingezameld
           </Button>
         )

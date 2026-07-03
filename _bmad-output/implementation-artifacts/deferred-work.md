@@ -75,3 +75,13 @@
 ## Deferred from: materials dashboard improvements (2026-07-03)
 
 - **UX: onderscheid onboarding-materialen vs offboarding-inlevering** — In het Materials Dashboard is het verschil tussen "materiaal voorzien" (onboarding) en "materiaal inleveren" (offboarding) niet duidelijk. Overweeg een visuele indicator of apart tabblad voor retourmateriaal.
+
+## Deferred from: code review COLLECTED status (2026-07-03)
+
+- **Bulk UI: direction-aware status options** — Bulk status dropdown toont alle statussen ongeacht starter type. RESERVED zou verborgen moeten zijn voor offboarding selecties en COLLECTED voor onboarding.
+- **Full offboarding material UX in starter dialog** — De starter dialog toont nu een simpele Ingezameld/Undo knop voor offboarding, maar mist de MaterialStatusStepper visuele feedback en intermediate states.
+- **KPI/Health: split per starter type** — Material coverage KPI en health score mengen onboarding-provisie en offboarding-collectie in één metric.
+- **DELETE API: server-side terminal status check** — DELETE endpoint voor StarterMaterial valideert niet of de status terminal is (RESERVED/COLLECTED). UI verbergt de knop maar API laat het toe.
+- **Duplicate MaterialStatus types in 4+ files** — Type union is lokaal gedefinieerd in meerdere componenten i.p.v. geïmporteerd uit Prisma of een shared type.
+- **Documentation: data-models.md** — StarterMaterial sectie vermeldt COLLECTED status niet.
+- **Geen automated tests voor COLLECTED status** — Nieuwe enum waarde heeft geen unit/integration test coverage.

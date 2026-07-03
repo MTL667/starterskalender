@@ -133,7 +133,8 @@ enum MaterialStatus {
   IN_STOCK // Op voorraad — klaar om te reserveren
   ORDERED // Besteld bij leverancier
   RECEIVED // Ontvangen — klaar om te reserveren
-  RESERVED // Gereserveerd voor de starter (eindstatus)
+  RESERVED // Gereserveerd voor de starter (eindstatus onboarding)
+  COLLECTED // Ingezameld bij vertrek (eindstatus offboarding)
 }
 
 enum MaterialProvisionType {
@@ -539,7 +540,7 @@ model StarterMaterial {
   material             Material               @relation(fields: [materialId], references: [id], onDelete: Cascade)
   status               MaterialStatus         @default(PENDING)
   materialProvision    MaterialProvisionType  @default(ENTITY_PROVIDED)
-  isProvided           Boolean                @default(false) // Legacy — true wanneer status = RESERVED
+  isProvided           Boolean                @default(false) // true wanneer status = RESERVED of COLLECTED
   providedAt           DateTime?
   providedBy           String?
   orderedAt            DateTime?

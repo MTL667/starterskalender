@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import { Package, ShoppingCart, Truck, Check, Clock } from 'lucide-react'
 
-type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED'
+type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED' | 'COLLECTED'
 
 interface Step {
   key: MaterialStatus
@@ -56,6 +56,15 @@ export function MaterialStatusStepper({
       <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
         <Clock className="h-3 w-3" />
         <span>Actie nodig</span>
+      </div>
+    )
+  }
+
+  if (status === 'COLLECTED') {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+        <Check className="h-3 w-3" />
+        <span>Ingezameld</span>
       </div>
     )
   }
@@ -115,6 +124,7 @@ export function getStatusLabel(status: MaterialStatus): string {
     ORDERED: 'Besteld',
     RECEIVED: 'Ontvangen',
     RESERVED: 'Gereserveerd',
+    COLLECTED: 'Ingezameld',
   }
   return labels[status] || status
 }
@@ -126,6 +136,7 @@ export function getStatusColor(status: MaterialStatus): string {
     ORDERED: 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-950',
     RECEIVED: 'text-cyan-600 bg-cyan-100 dark:text-cyan-400 dark:bg-cyan-950',
     RESERVED: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-950',
+    COLLECTED: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-950',
   }
   return colors[status] || ''
 }

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/popover'
 import { Package, ShoppingCart, Truck, Check, Undo2 } from 'lucide-react'
 
-type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED'
+type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED' | 'COLLECTED'
 
 interface MaterialActionButtonsProps {
   status: MaterialStatus
