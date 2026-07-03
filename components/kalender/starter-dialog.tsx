@@ -869,6 +869,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         data.leaveReasonNote = formData.leaveReasonNote || null
       }
 
+      if (!isEdit && formData.type === 'OFFBOARDING' && selectedEmployee) {
+        data.sourceStarterId = selectedEmployee.id
+      }
+
       const url = isEdit ? `/api/starters/${starter.id}` : '/api/starters'
       const method = isEdit ? 'PATCH' : 'POST'
 
@@ -883,7 +887,8 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
       }
 
       // Als nieuwe starter (niet pending), wijs automatisch materials toe van de job role
-      if (!isEdit && !isPendingBoarding && formData.roleTitle && formData.entityId) {
+      // Skip voor offboarding: materialen worden al gekopieerd vanuit de bron-starter server-side
+      if (!isEdit && !isPendingBoarding && formData.type !== 'OFFBOARDING' && formData.roleTitle && formData.entityId) {
         const starterData = await res.json()
         if (starterData.id) {
           try {

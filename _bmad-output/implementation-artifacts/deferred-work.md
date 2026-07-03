@@ -64,3 +64,10 @@
 - **Credential card empty after page reload** — Once SSE completes, the password is only in local state. Refresh clears it. Pre-existing limitation (was same with TAP). Fix: extend `/verify` to return decrypted password, or auto-reconnect SSE.
 - **FAILED_AT_TAP renders all steps as pending in UI** — Legacy jobs in `FAILED_AT_TAP` have no corresponding step in the new STEPS array; all steps appear pending. Map legacy failure states to a visible fallback.
 - **Fixed password not validated against entity complexity rules** — API accepts any password up to 256 chars; Graph API rejects weak passwords at creation. Validate against toggle settings before encrypt/store for better UX.
+
+## Deferred from: offboarding material copy from source starter (2026-07-03)
+
+- **Silent material copy errors** — Copy loop is in try/catch that only logs. Consider surfacing to the client or wrapping in a transaction.
+- **Employee picker returns wrong ID for homonyms** — `/api/starters/employees` uses `distinct: ['firstName', 'lastName']` which is non-deterministic for duplicate names. Consider adding entity to distinct key or preferring latest by startDate.
+- **No transaction for material copy** — Sequential upserts without wrapping Prisma transaction; partial failure leaves inconsistent records.
+- **sourceStarterId not persisted on Starter** — The link is used only at create time. Consider storing for audit/re-sync purposes.

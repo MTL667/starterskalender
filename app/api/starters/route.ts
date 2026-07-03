@@ -57,6 +57,7 @@ const StarterSchema = z.object({
   terminationInitiator: z.enum(VALID_TERMINATION_INITIATORS).nullable().optional(),
   leaveReasonId: z.string().nullable().optional(),
   leaveReasonNote: z.string().nullable().optional(),
+  sourceStarterId: z.string().nullable().optional(),
 })
 
 // GET - List starters met filtering
@@ -328,6 +329,39 @@ export async function POST(request: NextRequest) {
         }
       } catch (matError) {
         console.error('Failed to auto-assign materials:', matError)
+      }
+    }
+
+    // For offboarding: copy materials from source onboarding starter (not from job role template)
+    if (data.type === 'OFFBOARDING' && data.sourceStarterId) {
+      try {
+        const sourceStarter = await prisma.starter.findUnique({
+          where: { id: data.sourceStarterId },
+          select: { entityId: true, type: true, isCancelled: true },
+        })
+        if (sourceStarter && sourceStarter.entityId === starter.entityId && !sourceStarter.isCancelled) {
+          const sourceMaterials = await prisma.starterMaterial.findMany({
+            where: { starterId: data.sourceStarterId },
+            select: { materialId: true, notes: true, materialProvision: true },
+          })
+          for (const sm of sourceMaterials) {
+            await prisma.starterMaterial.upsert({
+              where: { starterId_materialId: { starterId: starter.id, materialId: sm.materialId } },
+              update: {},
+              create: {
+                starterId: starter.id,
+                materialId: sm.materialId,
+                notes: sm.notes,
+                materialProvision: sm.materialProvision,
+              },
+            })
+          }
+          if (sourceMaterials.length > 0) {
+            console.log(`📦 Copied ${sourceMaterials.length} materials from onboarding starter to offboarding "${starter.firstName} ${starter.lastName}"`)
+          }
+        }
+      } catch (matError) {
+        console.error('Failed to copy materials from source starter:', matError)
       }
     }
 
