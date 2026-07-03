@@ -42,6 +42,7 @@ interface StarterMaterialItem {
     firstName: string
     lastName: string
     startDate: string | null
+    type: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
     entityId: string | null
     entity: { id: string; name: string; colorHex: string } | null
   }
@@ -61,6 +62,7 @@ export default function MaterialenDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>('PENDING')
   const [materialFilter, setMaterialFilter] = useState<string>('all')
   const [entityFilter, setEntityFilter] = useState<string>('all')
+  const [directionFilter, setDirectionFilter] = useState<'all' | 'provide' | 'collect'>('all')
   const [overdueOnly, setOverdueOnly] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState<string>('')
@@ -208,8 +210,15 @@ export default function MaterialenDashboard() {
   }
 
   const sortedMaterials = (() => {
-    if (!data?.materials || !sortColumn) return data?.materials ?? []
-    return [...data.materials].sort((a, b) => {
+    if (!data?.materials) return []
+    let filtered = data.materials
+    if (directionFilter === 'provide') {
+      filtered = filtered.filter(m => m.starter.type !== 'OFFBOARDING')
+    } else if (directionFilter === 'collect') {
+      filtered = filtered.filter(m => m.starter.type === 'OFFBOARDING')
+    }
+    if (!sortColumn) return filtered
+    return [...filtered].sort((a, b) => {
       let cmp = 0
       switch (sortColumn) {
         case 'entity':
@@ -314,6 +323,17 @@ export default function MaterialenDashboard() {
           </SelectContent>
         </Select>
 
+        <Select value={directionFilter} onValueChange={(v: 'all' | 'provide' | 'collect') => setDirectionFilter(v)}>
+          <SelectTrigger className="w-[180px] h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Voorzien + Inleveren</SelectItem>
+            <SelectItem value="provide">Voorzien (onboarding)</SelectItem>
+            <SelectItem value="collect">In te leveren (offboarding)</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Button
           variant="ghost"
           size="sm"
@@ -322,6 +342,7 @@ export default function MaterialenDashboard() {
             setStatusFilter('PENDING')
             setMaterialFilter('all')
             setEntityFilter('all')
+            setDirectionFilter('all')
             setOverdueOnly(false)
           }}
         >
@@ -454,7 +475,12 @@ export default function MaterialenDashboard() {
                       )}
                     </td>
                     <td className="p-3">
-                      {item.starter.firstName} {item.starter.lastName}
+                      <div>
+                        {item.starter.firstName} {item.starter.lastName}
+                      </div>
+                      {item.starter.type === 'OFFBOARDING' && (
+                        <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">In te leveren</span>
+                      )}
                     </td>
                     <td className="p-3">
                       {item.starter.entity && (
@@ -473,14 +499,20 @@ export default function MaterialenDashboard() {
                         : '—'}
                     </td>
                     <td className="p-3">
-                      <MaterialStatusStepper
-                        status={item.status}
-                        expectedDeliveryDate={item.expectedDeliveryDate}
-                        orderedAt={item.orderedAt}
-                        receivedAt={item.receivedAt}
-                        reservedAt={item.reservedAt}
-                        compact
-                      />
+                      {item.starter.type === 'OFFBOARDING' ? (
+                        <Badge variant={item.status === 'RESERVED' ? 'default' : 'outline'} className="text-xs">
+                          {item.status === 'RESERVED' ? 'Ingezameld' : 'In te leveren'}
+                        </Badge>
+                      ) : (
+                        <MaterialStatusStepper
+                          status={item.status}
+                          expectedDeliveryDate={item.expectedDeliveryDate}
+                          orderedAt={item.orderedAt}
+                          receivedAt={item.receivedAt}
+                          reservedAt={item.reservedAt}
+                          compact
+                        />
+                      )}
                     </td>
                     <td className="p-3 text-xs">
                       {item.expectedDeliveryDate ? (
@@ -520,6 +552,33 @@ export default function MaterialenDashboard() {
 function QuickAction({ item, onUpdate }: { item: StarterMaterialItem; onUpdate: (item: StarterMaterialItem, status: string, date?: string) => void }) {
   const [orderDate, setOrderDate] = useState('')
   const [open, setOpen] = useState(false)
+  const isOffboarding = item.starter.type === 'OFFBOARDING'
+
+  if (isOffboarding) {
+    switch (item.status) {
+      case 'PENDING':
+        return (
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RESERVED')}>
+            <Check className="h-3 w-3 mr-1" /> Ingezameld
+          </Button>
+        )
+      case 'RESERVED':
+        return (
+          <div className="flex items-center gap-1 justify-end">
+            <span className="text-xs text-green-600">✓</span>
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground" title="Ongedaan maken" onClick={() => onUpdate(item, 'PENDING')}>
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )
+      default:
+        return (
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onUpdate(item, 'RESERVED')}>
+            <Check className="h-3 w-3 mr-1" /> Ingezameld
+          </Button>
+        )
+    }
+  }
 
   switch (item.status) {
     case 'PENDING':

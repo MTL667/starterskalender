@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
             firstName: true,
             lastName: true,
             startDate: true,
+            type: true,
             entityId: true,
             entity: { select: { id: true, name: true, colorHex: true } },
           },
