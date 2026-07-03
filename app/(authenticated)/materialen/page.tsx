@@ -193,10 +193,10 @@ export default function MaterialenDashboard() {
 
   const toggleSelectAll = () => {
     if (!data) return
-    if (selectedIds.size === data.materials.length) {
+    if (selectedIds.size === sortedMaterials.length) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(data.materials.map(m => m.id)))
+      setSelectedIds(new Set(sortedMaterials.map(m => m.id)))
     }
   }
 
@@ -411,7 +411,7 @@ export default function MaterialenDashboard() {
         <div className="flex items-center justify-center h-32">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : !data?.materials.length ? (
+      ) : !sortedMaterials.length ? (
         <div className="text-center py-12 text-muted-foreground">
           <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
           <p>Geen materialen gevonden voor deze filters</p>
@@ -423,7 +423,7 @@ export default function MaterialenDashboard() {
               <tr>
                 <th className="p-3 w-8">
                   <Checkbox
-                    checked={data.materials.length > 0 && selectedIds.size === data.materials.length}
+                    checked={sortedMaterials.length > 0 && selectedIds.size === sortedMaterials.length}
                     onCheckedChange={toggleSelectAll}
                   />
                 </th>
@@ -478,7 +478,7 @@ export default function MaterialenDashboard() {
                       <div>
                         {item.starter.firstName} {item.starter.lastName}
                       </div>
-                      {item.starter.type === 'OFFBOARDING' && (
+                      {item.starter.type === 'OFFBOARDING' && item.status !== 'RESERVED' && (
                         <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">In te leveren</span>
                       )}
                     </td>
