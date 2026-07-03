@@ -71,3 +71,7 @@
 - **Employee picker returns wrong ID for homonyms** — `/api/starters/employees` uses `distinct: ['firstName', 'lastName']` which is non-deterministic for duplicate names. Consider adding entity to distinct key or preferring latest by startDate.
 - **No transaction for material copy** — Sequential upserts without wrapping Prisma transaction; partial failure leaves inconsistent records.
 - **sourceStarterId not persisted on Starter** — The link is used only at create time. Consider storing for audit/re-sync purposes.
+
+## Deferred from: materials dashboard improvements (2026-07-03)
+
+- **UX: onderscheid onboarding-materialen vs offboarding-inlevering** — In het Materials Dashboard is het verschil tussen "materiaal voorzien" (onboarding) en "materiaal inleveren" (offboarding) niet duidelijk. Overweeg een visuele indicator of apart tabblad voor retourmateriaal.

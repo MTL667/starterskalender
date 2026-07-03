@@ -20,9 +20,11 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { MaterialStatusStepper, getStatusLabel, getStatusColor } from '@/components/materials/material-status-stepper'
-import { Package, ShoppingCart, Truck, Check, Clock, AlertTriangle, Filter, Loader2, Trash2, Undo2 } from 'lucide-react'
+import { Package, ShoppingCart, Truck, Check, Clock, AlertTriangle, Filter, Loader2, Trash2, Undo2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 type MaterialStatus = 'PENDING' | 'IN_STOCK' | 'ORDERED' | 'RECEIVED' | 'RESERVED'
+type SortColumn = 'startDate' | 'entity' | 'deliveryDate' | null
+type SortDirection = 'asc' | 'desc'
 
 interface StarterMaterialItem {
   id: string
@@ -66,7 +68,8 @@ export default function MaterialenDashboard() {
   const [bulkLoading, setBulkLoading] = useState(false)
   const [entities, setEntities] = useState<{ id: string; name: string }[]>([])
   const [materialTypes, setMaterialTypes] = useState<{ id: string; name: string }[]>([])
-
+  const [sortColumn, setSortColumn] = useState<SortColumn>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const perms = session?.user?.perms ?? []
   const isMaterialMgr =
     perms.includes('materials:manage') || perms.includes('admin:users:manage')
@@ -194,6 +197,34 @@ export default function MaterialenDashboard() {
       setSelectedIds(new Set(data.materials.map(m => m.id)))
     }
   }
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const sortedMaterials = (() => {
+    if (!data?.materials || !sortColumn) return data?.materials ?? []
+    return [...data.materials].sort((a, b) => {
+      let cmp = 0
+      switch (sortColumn) {
+        case 'entity':
+          cmp = (a.starter.entity?.name ?? '').localeCompare(b.starter.entity?.name ?? '')
+          break
+        case 'startDate':
+          cmp = (a.starter.startDate ?? '').localeCompare(b.starter.startDate ?? '')
+          break
+        case 'deliveryDate':
+          cmp = (a.expectedDeliveryDate ?? '').localeCompare(b.expectedDeliveryDate ?? '')
+          break
+      }
+      return sortDirection === 'desc' ? -cmp : cmp
+    })
+  })()
 
   if (sessionStatus === 'loading' || !isMaterialMgr) {
     return (
@@ -377,15 +408,30 @@ export default function MaterialenDashboard() {
                 </th>
                 <th className="p-3 text-left font-medium">Materiaal</th>
                 <th className="p-3 text-left font-medium">Starter</th>
-                <th className="p-3 text-left font-medium">Entiteit</th>
-                <th className="p-3 text-left font-medium">Startdatum</th>
+                <th className="p-3 text-left font-medium">
+                  <button className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => handleSort('entity')}>
+                    Entiteit
+                    {sortColumn === 'entity' ? (sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                  </button>
+                </th>
+                <th className="p-3 text-left font-medium">
+                  <button className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => handleSort('startDate')}>
+                    Startdatum
+                    {sortColumn === 'startDate' ? (sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                  </button>
+                </th>
                 <th className="p-3 text-left font-medium">Status</th>
-                <th className="p-3 text-left font-medium">Leverdatum</th>
+                <th className="p-3 text-left font-medium">
+                  <button className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => handleSort('deliveryDate')}>
+                    Leverdatum
+                    {sortColumn === 'deliveryDate' ? (sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />) : <ArrowUpDown className="h-3 w-3 opacity-40" />}
+                  </button>
+                </th>
                 <th className="p-3 text-right font-medium">Actie</th>
               </tr>
             </thead>
             <tbody className="divide-y">
-              {data.materials.map(item => {
+              {sortedMaterials.map(item => {
                 const isOverdue = item.status === 'ORDERED' &&
                   item.expectedDeliveryDate &&
                   new Date(item.expectedDeliveryDate) < new Date()
