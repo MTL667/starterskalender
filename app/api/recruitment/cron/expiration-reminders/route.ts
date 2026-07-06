@@ -1,15 +1,11 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { eventBus } from '@/lib/events'
+import { verifyCronAuth } from '@/lib/cron-auth'
 
-export async function POST() {
-  const headersList = await headers()
-  const cronSecret = headersList.get('x-cron-secret')
-  const expectedSecret = process.env.CRON_SECRET
-  if (!expectedSecret || cronSecret !== expectedSecret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export async function POST(req: Request) {
+  const authError = verifyCronAuth(req)
+  if (authError) return authError
 
   const now = new Date()
   const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Start script voor Next.js + Cron jobs
+# Start script voor Next.js app
 
 echo "🚀 Starting Airport..."
 
@@ -41,47 +41,8 @@ if [ "$RUN_RBAC_V2_BACKFILL" = "true" ]; then
   su-exec nextjs:nodejs node ./node_modules/tsx/dist/cli.mjs prisma/backfill-rbac.ts || echo "⚠️  RBAC backfill failed (continuing...)"
 fi
 
-# Setup cron jobs with wrapper script (avoids quoting issues in BusyBox crontab)
-echo "📅 Setting up cron jobs..."
-if [ -n "$CRON_SECRET" ]; then
-  echo "  ✅ CRON_SECRET is set"
-else
-  echo "  ⚠️  CRON_SECRET is not set — cron endpoints are unprotected!"
-fi
-
-# Write cron env to file (BusyBox crond does NOT support VAR=value in crontab)
-echo "CRON_SECRET=${CRON_SECRET:-}" > /app/.cron-env
-chmod 600 /app/.cron-env
-
-cat > /etc/crontabs/root << CRONTAB
-# Airport - Automated Email Cron Jobs (generated at startup)
-# Timezone: ${TZ:-UTC}
-
-# Wekelijkse reminder - elke dag om 08:00
-0 8 * * * . /app/.cron-env; /app/cron-curl.sh /api/cron/send-weekly-reminders > /proc/1/fd/1 2>&1
-
-# Maandoverzicht - 1e van elke maand om 09:00
-0 9 1 * * . /app/.cron-env; /app/cron-curl.sh /api/cron/send-monthly-summary > /proc/1/fd/1 2>&1
-
-# Kwartaaloverzicht - 1e van kwartaal om 10:00 (jan/apr/jul/okt)
-0 10 1 1,4,7,10 * . /app/.cron-env; /app/cron-curl.sh /api/cron/send-quarterly-summary > /proc/1/fd/1 2>&1
-
-# Jaaroverzicht - 1 januari om 11:00
-0 11 1 1 * . /app/.cron-env; /app/cron-curl.sh /api/cron/send-yearly-summary > /proc/1/fd/1 2>&1
-
-# Materialen leverdatum check - elke werkdag om 08:30
-30 8 * * 1-5 . /app/.cron-env; /app/cron-curl.sh /api/cron/check-material-deliveries > /proc/1/fd/1 2>&1
-
-CRONTAB
-chmod 0644 /etc/crontabs/root
-
-# Start crond in de achtergrond (als root)
-echo "📅 Starting cron daemon..."
-crond -b -l 2
-echo "  ✅ crond started ($(cat /etc/crontabs/root | grep -c 'cron-curl') jobs registered)"
-
-# Wacht even voor crond is gestart
-sleep 2
+# NOTE: Cron jobs zijn verplaatst naar Cronicle (externe scheduler container).
+# Zie docs/cronicle-setup.md voor configuratie.
 
 # Start Next.js server as nextjs user (foreground)
 echo "🌐 Starting Next.js server as nextjs user..."

@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { createAuditLog } from '@/lib/audit'
+import { verifyCronAuth } from '@/lib/cron-auth'
 import { createHash } from 'crypto'
 
-export async function POST() {
-  const headersList = await headers()
-  const cronSecret = headersList.get('x-cron-secret')
-  const expectedSecret = process.env.CRON_SECRET
-  if (!expectedSecret || cronSecret !== expectedSecret) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+export async function POST(req: Request) {
+  const authError = verifyCronAuth(req)
+  if (authError) return authError
 
   const entities = await prisma.entity.findMany({
     select: { id: true, retentionGraceDays: true },
