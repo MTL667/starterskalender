@@ -6,8 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Bell, BellOff, Mail, Check } from 'lucide-react'
+import { Mail, Check, ClipboardList, Package, UserX, Shield } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 interface NotificationPreference {
@@ -17,6 +16,10 @@ interface NotificationPreference {
   monthlySummary: boolean
   quarterlySummary: boolean
   yearlySummary: boolean
+  taskEmails: boolean
+  materialAlerts: boolean
+  starterCancellation: boolean
+  entraAlerts: boolean
   entity: {
     id: string
     name: string
@@ -24,13 +27,42 @@ interface NotificationPreference {
   }
 }
 
-type NotifField = 'weeklyReminder' | 'monthlySummary' | 'quarterlySummary' | 'yearlySummary'
+interface EntityCapabilities {
+  tasks: boolean
+  materials: boolean
+  cancellation: boolean
+  entra: boolean
+}
+
+type NotifField = keyof Omit<NotificationPreference, 'id' | 'entityId' | 'entity'>
+
+interface NotifOption {
+  field: NotifField
+  labelKey: string
+  descKey: string
+  capability?: keyof EntityCapabilities
+}
+
+const DIGEST_OPTIONS: NotifOption[] = [
+  { field: 'weeklyReminder', labelKey: 'weeklyReminder', descKey: 'weeklyReminderDescription' },
+  { field: 'monthlySummary', labelKey: 'monthlySummary', descKey: 'monthlySummaryDescription' },
+  { field: 'quarterlySummary', labelKey: 'quarterlySummary', descKey: 'quarterlySummaryDescription' },
+  { field: 'yearlySummary', labelKey: 'yearlySummary', descKey: 'yearlySummaryDescription' },
+]
+
+const OPERATIONAL_OPTIONS: NotifOption[] = [
+  { field: 'taskEmails', labelKey: 'taskEmails', descKey: 'taskEmailsDescription', capability: 'tasks' },
+  { field: 'materialAlerts', labelKey: 'materialAlerts', descKey: 'materialAlertsDescription', capability: 'materials' },
+  { field: 'starterCancellation', labelKey: 'starterCancellation', descKey: 'starterCancellationDescription', capability: 'cancellation' },
+  { field: 'entraAlerts', labelKey: 'entraAlerts', descKey: 'entraAlertsDescription', capability: 'entra' },
+]
 
 export default function ProfielPage() {
   const t = useTranslations('profile')
   const tc = useTranslations('common')
   const { data: session } = useSession()
   const [preferences, setPreferences] = useState<NotificationPreference[]>([])
+  const [capabilities, setCapabilities] = useState<Record<string, EntityCapabilities>>({})
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<string | null>(null)
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
@@ -44,9 +76,12 @@ export default function ProfielPage() {
       const res = await fetch('/api/user/notification-preferences')
       if (res.ok) {
         const data = await res.json()
-        setPreferences(data)
-        if (data.length > 0 && !selectedEntityId) {
-          setSelectedEntityId(data[0].entityId)
+        const prefs = data.preferences || data
+        const caps = data.capabilities || {}
+        setPreferences(prefs)
+        setCapabilities(caps)
+        if (prefs.length > 0 && !selectedEntityId) {
+          setSelectedEntityId(prefs[0].entityId)
         }
       }
     } catch (error) {
@@ -56,37 +91,20 @@ export default function ProfielPage() {
     }
   }
 
-  const updatePreference = async (
-    entityId: string,
-    field: NotifField,
-    value: boolean
-  ) => {
+  const updatePreference = async (entityId: string, field: NotifField, value: boolean) => {
     setUpdating(`${entityId}-${field}`)
 
     try {
-      const pref = preferences.find(p => p.entityId === entityId)
-      
       const res = await fetch('/api/user/notification-preferences', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entityId,
-          [field]: value,
-          ...(field !== 'weeklyReminder' && { weeklyReminder: pref?.weeklyReminder }),
-          ...(field !== 'monthlySummary' && { monthlySummary: pref?.monthlySummary }),
-          ...(field !== 'quarterlySummary' && { quarterlySummary: pref?.quarterlySummary }),
-          ...(field !== 'yearlySummary' && { yearlySummary: pref?.yearlySummary }),
-        }),
+        body: JSON.stringify({ entityId, [field]: value }),
       })
 
-      if (!res.ok) {
-        throw new Error('Failed to update preference')
-      }
+      if (!res.ok) throw new Error('Failed to update preference')
 
       setPreferences(prev =>
-        prev.map(p =>
-          p.entityId === entityId ? { ...p, [field]: value } : p
-        )
+        prev.map(p => p.entityId === entityId ? { ...p, [field]: value } : p)
       )
     } catch (error) {
       console.error('Error updating preference:', error)
@@ -97,30 +115,44 @@ export default function ProfielPage() {
   }
 
   const toggleAll = async (entityId: string, enable: boolean) => {
-    const fields: NotifField[] = ['weeklyReminder', 'monthlySummary', 'quarterlySummary', 'yearlySummary']
     setUpdating(`${entityId}-all`)
+
+    const payload: Record<string, boolean | string> = {
+      entityId,
+      weeklyReminder: enable,
+      monthlySummary: enable,
+      quarterlySummary: enable,
+      yearlySummary: enable,
+      taskEmails: enable,
+      materialAlerts: enable,
+      starterCancellation: enable,
+      entraAlerts: enable,
+    }
 
     try {
       const res = await fetch('/api/user/notification-preferences', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          entityId,
-          weeklyReminder: enable,
-          monthlySummary: enable,
-          quarterlySummary: enable,
-          yearlySummary: enable,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!res.ok) throw new Error('Failed to update')
 
       setPreferences(prev =>
-        prev.map(p =>
-          p.entityId === entityId
-            ? { ...p, weeklyReminder: enable, monthlySummary: enable, quarterlySummary: enable, yearlySummary: enable }
-            : p
-        )
+        prev.map(p => {
+          if (p.entityId !== entityId) return p
+          return {
+            ...p,
+            weeklyReminder: enable,
+            monthlySummary: enable,
+            quarterlySummary: enable,
+            yearlySummary: enable,
+            taskEmails: enable,
+            materialAlerts: enable,
+            starterCancellation: enable,
+            entraAlerts: enable,
+          }
+        })
       )
     } catch (error) {
       console.error('Error updating preferences:', error)
@@ -130,17 +162,21 @@ export default function ProfielPage() {
   }
 
   const enabledCount = (pref: NotificationPreference) => {
-    return [pref.weeklyReminder, pref.monthlySummary, pref.quarterlySummary, pref.yearlySummary].filter(Boolean).length
+    const entityCaps = capabilities[pref.entityId]
+    let total = 4
+    let enabled = [pref.weeklyReminder, pref.monthlySummary, pref.quarterlySummary, pref.yearlySummary].filter(Boolean).length
+
+    if (entityCaps?.tasks) { total++; if (pref.taskEmails) enabled++ }
+    if (entityCaps?.materials) { total++; if (pref.materialAlerts) enabled++ }
+    if (entityCaps?.cancellation) { total++; if (pref.starterCancellation) enabled++ }
+    if (entityCaps?.entra) { total++; if (pref.entraAlerts) enabled++ }
+
+    return { enabled, total }
   }
 
   const selectedPref = preferences.find(p => p.entityId === selectedEntityId)
-
-  const NOTIF_OPTIONS: { field: NotifField; labelKey: string; descKey: string }[] = [
-    { field: 'weeklyReminder', labelKey: 'weeklyReminder', descKey: 'weeklyReminderDescription' },
-    { field: 'monthlySummary', labelKey: 'monthlySummary', descKey: 'monthlySummaryDescription' },
-    { field: 'quarterlySummary', labelKey: 'quarterlySummary', descKey: 'quarterlySummaryDescription' },
-    { field: 'yearlySummary', labelKey: 'yearlySummary', descKey: 'yearlySummaryDescription' },
-  ]
+  const entityCaps = selectedEntityId ? capabilities[selectedEntityId] : undefined
+  const visibleOperational = OPERATIONAL_OPTIONS.filter(opt => !opt.capability || entityCaps?.[opt.capability])
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
@@ -177,7 +213,7 @@ export default function ProfielPage() {
               {/* Entity list (sidebar) */}
               <div className="w-56 shrink-0 space-y-1">
                 {preferences.map(pref => {
-                  const count = enabledCount(pref)
+                  const { enabled, total } = enabledCount(pref)
                   const isSelected = pref.entityId === selectedEntityId
                   return (
                     <button
@@ -194,8 +230,8 @@ export default function ProfielPage() {
                         style={{ backgroundColor: pref.entity.colorHex }}
                       />
                       <span className="truncate font-medium flex-1">{pref.entity.name}</span>
-                      <span className={`text-xs tabular-nums ${count === 4 ? 'text-green-600' : count === 0 ? 'text-muted-foreground' : 'text-foreground'}`}>
-                        {count}/4
+                      <span className={`text-xs tabular-nums ${enabled === total ? 'text-green-600' : enabled === 0 ? 'text-muted-foreground' : 'text-foreground'}`}>
+                        {enabled}/{total}
                       </span>
                     </button>
                   )
@@ -212,53 +248,100 @@ export default function ProfielPage() {
                       >
                         {selectedPref.entity.name}
                       </Badge>
-                      {enabledCount(selectedPref) === 4 && (
-                        <span className="flex items-center gap-1.5 text-xs text-green-600">
-                          <Check className="h-3 w-3" /> Alles aan
-                        </span>
-                      )}
+                      {(() => {
+                        const { enabled, total } = enabledCount(selectedPref)
+                        return enabled === total ? (
+                          <span className="flex items-center gap-1.5 text-xs text-green-600">
+                            <Check className="h-3 w-3" /> Alles aan
+                          </span>
+                        ) : null
+                      })()}
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => toggleAll(selectedPref.entityId, true)}
-                        disabled={updating === `${selectedPref.entityId}-all` || enabledCount(selectedPref) === 4}
-                        className="text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline"
-                      >
-                        Alles aan
-                      </button>
-                      <span className="text-muted-foreground text-xs">|</span>
-                      <button
-                        onClick={() => toggleAll(selectedPref.entityId, false)}
-                        disabled={updating === `${selectedPref.entityId}-all` || enabledCount(selectedPref) === 0}
-                        className="text-xs text-muted-foreground hover:underline disabled:opacity-50 disabled:no-underline"
-                      >
-                        Alles uit
-                      </button>
+                      {(() => {
+                        const { enabled, total } = enabledCount(selectedPref)
+                        return (
+                          <>
+                            <button
+                              onClick={() => toggleAll(selectedPref.entityId, true)}
+                              disabled={updating === `${selectedPref.entityId}-all` || enabled === total}
+                              className="text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline"
+                            >
+                              {t('allNotificationsOn')}
+                            </button>
+                            <span className="text-muted-foreground text-xs">|</span>
+                            <button
+                              onClick={() => toggleAll(selectedPref.entityId, false)}
+                              disabled={updating === `${selectedPref.entityId}-all` || enabled === 0}
+                              className="text-xs text-muted-foreground hover:underline disabled:opacity-50 disabled:no-underline"
+                            >
+                              {t('allNotificationsOff')}
+                            </button>
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    {NOTIF_OPTIONS.map(({ field, labelKey, descKey }) => (
-                      <div key={field} className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <Label htmlFor={`${selectedPref.entityId}-${field}`}>
-                            {t(labelKey)}
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            {t(descKey)}
-                          </p>
+                  {/* Digest section */}
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5" />
+                      {t('categoryDigests')}
+                    </h4>
+                    <div className="space-y-4">
+                      {DIGEST_OPTIONS.map(({ field, labelKey, descKey }) => (
+                        <div key={field} className="flex items-center justify-between">
+                          <div className="space-y-0.5">
+                            <Label htmlFor={`${selectedPref.entityId}-${field}`}>
+                              {t(labelKey)}
+                            </Label>
+                            <p className="text-sm text-muted-foreground">
+                              {t(descKey)}
+                            </p>
+                          </div>
+                          <Switch
+                            id={`${selectedPref.entityId}-${field}`}
+                            checked={selectedPref[field] as boolean}
+                            onCheckedChange={(value) => updatePreference(selectedPref.entityId, field, value)}
+                            disabled={updating === `${selectedPref.entityId}-${field}` || updating === `${selectedPref.entityId}-all`}
+                          />
                         </div>
-                        <Switch
-                          id={`${selectedPref.entityId}-${field}`}
-                          checked={selectedPref[field]}
-                          onCheckedChange={(value) =>
-                            updatePreference(selectedPref.entityId, field, value)
-                          }
-                          disabled={updating === `${selectedPref.entityId}-${field}` || updating === `${selectedPref.entityId}-all`}
-                        />
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Operational section */}
+                  {visibleOperational.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                        {getOperationalIcon(visibleOperational)}
+                        {t('categoryOperational')}
+                      </h4>
+                      <div className="space-y-4">
+                        {visibleOperational.map(({ field, labelKey, descKey }) => (
+                          <div key={field} className="flex items-center justify-between">
+                            <div className="space-y-0.5 flex items-center gap-2">
+                              <div>
+                                <Label htmlFor={`${selectedPref.entityId}-${field}`}>
+                                  {t(labelKey)}
+                                </Label>
+                                <p className="text-sm text-muted-foreground">
+                                  {t(descKey)}
+                                </p>
+                              </div>
+                            </div>
+                            <Switch
+                              id={`${selectedPref.entityId}-${field}`}
+                              checked={selectedPref[field] as boolean}
+                              onCheckedChange={(value) => updatePreference(selectedPref.entityId, field, value)}
+                              disabled={updating === `${selectedPref.entityId}-${field}` || updating === `${selectedPref.entityId}-all`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -272,9 +355,21 @@ export default function ProfielPage() {
           <li>{t('notificationsInfo1')}</li>
           <li>{t('notificationsInfo2')}</li>
           <li>{t('notificationsInfo3')}</li>
+          <li>{t('notificationsInfo4')}</li>
         </ul>
       </div>
     </div>
   )
 }
 
+function getOperationalIcon(options: NotifOption[]) {
+  if (options.length === 0) return null
+  const first = options[0].field
+  switch (first) {
+    case 'taskEmails': return <ClipboardList className="h-3.5 w-3.5" />
+    case 'materialAlerts': return <Package className="h-3.5 w-3.5" />
+    case 'starterCancellation': return <UserX className="h-3.5 w-3.5" />
+    case 'entraAlerts': return <Shield className="h-3.5 w-3.5" />
+    default: return <Shield className="h-3.5 w-3.5" />
+  }
+}

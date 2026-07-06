@@ -8,6 +8,7 @@ import { getCurrentUser, hasEntityAccess } from '@/lib/auth-utils'
 import { isHRAdmin } from '@/lib/rbac'
 import { ROLE_ASSIGNMENTS_INCLUDE, toAuthorizedUser, visibleEntityIds } from '@/lib/authz'
 import { handleStarterCancellation } from '@/lib/starter-lifecycle'
+import { filterByNotificationPreference } from '@/lib/notification-prefs'
 
 const CancelSchema = z.object({
   cancelReason: z.string().optional(),
@@ -38,6 +39,7 @@ export async function POST(
               include: {
                 user: {
                   select: {
+                    id: true,
                     email: true,
                     name: true,
                   },
@@ -87,8 +89,8 @@ export async function POST(
     // Create IT cleanup task if starter was provisioned
     await handleStarterCancellation(id, user.id)
 
-    // Verzamel alle email ontvangers
-    const recipients: string[] = []
+    // Verzamel alle email ontvangers (user ID + email pairs)
+    const userRecipients: { id: string; email: string }[] = []
 
     const broadcastUsers = await prisma.user.findMany({
       where: {
@@ -109,21 +111,31 @@ export async function POST(
     })
     for (const u of broadcastUsers) {
       if (visibleEntityIds(toAuthorizedUser(u), 'starters:read') === 'ALL') {
-        recipients.push(u.email)
+        userRecipients.push({ id: u.id, email: u.email })
       }
     }
 
     // 3. Entity viewers/editors (via memberships)
     if (starter.entity) {
-      const entityUsers = starter.entity.memberships.map(m => m.user.email)
-      recipients.push(...entityUsers)
-
-      // 4. Entity notifyEmails
-      recipients.push(...starter.entity.notifyEmails)
+      for (const m of starter.entity.memberships) {
+        userRecipients.push({ id: m.user.id, email: m.user.email })
+      }
     }
 
-    // Verwijder duplicaten
-    const uniqueRecipients = [...new Set(recipients)]
+    // Filter op notification preferences
+    const uniqueUserMap = new Map(userRecipients.map(u => [u.id, u.email]))
+    const allUserIds = [...uniqueUserMap.keys()]
+
+    const filteredUserIds = starter.entityId
+      ? await filterByNotificationPreference(allUserIds, starter.entityId, 'starterCancellation')
+      : allUserIds
+
+    const filteredEmails = filteredUserIds.map(uid => uniqueUserMap.get(uid)!).filter(Boolean)
+
+    // Entity notifyEmails (niet gefilterd — dit zijn externe adressen)
+    const externalEmails = starter.entity?.notifyEmails || []
+
+    const uniqueRecipients = [...new Set([...filteredEmails, ...externalEmails])]
 
     // Verstuur emails
     if (uniqueRecipients.length > 0) {

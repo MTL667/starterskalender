@@ -566,11 +566,17 @@ model NotificationPreference {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   entity   Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
 
-  // Notificatie toggles per type
+  // Digest email toggles
   weeklyReminder   Boolean @default(true) // 1 week voor opstart
   monthlySummary   Boolean @default(true) // Maandelijkse samenvatting
   quarterlySummary Boolean @default(true) // Kwartaal samenvatting
   yearlySummary    Boolean @default(true) // Jaarlijks overzicht
+
+  // Operationele notificatie toggles
+  taskEmails          Boolean @default(true) // Taak-toegewezen / gedeblokkeerd emails
+  materialAlerts      Boolean @default(true) // Materiaal-verlopen meldingen (in-app + email)
+  starterCancellation Boolean @default(true) // Starter-geannuleerd broadcast email
+  entraAlerts         Boolean @default(true) // Entra/IT-gerelateerde waarschuwingen (in-app)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

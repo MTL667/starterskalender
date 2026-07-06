@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyCronAuth } from '@/lib/cron-auth'
+import { filterByNotificationPreference } from '@/lib/notification-prefs'
 
 export async function GET(req: Request) {
   const authError = verifyCronAuth(req)
@@ -57,10 +58,23 @@ export async function GET(req: Request) {
       select: { id: true },
     })
 
-    const recipientIds = [...new Set([
+    let recipientIds = [...new Set([
       ...materialManagers.map(u => u.id),
       ...hrAdmins.map(u => u.id),
     ])]
+
+    // Filter op basis van notification preferences per entity
+    const entityIds = [...new Set(overdue.map(m => m.starter.entityId).filter(Boolean))] as string[]
+    if (entityIds.length > 0) {
+      const allowedPerEntity = await Promise.all(
+        entityIds.map(eid => filterByNotificationPreference(recipientIds, eid, 'materialAlerts'))
+      )
+      // Gebruiker moet voor minstens één betrokken entity opt-in hebben
+      const allowedIntersection = recipientIds.filter(uid =>
+        allowedPerEntity.some(set => set.includes(uid))
+      )
+      recipientIds = allowedIntersection
+    }
 
     const itemSummary = overdue
       .map(m => `${m.material.name} — ${m.starter.firstName} ${m.starter.lastName}`)

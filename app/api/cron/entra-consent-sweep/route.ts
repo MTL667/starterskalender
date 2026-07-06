@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyCronAuth } from '@/lib/cron-auth'
 import { graphApiService, GraphAuthError, GraphTransientError } from '@/lib/graph-api-service'
+import { filterByNotificationPreference } from '@/lib/notification-prefs'
 
 export async function GET(req: Request) {
   const authError = verifyCronAuth(req)
@@ -77,8 +78,11 @@ async function notifyAdminsOfRevocation(entityId: string, entityName: string) {
     select: { userId: true },
   })
 
-  const notifications = members.map((member) => ({
-    userId: member.userId,
+  const userIds = members.map(m => m.userId)
+  const filteredIds = await filterByNotificationPreference(userIds, entityId, 'entraAlerts')
+
+  const notifications = filteredIds.map((userId) => ({
+    userId,
     type: 'ENTRA_CONSENT_REVOKED',
     title: `Entra ID consent ingetrokken: ${entityName}`,
     message: `De Entra ID verbinding voor ${entityName} is niet meer geldig. Verleen opnieuw admin consent in Azure Portal.`,
@@ -96,9 +100,12 @@ async function notifyAdminsOfExpiry(entityId: string, entityName: string, expiry
     select: { userId: true },
   })
 
+  const userIds = members.map(m => m.userId)
+  const filteredIds = await filterByNotificationPreference(userIds, entityId, 'entraAlerts')
+
   const formattedDate = expiryDate.toLocaleDateString('nl-NL')
-  const notifications = members.map((member) => ({
-    userId: member.userId,
+  const notifications = filteredIds.map((userId) => ({
+    userId,
     type: 'ENTRA_CERTIFICATE_EXPIRING',
     title: `Certificaat verloopt binnenkort: ${entityName}`,
     message: `Het Entra ID certificaat voor ${entityName} verloopt op ${formattedDate}. Genereer een nieuw keypair en upload het naar Azure Portal.`,

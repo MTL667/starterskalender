@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
 import { eventBus } from '@/lib/events'
 import { createCalendarEvent, isCalendarGraphConfigured } from '@/lib/graph-calendar'
+import { isNotificationEnabled } from '@/lib/notification-prefs'
 
 /**
  * Vervang variabelen in een string met waarden
@@ -618,6 +619,9 @@ async function sendTaskAssignmentEmail(task: any, starter: any) {
     return
   }
 
+  const prefEnabled = await isNotificationEnabled(task.assignedTo.id, task.entityId, 'taskEmails')
+  if (!prefEnabled) return
+
   const assigneeName = task.assignedTo.name || task.assignedTo.email
   const starterName = `${starter.firstName} ${starter.lastName}`
   const entityName = task.entity?.name || 'Onbekend'
@@ -961,12 +965,20 @@ export async function sendTaskReassignmentEmail(task: any, reassignedByName: str
  */
 export async function sendBulkRerouteEmail(
   tasks: any[],
-  newAssignee: { name?: string | null; email: string },
+  newAssignee: { id?: string; name?: string | null; email: string },
   reassignerName: string,
   notifyChannel: string
 ) {
   if (notifyChannel === 'IN_APP') return
   if (!newAssignee.email || tasks.length === 0) return
+
+  if (newAssignee.id && tasks[0]?.entityId) {
+    const entityIds = [...new Set(tasks.map(t => t.entityId).filter(Boolean))]
+    const checks = await Promise.all(
+      entityIds.map(eid => isNotificationEnabled(newAssignee.id!, eid, 'taskEmails'))
+    )
+    if (checks.every(v => !v)) return
+  }
 
   const assigneeName = newAssignee.name || newAssignee.email
   const taskTypeLabels = TASK_TYPE_LABELS
@@ -1081,6 +1093,9 @@ export async function sendBulkRerouteEmail(
  */
 async function sendTaskUnblockedEmail(task: any) {
   if (!task.assignedTo?.email) return
+
+  const prefEnabled = await isNotificationEnabled(task.assignedTo.id, task.entityId, 'taskEmails')
+  if (!prefEnabled) return
 
   const assigneeName = task.assignedTo.name || task.assignedTo.email
   const starterName = task.starter
