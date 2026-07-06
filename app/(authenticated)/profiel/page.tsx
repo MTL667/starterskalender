@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Bell, BellOff, Mail } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Bell, BellOff, Mail, Check } from 'lucide-react'
 import { useSession } from 'next-auth/react'
-import { Button } from '@/components/ui/button'
 
 interface NotificationPreference {
   id: string
@@ -23,6 +23,8 @@ interface NotificationPreference {
     colorHex: string
   }
 }
+
+type NotifField = 'weeklyReminder' | 'monthlySummary' | 'quarterlySummary' | 'yearlySummary'
 
 export default function ProfielPage() {
   const t = useTranslations('profile')
@@ -56,7 +58,7 @@ export default function ProfielPage() {
 
   const updatePreference = async (
     entityId: string,
-    field: 'weeklyReminder' | 'monthlySummary' | 'quarterlySummary' | 'yearlySummary',
+    field: NotifField,
     value: boolean
   ) => {
     setUpdating(`${entityId}-${field}`)
@@ -95,7 +97,9 @@ export default function ProfielPage() {
   }
 
   const toggleAll = async (entityId: string, enable: boolean) => {
+    const fields: NotifField[] = ['weeklyReminder', 'monthlySummary', 'quarterlySummary', 'yearlySummary']
     setUpdating(`${entityId}-all`)
+
     try {
       const res = await fetch('/api/user/notification-preferences', {
         method: 'PATCH',
@@ -108,7 +112,9 @@ export default function ProfielPage() {
           yearlySummary: enable,
         }),
       })
-      if (!res.ok) throw new Error('Failed')
+
+      if (!res.ok) throw new Error('Failed to update')
+
       setPreferences(prev =>
         prev.map(p =>
           p.entityId === entityId
@@ -117,18 +123,24 @@ export default function ProfielPage() {
         )
       )
     } catch (error) {
-      console.error('Error toggling all preferences:', error)
-      alert(t('errorSavingPreference'))
+      console.error('Error updating preferences:', error)
     } finally {
       setUpdating(null)
     }
   }
 
-  const countEnabled = (pref: NotificationPreference) => {
+  const enabledCount = (pref: NotificationPreference) => {
     return [pref.weeklyReminder, pref.monthlySummary, pref.quarterlySummary, pref.yearlySummary].filter(Boolean).length
   }
 
   const selectedPref = preferences.find(p => p.entityId === selectedEntityId)
+
+  const NOTIF_OPTIONS: { field: NotifField; labelKey: string; descKey: string }[] = [
+    { field: 'weeklyReminder', labelKey: 'weeklyReminder', descKey: 'weeklyReminderDescription' },
+    { field: 'monthlySummary', labelKey: 'monthlySummary', descKey: 'monthlySummaryDescription' },
+    { field: 'quarterlySummary', labelKey: 'quarterlySummary', descKey: 'quarterlySummaryDescription' },
+    { field: 'yearlySummary', labelKey: 'yearlySummary', descKey: 'yearlySummaryDescription' },
+  ]
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
@@ -161,142 +173,91 @@ export default function ProfielPage() {
               {t('noEntityAccess')}
             </div>
           ) : (
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Entity list */}
-              <div className="md:w-56 shrink-0 space-y-1" role="tablist" aria-label={t('emailNotifications')}>
+            <div className="flex gap-6">
+              {/* Entity list (sidebar) */}
+              <div className="w-56 shrink-0 space-y-1">
                 {preferences.map(pref => {
-                  const enabled = countEnabled(pref)
+                  const count = enabledCount(pref)
                   const isSelected = pref.entityId === selectedEntityId
                   return (
                     <button
                       key={pref.entityId}
                       onClick={() => setSelectedEntityId(pref.entityId)}
-                      aria-selected={isSelected}
-                      role="tab"
-                      className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md text-left text-sm transition-colors ${
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left text-sm transition-colors ${
                         isSelected
                           ? 'bg-primary/10 border border-primary/30'
                           : 'hover:bg-muted border border-transparent'
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: pref.entity.colorHex }}
-                        />
-                        <span className="truncate font-medium" title={pref.entity.name}>{pref.entity.name}</span>
-                      </div>
-                      <span className={`text-xs shrink-0 ${enabled === 4 ? 'text-green-600' : enabled === 0 ? 'text-muted-foreground' : 'text-amber-600'}`}>
-                        {enabled}/4
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: pref.entity.colorHex }}
+                      />
+                      <span className="truncate font-medium flex-1">{pref.entity.name}</span>
+                      <span className={`text-xs tabular-nums ${count === 4 ? 'text-green-600' : count === 0 ? 'text-muted-foreground' : 'text-foreground'}`}>
+                        {count}/4
                       </span>
                     </button>
                   )
                 })}
               </div>
 
-              {/* Selected entity preferences */}
+              {/* Notification toggles for selected entity */}
               {selectedPref && (
-                <div className="flex-1 border rounded-lg p-5">
-                  <div className="flex items-center justify-between mb-5">
-                    <Badge
-                      style={{ backgroundColor: selectedPref.entity.colorHex, color: 'white' }}
-                    >
-                      {selectedPref.entity.name}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7"
-                      disabled={updating !== null}
-                      onClick={() => {
-                        const allOn = countEnabled(selectedPref) === 4
-                        toggleAll(selectedPref.entityId, !allOn)
-                      }}
-                    >
-                      {countEnabled(selectedPref) === 4 ? (
-                        <><BellOff className="h-3.5 w-3.5 mr-1" /> {t('allNotificationsOff')}</>
-                      ) : (
-                        <><Bell className="h-3.5 w-3.5 mr-1" /> {t('allNotificationsOn')}</>
+                <div className="flex-1 border rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        style={{ backgroundColor: selectedPref.entity.colorHex, color: 'white' }}
+                      >
+                        {selectedPref.entity.name}
+                      </Badge>
+                      {enabledCount(selectedPref) === 4 && (
+                        <span className="flex items-center gap-1.5 text-xs text-green-600">
+                          <Check className="h-3 w-3" /> Alles aan
+                        </span>
                       )}
-                    </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleAll(selectedPref.entityId, true)}
+                        disabled={updating === `${selectedPref.entityId}-all` || enabledCount(selectedPref) === 4}
+                        className="text-xs text-primary hover:underline disabled:opacity-50 disabled:no-underline"
+                      >
+                        Alles aan
+                      </button>
+                      <span className="text-muted-foreground text-xs">|</span>
+                      <button
+                        onClick={() => toggleAll(selectedPref.entityId, false)}
+                        disabled={updating === `${selectedPref.entityId}-all` || enabledCount(selectedPref) === 0}
+                        className="text-xs text-muted-foreground hover:underline disabled:opacity-50 disabled:no-underline"
+                      >
+                        Alles uit
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor={`${selectedPref.entityId}-weekly`}>
-                          {t('weeklyReminder')}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          {t('weeklyReminderDescription')}
-                        </p>
+                    {NOTIF_OPTIONS.map(({ field, labelKey, descKey }) => (
+                      <div key={field} className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor={`${selectedPref.entityId}-${field}`}>
+                            {t(labelKey)}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            {t(descKey)}
+                          </p>
+                        </div>
+                        <Switch
+                          id={`${selectedPref.entityId}-${field}`}
+                          checked={selectedPref[field]}
+                          onCheckedChange={(value) =>
+                            updatePreference(selectedPref.entityId, field, value)
+                          }
+                          disabled={updating === `${selectedPref.entityId}-${field}` || updating === `${selectedPref.entityId}-all`}
+                        />
                       </div>
-                      <Switch
-                        id={`${selectedPref.entityId}-weekly`}
-                        checked={selectedPref.weeklyReminder}
-                        onCheckedChange={(value) =>
-                          updatePreference(selectedPref.entityId, 'weeklyReminder', value)
-                        }
-                        disabled={updating !== null}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor={`${selectedPref.entityId}-monthly`}>
-                          {t('monthlySummary')}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          {t('monthlySummaryDescription')}
-                        </p>
-                      </div>
-                      <Switch
-                        id={`${selectedPref.entityId}-monthly`}
-                        checked={selectedPref.monthlySummary}
-                        onCheckedChange={(value) =>
-                          updatePreference(selectedPref.entityId, 'monthlySummary', value)
-                        }
-                        disabled={updating !== null}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor={`${selectedPref.entityId}-quarterly`}>
-                          {t('quarterlySummary')}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          {t('quarterlySummaryDescription')}
-                        </p>
-                      </div>
-                      <Switch
-                        id={`${selectedPref.entityId}-quarterly`}
-                        checked={selectedPref.quarterlySummary}
-                        onCheckedChange={(value) =>
-                          updatePreference(selectedPref.entityId, 'quarterlySummary', value)
-                        }
-                        disabled={updating !== null}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <Label htmlFor={`${selectedPref.entityId}-yearly`}>
-                          {t('yearlySummary')}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          {t('yearlySummaryDescription')}
-                        </p>
-                      </div>
-                      <Switch
-                        id={`${selectedPref.entityId}-yearly`}
-                        checked={selectedPref.yearlySummary}
-                        onCheckedChange={(value) =>
-                          updatePreference(selectedPref.entityId, 'yearlySummary', value)
-                        }
-                        disabled={updating !== null}
-                      />
-                    </div>
+                    ))}
                   </div>
                 </div>
               )}
