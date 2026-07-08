@@ -1,25 +1,30 @@
 import NextAuth from 'next-auth'
-import { NextRequest } from 'next/server'
+import { headers } from 'next/headers'
 import { authOptions } from '@/lib/auth-options'
 
-function getPublicUrl(req: NextRequest): string {
-  const forwardedHost = req.headers.get('x-forwarded-host')
-  const forwardedProto = req.headers.get('x-forwarded-proto') || 'https'
-  const host = forwardedHost || req.headers.get('host')
+async function setPublicUrl() {
+  const hdrs = await headers()
+  const forwardedHost = hdrs.get('x-forwarded-host')
+  const forwardedProto = hdrs.get('x-forwarded-proto') || 'https'
+  const host = forwardedHost || hdrs.get('host')
 
   if (host && !host.startsWith('localhost')) {
-    return `${forwardedProto}://${host}`
+    process.env.NEXTAUTH_URL = `${forwardedProto}://${host}`
+  } else if (!process.env.NEXTAUTH_URL) {
+    process.env.NEXTAUTH_URL = process.env.APP_URL || 'https://airport.hertbelgium.be'
   }
-
-  return process.env.APP_URL || 'https://airport.hertbelgium.be'
 }
 
-function handler(req: NextRequest) {
-  const publicUrl = getPublicUrl(req)
-  process.env.NEXTAUTH_URL = publicUrl
+const handler = NextAuth(authOptions)
 
-  const nextAuth = NextAuth(authOptions)
-  return nextAuth(req as any)
+async function GET(req: Request, ctx: any) {
+  await setPublicUrl()
+  return handler(req as any, ctx)
 }
 
-export { handler as GET, handler as POST }
+async function POST(req: Request, ctx: any) {
+  await setPublicUrl()
+  return handler(req as any, ctx)
+}
+
+export { GET, POST }
