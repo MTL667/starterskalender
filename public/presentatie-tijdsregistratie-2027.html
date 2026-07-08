@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tijdsregistratie 2027 — Airport Strategie</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #1e3a5f;
+            --accent: #3b82f6;
+            --accent-light: #dbeafe;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --muted: #64748b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px 80px;
+            border-bottom: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 14px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        /* Title slide */
+        .slide-title {
+            background: linear-gradient(135deg, var(--primary) 0%, #2563eb 100%);
+            color: white;
+            text-align: center;
+        }
+        .slide-title h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+        .slide-title .subtitle {
+            font-size: 1.5rem;
+            opacity: 0.85;
+            margin-bottom: 40px;
+        }
+        .slide-title .meta {
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+        .slide-title .logo {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+            opacity: 0.9;
+        }
+
+        /* Section slides */
+        .slide-section {
+            background: var(--primary);
+            color: white;
+            text-align: center;
+        }
+        .slide-section h2 {
+            font-size: 2.8rem;
+            font-weight: 700;
+        }
+        .slide-section .section-sub {
+            font-size: 1.3rem;
+            opacity: 0.8;
+            margin-top: 12px;
+        }
+
+        /* Content slides */
+        h2 { font-size: 2rem; margin-bottom: 32px; color: var(--primary); }
+        h3 { font-size: 1.3rem; margin-bottom: 16px; color: var(--primary); }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .card-accent {
+            border-left: 4px solid var(--accent);
+        }
+
+        .card-success {
+            border-left: 4px solid var(--success);
+        }
+
+        .card-warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .card-danger {
+            border-left: 4px solid var(--danger);
+        }
+
+        .card h4 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+
+        .card p, .card li {
+            font-size: 0.95rem;
+            color: var(--muted);
+        }
+
+        ul { list-style: none; padding: 0; }
+        ul li { padding: 8px 0; padding-left: 24px; position: relative; }
+        ul li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .highlight-box {
+            background: var(--accent-light);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin: 24px 0;
+            border: 1px solid #bfdbfe;
+        }
+
+        .highlight-box.green {
+            background: #d1fae5;
+            border-color: #6ee7b7;
+        }
+
+        .highlight-box.amber {
+            background: #fef3c7;
+            border-color: #fcd34d;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 24px;
+            margin: 32px 0;
+        }
+
+        .stat {
+            flex: 1;
+            text-align: center;
+            padding: 24px;
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat .number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stat .label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:nth-child(even) { background: #f1f5f9; }
+
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+            margin: 24px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+            padding: 16px 20px;
+            background: var(--card);
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -34px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--accent);
+        }
+
+        .timeline-item .date {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .timeline-item h4 {
+            margin: 4px 0;
+            font-size: 1rem;
+        }
+
+        .timeline-item p {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-blue { background: #dbeafe; color: #1d4ed8; }
+        .badge-green { background: #d1fae5; color: #047857; }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .quote {
+            font-size: 1.4rem;
+            font-style: italic;
+            color: var(--primary);
+            border-left: 4px solid var(--accent);
+            padding-left: 24px;
+            margin: 32px 0;
+        }
+
+        .cta {
+            text-align: center;
+            margin-top: 40px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: var(--accent);
+            color: white;
+            padding: 16px 40px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        @media print {
+            .slide { page-break-after: always; min-height: auto; padding: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Slide 1: Title -->
+<div class="slide slide-title">
+    <div class="logo">✈️ AIRPORT</div>
+    <h1>Tijdsregistratie 2027</h1>
+    <p class="subtitle">Hoe Airport een compliance-oplossing biedt<br>zonder extra werk voor werknemers</p>
+    <p class="meta">Interne strategiepresentatie — Juli 2026</p>
+    <span class="slide-number">1</span>
+</div>
+
+<!-- Slide 2: Context -->
+<div class="slide slide-section">
+    <h2>De context</h2>
+    <p class="section-sub">Wat verandert er vanaf 2027?</p>
+    <span class="slide-number">2</span>
+</div>
+
+<!-- Slide 3: Het probleem -->
+<div class="slide">
+    <h2>Nieuwe wetgeving: verplichte tijdsregistratie</h2>
+    
+    <div class="highlight-box amber">
+        <strong>Vanaf 1 april 2027</strong> moet elke Belgische werkgever beschikken over een systeem om de dagelijkse arbeidstijd te registreren. Het systeem moet <strong>objectief, betrouwbaar en toegankelijk</strong> zijn.
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number">1 apr</div>
+            <div class="label">2027 — Deadline</div>
+        </div>
+        <div class="stat">
+            <div class="number">100%</div>
+            <div class="label">Private + publieke sector</div>
+        </div>
+        <div class="stat">
+            <div class="number">€5-15</div>
+            <div class="label">/user/maand bij concurrentie</div>
+        </div>
+    </div>
+
+    <h3>Wat volstaat volgens de huidige richtlijnen:</h3>
+    <ul>
+        <li>Geen prikklok verplicht — digitale systemen toegestaan</li>
+        <li>Registratie achteraf is mogelijk</li>
+        <li>Het volstaat om enkel <strong>afwijkingen</strong> op het overeengekomen uurrooster te registreren</li>
+        <li>Bepaalde categorieën uitgezonderd (leidinggevenden, telewerkers, reizend personeel)</li>
+    </ul>
+    <span class="slide-number">3</span>
+</div>
+
+<!-- Slide 4: Onze positie -->
+<div class="slide">
+    <h2>Onze unieke positie</h2>
+
+    <div class="two-col">
+        <div>
+            <h3>Wat we al hebben</h3>
+            <div class="card card-success">
+                <h4>Airport</h4>
+                <p>Onboarding/offboarding platform met multi-entity architectuur, RBAC, functie-configuratie, taakautomatisering</p>
+            </div>
+            <div class="card card-success" style="margin-top: 16px;">
+                <h4>ERP Forms</h4>
+                <p>Dagelijks gebruikt door veldwerkers voor inspecties en rapporten — met timestamps op elke actie</p>
+            </div>
+            <div class="card card-success" style="margin-top: 16px;">
+                <h4>Volledige controle</h4>
+                <p>Beide systemen zelfgebouwd — geen externe afhankelijkheden voor integratie</p>
+            </div>
+        </div>
+        <div>
+            <h3>Wat we al weten per werknemer</h3>
+            <ul>
+                <li>Welke entiteit</li>
+                <li>Welke functie (JobRole)</li>
+                <li>Startdatum</li>
+                <li>Werkrooster (bij onboarding vastgelegd)</li>
+                <li>ERP-activiteit (dagelijkse timestamps)</li>
+                <li>Microsoft 365 account (Entra ID)</li>
+            </ul>
+
+            <div class="highlight-box green" style="margin-top: 24px;">
+                <strong>Kerninsight:</strong> We kennen het verwachte rooster én we hebben dagelijkse activiteitsdata. Samen = tijdsregistratie.
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">4</span>
+</div>
+
+<!-- Slide 5: Section -->
+<div class="slide slide-section">
+    <h2>De oplossing</h2>
+    <p class="section-sub">Compliance als bijproduct van wat mensen al doen</p>
+    <span class="slide-number">5</span>
+</div>
+
+<!-- Slide 6: Concept -->
+<div class="slide">
+    <h2>Het concept: "Stilte = Akkoord"</h2>
+
+    <div class="quote">
+        "Werknemers registreren niet hun werktijd — ze melden alleen wanneer het NIET normaal was."
+    </div>
+
+    <div class="content-grid">
+        <div class="card card-accent">
+            <h4>🔇 Geen actie nodig</h4>
+            <p>Het werkrooster is het vertrekpunt. Als een werknemer niets meldt, is die dag volgens schema verlopen. Het systeem registreert automatisch de standaard-uren.</p>
+        </div>
+        <div class="card card-accent">
+            <h4>⚡ Alleen afwijkingen</h4>
+            <p>Overgewerkt? Later begonnen? Ziek? Alleen dán een korte melding. Eén formulier, 30 seconden.</p>
+        </div>
+        <div class="card card-accent">
+            <h4>📊 Passieve detectie via ERP</h4>
+            <p>Veldwerkers die inspecties/rapporten invullen in ERP Forms genereren automatisch timestamps. Eerste actie = start, laatste = einde werkdag.</p>
+        </div>
+        <div class="card card-accent">
+            <h4>✅ Wettelijk conform</h4>
+            <p>Het resultaat is een objectief, betrouwbaar, toegankelijk overzicht van werkuren — exact wat de wet vraagt.</p>
+        </div>
+    </div>
+    <span class="slide-number">6</span>
+</div>
+
+<!-- Slide 7: Hybride model -->
+<div class="slide">
+    <h2>Hybride model — past bij elke werknemer</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Type werknemer</th>
+                <th>Registratiemethode</th>
+                <th>Extra werk voor werknemer</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Veldwerker</strong> (ERP Forms gebruiker)</td>
+                <td>Passief — timestamps uit inspecties/rapporten</td>
+                <td>Nul — werkt al in het systeem</td>
+            </tr>
+            <tr>
+                <td><strong>Kantoormedewerker</strong> (vast rooster)</td>
+                <td>Stilte = akkoord — alleen afwijkingen melden</td>
+                <td>Minimaal — alleen bij uitzondering</td>
+            </tr>
+            <tr>
+                <td><strong>Flexwerker</strong> (variabel rooster)</td>
+                <td>Dagelijkse bevestiging — 2 taps per dag</td>
+                <td>Laag — 10 seconden per dag</td>
+            </tr>
+            <tr>
+                <td><strong>Leidinggevende / telewerker</strong></td>
+                <td>Uitgezonderd van verplichting</td>
+                <td>Geen</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="highlight-box green">
+        <strong>Configureerbaar per entiteit en per functie.</strong> Elke entiteit kiest welke modus past bij hun werknemers — net zoals ze nu al taken en materialen configureren per functie.
+    </div>
+    <span class="slide-number">7</span>
+</div>
+
+<!-- Slide 8: Architectuur -->
+<div class="slide">
+    <h2>Hoe het technisch werkt</h2>
+
+    <div class="two-col">
+        <div>
+            <h3>Databronnen</h3>
+            <div class="card" style="margin-bottom: 12px;">
+                <h4>① Werkrooster (Airport)</h4>
+                <p>Bij onboarding vastgelegd. Templates per entiteit/functie. Cascadeert: entiteit → functie → individueel.</p>
+            </div>
+            <div class="card" style="margin-bottom: 12px;">
+                <h4>② Activiteitsdata (ERP Forms)</h4>
+                <p>Event-webhook bij elke gebruikersactie. Timestamps als bewijs van aanwezigheid.</p>
+            </div>
+            <div class="card">
+                <h4>③ Afwijkingen (Airport)</h4>
+                <p>Werknemer meldt zelf: overwerk, ziekte, vroeger/later. Simpel formulier of dagbevestiging.</p>
+            </div>
+        </div>
+        <div>
+            <h3>Output</h3>
+            <div class="card card-success" style="margin-bottom: 12px;">
+                <h4>HR Dashboard</h4>
+                <p>Tab "Uren" in Airport. Overzicht per werknemer, per week. Afwijkingen gemarkeerd. Alerts bij ontbrekende registratie.</p>
+            </div>
+            <div class="card card-success" style="margin-bottom: 12px;">
+                <h4>Inspectie-export</h4>
+                <p>Eén klik → PDF/CSV rapport klaar voor sociaal inspectie. Rooster + afwijkingen + timestamps.</p>
+            </div>
+            <div class="card card-success">
+                <h4>Payroll API (later)</h4>
+                <p>Gestructureerde feed naar sociaal secretariaat (SD Worx, Acerta, Partena).</p>
+            </div>
+        </div>
+    </div>
+    <span class="slide-number">8</span>
+</div>
+
+<!-- Slide 9: Commercieel voordeel -->
+<div class="slide">
+    <h2>Commercieel voordeel</h2>
+
+    <div class="quote">
+        "U bent al compliant — en u wist het niet."
+    </div>
+
+    <div class="content-grid">
+        <div class="card card-success">
+            <h4>💰 Inbegrepen, niet extra</h4>
+            <p>Klanten die Airport + ERP Forms gebruiken krijgen tijdsregistratie erbij. Geen aparte tool à €5-15/user/maand nodig.</p>
+        </div>
+        <div class="card card-success">
+            <h4>🔒 Versterkt lock-in</h4>
+            <p>Hoe meer HR-processen in Airport (onboarding + taken + materialen + uren), hoe waardevoller het platform.</p>
+        </div>
+        <div class="card card-success">
+            <h4>🎯 Sales-urgentie</h4>
+            <p>April 2027 is een harde deadline. Elke werkgever MOET iets hebben. Wij bieden het met nul implementatietijd.</p>
+        </div>
+        <div class="card card-success">
+            <h4>🏆 Concurrentievoorsprong</h4>
+            <p>Protime, TimeMoto = standalone tools. Wij = geïntegreerd in het HR-ecosysteem dat ze al gebruiken.</p>
+        </div>
+    </div>
+    <span class="slide-number">9</span>
+</div>
+
+<!-- Slide 10: Risico's -->
+<div class="slide">
+    <h2>Risico's en mitigatie</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Risico</th>
+                <th>Impact</th>
+                <th>Mitigatie</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Definitieve wet wijkt af (strenger)</td>
+                <td><span class="badge badge-amber">Medium</span></td>
+                <td>Systeem flexibel gebouwd — kan ook volledige registratie aan</td>
+            </tr>
+            <tr>
+                <td>Aansprakelijkheid bij inspectie-falen</td>
+                <td><span class="badge badge-amber">Medium</span></td>
+                <td>Positioneren als "tool", niet als "compliance-garantie". Verantwoordelijkheid blijft bij werkgever.</td>
+            </tr>
+            <tr>
+                <td>Scope creep (overuren, ploegen, CAO's)</td>
+                <td><span class="badge badge-blue">Laag</span></td>
+                <td>Gefaseerde aanpak. MVP = afwijkingen. Complexe regimes pas in fase 5.</td>
+            </tr>
+            <tr>
+                <td>Klanten zonder ERP Forms</td>
+                <td><span class="badge badge-blue">Laag</span></td>
+                <td>Fallback via dagbevestiging (mail/PWA). Werkt onafhankelijk van ERP.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="highlight-box">
+        <strong>Kernstrategie:</strong> Flexibel bouwen op basis van de huidige richtlijnen. Bijsturen zodra de definitieve wet gepubliceerd wordt (verwacht H2 2026). De architectuur ondersteunt beide scenario's.
+    </div>
+    <span class="slide-number">10</span>
+</div>
+
+<!-- Slide 11: Section -->
+<div class="slide slide-section">
+    <h2>Roadmap</h2>
+    <p class="section-sub">Van concept tot commercieel klaar in 6 maanden</p>
+    <span class="slide-number">11</span>
+</div>
+
+<!-- Slide 12: Timeline -->
+<div class="slide">
+    <h2>Implementatie-roadmap</h2>
+
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="date">Jul – Aug 2026</div>
+            <h4>Fase 0: Fundament</h4>
+            <p>Datamodel (WorkSchedule, TimeEntry, TimeDeviation). Entiteit-configuratie voor registratiemodus en uurrooster-templates.</p>
+        </div>
+        <div class="timeline-item">
+            <div class="date">Sep – Okt 2026</div>
+            <h4>Fase 1: MVP Kern</h4>
+            <p>Afwijkingenformulier in Airport. "Stilte = akkoord" logica. HR-dashboard tab "Uren". Intern testbaar.</p>
+        </div>
+        <div class="timeline-item">
+            <div class="date">Nov 2026</div>
+            <h4>Fase 2: ERP Koppeling</h4>
+            <p>Event-webhook vanuit ERP Forms → passieve timestamps. Hybride modus volledig operationeel.</p>
+        </div>
+        <div class="timeline-item">
+            <div class="date">Dec 2026</div>
+            <h4>Fase 3: Output & Export</h4>
+            <p>Inspectie-rapport (PDF/CSV). Weekoverzicht per entiteit. Alerts bij ontbrekende registratie. <strong>→ Commercieel klaar.</strong></p>
+        </div>
+        <div class="timeline-item">
+            <div class="date">Q1 2027</div>
+            <h4>Fase 4: Compliance-validatie</h4>
+            <p>Wet gepubliceerd → toetsen aan definitieve eisen. Bijsturen indien nodig. Klanten onboarden.</p>
+        </div>
+        <div class="timeline-item">
+            <div class="date">Q2 2027+</div>
+            <h4>Fase 5: Uitbreiding</h4>
+            <p>Payroll API-feed. Teams-bot. Geavanceerde roosters (ploegen, nachtwerk). Mobiele app.</p>
+        </div>
+    </div>
+    <span class="slide-number">12</span>
+</div>
+
+<!-- Slide 13: Conclusie -->
+<div class="slide">
+    <h2>Samenvatting</h2>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="number" style="font-size: 1.8rem;">Feature in Airport</div>
+            <div class="label">Geen apart product</div>
+        </div>
+        <div class="stat">
+            <div class="number" style="font-size: 1.8rem;">Hybride registratie</div>
+            <div class="label">Passief + actief fallback</div>
+        </div>
+        <div class="stat">
+            <div class="number" style="font-size: 1.8rem;">Per entiteit</div>
+            <div class="label">Configureerbaar</div>
+        </div>
+    </div>
+
+    <div class="content-grid" style="margin-top: 32px;">
+        <div>
+            <h3>Waarom nu beginnen?</h3>
+            <ul>
+                <li>Wettelijke verplichting — geen keuze</li>
+                <li>9 maanden tot deadline — net genoeg</li>
+                <li>Unieke synergie Airport + ERP Forms</li>
+                <li>Concurrentievoordeel als eerste geïntegreerde oplossing</li>
+            </ul>
+        </div>
+        <div>
+            <h3>Eerste stappen</h3>
+            <ul>
+                <li>Datamodel ontwerpen (WorkSchedule, TimeEntry)</li>
+                <li>Entiteit-admin: modus + rooster-templates</li>
+                <li>ERP Forms: event-interface definiëren</li>
+                <li>Pilot met één entiteit intern</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="cta">
+        <p style="color: var(--muted); margin-bottom: 16px; font-size: 1.1rem;">Volgende stap: goedkeuring om Fase 0 te starten</p>
+    </div>
+    <span class="slide-number">13</span>
+</div>
+
+</body>
+</html>
