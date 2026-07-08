@@ -6,7 +6,7 @@ const nextConfig = {
   reactStrictMode: true,
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000'],
+      allowedOrigins: ['localhost:3000', 'airport.hertbelgium.be', 'starterskalender.kevinit.be'],
       bodySizeLimit: '100mb',
     },
     // Next.js 16 default is 10MB — verhogen zodat foto/bestand uploads niet
@@ -21,7 +21,7 @@ const nextConfig = {
   serverExternalPackages: ['pdf-lib', 'pdfjs-dist'],
   // Environment variables exposed to client
   env: {
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+    APP_URL: process.env.APP_URL,
     DEV_MODE: process.env.DEV_MODE,
   },
 }
