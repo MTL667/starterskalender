@@ -66,7 +66,7 @@ export async function POST(req: Request) {
 
     // Construct the full URL for the cron endpoint
     // Try multiple base URL strategies
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXTAUTH_URL_INTERNAL || process.env.APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
     
     // Remove trailing slash if present
     const cleanBaseUrl = baseUrl.replace(/\/$/, '')

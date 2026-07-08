@@ -3,6 +3,7 @@ import { sendEmail } from '@/lib/email'
 import { eventBus } from '@/lib/events'
 import { createCalendarEvent, isCalendarGraphConfigured } from '@/lib/graph-calendar'
 import { isNotificationEnabled } from '@/lib/notification-prefs'
+import { getAppUrl } from '@/lib/url'
 
 /**
  * Vervang variabelen in een string met waarden
@@ -502,7 +503,7 @@ export async function createAutomaticTasks(
             `<p><strong>${title}</strong></p>`,
             description ? `<p>${description.replace(/\n/g, '<br>')}</p>` : '',
             `<p>Starter: ${variables.starterName}<br>Entiteit: ${variables.entityName}</p>`,
-            `<p>Link: ${process.env.NEXTAUTH_URL || ''}/taken?taskId=${task.id}</p>`,
+            `<p>Link: ${getAppUrl()}/taken?taskId=${task.id}</p>`,
           ].join('')
           const eventId = await createCalendarEvent({
             assigneeEmail: task.assignedTo.email,
@@ -720,7 +721,7 @@ async function sendTaskAssignmentEmail(task: any, starter: any) {
       </div>
 
       <center>
-        <a href="${process.env.NEXTAUTH_URL}/taken/${task.id}" class="button">
+        <a href="${getAppUrl()}/taken/${task.id}" class="button">
           Bekijk Taak
         </a>
       </center>
@@ -937,7 +938,7 @@ export async function sendTaskReassignmentEmail(task: any, reassignedByName: str
       </div>
 
       <center>
-        <a href="${process.env.NEXTAUTH_URL}/taken?taskId=${task.id}" class="button">
+        <a href="${getAppUrl()}/taken?taskId=${task.id}" class="button">
           Bekijk Taak
         </a>
       </center>
@@ -1067,7 +1068,7 @@ export async function sendBulkRerouteEmail(
       ${groupsHtml}
 
       <center>
-        <a href="${process.env.NEXTAUTH_URL}/taken" class="button">
+        <a href="${getAppUrl()}/taken" class="button">
           Bekijk Taken
         </a>
       </center>
@@ -1144,7 +1145,7 @@ async function sendTaskUnblockedEmail(task: any) {
       </div>
 
       <center>
-        <a href="${process.env.NEXTAUTH_URL}/taken?taskId=${task.id}" class="button">
+        <a href="${getAppUrl()}/taken?taskId=${task.id}" class="button">
           Bekijk Taak
         </a>
       </center>

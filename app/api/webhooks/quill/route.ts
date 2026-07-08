@@ -285,7 +285,7 @@ async function handleFullySigned(
   }
 
   if (document.recipientEmail && document.starter) {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'
+    const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'https://airport.hertbelgium.be'
     try {
       await sendSignedConfirmationEmail({
         recipientEmail: document.recipientEmail,

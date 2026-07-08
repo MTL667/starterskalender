@@ -2,6 +2,7 @@ import sgMail from '@sendgrid/mail'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { createAuditLog } from './audit'
+import { getAppUrl } from './url'
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY || '')
 
@@ -80,7 +81,7 @@ export async function sendReminderEmail(input: SendReminderEmailInput): Promise<
       </table>
       
       <p style="color: #6b7280; margin: 0 0 16px;">
-        <a href="${process.env.NEXTAUTH_URL}/kalender" style="color: #3b82f6; text-decoration: none;">
+        <a href="${getAppUrl()}/kalender" style="color: #3b82f6; text-decoration: none;">
           Bekijk de volledige kalender →
         </a>
       </p>

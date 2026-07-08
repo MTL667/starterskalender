@@ -172,7 +172,7 @@ export async function POST(
 
     if (signingMethod === 'QES' && isQuillConfigured() && recipientEmail) {
       try {
-        const webhookUrl = `${process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'}/api/webhooks/quill`
+        const webhookUrl = `${process.env.APP_URL || process.env.NEXTAUTH_URL || 'https://airport.hertbelgium.be'}/api/webhooks/quill`
 
         const guestUser = await createGuestUser(
           recipientEmail,

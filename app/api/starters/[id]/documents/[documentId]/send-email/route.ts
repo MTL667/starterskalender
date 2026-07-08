@@ -54,7 +54,7 @@ export async function POST(
       if (!document.signingToken) {
         return NextResponse.json({ error: 'Geen signing token beschikbaar' }, { status: 400 })
       }
-      const baseUrl = process.env.NEXTAUTH_URL || 'https://starterskalender.kevinit.be'
+      const baseUrl = process.env.APP_URL || process.env.NEXTAUTH_URL || 'https://airport.hertbelgium.be'
       signingUrl = `${baseUrl}/sign/${document.signingToken}`
     }
 
