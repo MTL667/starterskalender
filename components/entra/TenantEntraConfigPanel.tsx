@@ -217,7 +217,7 @@ export function TenantEntraConfigPanel({ entityId }: TenantEntraConfigPanelProps
               <div className="relative flex-1">
                 <Input
                   type={showPassword ? 'text' : 'password'}
-                  value={isEditingPassword ? passwordDraft : ''}
+                  value={passwordDraft}
                   onChange={(e) => setPasswordDraft(e.target.value)}
                   placeholder={t('fixedPassword.placeholder')}
                   maxLength={256}
