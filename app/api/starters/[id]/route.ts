@@ -113,7 +113,7 @@ export async function PATCH(
     // Check if this is a pending boarding starter being activated
     const existingStarter = await prisma.starter.findUnique({
       where: { id },
-      select: { isPendingBoarding: true, type: true, entityId: true },
+      select: { isPendingBoarding: true, type: true, entityId: true, employmentType: true },
     })
 
     // RBAC v2: strip protected velden uit de update-payload als user geen permissie heeft
