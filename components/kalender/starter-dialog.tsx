@@ -1751,7 +1751,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
               </div>
             </div>
 
-            {isEdit && starter?.inspectorNumber != null && (
+            {isEdit && starter?.inspectorNumber != null && starter?.employmentType !== 'SUBCONTRACTOR' && starter?.employmentType !== 'CONSULTANT' && (
               <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                 <span className="text-sm font-medium text-muted-foreground">
                   {starter.entity?.inspectorNumberLabel || 'Inspecteurnummer'}
@@ -1821,7 +1821,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                 )}
               </div>
             )}
-            {isEdit && canEditInspectorNumber && starter?.inspectorNumber == null && starter?.type !== 'OFFBOARDING' && starter?.entity?.inspectorNumberEnabled && (() => {
+            {isEdit && canEditInspectorNumber && starter?.inspectorNumber == null && starter?.type !== 'OFFBOARDING' && starter?.employmentType !== 'SUBCONTRACTOR' && starter?.employmentType !== 'CONSULTANT' && starter?.entity?.inspectorNumberEnabled && (() => {
               const currentRole = jobRoles.find(r => r.title === starter?.roleTitle)
               if (!currentRole?.requiresInspectorNumber) return null
               return (

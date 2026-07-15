@@ -133,7 +133,7 @@ export async function bulkImportInspectorNumbers(
         firstName: { equals: firstName, mode: 'insensitive' },
         lastName: { equals: lastName, mode: 'insensitive' },
       },
-      select: { id: true, inspectorNumber: true },
+      select: { id: true, inspectorNumber: true, employmentType: true },
     })
 
     if (matches.length === 0) {
@@ -147,6 +147,11 @@ export async function bulkImportInspectorNumbers(
     }
 
     const starter = matches[0]
+
+    if (starter.employmentType === 'SUBCONTRACTOR' || starter.employmentType === 'CONSULTANT') {
+      results.push({ row: i + 1, success: false, error: `Onderaannemers/consultants krijgen geen inspecteurnummer` })
+      continue
+    }
 
     if (starter.inspectorNumber !== null) {
       results.push({ row: i + 1, success: false, error: `Starter heeft al nummer ${starter.inspectorNumber}` })

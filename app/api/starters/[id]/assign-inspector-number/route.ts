@@ -28,11 +28,15 @@ export async function POST(
 
     const starter = await prisma.starter.findUnique({
       where: { id },
-      select: { entityId: true, inspectorNumber: true },
+      select: { entityId: true, inspectorNumber: true, employmentType: true },
     })
 
     if (!starter) {
       return NextResponse.json({ error: 'Starter niet gevonden' }, { status: 404 })
+    }
+
+    if (starter.employmentType === 'SUBCONTRACTOR' || starter.employmentType === 'CONSULTANT') {
+      return NextResponse.json({ error: 'Onderaannemers en consultants krijgen geen inspecteurnummer' }, { status: 400 })
     }
 
     if (starter.inspectorNumber !== null) {

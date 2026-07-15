@@ -126,6 +126,12 @@ export async function PATCH(
     }
 
     if (data.inspectorNumber !== undefined) {
+      if (existingStarter?.employmentType === 'SUBCONTRACTOR' || existingStarter?.employmentType === 'CONSULTANT') {
+        return NextResponse.json(
+          { error: 'Onderaannemers en consultants krijgen geen inspecteurnummer' },
+          { status: 400 },
+        )
+      }
       const { can } = await import('@/lib/authz')
       if (!can(authz, 'starters:write:inspectornumber')) {
         return NextResponse.json(
