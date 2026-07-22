@@ -576,6 +576,7 @@ model NotificationPreference {
   taskEmails          Boolean @default(true) // Taak-toegewezen / gedeblokkeerd emails
   materialAlerts      Boolean @default(true) // Materiaal-verlopen meldingen (in-app + email)
   starterCancellation Boolean @default(true) // Starter-geannuleerd broadcast email
+  starterCreated      Boolean @default(true) // Nieuwe starter aangemaakt in entiteit (email + in-app)
   entraAlerts         Boolean @default(true) // Entra/IT-gerelateerde waarschuwingen (in-app)
 
   createdAt DateTime @default(now())

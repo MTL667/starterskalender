@@ -273,3 +273,104 @@ export async function sendTestEmail(to: string): Promise<void> {
   }
 }
 
+/**
+ * Stuurt een notificatie email wanneer een nieuwe starter is aangemaakt
+ */
+export interface StarterCreatedEmailInput {
+  to: string[]
+  starterName: string
+  starterType: 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION'
+  employmentType?: string
+  roleTitle?: string | null
+  entityName: string
+  startDate?: Date | null
+  createdByName: string
+}
+
+export async function sendStarterCreatedEmail(input: StarterCreatedEmailInput): Promise<void> {
+  const { to, starterName, starterType, employmentType, roleTitle, entityName, startDate, createdByName } = input
+
+  if (!to || to.length === 0) return
+
+  const typeLabels: Record<string, string> = {
+    ONBOARDING: 'Onboarding',
+    OFFBOARDING: 'Offboarding',
+    MIGRATION: 'Migratie',
+  }
+
+  const employmentLabels: Record<string, string> = {
+    EMPLOYEE: 'Werknemer',
+    SUBCONTRACTOR: 'Onderaannemer',
+    CONSULTANT: 'Consultant',
+  }
+
+  const typeLabel = typeLabels[starterType] || starterType
+  const empLabel = employmentType ? employmentLabels[employmentType] || employmentType : null
+  const dateStr = startDate ? format(startDate, 'dd/MM/yyyy', { locale: nl }) : 'Nog niet bepaald'
+
+  const subject = `Airport: Nieuwe ${typeLabel.toLowerCase()} — ${starterName} (${entityName})`
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Nieuwe Starter</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background: #f9fafb;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 32px;">
+      <h1 style="color: #1f2937; font-size: 20px; margin: 0 0 8px;">🆕 Nieuwe ${typeLabel.toLowerCase()}</h1>
+      <p style="color: #6b7280; margin: 0 0 24px;">Er is een nieuwe starter aangemaakt bij <strong>${entityName}</strong>.</p>
+      
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600; width: 140px;">Naam</td>
+          <td style="padding: 8px 12px;">${starterName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600;">Type</td>
+          <td style="padding: 8px 12px;">${typeLabel}${empLabel ? ` (${empLabel})` : ''}</td>
+        </tr>
+        ${roleTitle ? `<tr>
+          <td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600;">Functie</td>
+          <td style="padding: 8px 12px;">${roleTitle}</td>
+        </tr>` : ''}
+        <tr>
+          <td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600;">Startdatum</td>
+          <td style="padding: 8px 12px;">${dateStr}</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600;">Aangemaakt door</td>
+          <td style="padding: 8px 12px;">${createdByName}</td>
+        </tr>
+      </table>
+
+      <p style="margin: 0;">
+        <a href="${getAppUrl()}/kalender" style="color: #3b82f6; text-decoration: none;">
+          Bekijk in Airport →
+        </a>
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+      <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+        Je ontvangt deze e-mail omdat je lid bent van ${entityName}. Je kan dit uitschakelen via je profiel-instellingen.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `
+
+  try {
+    await sgMail.sendMultiple({
+      to,
+      from: process.env.SENDGRID_FROM_EMAIL || process.env.MAIL_FROM || 'noreply@example.com',
+      replyTo: process.env.MAIL_REPLY_TO,
+      subject,
+      html,
+    })
+  } catch (error: any) {
+    console.error('Failed to send starter-created email:', error)
+  }
+}

@@ -1104,6 +1104,8 @@
     "materialAlertsDescription": "Melding wanneer materiaalbestellingen hun leverdatum overschrijden",
     "starterCancellation": "Annulatie Meldingen",
     "starterCancellationDescription": "Email wanneer een starter wordt geannuleerd",
+    "starterCreated": "Nieuwe Starter Meldingen",
+    "starterCreatedDescription": "Email en in-app melding wanneer een nieuwe starter wordt aangemaakt",
     "entraAlerts": "Entra / IT Meldingen",
     "entraAlertsDescription": "Waarschuwingen over Entra-consent of verlopen certificaten",
     "aboutNotifications": "Over notificaties:",

@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Check, ClipboardList, Package, UserX, Shield } from 'lucide-react'
+import { Mail, Check, ClipboardList, Package, UserX, UserPlus, Shield } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 interface NotificationPreference {
@@ -19,6 +19,7 @@ interface NotificationPreference {
   taskEmails: boolean
   materialAlerts: boolean
   starterCancellation: boolean
+  starterCreated: boolean
   entraAlerts: boolean
   entity: {
     id: string
@@ -31,6 +32,7 @@ interface EntityCapabilities {
   tasks: boolean
   materials: boolean
   cancellation: boolean
+  starterCreated: boolean
   entra: boolean
 }
 
@@ -54,6 +56,7 @@ const OPERATIONAL_OPTIONS: NotifOption[] = [
   { field: 'taskEmails', labelKey: 'taskEmails', descKey: 'taskEmailsDescription', capability: 'tasks' },
   { field: 'materialAlerts', labelKey: 'materialAlerts', descKey: 'materialAlertsDescription', capability: 'materials' },
   { field: 'starterCancellation', labelKey: 'starterCancellation', descKey: 'starterCancellationDescription', capability: 'cancellation' },
+  { field: 'starterCreated', labelKey: 'starterCreated', descKey: 'starterCreatedDescription', capability: 'starterCreated' },
   { field: 'entraAlerts', labelKey: 'entraAlerts', descKey: 'entraAlertsDescription', capability: 'entra' },
 ]
 
@@ -126,6 +129,7 @@ export default function ProfielPage() {
       taskEmails: enable,
       materialAlerts: enable,
       starterCancellation: enable,
+      starterCreated: enable,
       entraAlerts: enable,
     }
 
@@ -150,6 +154,7 @@ export default function ProfielPage() {
             taskEmails: enable,
             materialAlerts: enable,
             starterCancellation: enable,
+            starterCreated: enable,
             entraAlerts: enable,
           }
         })
@@ -169,6 +174,7 @@ export default function ProfielPage() {
     if (entityCaps?.tasks) { total++; if (pref.taskEmails) enabled++ }
     if (entityCaps?.materials) { total++; if (pref.materialAlerts) enabled++ }
     if (entityCaps?.cancellation) { total++; if (pref.starterCancellation) enabled++ }
+    if (entityCaps?.starterCreated) { total++; if (pref.starterCreated) enabled++ }
     if (entityCaps?.entra) { total++; if (pref.entraAlerts) enabled++ }
 
     return { enabled, total }
@@ -369,6 +375,7 @@ function getOperationalIcon(options: NotifOption[]) {
     case 'taskEmails': return <ClipboardList className="h-3.5 w-3.5" />
     case 'materialAlerts': return <Package className="h-3.5 w-3.5" />
     case 'starterCancellation': return <UserX className="h-3.5 w-3.5" />
+    case 'starterCreated': return <UserPlus className="h-3.5 w-3.5" />
     case 'entraAlerts': return <Shield className="h-3.5 w-3.5" />
     default: return <Shield className="h-3.5 w-3.5" />
   }

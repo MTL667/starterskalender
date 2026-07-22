@@ -9,6 +9,8 @@ import { createAuditLog } from '@/lib/audit'
 import { normalizeString } from '@/lib/utils'
 import { createAutomaticTasks } from '@/lib/task-automation'
 import { eventBus } from '@/lib/events'
+import { sendStarterCreatedEmail } from '@/lib/email'
+import { filterByNotificationPreference } from '@/lib/notification-prefs'
 
 const VALID_TYPES = ['ONBOARDING', 'OFFBOARDING', 'MIGRATION'] as const
 const VALID_EMPLOYMENT_TYPES = ['EMPLOYEE', 'SUBCONTRACTOR', 'CONSULTANT'] as const
@@ -384,6 +386,65 @@ export async function POST(request: NextRequest) {
 
     if (starter.entityId) {
       eventBus.emit({ type: 'starter:created', entityId: starter.entityId, payload: { starterId: starter.id } })
+
+      // Send starter-created email notification to entity members (fire-and-forget)
+      ;(async () => {
+        try {
+          const entity = await prisma.entity.findUnique({
+            where: { id: starter.entityId! },
+            include: {
+              memberships: {
+                include: { user: { select: { id: true, email: true } } },
+              },
+            },
+          })
+          if (!entity) return
+
+          const memberUserIds = entity.memberships.map(m => m.user.id)
+          const eligibleUserIds = await filterByNotificationPreference(
+            memberUserIds,
+            starter.entityId!,
+            'starterCreated',
+          )
+
+          // Exclude the creator from the email
+          const recipientIds = eligibleUserIds.filter(id => id !== user.id)
+          const recipientEmails = entity.memberships
+            .filter(m => recipientIds.includes(m.user.id))
+            .map(m => m.user.email)
+            .filter(Boolean) as string[]
+
+          if (recipientEmails.length > 0) {
+            await sendStarterCreatedEmail({
+              to: recipientEmails,
+              starterName: `${starter.firstName} ${starter.lastName}`,
+              starterType: starter.type as 'ONBOARDING' | 'OFFBOARDING' | 'MIGRATION',
+              employmentType: starter.employmentType,
+              roleTitle: starter.roleTitle,
+              entityName: entity.name,
+              startDate: starter.startDate,
+              createdByName: user.name || user.email,
+            })
+          }
+
+          // In-app notifications for eligible recipients
+          if (recipientIds.length > 0) {
+            await prisma.notification.createMany({
+              data: recipientIds.map(userId => ({
+                userId,
+                type: 'STARTER_CREATED',
+                title: 'Nieuwe starter aangemaakt',
+                message: `${user.name || user.email} heeft ${starter.firstName} ${starter.lastName} aangemaakt bij ${entity.name}.`,
+                linkUrl: `/kalender`,
+                starterId: starter.id,
+              })),
+            })
+            eventBus.emit({ type: 'notification:new', entityId: starter.entityId!, payload: { starterId: starter.id } })
+          }
+        } catch (err) {
+          console.error('Failed to send starter-created notifications:', err)
+        }
+      })()
     }
 
     // Refetch if inspector number was assigned (so the response includes it)

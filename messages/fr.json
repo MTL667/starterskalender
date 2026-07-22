@@ -1104,6 +1104,8 @@
     "materialAlertsDescription": "Notification lorsque des commandes de matériel dépassent leur date de livraison",
     "starterCancellation": "Notifications d'annulation",
     "starterCancellationDescription": "Email lorsqu'un collaborateur est annulé",
+    "starterCreated": "Notifications nouveau collaborateur",
+    "starterCreatedDescription": "Email et notification in-app lorsqu'un nouveau collaborateur est créé",
     "entraAlerts": "Alertes Entra / IT",
     "entraAlertsDescription": "Avertissements concernant le consentement Entra ou les certificats expirés",
     "aboutNotifications": "À propos des notifications :",

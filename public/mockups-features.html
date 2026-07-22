@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature Mockups — Onderaannemers & Reden van vertrek</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; color: #1a1a2e; }
+  .page { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+  h1 { font-size: 26px; margin-bottom: 6px; color: #0f172a; }
+  .subtitle { color: #64748b; margin-bottom: 36px; font-size: 14px; }
+  .mockup { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.04); margin-bottom: 36px; overflow: hidden; }
+  .mockup-header { padding: 14px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px; }
+  .mockup-header .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #ef4444; } .dot.y { background: #eab308; } .dot.g { background: #22c55e; }
+  .mockup-title { font-weight: 600; font-size: 13px; color: #475569; margin-left: 6px; }
+  .mockup-body { padding: 24px; }
+  .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-green { background: #dcfce7; color: #16a34a; }
+  .badge-purple { background: #f3e8ff; color: #7c3aed; }
+  .badge-amber { background: #fef3c7; color: #d97706; }
+  .badge-gray { background: #f1f5f9; color: #64748b; }
+  .badge-red { background: #fee2e2; color: #dc2626; }
+  .badge-indigo { background: #e0e7ff; color: #4338ca; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; font-weight: 500; color: #374151; }
+  .form-group label .req { color: #ef4444; }
+  .form-input { padding: 7px 11px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 13px; background: #fff; color: #1f2937; }
+  .form-input.filled { background: #f0fdf4; border-color: #86efac; }
+  .form-input.disabled { background: #f9fafb; color: #9ca3af; }
+  .form-select { padding: 7px 11px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 13px; background: #fff; color: #1f2937; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+  .form-textarea { padding: 7px 11px; border: 1px solid #d1d5db; border-radius: 7px; font-size: 13px; resize: vertical; min-height: 50px; font-family: inherit; }
+  .separator { border: none; border-top: 1px solid #e2e8f0; margin: 18px 0; }
+  .section-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+  .btn { padding: 7px 14px; border-radius: 7px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-primary { background: #0f172a; color: #fff; }
+  .btn-outline { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+  .btn-success { background: #22c55e; color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  .type-selector { display: flex; gap: 8px; margin-bottom: 18px; }
+  .type-btn { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; border: 2px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .type-btn.active { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+  .type-btn .icon { font-size: 16px; }
+
+  .vat-row { display: flex; gap: 8px; align-items: flex-end; }
+  .vat-status { display: flex; align-items: center; gap: 6px; font-size: 12px; margin-top: 4px; }
+  .vat-status.success { color: #16a34a; }
+  .vat-status.error { color: #dc2626; }
+
+  .material-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; }
+  .material-name { font-size: 13px; font-weight: 500; }
+  .material-sub { font-size: 11px; color: #64748b; }
+  .toggle { width: 36px; height: 20px; border-radius: 10px; position: relative; cursor: pointer; border: none; display: inline-block; }
+  .toggle.on { background: #22c55e; }
+  .toggle.off { background: #d1d5db; }
+  .toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 2px; }
+  .toggle.on::after { left: 18px; }
+  .toggle.off::after { left: 2px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; }
+  .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: #0f172a; margin-top: 3px; }
+  .stat-sub { font-size: 11px; color: #64748b; }
+
+  .tabs { display: flex; gap: 4px; background: #f1f5f9; padding: 3px; border-radius: 7px; width: fit-content; margin-bottom: 20px; }
+  .tab { padding: 5px 14px; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: transparent; color: #64748b; }
+  .tab.active { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .feature-tag { position: absolute; top: -10px; right: 16px; background: #3b82f6; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 4px; text-transform: uppercase; letter-spacing: .5px; }
+
+  .address-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+  .address-grid-2 { display: grid; grid-template-columns: 1fr 2fr 2fr; gap: 10px; }
+
+  .calendar-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .calendar-item { padding: 10px 14px; background: #fff; border-left: 3px solid; border-radius: 6px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  .calendar-item.employee { border-color: #3b82f6; }
+  .calendar-item.subcontractor { border-color: #f59e0b; }
+  .calendar-item.offboarding { border-color: #ef4444; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Feature Mockups</h1>
+  <p class="subtitle">Onderaannemers & Reden van vertrek — nieuwe functionaliteiten</p>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- FEATURE 1: ONDERAANNEMERS                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+  <div style="margin-bottom:10px;">
+    <span class="badge badge-amber" style="font-size:13px;padding:4px 14px;">FEATURE 1</span>
+    <span style="font-size:18px;font-weight:700;margin-left:10px;">Onderaannemers</span>
+  </div>
+  <p style="color:#64748b;font-size:13px;margin-bottom:24px;">Nieuw startertype voor onderaannemingen met BTW-opzoek, adresgegevens en materiaalvoorzienig</p>
+
+  <!-- 1A: Type selector -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">1A. Type selector — Werknemer vs. Onderaannemer</span>
+    </div>
+    <div class="mockup-body">
+      <div style="font-size:13px;color:#64748b;margin-bottom:12px;">Bij het aanmaken van een starter kies je het type:</div>
+      <div class="type-selector">
+        <div class="type-btn">
+          <span class="icon">👤</span> Werknemer
+        </div>
+        <div class="type-btn active">
+          <span class="icon">🏢</span> Onderaannemer
+        </div>
+      </div>
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:12px;color:#1e40af;">
+        ℹ️ Bij onderaannemers worden bedrijfsgegevens automatisch opgehaald via het BTW-nummer (EU VIES + Belgische KBO API).
+      </div>
+    </div>
+  </div>
+
+  <!-- 1B: VAT Lookup + Company data -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">1B. BTW-opzoek — Automatisch invullen bedrijfsgegevens</span>
+    </div>
+    <div class="mockup-body">
+      <div class="section-title">🏢 Bedrijfsgegevens</div>
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="form-group full">
+          <label>BTW-nummer</label>
+          <div class="vat-row">
+            <input class="form-input" value="BE0878065378" style="flex:1;">
+            <button class="btn btn-primary btn-sm">🔍 Opzoeken</button>
+          </div>
+          <div class="vat-status success">✓ Geldig — gegevens opgehaald via KBO</div>
+        </div>
+        <div class="form-group">
+          <label>Bedrijfsnaam</label>
+          <input class="form-input filled" value="TechConsult BV">
+        </div>
+        <div class="form-group">
+          <label>Rechtsvorm</label>
+          <input class="form-input filled" value="Besloten Vennootschap">
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:16px;">📍 Adres (opgesplitst)</div>
+      <div class="address-grid" style="margin-bottom:10px;">
+        <div class="form-group">
+          <label>Straat</label>
+          <input class="form-input filled" value="Koningsstraat">
+        </div>
+        <div class="form-group">
+          <label>Nummer</label>
+          <input class="form-input filled" value="153">
+        </div>
+        <div class="form-group">
+          <label>Bus <span style="color:#94a3b8;font-weight:400;">(optioneel)</span></label>
+          <input class="form-input" value="" placeholder="bv. A">
+        </div>
+      </div>
+      <div class="address-grid-2">
+        <div class="form-group">
+          <label>Postcode</label>
+          <input class="form-input filled" value="1000">
+        </div>
+        <div class="form-group">
+          <label>Gemeente</label>
+          <input class="form-input filled" value="Brussel">
+        </div>
+        <div class="form-group">
+          <label>Land</label>
+          <input class="form-input filled" value="België">
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:#64748b;">🟢 Groen gemarkeerde velden zijn automatisch ingevuld via BTW-opzoek</div>
+    </div>
+  </div>
+
+  <!-- 1C: Persoonsgegevens + contract -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">1C. Persoonsgegevens & contract — Onderaannemer</span>
+    </div>
+    <div class="mockup-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Voornaam <span class="req">*</span></label>
+          <input class="form-input" value="Jan">
+        </div>
+        <div class="form-group">
+          <label>Achternaam <span class="req">*</span></label>
+          <input class="form-input" value="Peeters">
+        </div>
+        <div class="form-group">
+          <label>Entiteit <span class="req">*</span></label>
+          <select class="form-select"><option>Groep Vlaanderen</option></select>
+        </div>
+        <div class="form-group">
+          <label>Functie</label>
+          <select class="form-select"><option>CFO</option></select>
+        </div>
+        <div class="form-group">
+          <label>Startdatum</label>
+          <input class="form-input" type="text" value="2026-07-01">
+        </div>
+        <div class="form-group">
+          <label>Contractuele datum</label>
+          <input class="form-input" type="text" value="2026-06-15">
+        </div>
+        <div class="form-group">
+          <label>Gewenst e-mailadres</label>
+          <input class="form-input" value="jan.peeters@groep.be">
+        </div>
+        <div class="form-group">
+          <label>Taal</label>
+          <select class="form-select"><option>Nederlands</option></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1D: Materiaalvoorziening -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">1D. Materiaalvoorziening — Onderaannemer voorziet standaard zelf</span>
+    </div>
+    <div class="mockup-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="section-title" style="margin:0;">📦 Materialen</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:#64748b;">Entiteit voorziet materiaal:</span>
+          <button class="toggle off"></button>
+        </div>
+      </div>
+      <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#92400e;margin-bottom:14px;">
+        ⚠️ Onderaannemers voorzien standaard hun eigen materiaal. Schakel de toggle in als de entiteit materiaal moet voorzien.
+      </div>
+      <div class="material-row" style="opacity:.5;">
+        <div>
+          <div class="material-name">💻 Laptop</div>
+          <div class="material-sub">Standaard voor CFO</div>
+        </div>
+        <span class="badge badge-gray">Zelf voorzien</span>
+      </div>
+      <div class="material-row" style="opacity:.5;">
+        <div>
+          <div class="material-name">📱 GSM</div>
+          <div class="material-sub">Standaard voor CFO</div>
+        </div>
+        <span class="badge badge-gray">Zelf voorzien</span>
+      </div>
+      <div class="material-row" style="opacity:.5;">
+        <div>
+          <div class="material-name">🔑 Badge</div>
+          <div class="material-sub">Standaard voor CFO</div>
+        </div>
+        <span class="badge badge-gray">Zelf voorzien</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1E: Kalender weergave -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">1E. Kalender — Onderaannemers naast werknemers</span>
+    </div>
+    <div class="mockup-body">
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <span class="badge badge-blue">👤 Werknemer</span>
+        <span class="badge badge-amber">🏢 Onderaannemer</span>
+        <span class="badge badge-red">↩ Offboarding</span>
+      </div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:10px;">Week 27 — 30 juni – 4 juli 2026</div>
+      <div class="calendar-item employee">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-size:13px;font-weight:600;">Sophie De Smet</span>
+            <span class="badge badge-blue" style="margin-left:8px;">Werknemer</span>
+          </div>
+          <span style="font-size:12px;color:#64748b;">Groep Vlaanderen · Marketing Manager</span>
+        </div>
+      </div>
+      <div class="calendar-item subcontractor">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-size:13px;font-weight:600;">Jan Peeters</span>
+            <span class="badge badge-amber" style="margin-left:8px;">Onderaannemer</span>
+          </div>
+          <span style="font-size:12px;color:#64748b;">Groep Vlaanderen · CFO · TechConsult BV</span>
+        </div>
+      </div>
+      <div class="calendar-item employee">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-size:13px;font-weight:600;">Ahmed El Amrani</span>
+            <span class="badge badge-blue" style="margin-left:8px;">Werknemer</span>
+          </div>
+          <span style="font-size:12px;color:#64748b;">Groep Wallonië · Data Analyst</span>
+        </div>
+      </div>
+      <div class="calendar-item offboarding">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-size:13px;font-weight:600;">Maria Janssens</span>
+            <span class="badge badge-red" style="margin-left:8px;">Offboarding</span>
+          </div>
+          <span style="font-size:12px;color:#64748b;">Groep Vlaanderen · HR Business Partner</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- FEATURE 2: REDEN VAN VERTREK                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+
+  <div style="margin-top:48px;margin-bottom:10px;">
+    <span class="badge badge-purple" style="font-size:13px;padding:4px 14px;">FEATURE 2</span>
+    <span style="font-size:18px;font-weight:700;margin-left:10px;">Reden van vertrek</span>
+  </div>
+  <p style="color:#64748b;font-size:13px;margin-bottom:24px;">Bij offboarding: initiator + vertrekreden + toelichting, met statistieken en beheerbare redenenlijst</p>
+
+  <!-- 2A: Offboarding dialog met reason -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">2A. Offboarding dialog — Reden van vertrek invullen</span>
+    </div>
+    <div class="mockup-body">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;font-size:18px;">↩</div>
+        <div>
+          <div style="font-size:16px;font-weight:600;">Maria Janssens — Offboarding</div>
+          <div style="font-size:12px;color:#64748b;">Groep Vlaanderen · HR Business Partner · Vertrek: 30/06/2026</div>
+        </div>
+      </div>
+
+      <hr class="separator">
+
+      <div class="section-title">📋 Reden van vertrek</div>
+      <div class="form-grid" style="margin-bottom:14px;">
+        <div class="form-group">
+          <label>Initiator <span class="req">*</span></label>
+          <select class="form-select">
+            <option>De werknemer zelf</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Vertrekreden</label>
+          <select class="form-select">
+            <option>Betere aanbieding elders</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Toelichting</label>
+          <textarea class="form-textarea">Maria heeft een aanbod gekregen als HR Director bij een internationaal bedrijf. Zij vertrekt in goede verstandhouding.</textarea>
+        </div>
+      </div>
+
+      <hr class="separator">
+
+      <div class="section-title">📦 Materiaal teruggave</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Retourdatum materialen</label>
+          <input class="form-input" type="text" value="2026-06-27">
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="material-row">
+          <div>
+            <div class="material-name">💻 Laptop — MacBook Pro 14"</div>
+            <div class="material-sub">Toegewezen op 15/01/2024</div>
+          </div>
+          <span class="badge badge-amber">Terug te geven</span>
+        </div>
+        <div class="material-row">
+          <div>
+            <div class="material-name">📱 iPhone 15 Pro</div>
+            <div class="material-sub">Toegewezen op 15/01/2024</div>
+          </div>
+          <span class="badge badge-amber">Terug te geven</span>
+        </div>
+        <div class="material-row">
+          <div>
+            <div class="material-name">🔑 Toegangsbadge #4521</div>
+            <div class="material-sub">Toegewezen op 15/01/2024</div>
+          </div>
+          <span class="badge badge-amber">Terug te geven</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2B: Inline reden toevoegen -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">2B. Inline reden toevoegen — Vanuit de offboarding flow</span>
+    </div>
+    <div class="mockup-body">
+      <div class="form-group" style="max-width:450px;">
+        <label>Vertrekreden</label>
+        <div style="display:flex;gap:8px;">
+          <input class="form-input" value="Burn-out" style="flex:1;" placeholder="Nieuwe reden...">
+          <button class="btn btn-success btn-sm">✓</button>
+          <button class="btn btn-outline btn-sm">✗</button>
+        </div>
+        <div style="font-size:11px;color:#64748b;margin-top:4px;">💡 Nieuwe redenen worden automatisch opgeslagen en verschijnen in de dropdown en statistieken.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2C: Offboarding Statistieken Dashboard -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">2C. Statistieken Dashboard — Offboarding analyse</span>
+    </div>
+    <div class="mockup-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div>
+          <div style="font-size:18px;font-weight:700;">Statistieken</div>
+          <div style="font-size:12px;color:#64748b;">Operationele KPI's en offboarding analyse</div>
+        </div>
+        <div class="tabs">
+          <button class="tab">Operationeel</button>
+          <button class="tab active">Offboarding</button>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <select class="form-select" style="width:90px;font-size:12px;"><option>2026</option></select>
+        <select class="form-select" style="width:110px;font-size:12px;"><option>Volledig jaar</option></select>
+        <span style="font-size:12px;color:#64748b;">— 14 offboardings</span>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card" style="border-left:3px solid #ef4444;">
+          <div class="stat-label">🏢 Entiteit verbroken</div>
+          <div class="stat-value">5</div>
+          <div class="stat-sub">35.7%</div>
+        </div>
+        <div class="stat-card" style="border-left:3px solid #f59e0b;">
+          <div class="stat-label">🤝 Onderling overleg</div>
+          <div class="stat-value">3</div>
+          <div class="stat-sub">21.4%</div>
+        </div>
+        <div class="stat-card" style="border-left:3px solid #3b82f6;">
+          <div class="stat-label">👤 Werknemer zelf</div>
+          <div class="stat-value">6</div>
+          <div class="stat-sub">42.9%</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Verdeling initiator</div>
+          <div style="display:flex;align-items:center;gap:20px;">
+            <svg width="130" height="130" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#e2e8f0" stroke-width="18"/>
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#3b82f6" stroke-width="18" stroke-dasharray="102 137" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#ef4444" stroke-width="18" stroke-dasharray="86 153" stroke-dashoffset="-102" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#f59e0b" stroke-width="18" stroke-dasharray="51 188" stroke-dashoffset="-188" transform="rotate(-90 50 50)"/>
+            </svg>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div>Werknemer (43%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>Entiteit (36%)</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Overleg (21%)</div>
+            </div>
+          </div>
+        </div>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Top vertrekredenen</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Betere aanbieding elders</span><span style="font-weight:600;">5</span></div>
+              <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="width:100%;height:100%;background:#3b82f6;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Einde contract</span><span style="font-weight:600;">3</span></div>
+              <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="width:60%;height:100%;background:#8b5cf6;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Onvoldoende prestatie</span><span style="font-weight:600;">2</span></div>
+              <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="width:40%;height:100%;background:#f59e0b;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Verhuizing</span><span style="font-weight:600;">2</span></div>
+              <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="width:40%;height:100%;background:#22c55e;border-radius:3px;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Pensioen</span><span style="font-weight:600;">2</span></div>
+              <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;"><div style="width:40%;height:100%;background:#ec4899;border-radius:3px;"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly trend -->
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Maandelijkse trend 2026</div>
+        <div style="display:flex;align-items:flex-end;gap:6px;height:100px;padding:0 8px;">
+          <div style="flex:1;text-align:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+              <div style="width:100%;height:20px;background:#3b82f6;border-radius:3px 3px 0 0;"></div>
+              <div style="width:100%;height:12px;background:#ef4444;border-radius:0;"></div>
+              <div style="width:100%;height:8px;background:#f59e0b;border-radius:0 0 3px 3px;"></div>
+            </div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Jan</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+              <div style="width:100%;height:12px;background:#3b82f6;border-radius:3px 3px 0 0;"></div>
+              <div style="width:100%;height:8px;background:#ef4444;border-radius:0 0 3px 3px;"></div>
+            </div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Feb</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+              <div style="width:100%;height:16px;background:#3b82f6;border-radius:3px 3px 0 0;"></div>
+              <div style="width:100%;height:16px;background:#ef4444;border-radius:0;"></div>
+              <div style="width:100%;height:4px;background:#f59e0b;border-radius:0 0 3px 3px;"></div>
+            </div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Mrt</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+              <div style="width:100%;height:8px;background:#3b82f6;border-radius:3px 3px 0 0;"></div>
+              <div style="width:100%;height:4px;background:#f59e0b;border-radius:0 0 3px 3px;"></div>
+            </div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Apr</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+              <div style="width:100%;height:24px;background:#3b82f6;border-radius:3px 3px 0 0;"></div>
+              <div style="width:100%;height:8px;background:#ef4444;border-radius:0;"></div>
+              <div style="width:100%;height:12px;background:#f59e0b;border-radius:0 0 3px 3px;"></div>
+            </div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Mei</div>
+          </div>
+          <div style="flex:1;text-align:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+              <div style="width:100%;height:16px;background:#3b82f6;border-radius:3px 3px 0 0;"></div>
+              <div style="width:100%;height:12px;background:#ef4444;border-radius:0;"></div>
+              <div style="width:100%;height:8px;background:#f59e0b;border-radius:0 0 3px 3px;"></div>
+            </div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Jun</div>
+          </div>
+          <div style="flex:1;text-align:center;opacity:.3;">
+            <div style="width:100%;height:4px;background:#e2e8f0;border-radius:3px;"></div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Jul</div>
+          </div>
+          <div style="flex:1;text-align:center;opacity:.3;">
+            <div style="width:100%;height:4px;background:#e2e8f0;border-radius:3px;"></div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Aug</div>
+          </div>
+          <div style="flex:1;text-align:center;opacity:.3;">
+            <div style="width:100%;height:4px;background:#e2e8f0;border-radius:3px;"></div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Sep</div>
+          </div>
+          <div style="flex:1;text-align:center;opacity:.3;">
+            <div style="width:100%;height:4px;background:#e2e8f0;border-radius:3px;"></div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Okt</div>
+          </div>
+          <div style="flex:1;text-align:center;opacity:.3;">
+            <div style="width:100%;height:4px;background:#e2e8f0;border-radius:3px;"></div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Nov</div>
+          </div>
+          <div style="flex:1;text-align:center;opacity:.3;">
+            <div style="width:100%;height:4px;background:#e2e8f0;border-radius:3px;"></div>
+            <div style="font-size:9px;color:#94a3b8;margin-top:4px;">Dec</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:10px;justify-content:center;">
+          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;"></div>Werknemer zelf</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>Entiteit verbroken</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Onderling overleg</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2D: Beheer vertrekredenen -->
+  <div class="mockup">
+    <div class="mockup-header">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span class="mockup-title">2D. Admin — Vertrekredenen beheren</span>
+    </div>
+    <div class="mockup-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div>
+          <div style="font-size:15px;font-weight:600;">Vertrekredenen beheer</div>
+          <div style="font-size:12px;color:#64748b;">Redenen toevoegen, hernoemen of deactiveren</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="form-input" placeholder="Nieuwe reden..." style="width:180px;font-size:12px;">
+          <button class="btn btn-primary btn-sm">+ Toevoegen</button>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px 12px;background:#f8fafc;border-bottom:2px solid #e2e8f0;font-weight:600;color:#475569;">Reden</th>
+            <th style="text-align:center;padding:8px;background:#f8fafc;border-bottom:2px solid #e2e8f0;font-weight:600;color:#475569;width:80px;">Periode</th>
+            <th style="text-align:center;padding:8px;background:#f8fafc;border-bottom:2px solid #e2e8f0;font-weight:600;color:#475569;width:80px;">Totaal</th>
+            <th style="text-align:center;padding:8px;background:#f8fafc;border-bottom:2px solid #e2e8f0;font-weight:600;color:#475569;width:70px;">Status</th>
+            <th style="width:70px;background:#f8fafc;border-bottom:2px solid #e2e8f0;"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:500;">Betere aanbieding elders</td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><span class="badge badge-blue">5</span></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><span class="badge badge-gray">12</span></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><button class="toggle on"></button></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;">✎ 🗑</td></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:500;">Einde contract</td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><span class="badge badge-blue">3</span></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><span class="badge badge-gray">8</span></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><button class="toggle on"></button></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;">✎ 🗑</td></tr>
+          <tr><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:500;">Onvoldoende prestatie</td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><span class="badge badge-blue">2</span></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><span class="badge badge-gray">5</span></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><button class="toggle on"></button></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;">✎ 🗑</td></tr>
+          <tr style="opacity:.5;"><td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;font-weight:500;text-decoration:line-through;">Reorganisatie</td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><span class="badge badge-gray">0</span></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><span class="badge badge-gray">1</span></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;"><button class="toggle off"></button></td><td style="text-align:center;padding:8px;border-bottom:1px solid #f1f5f9;">✎ 🗑</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

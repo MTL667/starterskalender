@@ -8,6 +8,7 @@ type NotifField =
   | 'taskEmails'
   | 'materialAlerts'
   | 'starterCancellation'
+  | 'starterCreated'
   | 'entraAlerts'
 
 /**
