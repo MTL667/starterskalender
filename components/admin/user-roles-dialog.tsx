@@ -152,7 +152,7 @@ export function UserRolesDialog({ open, onClose, userId, userName }: UserRolesDi
           <DialogTitle>Rollen & toegang — {userName}</DialogTitle>
           <DialogDescription>
             Ken rechtengroepen toe met een optionele entity-scope. Een toekenning zonder entiteiten
-            geldt globaal (alle entiteiten). System-rollen met "bypass" overschrijven de scope altijd.
+            geldt globaal (alle entiteiten). System-rollen met &quot;bypass&quot; overschrijven de scope altijd.
           </DialogDescription>
         </DialogHeader>
 

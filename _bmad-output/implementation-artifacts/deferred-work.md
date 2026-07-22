@@ -85,3 +85,12 @@
 - **Duplicate MaterialStatus types in 4+ files** — Type union is lokaal gedefinieerd in meerdere componenten i.p.v. geïmporteerd uit Prisma of een shared type.
 - **Documentation: data-models.md** — StarterMaterial sectie vermeldt COLLECTED status niet.
 - **Geen automated tests voor COLLECTED status** — Nieuwe enum waarde heeft geen unit/integration test coverage.
+
+## Deferred from: ESLint 9 / audit split (2026-07-22)
+
+- **npm audit cleanup** — Address remaining npm audit findings (`npm audit fix` and targeted major bumps for packages like jspdf, nodemailer, next, axios). Deferred from the Docker warning cleanup so ESLint 9 can ship first with lower blast radius. ~48 reported vulns (3 critical, 16 high).
+
+## Deferred from: ESLint 9 upgrade (2026-07-22)
+
+- **React Compiler hooks cleanup** — `react-hooks/set-state-in-effect`, `purity`, `refs`, and `immutability` are currently warnings (~29 findings). Upgrade them to errors once the affected components are refactored.
+- **Lint scope parity with old `next lint`** — `eslint .` also covers `prisma/`, root configs, `i18n/`, etc. Consider narrowing with a `files` pattern or eslint CLI args if noise becomes a problem.

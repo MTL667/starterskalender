@@ -11,7 +11,6 @@ import { downloadDocument, isDocsGraphConfigured, isSafeImageMimeType } from '@/
 //   - splits op code-point grens (geen halve surrogate pair)
 function sanitizeFileName(name: string): string {
   const stripped = name
-    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x1F\x7F"\\\u2028\u2029]/g, '_')
   // `Array.from` itereert op code points, dus surrogate pairs blijven intact.
   const codePoints = Array.from(stripped)
@@ -43,7 +42,6 @@ function rfc5987Encode(value: string): string {
 function safeLogValue(value: unknown): string {
   const s = typeof value === 'string' ? value : String(value)
   const truncated = s.length > 120 ? s.slice(0, 120) + '…' : s
-  // eslint-disable-next-line no-control-regex
   return truncated.replace(/[\x00-\x1F\x7F]/g, (c) => {
     if (c === '\n') return '\\n'
     if (c === '\r') return '\\r'

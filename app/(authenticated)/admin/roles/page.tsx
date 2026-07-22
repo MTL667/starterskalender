@@ -287,7 +287,7 @@ export default function AdminRolesPage() {
                     {creating && (
                       <>
                         <Label htmlFor="key" className="text-xs">
-                          Key (klein, geen spaties, bv. "marketing-operator")
+                          Key (klein, geen spaties, bv. &quot;marketing-operator&quot;)
                         </Label>
                         <Input
                           id="key"
