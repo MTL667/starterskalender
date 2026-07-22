@@ -1,8 +1,8 @@
 # Multi-stage build voor Next.js applicatie
 
 # Stage 1: Dependencies
-# Use Node 20 for Next.js 16+ support (requires >=20.9.0)
-FROM node:20-alpine3.19 AS deps
+# Node 22 LTS — matches .nvmrc; also satisfies pdfjs-dist engines (>=20.19 / >=22.13)
+FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY prisma ./prisma
 RUN npm ci --legacy-peer-deps
 
 # Stage 2: Builder
-FROM node:20-alpine3.19 AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Kopieer node_modules (inclusief gegenereerde Prisma client)
@@ -31,12 +31,11 @@ ENV NEXT_PRIVATE_WORKERS=2
 RUN npm run build
 
 # Stage 3: Runner
-FROM node:20-alpine3.19 AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
-# Installeer OpenSSL voor Prisma, curl voor cron jobs, en su-exec voor user switching
-RUN apk add --no-cache openssl curl su-exec \
-    && apk add --no-cache --repository=https://dl-cdn.alpinelinux.org/alpine/v3.21/main postgresql17-client
+# Installeer OpenSSL voor Prisma, curl voor cron jobs, su-exec, en psql client
+RUN apk add --no-cache openssl curl su-exec postgresql17-client
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
