@@ -411,7 +411,7 @@ export async function PATCH(
         try {
           const { resolveStarterDateChangeRecipients } = await import('@/lib/starter-notification-recipients')
           const { sendStarterDateChangeEmail } = await import('@/lib/email')
-          const recipients = await resolveStarterDateChangeRecipients(entityId, user.id)
+          const { recipients } = await resolveStarterDateChangeRecipients(entityId, user.id)
           if (recipients.length > 0) {
             await sendStarterDateChangeEmail({
               to: recipients.map((r) => r.email),

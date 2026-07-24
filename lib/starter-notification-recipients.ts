@@ -8,30 +8,31 @@ export type StarterNotifyRecipient = {
   name: string | null
 }
 
+export type StarterNotifyResolveMeta = {
+  eligibleBeforePref: number
+  afterPrefFilter: number
+  excludedActor: boolean
+}
+
 /**
- * Recipients for date-change mail — mirrors cancellation/starterCreated:
- * - users with starters:read on the entity (role-based)
- * - plus active entity memberships
- * Then: preference starterDateChange on, exclude actor.
+ * Recipients for date-change mail:
+ * - any ACTIVE/INVITED user with starters:read on the entity (RBAC)
+ * - plus active entity memberships (legacy)
+ * - preference starterDateChange not explicitly off
+ * - actor excluded
  */
 export async function resolveStarterDateChangeRecipients(
   entityId: string,
   excludeUserId: string,
-): Promise<StarterNotifyRecipient[]> {
+): Promise<{ recipients: StarterNotifyRecipient[]; meta: StarterNotifyResolveMeta }> {
   const byId = new Map<string, StarterNotifyRecipient>()
 
+  // Broad load: all users with any role assignment, then filter with can().
+  // Avoids brittle nested permission SQL that can miss valid assignees.
   const roleUsers = await prisma.user.findMany({
     where: {
-      status: 'ACTIVE',
-      roleAssignments: {
-        some: {
-          role: {
-            permissions: {
-              some: { permissionKey: 'starters:read' },
-            },
-          },
-        },
-      },
+      status: { in: ['ACTIVE', 'INVITED'] },
+      roleAssignments: { some: {} },
     },
     include: ROLE_ASSIGNMENTS_INCLUDE,
   })
@@ -42,7 +43,6 @@ export async function resolveStarterDateChangeRecipients(
     byId.set(u.id, { id: u.id, email: u.email, name: u.name })
   }
 
-  // Entity members (same as starterCreated / cancellation broadcasts)
   const memberships = await prisma.membership.findMany({
     where: { entityId },
     include: {
@@ -54,14 +54,23 @@ export async function resolveStarterDateChangeRecipients(
 
   for (const m of memberships) {
     const u = m.user
-    if (!u || u.id === excludeUserId || !u.email || u.status !== 'ACTIVE') continue
+    if (!u || u.id === excludeUserId || !u.email) continue
+    if (u.status !== 'ACTIVE' && u.status !== 'INVITED') continue
     if (!byId.has(u.id)) {
       byId.set(u.id, { id: u.id, email: u.email, name: u.name })
     }
   }
 
   const eligible = [...byId.values()]
-  if (eligible.length === 0) return []
+  const meta: StarterNotifyResolveMeta = {
+    eligibleBeforePref: eligible.length,
+    afterPrefFilter: eligible.length,
+    excludedActor: true,
+  }
+
+  if (eligible.length === 0) {
+    return { recipients: [], meta }
+  }
 
   try {
     const allowedIds = await filterByNotificationPreference(
@@ -70,10 +79,11 @@ export async function resolveStarterDateChangeRecipients(
       'starterDateChange',
     )
     const allowed = new Set(allowedIds)
-    return eligible.filter((r) => allowed.has(r.id))
+    const recipients = eligible.filter((r) => allowed.has(r.id))
+    meta.afterPrefFilter = recipients.length
+    return { recipients, meta }
   } catch (err) {
-    // Column not migrated yet, or prefs query failed — opt-in default
     console.warn('starterDateChange pref filter failed, falling back to all eligible:', err)
-    return eligible
+    return { recipients: eligible, meta }
   }
 }

@@ -33,13 +33,14 @@ export async function GET(
       return NextResponse.json({ recipients: [] })
     }
 
-    const recipients = await resolveStarterDateChangeRecipients(starter.entityId, user.id)
+    const { recipients, meta } = await resolveStarterDateChangeRecipients(starter.entityId, user.id)
     return NextResponse.json({
       recipients: recipients.map((r) => ({
         id: r.id,
         email: r.email,
         name: r.name || r.email,
       })),
+      meta,
     })
   } catch (error) {
     console.error('Error resolving date-change recipients:', error)

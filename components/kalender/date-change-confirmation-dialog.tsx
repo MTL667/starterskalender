@@ -94,7 +94,11 @@ export function DateChangeConfirmationDialog({
                     Ontvangers konden niet geladen worden. Je kan wel opslaan zonder mail, of annuleren.
                   </p>
                 ) : recipients.length === 0 ? (
-                  <p className="text-xs">Niemand ontvangt momenteel deze melding (of iedereen heeft ze uitstaan).</p>
+                  <p className="text-xs">
+                    Geen andere collega&apos;s gevonden die starters van deze entiteit mogen zien.
+                    (Jijzelf krijgt deze mail niet.) Controleer of collega&apos;s de juiste rol hebben
+                    en of &quot;Datumwijziging&quot; in hun profiel aanstaat.
+                  </p>
                 ) : (
                   <ul className="max-h-40 overflow-y-auto rounded-md border divide-y text-xs">
                     {recipients.map((r) => (

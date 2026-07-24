@@ -56,8 +56,7 @@ export async function filterByNotificationPreference(
     prefMap.set(p.userId, (p as Record<string, any>)[field])
   }
 
-  return userIds.filter(uid => {
-    const val = prefMap.get(uid)
-    return val === undefined || val === true
-  })
+  // Opt-out model: only exclude when explicitly false.
+  // missing row / undefined / null ⇒ enabled (matches isNotificationEnabled).
+  return userIds.filter(uid => prefMap.get(uid) !== false)
 }
