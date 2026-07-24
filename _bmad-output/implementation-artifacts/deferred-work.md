@@ -94,3 +94,9 @@
 
 - **React Compiler hooks cleanup** — `react-hooks/set-state-in-effect`, `purity`, `refs`, and `immutability` are currently warnings (~29 findings). Upgrade them to errors once the affected components are refactored.
 - **Lint scope parity with old `next lint`** — `eslint .` also covers `prisma/`, root configs, `i18n/`, etc. Consider narrowing with a `files` pattern or eslint CLI args if noise becomes a problem.
+
+## Deferred from: date-change notification (2026-07-24)
+
+- **FR i18n for date-change confirmation dialog** — Copy is currently hardcoded Dutch.
+- **Mail failure after successful save** — PATCH returns 200 even if SendGrid fails; consider surfacing emailSent flag.
+- **Recipient query scale** — resolveStarterDateChangeRecipients loads all ACTIVE users with starters:read globally then filters in JS.

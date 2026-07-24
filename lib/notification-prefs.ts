@@ -9,6 +9,7 @@ type NotifField =
   | 'materialAlerts'
   | 'starterCancellation'
   | 'starterCreated'
+  | 'starterDateChange'
   | 'entraAlerts'
 
 /**

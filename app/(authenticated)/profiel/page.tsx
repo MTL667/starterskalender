@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Check, ClipboardList, Package, UserX, UserPlus, Shield } from 'lucide-react'
+import { Mail, Check, ClipboardList, Package, UserX, UserPlus, CalendarClock, Shield } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 
 interface NotificationPreference {
@@ -20,6 +20,7 @@ interface NotificationPreference {
   materialAlerts: boolean
   starterCancellation: boolean
   starterCreated: boolean
+  starterDateChange: boolean
   entraAlerts: boolean
   entity: {
     id: string
@@ -33,6 +34,7 @@ interface EntityCapabilities {
   materials: boolean
   cancellation: boolean
   starterCreated: boolean
+  starterDateChange: boolean
   entra: boolean
 }
 
@@ -57,6 +59,7 @@ const OPERATIONAL_OPTIONS: NotifOption[] = [
   { field: 'materialAlerts', labelKey: 'materialAlerts', descKey: 'materialAlertsDescription', capability: 'materials' },
   { field: 'starterCancellation', labelKey: 'starterCancellation', descKey: 'starterCancellationDescription', capability: 'cancellation' },
   { field: 'starterCreated', labelKey: 'starterCreated', descKey: 'starterCreatedDescription', capability: 'starterCreated' },
+  { field: 'starterDateChange', labelKey: 'starterDateChange', descKey: 'starterDateChangeDescription', capability: 'starterDateChange' },
   { field: 'entraAlerts', labelKey: 'entraAlerts', descKey: 'entraAlertsDescription', capability: 'entra' },
 ]
 
@@ -130,6 +133,7 @@ export default function ProfielPage() {
       materialAlerts: enable,
       starterCancellation: enable,
       starterCreated: enable,
+      starterDateChange: enable,
       entraAlerts: enable,
     }
 
@@ -155,6 +159,7 @@ export default function ProfielPage() {
             materialAlerts: enable,
             starterCancellation: enable,
             starterCreated: enable,
+            starterDateChange: enable,
             entraAlerts: enable,
           }
         })
@@ -175,6 +180,7 @@ export default function ProfielPage() {
     if (entityCaps?.materials) { total++; if (pref.materialAlerts) enabled++ }
     if (entityCaps?.cancellation) { total++; if (pref.starterCancellation) enabled++ }
     if (entityCaps?.starterCreated) { total++; if (pref.starterCreated) enabled++ }
+    if (entityCaps?.starterDateChange) { total++; if (pref.starterDateChange) enabled++ }
     if (entityCaps?.entra) { total++; if (pref.entraAlerts) enabled++ }
 
     return { enabled, total }
@@ -376,6 +382,7 @@ function getOperationalIcon(options: NotifOption[]) {
     case 'materialAlerts': return <Package className="h-3.5 w-3.5" />
     case 'starterCancellation': return <UserX className="h-3.5 w-3.5" />
     case 'starterCreated': return <UserPlus className="h-3.5 w-3.5" />
+    case 'starterDateChange': return <CalendarClock className="h-3.5 w-3.5" />
     case 'entraAlerts': return <Shield className="h-3.5 w-3.5" />
     default: return <Shield className="h-3.5 w-3.5" />
   }

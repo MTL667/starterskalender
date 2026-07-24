@@ -577,6 +577,7 @@ model NotificationPreference {
   materialAlerts      Boolean @default(true) // Materiaal-verlopen meldingen (in-app + email)
   starterCancellation Boolean @default(true) // Starter-geannuleerd broadcast email
   starterCreated      Boolean @default(true) // Nieuwe starter aangemaakt in entiteit (email + in-app)
+  starterDateChange   Boolean @default(true) // Startdatum / inleverdatum gewijzigd (email)
   entraAlerts         Boolean @default(true) // Entra/IT-gerelateerde waarschuwingen (in-app)
 
   createdAt DateTime @default(now())

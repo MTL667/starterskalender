@@ -4,6 +4,22 @@ import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz'
 const TIMEZONE = 'Europe/Brussels'
 
 /**
+ * Calendar day key (yyyy-MM-dd) in Europe/Brussels.
+ * Plain date strings (from <input type="date">) are returned as-is.
+ */
+export function toBrusselsDateKey(date: Date | string | null | undefined): string | null {
+  if (!date) return null
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) return date
+  const d = typeof date === 'string' ? new Date(date) : date
+  if (Number.isNaN(d.getTime())) return null
+  const zoned = utcToZonedTime(d, TIMEZONE)
+  const y = zoned.getFullYear()
+  const m = String(zoned.getMonth() + 1).padStart(2, '0')
+  const day = String(zoned.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/**
  * Berekent het weeknummer (ISO 8601 week, Monday-first) voor een datum
  * @param date - De datum (in Europe/Brussels timezone)
  * @returns Het weeknummer (1-53)

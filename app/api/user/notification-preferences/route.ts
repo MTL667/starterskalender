@@ -90,6 +90,7 @@ export async function GET() {
               materialAlerts: true,
               starterCancellation: true,
               starterCreated: true,
+              starterDateChange: true,
               entraAlerts: true,
             },
           })
@@ -110,13 +111,14 @@ export async function GET() {
 
     // Bepaal per-entity capabilities (welke toggles de user mag zien)
     const membershipSet = new Set(user.memberships.map(m => m.entity.id))
-    const capabilities: Record<string, { tasks: boolean; materials: boolean; cancellation: boolean; starterCreated: boolean; entra: boolean }> = {}
+    const capabilities: Record<string, { tasks: boolean; materials: boolean; cancellation: boolean; starterCreated: boolean; starterDateChange: boolean; entra: boolean }> = {}
 
     for (const entityId of accessibleEntities) {
       const hasTasks = can(authUser, 'tasks:read:assigned', { entityId }) || can(authUser, 'tasks:read', { entityId })
       const hasMaterials = can(authUser, 'materials:manage', { entityId }) || can(authUser, 'admin:users:manage', { entityId })
       const hasCancellation = can(authUser, 'starters:read', { entityId })
       const hasStarterCreated = can(authUser, 'starters:read', { entityId })
+      const hasStarterDateChange = can(authUser, 'starters:read', { entityId })
       const hasEntra = membershipSet.has(entityId) || can(authUser, 'admin:entities:manage', { entityId })
 
       capabilities[entityId] = {
@@ -124,6 +126,7 @@ export async function GET() {
         materials: hasMaterials,
         cancellation: hasCancellation,
         starterCreated: hasStarterCreated,
+        starterDateChange: hasStarterDateChange,
         entra: hasEntra,
       }
     }
@@ -148,6 +151,7 @@ const UpdatePreferenceSchema = z.object({
   materialAlerts: z.boolean().optional(),
   starterCancellation: z.boolean().optional(),
   starterCreated: z.boolean().optional(),
+  starterDateChange: z.boolean().optional(),
   entraAlerts: z.boolean().optional(),
 })
 
@@ -202,12 +206,14 @@ export async function PATCH(req: Request) {
     const hasMaterials = can(authUser, 'materials:manage', { entityId: data.entityId }) || can(authUser, 'admin:users:manage', { entityId: data.entityId })
     const hasCancellation = can(authUser, 'starters:read', { entityId: data.entityId })
     const hasStarterCreated = can(authUser, 'starters:read', { entityId: data.entityId })
+    const hasStarterDateChange = can(authUser, 'starters:read', { entityId: data.entityId })
     const hasEntra = !!membership || can(authUser, 'admin:entities:manage', { entityId: data.entityId })
 
     if (!hasTasks) delete (data as any).taskEmails
     if (!hasMaterials) delete (data as any).materialAlerts
     if (!hasCancellation) delete (data as any).starterCancellation
     if (!hasStarterCreated) delete (data as any).starterCreated
+    if (!hasStarterDateChange) delete (data as any).starterDateChange
     if (!hasEntra) delete (data as any).entraAlerts
 
     // Update of create preference
@@ -227,6 +233,7 @@ export async function PATCH(req: Request) {
         ...(data.materialAlerts !== undefined && { materialAlerts: data.materialAlerts }),
         ...(data.starterCancellation !== undefined && { starterCancellation: data.starterCancellation }),
         ...(data.starterCreated !== undefined && { starterCreated: data.starterCreated }),
+        ...(data.starterDateChange !== undefined && { starterDateChange: data.starterDateChange }),
         ...(data.entraAlerts !== undefined && { entraAlerts: data.entraAlerts }),
       },
       create: {
@@ -240,6 +247,7 @@ export async function PATCH(req: Request) {
         materialAlerts: data.materialAlerts ?? true,
         starterCancellation: data.starterCancellation ?? true,
         starterCreated: data.starterCreated ?? true,
+        starterDateChange: data.starterDateChange ?? true,
         entraAlerts: data.entraAlerts ?? true,
       },
       include: {

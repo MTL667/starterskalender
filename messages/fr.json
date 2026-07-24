@@ -1106,6 +1106,8 @@
     "starterCancellationDescription": "Email lorsqu'un collaborateur est annulé",
     "starterCreated": "Notifications nouveau collaborateur",
     "starterCreatedDescription": "Email et notification in-app lorsqu'un nouveau collaborateur est créé",
+    "starterDateChange": "Notifications de changement de date",
+    "starterDateChangeDescription": "Email lorsque la date de début ou de retour matériel d'un collaborateur change",
     "entraAlerts": "Alertes Entra / IT",
     "entraAlertsDescription": "Avertissements concernant le consentement Entra ou les certificats expirés",
     "aboutNotifications": "À propos des notifications :",

@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import { format } from 'date-fns'
+import { toBrusselsDateKey } from '@/lib/week-utils'
 import { Trash2, XCircle, Copy, Check, FileSignature, Search, UserCheck, PenLine, RefreshCw, Clock, AlertTriangle, Package, Loader2, ShoppingCart, ImageIcon, Cloud, CloudOff, Building2, CheckCircle2, Undo2 } from 'lucide-react'
 import { getExperienceText } from '@/lib/experience-utils'
 import { useSession } from 'next-auth/react'
@@ -30,6 +31,11 @@ import { useHealthScores } from '@/lib/use-health-scores'
 import { StarterAvatar } from '@/components/kalender/starter-avatar'
 import { PhotoPickerDialog } from '@/components/kalender/photo-picker-dialog'
 import { OffboardingSection } from '@/components/offboarding/OffboardingSection'
+import {
+  DateChangeConfirmationDialog,
+  type DateChangeRecipient,
+  type DateChangeSummary,
+} from '@/components/kalender/date-change-confirmation-dialog'
 
 interface Starter {
   id: string
@@ -168,6 +174,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
   const [regeneratingTasks, setRegeneratingTasks] = useState(false)
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null)
   const [pendingConfirmOpen, setPendingConfirmOpen] = useState(false)
+  const [dateChangeDialogOpen, setDateChangeDialogOpen] = useState(false)
+  const [dateChangeSummary, setDateChangeSummary] = useState<DateChangeSummary>({})
+  const [dateChangeRecipients, setDateChangeRecipients] = useState<DateChangeRecipient[]>([])
+  const [dateChangeRecipientsLoading, setDateChangeRecipientsLoading] = useState(false)
+  const [dateChangePreviewError, setDateChangePreviewError] = useState(false)
   const [assigningMaterials, setAssigningMaterials] = useState(false)
   const [photoPickerOpen, setPhotoPickerOpen] = useState(false)
   const [photoCacheBuster, setPhotoCacheBuster] = useState<number>(() => Date.now())
@@ -688,6 +699,53 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
+  const detectDateChanges = (): DateChangeSummary | null => {
+    if (!isEdit || !starter) return null
+    // Pending boarding activation is a separate flow — no colleague notify dialog
+    if (starter.isPendingBoarding) return null
+
+    const summary: DateChangeSummary = {}
+
+    const oldStart = toBrusselsDateKey(starter.startDate)
+    const newStart = formData.startDate ? toBrusselsDateKey(formData.startDate) : null
+    if (oldStart !== newStart) {
+      summary.startDate = { from: oldStart, to: newStart }
+    }
+
+    if (formData.type === 'OFFBOARDING' || starter.type === 'OFFBOARDING') {
+      const oldReturn = toBrusselsDateKey(starter.materialReturnDate)
+      const newReturn = formData.materialReturnDate ? toBrusselsDateKey(formData.materialReturnDate) : null
+      if (oldReturn !== newReturn) {
+        summary.materialReturnDate = { from: oldReturn, to: newReturn }
+      }
+    }
+
+    return summary.startDate || summary.materialReturnDate ? summary : null
+  }
+
+  const openDateChangeDialog = async (summary: DateChangeSummary) => {
+    setDateChangeSummary(summary)
+    setDateChangeDialogOpen(true)
+    setDateChangeRecipients([])
+    setDateChangePreviewError(false)
+    if (!starter?.id) return
+    setDateChangeRecipientsLoading(true)
+    try {
+      const res = await fetch(`/api/starters/${starter.id}/date-change-recipients`)
+      if (res.ok) {
+        const data = await res.json()
+        setDateChangeRecipients(data.recipients || [])
+      } else {
+        setDateChangePreviewError(true)
+      }
+    } catch {
+      setDateChangePreviewError(true)
+      setDateChangeRecipients([])
+    } finally {
+      setDateChangeRecipientsLoading(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -704,6 +762,13 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     // For new ONBOARDING starters without startDate, show pending boarding confirmation
     if (!isEdit && formData.type === 'ONBOARDING' && !formData.startDate) {
       setPendingConfirmOpen(true)
+      return
+    }
+
+    // On edit: ask whether to notify colleagues when dates change
+    const dateChanges = detectDateChanges()
+    if (dateChanges) {
+      await openDateChangeDialog(dateChanges)
       return
     }
 
@@ -774,7 +839,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
     }
   }
 
-  const submitStarter = async (isPendingBoarding: boolean) => {
+  const submitStarter = async (isPendingBoarding: boolean, options?: { notifyDateChange?: boolean }) => {
     setLoading(true)
 
     try {
@@ -837,6 +902,10 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         experienceEntity: formData.type === 'ONBOARDING' && formData.hasExperience ? (formData.experienceEntity || null) : null,
         phoneNumber: formData.phoneNumber || null,
         desiredEmail: formData.desiredEmail || null,
+      }
+
+      if (options?.notifyDateChange) {
+        data.notifyDateChange = true
       }
 
       if (!isEdit) {
@@ -902,6 +971,7 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         }
       }
 
+      setDateChangeDialogOpen(false)
       onClose(true)
     } catch (error) {
       console.error('Error saving starter:', error)
@@ -2804,6 +2874,21 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <DateChangeConfirmationDialog
+      open={dateChangeDialogOpen}
+      onOpenChange={(open) => {
+        if (loading) return
+        setDateChangeDialogOpen(open)
+      }}
+      summary={dateChangeSummary}
+      recipients={dateChangeRecipients}
+      loadingRecipients={dateChangeRecipientsLoading}
+      previewError={dateChangePreviewError}
+      submitting={loading}
+      onConfirmWithNotify={() => submitStarter(false, { notifyDateChange: true })}
+      onConfirmWithoutNotify={() => submitStarter(false)}
+    />
 
     {/* Pending Boarding Confirmation Dialog */}
     <Dialog open={pendingConfirmOpen} onOpenChange={setPendingConfirmOpen}>

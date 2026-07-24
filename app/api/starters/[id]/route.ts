@@ -48,6 +48,7 @@ const UpdateStarterSchema = z.object({
   terminationInitiator: z.enum(['ENTITY_TERMINATED', 'MUTUAL_AGREEMENT', 'EMPLOYEE_RESIGNED', 'FORCE_MAJEURE']).nullable().optional(),
   leaveReasonId: z.string().nullable().optional(),
   leaveReasonNote: z.string().nullable().optional(),
+  notifyDateChange: z.boolean().optional(),
 })
 
 // GET - Get single starter
@@ -109,16 +110,29 @@ export async function PATCH(
 
     const body = await request.json()
     const parsed = UpdateStarterSchema.parse(body)
+    const notifyDateChange = parsed.notifyDateChange === true
+    const { notifyDateChange: _notifyFlag, ...parsedFields } = parsed
 
     // Check if this is a pending boarding starter being activated
     const existingStarter = await prisma.starter.findUnique({
       where: { id },
-      select: { isPendingBoarding: true, type: true, entityId: true, employmentType: true },
+      select: {
+        isPendingBoarding: true,
+        type: true,
+        entityId: true,
+        employmentType: true,
+        startDate: true,
+        materialReturnDate: true,
+        firstName: true,
+        lastName: true,
+        roleTitle: true,
+        entity: { select: { id: true, name: true } },
+      },
     })
 
     // RBAC v2: strip protected velden uit de update-payload als user geen permissie heeft
     const authz = await getCurrentAuthorizedUser()
-    const { data, dropped } = filterWritableFields(parsed, authz, 'starters', {
+    const { data, dropped } = filterWritableFields(parsedFields, authz, 'starters', {
       entityId: existingStarter?.entityId ?? null,
     })
     if (dropped.length > 0) {
@@ -377,6 +391,46 @@ export async function PATCH(
 
     if (starter.entityId) {
       eventBus.emit({ type: 'starter:updated', entityId: starter.entityId, payload: { starterId: starter.id } })
+    }
+
+    // Optional date-change notification email (explicit client opt-in only)
+    if (notifyDateChange && existingStarter && !isActivatingPending) {
+      const { toBrusselsDateKey } = await import('@/lib/week-utils')
+      const sameDay = (a: Date | null | undefined, b: Date | null | undefined) =>
+        toBrusselsDateKey(a ?? null) === toBrusselsDateKey(b ?? null)
+
+      const startChanged =
+        data.startDate !== undefined &&
+        !sameDay(existingStarter.startDate, updateData.startDate ?? null)
+      const returnChanged =
+        data.materialReturnDate !== undefined &&
+        !sameDay(existingStarter.materialReturnDate, updateData.materialReturnDate ?? null)
+
+      const entityId = starter.entityId || existingStarter.entityId
+      if ((startChanged || returnChanged) && entityId) {
+        try {
+          const { resolveStarterDateChangeRecipients } = await import('@/lib/starter-notification-recipients')
+          const { sendStarterDateChangeEmail } = await import('@/lib/email')
+          const recipients = await resolveStarterDateChangeRecipients(entityId, user.id)
+          if (recipients.length > 0) {
+            await sendStarterDateChangeEmail({
+              to: recipients.map((r) => r.email),
+              starterName: `${starter.firstName} ${starter.lastName}`,
+              entityName: starter.entity?.name || existingStarter.entity?.name || '—',
+              changedByName: user.name || user.email,
+              roleTitle: starter.roleTitle,
+              startDateChange: startChanged
+                ? { from: existingStarter.startDate, to: starter.startDate }
+                : null,
+              materialReturnDateChange: returnChanged
+                ? { from: existingStarter.materialReturnDate, to: starter.materialReturnDate }
+                : null,
+            })
+          }
+        } catch (mailErr) {
+          console.error('Failed to send date-change notification:', mailErr)
+        }
+      }
     }
 
     const safe = sanitizeFields(starter, authz, 'starters', { entityId: starter.entityId })

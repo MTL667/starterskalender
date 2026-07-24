@@ -374,3 +374,96 @@ export async function sendStarterCreatedEmail(input: StarterCreatedEmailInput): 
     console.error('Failed to send starter-created email:', error)
   }
 }
+
+/**
+ * Stuurt een notificatie wanneer start- of inleverdatum wijzigt
+ */
+export interface StarterDateChangeEmailInput {
+  to: string[]
+  starterName: string
+  entityName: string
+  changedByName: string
+  roleTitle?: string | null
+  startDateChange?: { from: Date | null; to: Date | null } | null
+  materialReturnDateChange?: { from: Date | null; to: Date | null } | null
+}
+
+export async function sendStarterDateChangeEmail(input: StarterDateChangeEmailInput): Promise<void> {
+  const { to, starterName, entityName, changedByName, roleTitle, startDateChange, materialReturnDateChange } = input
+
+  if (!to || to.length === 0) return
+  if (!startDateChange && !materialReturnDateChange) return
+
+  const fmt = (d: Date | null) => (d ? format(d, 'dd/MM/yyyy', { locale: nl }) : '—')
+
+  const parts: string[] = []
+  if (startDateChange) {
+    parts.push(`startdatum (${fmt(startDateChange.from)} → ${fmt(startDateChange.to)})`)
+  }
+  if (materialReturnDateChange) {
+    parts.push(`inleverdatum (${fmt(materialReturnDateChange.from)} → ${fmt(materialReturnDateChange.to)})`)
+  }
+
+  const changeSummary = parts.join(' en ')
+  let subject: string
+  if (startDateChange && materialReturnDateChange) {
+    subject = `Airport: Start- en inleverdatum gewijzigd — ${starterName} (${entityName})`
+  } else if (materialReturnDateChange) {
+    subject = `Airport: Inleverdatum gewijzigd — ${starterName} (${entityName})`
+  } else {
+    subject = `Airport: Startdatum gewijzigd — ${starterName} (${entityName})`
+  }
+
+  const rows: string[] = [
+    `<tr><td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600; width: 160px;">Naam</td><td style="padding: 8px 12px;">${starterName}</td></tr>`,
+  ]
+  if (roleTitle) {
+    rows.push(`<tr><td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600;">Functie</td><td style="padding: 8px 12px;">${roleTitle}</td></tr>`)
+  }
+  if (startDateChange) {
+    rows.push(`<tr><td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600;">Startdatum</td><td style="padding: 8px 12px;">${fmt(startDateChange.from)} → <strong>${fmt(startDateChange.to)}</strong></td></tr>`)
+  }
+  if (materialReturnDateChange) {
+    rows.push(`<tr><td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600;">Inleverdatum</td><td style="padding: 8px 12px;">${fmt(materialReturnDateChange.from)} → <strong>${fmt(materialReturnDateChange.to)}</strong></td></tr>`)
+  }
+  rows.push(`<tr><td style="padding: 8px 12px; background: #f3f4f6; font-weight: 600;">Gewijzigd door</td><td style="padding: 8px 12px;">${changedByName}</td></tr>`)
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Datum gewijzigd</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background: #f9fafb;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 32px;">
+      <h1 style="color: #1f2937; font-size: 20px; margin: 0 0 8px;">📅 Datum gewijzigd</h1>
+      <p style="color: #6b7280; margin: 0 0 24px;">
+        De ${changeSummary} van <strong>${starterName}</strong> bij <strong>${entityName}</strong> is aangepast.
+      </p>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+        ${rows.join('\n')}
+      </table>
+      <p style="margin: 0;">
+        <a href="${getAppUrl()}/kalender" style="color: #3b82f6; text-decoration: none;">Bekijk in Airport →</a>
+      </p>
+      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+      <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+        Je ontvangt deze e-mail omdat je starters van ${entityName} kan bekijken. Je kan dit uitschakelen via je profiel-instellingen.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `
+
+  try {
+    await sgMail.sendMultiple({
+      to,
+      from: process.env.SENDGRID_FROM_EMAIL || process.env.MAIL_FROM || 'noreply@example.com',
+      replyTo: process.env.MAIL_REPLY_TO,
+      subject,
+      html,
+    })
+  } catch (error: any) {
+    console.error('Failed to send starter date-change email:', error)
+  }
+}

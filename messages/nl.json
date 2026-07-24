@@ -1106,6 +1106,8 @@
     "starterCancellationDescription": "Email wanneer een starter wordt geannuleerd",
     "starterCreated": "Nieuwe Starter Meldingen",
     "starterCreatedDescription": "Email en in-app melding wanneer een nieuwe starter wordt aangemaakt",
+    "starterDateChange": "Datumwijziging Meldingen",
+    "starterDateChangeDescription": "Email wanneer de startdatum of inleverdatum van een starter wijzigt",
     "entraAlerts": "Entra / IT Meldingen",
     "entraAlertsDescription": "Waarschuwingen over Entra-consent of verlopen certificaten",
     "aboutNotifications": "Over notificaties:",
