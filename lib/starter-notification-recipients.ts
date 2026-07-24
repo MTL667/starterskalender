@@ -9,13 +9,18 @@ export type StarterNotifyRecipient = {
 }
 
 /**
- * Users with starters:read on the entity, preference enabled, excluding the actor.
+ * Recipients for date-change mail — mirrors cancellation/starterCreated:
+ * - users with starters:read on the entity (role-based)
+ * - plus active entity memberships
+ * Then: preference starterDateChange on, exclude actor.
  */
 export async function resolveStarterDateChangeRecipients(
   entityId: string,
   excludeUserId: string,
 ): Promise<StarterNotifyRecipient[]> {
-  const candidates = await prisma.user.findMany({
+  const byId = new Map<string, StarterNotifyRecipient>()
+
+  const roleUsers = await prisma.user.findMany({
     where: {
       status: 'ACTIVE',
       roleAssignments: {
@@ -31,22 +36,44 @@ export async function resolveStarterDateChangeRecipients(
     include: ROLE_ASSIGNMENTS_INCLUDE,
   })
 
-  const eligible: StarterNotifyRecipient[] = []
-  for (const u of candidates) {
-    if (u.id === excludeUserId) continue
-    if (!u.email) continue
-    const authUser = toAuthorizedUser(u)
-    if (!can(authUser, 'starters:read', { entityId })) continue
-    eligible.push({ id: u.id, email: u.email, name: u.name })
+  for (const u of roleUsers) {
+    if (u.id === excludeUserId || !u.email) continue
+    if (!can(toAuthorizedUser(u), 'starters:read', { entityId })) continue
+    byId.set(u.id, { id: u.id, email: u.email, name: u.name })
   }
 
+  // Entity members (same as starterCreated / cancellation broadcasts)
+  const memberships = await prisma.membership.findMany({
+    where: { entityId },
+    include: {
+      user: {
+        select: { id: true, email: true, name: true, status: true },
+      },
+    },
+  })
+
+  for (const m of memberships) {
+    const u = m.user
+    if (!u || u.id === excludeUserId || !u.email || u.status !== 'ACTIVE') continue
+    if (!byId.has(u.id)) {
+      byId.set(u.id, { id: u.id, email: u.email, name: u.name })
+    }
+  }
+
+  const eligible = [...byId.values()]
   if (eligible.length === 0) return []
 
-  const allowedIds = await filterByNotificationPreference(
-    eligible.map((r) => r.id),
-    entityId,
-    'starterDateChange',
-  )
-  const allowed = new Set(allowedIds)
-  return eligible.filter((r) => allowed.has(r.id))
+  try {
+    const allowedIds = await filterByNotificationPreference(
+      eligible.map((r) => r.id),
+      entityId,
+      'starterDateChange',
+    )
+    const allowed = new Set(allowedIds)
+    return eligible.filter((r) => allowed.has(r.id))
+  } catch (err) {
+    // Column not migrated yet, or prefs query failed — opt-in default
+    console.warn('starterDateChange pref filter failed, falling back to all eligible:', err)
+    return eligible
+  }
 }
