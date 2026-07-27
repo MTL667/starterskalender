@@ -2099,6 +2099,32 @@
         "warning": "Kopieer het wachtwoord nu en geef het door aan de starter.",
         "copied": "Gekopieerd",
         "mailboxInfo": "De mailbox is actief binnen ~5 minuten."
+      },
+      "domainRecovery": {
+        "hint": "Dit mailadres kan niet worden aangemaakt op de huidige entiteit (domein niet geldig in deze Entra-tenant).",
+        "resolve": "Oplossen…",
+        "title": "Mailadres kan niet op deze entiteit",
+        "description": "Het gewenste mailadres hoort bij een ander Entra-domein. Kies een andere tenant, pas het mailadres aan, of annuleer.",
+        "otherTenant": "Aanmaken via andere tenant",
+        "editEmail": "Mailadres aanpassen",
+        "cancel": "Annuleren",
+        "back": "Terug",
+        "confirm": "Opnieuw proberen",
+        "selectTenant": "Entiteit / tenant",
+        "selectTenantPlaceholder": "Kies een entiteit…",
+        "loadingEntities": "Entiteiten laden…",
+        "noOtherTenants": "Geen andere entiteiten met een gezonde Entra-koppeling beschikbaar.",
+        "loadEntitiesError": "Entiteiten laden mislukt",
+        "loadingLicenses": "Licenties controleren…",
+        "loadLicensesError": "Licenties laden mislukt",
+        "mappedLicenseOk": "Licentie van de starter-entiteit is beschikbaar: {license}",
+        "mappedLicenseMissing": "Licentie \"{license}\" is niet beschikbaar in de gekozen tenant. Kies een beschikbare licentie.",
+        "mappedLicenseUnknown": "Geen gemapte licentie gevonden. Kies een beschikbare licentie in de gekozen tenant.",
+        "selectLicense": "Licentie",
+        "selectLicensePlaceholder": "Kies een licentie…",
+        "selectLicenseRequired": "Kies een licentie om door te gaan",
+        "noAvailableLicenses": "Geen beschikbare licenties in deze tenant.",
+        "submitError": "Opnieuw proberen mislukt"
       }
     },
     "graphStatus": {

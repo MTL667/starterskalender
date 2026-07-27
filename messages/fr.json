@@ -2098,6 +2098,32 @@
         "warning": "Copiez le mot de passe maintenant et transmettez-le au starter.",
         "copied": "Copié",
         "mailboxInfo": "La boîte mail sera active dans ~5 minutes."
+      },
+      "domainRecovery": {
+        "hint": "Cette adresse mail ne peut pas être créée sur l'entité actuelle (domaine invalide dans ce tenant Entra).",
+        "resolve": "Résoudre…",
+        "title": "Adresse mail impossible sur cette entité",
+        "description": "L'adresse souhaitée appartient à un autre domaine Entra. Choisissez un autre tenant, modifiez l'adresse, ou annulez.",
+        "otherTenant": "Créer via un autre tenant",
+        "editEmail": "Modifier l'adresse mail",
+        "cancel": "Annuler",
+        "back": "Retour",
+        "confirm": "Réessayer",
+        "selectTenant": "Entité / tenant",
+        "selectTenantPlaceholder": "Choisir une entité…",
+        "loadingEntities": "Chargement des entités…",
+        "noOtherTenants": "Aucune autre entité avec une connexion Entra saine n'est disponible.",
+        "loadEntitiesError": "Échec du chargement des entités",
+        "loadingLicenses": "Vérification des licences…",
+        "loadLicensesError": "Échec du chargement des licences",
+        "mappedLicenseOk": "La licence de l'entité du starter est disponible : {license}",
+        "mappedLicenseMissing": "La licence « {license} » n'est pas disponible dans le tenant choisi. Sélectionnez une licence disponible.",
+        "mappedLicenseUnknown": "Aucune licence mappée trouvée. Sélectionnez une licence disponible dans le tenant choisi.",
+        "selectLicense": "Licence",
+        "selectLicensePlaceholder": "Choisir une licence…",
+        "selectLicenseRequired": "Choisissez une licence pour continuer",
+        "noAvailableLicenses": "Aucune licence disponible dans ce tenant.",
+        "submitError": "Échec de la nouvelle tentative"
       }
     },
     "graphStatus": {

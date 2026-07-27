@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { graphApiService } from '@/lib/graph-api-service'
 import { encryptEntra, decryptEntra } from '@/lib/encryption'
 import { createAuditLog } from '@/lib/audit'
+import { skuAvailableUnits } from '@/lib/provisioning-license'
 import { randomBytes } from 'crypto'
 
 type ProvisioningState = 'PENDING' | 'LICENSE_CHECKING' | 'USER_CREATING' | 'LICENSE_ASSIGNING' | 'TAP_CREATING' | 'MAILBOX_WAITING' | 'SUCCESS' | 'FAILED_AT_LICENSE_CHECK' | 'FAILED_AT_USER_CREATION' | 'FAILED_AT_LICENSE_ASSIGNMENT' | 'FAILED_AT_TAP' | 'FAILED_AT_MAILBOX_WAIT'
@@ -15,8 +16,27 @@ interface ProvisioningResult {
   assignedLicenseType?: string
 }
 
+export interface ProvisioningOptions {
+  provisioningEntityId?: string
+  licenseSkuId?: string
+  licenseSkuDisplayName?: string
+}
+
+type StarterProvisioningFields = {
+  id: string
+  entityId: string | null
+  firstName: string
+  lastName: string
+  desiredEmail: string | null
+  roleTitle: string | null
+}
+
 export class ProvisioningEngine {
-  async startProvisioning(starterId: string, triggeredBy: string): Promise<ProvisioningResult> {
+  async startProvisioning(
+    starterId: string,
+    triggeredBy: string,
+    options: ProvisioningOptions = {}
+  ): Promise<ProvisioningResult> {
     const starter = await prisma.starter.findUnique({
       where: { id: starterId },
       select: {
@@ -44,12 +64,17 @@ export class ProvisioningEngine {
       throw new Error('Provisioning already in progress for this starter')
     }
 
+    const jobEntityId = options.provisioningEntityId || starter.entityId
     const job = await prisma.provisioningJob.create({
       data: {
         starterId,
-        entityId: starter.entityId,
+        entityId: jobEntityId,
         state: 'PENDING',
         triggeredBy,
+        assignedLicenseType: options.licenseSkuDisplayName || undefined,
+        graphApiResponses: options.licenseSkuId
+          ? { selectedSkuId: options.licenseSkuId, selectedSkuDisplayName: options.licenseSkuDisplayName || null }
+          : undefined,
       },
     })
 
@@ -57,7 +82,7 @@ export class ProvisioningEngine {
       actorId: triggeredBy,
       action: 'CREATE',
       target: `ProvisioningJob:${job.id}`,
-      meta: { starterId, entityId: starter.entityId },
+      meta: { starterId, entityId: jobEntityId, starterEntityId: starter.entityId },
     })
 
     // Fire and forget - provisioning runs async, SSE endpoint tracks progress
@@ -68,9 +93,16 @@ export class ProvisioningEngine {
     return { jobId: job.id, state: 'PENDING' as ProvisioningState }
   }
 
-  async retryProvisioning(jobId: string, triggeredBy: string): Promise<ProvisioningResult> {
+  async retryProvisioning(
+    jobId: string,
+    triggeredBy: string,
+    options: ProvisioningOptions = {}
+  ): Promise<ProvisioningResult> {
     const failedJob = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
     if (!failedJob) throw new Error('Job not found')
+    if (!failedJob.state.startsWith('FAILED_AT_')) {
+      throw new Error('Can only retry a failed provisioning job')
+    }
 
     const starter = await prisma.starter.findUnique({
       where: { id: failedJob.starterId },
@@ -79,15 +111,47 @@ export class ProvisioningEngine {
 
     if (!starter || !starter.entityId) throw new Error('Starter not found')
 
+    const activeJob = await prisma.provisioningJob.findFirst({
+      where: {
+        starterId: failedJob.starterId,
+        state: { notIn: ['SUCCESS', 'FAILED_AT_LICENSE_CHECK', 'FAILED_AT_USER_CREATION', 'FAILED_AT_LICENSE_ASSIGNMENT', 'FAILED_AT_TAP', 'FAILED_AT_MAILBOX_WAIT'] },
+      },
+    })
+    if (activeJob) {
+      throw new Error('Provisioning already in progress for this starter')
+    }
+
+    const jobEntityId = options.provisioningEntityId || failedJob.entityId
+    const switchingEntity = jobEntityId !== failedJob.entityId
+    const hasLicenseOverride = Boolean(options.licenseSkuId)
+    // Fresh start only when switching Entra tenant (avoids orphaning Graph users on license-only retry)
+    const startFresh = switchingEntity
+
+    const previousResponses =
+      failedJob.graphApiResponses && typeof failedJob.graphApiResponses === 'object' && !Array.isArray(failedJob.graphApiResponses)
+        ? (failedJob.graphApiResponses as Record<string, unknown>)
+        : {}
+
+    const graphApiResponses = options.licenseSkuId
+      ? {
+          ...(!startFresh ? previousResponses : {}),
+          selectedSkuId: options.licenseSkuId,
+          selectedSkuDisplayName: options.licenseSkuDisplayName || null,
+        }
+      : startFresh
+        ? undefined
+        : failedJob.graphApiResponses ?? undefined
+
     const newJob = await prisma.provisioningJob.create({
       data: {
         starterId: failedJob.starterId,
-        entityId: failedJob.entityId,
+        entityId: jobEntityId,
         state: 'PENDING',
         triggeredBy,
-        graphUserId: failedJob.graphUserId,
-        assignedLicenseType: failedJob.assignedLicenseType,
-        temporaryPassword: failedJob.temporaryPassword,
+        graphUserId: startFresh ? null : failedJob.graphUserId,
+        assignedLicenseType: options.licenseSkuDisplayName || (startFresh ? null : failedJob.assignedLicenseType),
+        temporaryPassword: startFresh ? null : failedJob.temporaryPassword,
+        graphApiResponses: graphApiResponses as object | undefined,
       },
     })
 
@@ -95,10 +159,21 @@ export class ProvisioningEngine {
       actorId: triggeredBy,
       action: 'UPDATE',
       target: `ProvisioningJob:${newJob.id}`,
-      meta: { retryOf: jobId, starterId: failedJob.starterId },
+      meta: {
+        retryOf: jobId,
+        starterId: failedJob.starterId,
+        entityId: jobEntityId,
+        switchingEntity,
+        hasLicenseOverride,
+      },
     })
 
-    this.executeProvisioning(newJob.id, starter, failedJob.state, failedJob.graphUserId).catch((err) => {
+    this.executeProvisioning(
+      newJob.id,
+      starter,
+      startFresh ? null : failedJob.state,
+      startFresh ? null : failedJob.graphUserId
+    ).catch((err) => {
       console.error(`Provisioning retry job ${newJob.id} failed unexpectedly:`, err)
     })
 
@@ -134,23 +209,40 @@ export class ProvisioningEngine {
 
   private async executeProvisioning(
     jobId: string,
-    starter: { id: string; entityId: string | null; firstName: string; lastName: string; desiredEmail: string | null; roleTitle: string | null },
+    starter: StarterProvisioningFields,
     resumeFrom?: string | null,
     existingGraphUserId?: string | null
   ): Promise<ProvisioningResult> {
-    const entityId = starter.entityId!
+    const jobRow = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
+    if (!jobRow) throw new Error('Job not found')
+
+    // Graph / password rules use the job's Entra entity (may differ from starter entity)
+    const graphEntityId = jobRow.entityId
+    // License mapping defaults to starter's entity A
+    const licenseEntityId = starter.entityId!
 
     try {
       // Step 1: License Check
       if (!resumeFrom || resumeFrom === 'FAILED_AT_LICENSE_CHECK') {
         await this.updateState(jobId, 'LICENSE_CHECKING')
 
-        const licenseConfig = await this.getLicenseConfig(entityId, starter.roleTitle)
+        const licenseConfig = await this.resolveLicenseConfig(jobId, licenseEntityId, starter.roleTitle, graphEntityId)
         if (!licenseConfig) {
           return this.failJob(jobId, 'FAILED_AT_LICENSE_CHECK', 'No license configuration found for this function')
         }
+        if (licenseConfig.needsSelection) {
+          return this.failJob(
+            jobId,
+            'FAILED_AT_LICENSE_CHECK',
+            `LICENSE_SELECTION_REQUIRED:${JSON.stringify({
+              reason: licenseConfig.reason,
+              mappedSkuId: licenseConfig.mappedSkuId,
+              mappedSkuDisplayName: licenseConfig.mappedSkuDisplayName,
+            })}`
+          )
+        }
 
-        const skuCheck = await this.checkSkuAvailability(entityId, licenseConfig.skuId)
+        const skuCheck = await this.checkSkuAvailability(graphEntityId, licenseConfig.skuId)
         if (skuCheck === 'not_found') {
           return this.failJob(jobId, 'FAILED_AT_LICENSE_CHECK', `License "${licenseConfig.skuDisplayName}" is no longer available in the tenant subscription`)
         }
@@ -169,9 +261,8 @@ export class ProvisioningEngine {
       if (!graphUserId && (!resumeFrom || resumeFrom === 'FAILED_AT_USER_CREATION')) {
         await this.updateState(jobId, 'USER_CREATING')
 
-        const job = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
-        const { token } = await graphApiService.getAuthenticatedClient(entityId)
-        const password = await this.generatePassword(entityId)
+        const { token } = await graphApiService.getAuthenticatedClient(graphEntityId)
+        const password = await this.generatePassword(graphEntityId)
 
         const upn = starter.desiredEmail || `${starter.firstName.toLowerCase()}.${starter.lastName.toLowerCase()}@placeholder.onmicrosoft.com`
 
@@ -201,12 +292,18 @@ export class ProvisioningEngine {
         const user = await res.json()
         graphUserId = user.id
 
+        const currentJob = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
+        const prevResponses =
+          currentJob?.graphApiResponses && typeof currentJob.graphApiResponses === 'object' && !Array.isArray(currentJob.graphApiResponses)
+            ? (currentJob.graphApiResponses as Record<string, unknown>)
+            : {}
+
         await prisma.provisioningJob.update({
           where: { id: jobId },
           data: {
             graphUserId: user.id,
             temporaryPassword: encryptEntra(password),
-            graphApiResponses: { userCreation: { id: user.id, upn: user.userPrincipalName } },
+            graphApiResponses: { ...prevResponses, userCreation: { id: user.id, upn: user.userPrincipalName } },
           },
         })
       }
@@ -220,12 +317,12 @@ export class ProvisioningEngine {
           return this.failJob(jobId, 'FAILED_AT_LICENSE_ASSIGNMENT', 'No Graph user ID available')
         }
 
-        const licenseConfig = await this.getLicenseConfig(entityId, starter.roleTitle)
-        if (!licenseConfig) {
+        const licenseConfig = await this.resolveLicenseConfig(jobId, licenseEntityId, starter.roleTitle, graphEntityId)
+        if (!licenseConfig || licenseConfig.needsSelection) {
           return this.failJob(jobId, 'FAILED_AT_LICENSE_ASSIGNMENT', 'License configuration no longer found')
         }
 
-        const { token } = await graphApiService.getAuthenticatedClient(entityId)
+        const { token } = await graphApiService.getAuthenticatedClient(graphEntityId)
 
         const res = await fetch(`https://graph.microsoft.com/v1.0/users/${job.graphUserId}/assignLicense`, {
           method: 'POST',
@@ -288,6 +385,61 @@ export class ProvisioningEngine {
     return map[currentState] || 'FAILED_AT_LICENSE_CHECK'
   }
 
+  private getSelectedSkuFromJob(job: { graphApiResponses: unknown; assignedLicenseType: string | null }) {
+    const responses =
+      job.graphApiResponses && typeof job.graphApiResponses === 'object' && !Array.isArray(job.graphApiResponses)
+        ? (job.graphApiResponses as Record<string, unknown>)
+        : {}
+    const skuId = typeof responses.selectedSkuId === 'string' ? responses.selectedSkuId : null
+    const displayName =
+      (typeof responses.selectedSkuDisplayName === 'string' && responses.selectedSkuDisplayName) ||
+      job.assignedLicenseType ||
+      null
+    return skuId ? { skuId, skuDisplayName: displayName || skuId } : null
+  }
+
+  /**
+   * Resolve license: job override → mapped config from starter entity A if available on graph entity → needs selection.
+   */
+  private async resolveLicenseConfig(
+    jobId: string,
+    starterEntityId: string,
+    roleTitle: string | null,
+    graphEntityId: string
+  ): Promise<
+    | { needsSelection: false; skuId: string; skuDisplayName: string }
+    | { needsSelection: true; reason: string; mappedSkuId?: string; mappedSkuDisplayName?: string }
+    | null
+  > {
+    const job = await prisma.provisioningJob.findUnique({ where: { id: jobId } })
+    if (!job) return null
+
+    const selected = this.getSelectedSkuFromJob(job)
+    if (selected) {
+      return { needsSelection: false, ...selected }
+    }
+
+    const mapped = await this.getLicenseConfig(starterEntityId, roleTitle)
+    if (!mapped) return null
+
+    // Same tenant as mapping source: use mapped SKU directly
+    if (graphEntityId === starterEntityId) {
+      return { needsSelection: false, ...mapped }
+    }
+
+    const availability = await this.checkSkuAvailability(graphEntityId, mapped.skuId)
+    if (availability === 'available') {
+      return { needsSelection: false, ...mapped }
+    }
+
+    return {
+      needsSelection: true,
+      reason: availability === 'no_capacity' ? 'no_capacity' : 'not_found',
+      mappedSkuId: mapped.skuId,
+      mappedSkuDisplayName: mapped.skuDisplayName,
+    }
+  }
+
   private async getLicenseConfig(entityId: string, roleTitle: string | null) {
     if (!roleTitle) return null
 
@@ -308,7 +460,7 @@ export class ProvisioningEngine {
     const skus = await graphApiService.getSubscribedSkus(entityId)
     const target = skus.find(s => s.skuId === skuId)
     if (!target) return 'not_found'
-    return target.prepaidUnits.enabled - target.consumedUnits > 0 ? 'available' : 'no_capacity'
+    return skuAvailableUnits(target) > 0 ? 'available' : 'no_capacity'
   }
 
   private async generatePassword(entityId: string): Promise<string> {

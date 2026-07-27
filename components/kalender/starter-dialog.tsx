@@ -2282,6 +2282,11 @@ export function StarterDialog({ open, onClose, starter, entities, canEdit }: Sta
                   hasHealthyConnection={starterHasHealthyConnection}
                   hasLicenseConfig={starterHasLicenseConfig}
                   canEdit={canEdit}
+                  onEditEmail={() => {
+                    const el = document.getElementById('desiredEmail') as HTMLInputElement | null
+                    el?.focus()
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }}
                 />
               </div>
             )}

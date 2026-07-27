@@ -100,3 +100,9 @@
 - **FR i18n for date-change confirmation dialog** — Copy is currently hardcoded Dutch.
 - **Mail failure after successful save** — PATCH returns 200 even if SendGrid fails; consider surfacing emailSent flag.
 - **Recipient query scale** — resolveStarterDateChangeRecipients loads all ACTIVE users with starters:read globally then filters in JS.
+
+## Deferred from: alternate Entra tenant selector after UPN domain failure (2026-07-27)
+
+- **Brittle Graph UPN error matching** — `isUpnDomainError` depends on English Graph message substrings; localized/reformatted errors skip recovery. Consider Graph error codes if Microsoft exposes stable ones.
+- **No automated tests for cross-tenant provisioning** — authz boundaries, `resolveLicenseConfig` / startFresh, license-options, and UPN matcher lack unit/integration coverage.
+- **LICENSE_SELECTION_REQUIRED as engine safety-net only** — UI pre-checks before retry; if engine fails with this coded error outside the dialog, there is no dedicated recovery UI yet.

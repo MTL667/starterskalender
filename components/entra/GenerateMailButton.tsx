@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Mail, Loader2, CheckCircle2, Copy, RotateCcw, Trash2 } from 'lucide-react'
 import { ProvisioningStatus } from './ProvisioningStatus'
+import { DomainErrorRecoveryDialog } from './DomainErrorRecoveryDialog'
 import { useProvisioningStatus } from '@/lib/hooks/use-provisioning-status'
+import { isUpnDomainError } from '@/lib/provisioning-errors'
 
 interface GenerateMailButtonProps {
   starterId: string
@@ -13,6 +15,7 @@ interface GenerateMailButtonProps {
   hasHealthyConnection: boolean
   hasLicenseConfig: boolean
   canEdit: boolean
+  onEditEmail?: () => void
 }
 
 export function GenerateMailButton({
@@ -21,14 +24,22 @@ export function GenerateMailButton({
   hasHealthyConnection,
   hasLicenseConfig,
   canEdit,
+  onEditEmail,
 }: GenerateMailButtonProps) {
   const t = useTranslations('entra.provisioning')
   const [triggering, setTriggering] = useState(false)
   const [tempPassword, setTempPassword] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [alreadyProvisioned, setAlreadyProvisioned] = useState(false)
+  const [recoveryOpen, setRecoveryOpen] = useState(false)
+  const autoOpenedForJobRef = useRef<string | null>(null)
 
   const { status, isActive, isFailed, isSuccess, startedAt, reconnect } = useProvisioningStatus(starterId)
+
+  const showDomainRecovery =
+    isFailed &&
+    status.state === 'FAILED_AT_USER_CREATION' &&
+    isUpnDomainError(status.error)
 
   useEffect(() => {
     if (!starterId) return
@@ -51,6 +62,13 @@ export function GenerateMailButton({
       setAlreadyProvisioned(true)
     }
   }, [isActive, isFailed, isSuccess, status.temporaryPassword])
+
+  useEffect(() => {
+    if (showDomainRecovery && status.id && autoOpenedForJobRef.current !== status.id) {
+      autoOpenedForJobRef.current = status.id
+      setRecoveryOpen(true)
+    }
+  }, [showDomainRecovery, status.id])
 
   const handleGenerate = useCallback(async () => {
     setTriggering(true)
@@ -81,6 +99,28 @@ export function GenerateMailButton({
       setTriggering(false)
     }
   }, [starterId, status.id, reconnect])
+
+  const handleConfirmOtherTenant = useCallback(async (payload: {
+    provisioningEntityId: string
+    licenseSkuId?: string
+    licenseSkuDisplayName?: string
+  }) => {
+    if (!status.id) throw new Error(t('domainRecovery.submitError'))
+    // Keep failed UI + dialog mounted until success so errors stay visible
+    const res = await fetch(`/api/provisioning/${starterId}/retry`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId: status.id, ...payload }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(data.error || t('domainRecovery.submitError'))
+    setTriggering(true)
+    reconnect()
+  }, [starterId, status.id, reconnect, t])
+
+  const handleEditEmail = useCallback(() => {
+    onEditEmail?.()
+  }, [onEditEmail])
 
   const handleRemoveUser = useCallback(async () => {
     if (!status.id) return
@@ -157,7 +197,17 @@ export function GenerateMailButton({
           error={status.error}
           assignedLicenseType={status.assignedLicenseType}
         />
-        <div className="flex gap-2">
+        {showDomainRecovery && (
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            {t('domainRecovery.hint')}
+          </p>
+        )}
+        <div className="flex gap-2 flex-wrap">
+          {showDomainRecovery && (
+            <Button variant="default" onClick={() => setRecoveryOpen(true)} disabled={triggering}>
+              {t('domainRecovery.resolve')}
+            </Button>
+          )}
           <Button variant="outline" onClick={handleRetry} disabled={triggering}>
             <RotateCcw className="h-4 w-4 mr-2" />
             {t('retry')}
@@ -169,6 +219,14 @@ export function GenerateMailButton({
             </Button>
           )}
         </div>
+        <DomainErrorRecoveryDialog
+          open={recoveryOpen}
+          onOpenChange={setRecoveryOpen}
+          starterId={starterId}
+          starterEntityId={entityId}
+          onConfirmOtherTenant={handleConfirmOtherTenant}
+          onEditEmail={handleEditEmail}
+        />
       </div>
     )
   }
