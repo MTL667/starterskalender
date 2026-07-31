@@ -54,21 +54,15 @@ export async function validateSendGridFrom(fromEmail: string): Promise<{
       })
     }
 
-    // Fallback: if both list endpoints fail/empty but env From matches, allow env default
-    const envFrom = (process.env.SENDGRID_FROM_EMAIL || process.env.MAIL_FROM || '').toLowerCase()
-    if (!matchedSender && !matchedDomain && envFrom && envFrom === email) {
-      return { ok: true }
-    }
-
     if (matchedSender || matchedDomain) {
       return { ok: true }
     }
 
-    // If APIs returned non-ok (permissions), don't hard-block when we couldn't inspect
-    if (!sendersRes.ok && !domainsRes.ok) {
+    // Partial/failed list APIs → ambiguous (do not claim "unverified")
+    if (!sendersRes.ok || !domainsRes.ok) {
       return {
         ok: false,
-        error: `Could not verify From address with SendGrid (HTTP ${sendersRes.status}/${domainsRes.status}). Ensure the API key can read verified senders.`,
+        error: `Could not fully verify From address with SendGrid (HTTP ${sendersRes.status}/${domainsRes.status}). Ensure the API key can read verified senders and domains.`,
       }
     }
 

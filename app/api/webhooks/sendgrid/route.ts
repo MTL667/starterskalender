@@ -26,20 +26,24 @@ export async function POST(request: NextRequest) {
 
       if (pdfBatchItemId && eventType) {
         const data: Record<string, unknown> = {}
+        let allowedStatuses: string[] | null = null
         if (event.event === 'delivered') {
           data.status = 'DELIVERED'
           data.deliveredAt = new Date()
+          // Only advance from SENT — never clobber PENDING/FAILED
+          allowedStatuses = ['SENT']
         } else if (['bounce', 'dropped', 'spamreport'].includes(event.event)) {
           data.status = 'BOUNCED'
           data.bouncedAt = new Date()
           if (event.reason) data.errorMessage = String(event.reason)
+          allowedStatuses = ['SENT', 'DELIVERED']
         }
         if (event.sg_message_id) {
           data.sgMessageId = String(event.sg_message_id)
         }
-        if (Object.keys(data).length > 0) {
+        if (Object.keys(data).length > 0 && allowedStatuses) {
           await prisma.pdfMailBatchItem.updateMany({
-            where: { id: String(pdfBatchItemId) },
+            where: { id: String(pdfBatchItemId), status: { in: allowedStatuses as any } },
             data,
           })
         }
