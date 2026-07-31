@@ -174,8 +174,15 @@ export function isPdfFileName(fileName: string): boolean {
   return fileName.toLowerCase().endsWith('.pdf')
 }
 
-/** Reject non-PDF payloads even if the filename ends with .pdf */
+/** Reject non-PDF payloads even if the filename ends with .pdf (Buffer-free for client imports). */
 export function looksLikePdf(bytes: Buffer | Uint8Array): boolean {
   if (bytes.length < 5) return false
-  return Buffer.from(bytes.subarray(0, 5)).toString('utf8') === '%PDF-'
+  // %PDF-
+  return (
+    bytes[0] === 0x25 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x44 &&
+    bytes[3] === 0x46 &&
+    bytes[4] === 0x2d
+  )
 }

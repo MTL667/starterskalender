@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { parseRecipientList, pairRecipientsAndPdfs } from '@/lib/pdf-mailer'
 
 type BatchSummary = {
   id: string
@@ -314,6 +315,26 @@ export default function PdfMailerPage() {
     return counts
   }, [batch])
 
+  const batchPreview = useMemo(() => {
+    if (!recipients.trim() && files.length === 0) return null
+    try {
+      const { recipients: parsed, errors } = parseRecipientList(recipients)
+      const pdfMetas = files.map((f, i) => ({ fileName: f.name, storagePath: String(i) }))
+      const pairing = pairRecipientsAndPdfs(parsed, pdfMetas)
+      const parseIssues = errors.filter(e => !/Empty recipient list/i.test(e)).length
+      return {
+        recipientCount: parsed.length,
+        pdfCount: files.length,
+        willSend: pairing.pairs.length,
+        leftoverEmails: pairing.leftoverEmails.length,
+        leftoverPdfs: pairing.leftoverPdfNames.length,
+        parseIssues,
+      }
+    } catch {
+      return null
+    }
+  }, [recipients, files])
+
   return (
     <div className="container mx-auto py-8 max-w-5xl space-y-6">
       <Link href="/admin">
@@ -495,6 +516,34 @@ export default function PdfMailerPage() {
                   <li key={i}>{w}</li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {batchPreview && (
+            <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm space-y-1">
+              <p className="font-medium">{t('previewTitle')}</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
+                <span>{t('previewRecipients', { count: batchPreview.recipientCount })}</span>
+                <span>{t('previewPdfs', { count: batchPreview.pdfCount })}</span>
+                <span className="text-foreground font-medium">
+                  {t('previewWillSend', { count: batchPreview.willSend })}
+                </span>
+                {batchPreview.leftoverEmails > 0 && (
+                  <span className="text-amber-700 dark:text-amber-400">
+                    {t('previewLeftoverEmails', { count: batchPreview.leftoverEmails })}
+                  </span>
+                )}
+                {batchPreview.leftoverPdfs > 0 && (
+                  <span className="text-amber-700 dark:text-amber-400">
+                    {t('previewLeftoverPdfs', { count: batchPreview.leftoverPdfs })}
+                  </span>
+                )}
+                {batchPreview.parseIssues > 0 && (
+                  <span className="text-amber-700 dark:text-amber-400">
+                    {t('previewParseIssues', { count: batchPreview.parseIssues })}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 

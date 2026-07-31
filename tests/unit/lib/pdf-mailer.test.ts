@@ -4,6 +4,7 @@ import {
   pairRecipientsAndPdfs,
   renderPdfMailTemplate,
   isPdfFileName,
+  looksLikePdf,
 } from '@/lib/pdf-mailer'
 
 describe('parseRecipientList', () => {
@@ -127,5 +128,12 @@ describe('isPdfFileName', () => {
   it('accepts pdf extension case-insensitively', () => {
     expect(isPdfFileName('a.PDF')).toBe(true)
     expect(isPdfFileName('a.txt')).toBe(false)
+  })
+})
+
+describe('looksLikePdf', () => {
+  it('detects %PDF- magic without Buffer', () => {
+    expect(looksLikePdf(new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d, 0x31]))).toBe(true)
+    expect(looksLikePdf(new Uint8Array([0x00, 0x01, 0x02, 0x03, 0x04]))).toBe(false)
   })
 })
