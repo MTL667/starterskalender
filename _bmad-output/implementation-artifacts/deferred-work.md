@@ -117,3 +117,10 @@
 ## Deferred from: PDF mailer CSV drop UI (2026-07-31)
 
 - **Non-UTF-8 CSV encoding** — `file.text()` assumes UTF-8; Windows-1252 Excel exports may mangle accents. Add encoding detect/choice if users report corruption.
+
+## Deferred from: PDF mailer chunked upload (2026-07-31)
+
+- **Resume after page refresh** — `draftBatchId` is React-only; refresh orphans server DRAFT + uploaded files. Consider sessionStorage + file-name manifest restore.
+- **Orphan DRAFT cleanup** — abandoned create/upload leaves DB rows and `storage/pdf-mailer` files; needs TTL/sweeper (ties to PDF retention cleanup).
+- **Concurrent chunk upload locking** — no row lock/CAS on `uploadedPdfs`; low risk for single-admin UI.
+- **Resume file-identity check** — retry only checks counts; reordered/replaced files with same count can mis-pair.

@@ -1469,6 +1469,10 @@ model PdfMailBatch {
   subject          String
   bodyHtml         String             @db.Text
   status           PdfMailBatchStatus @default(DRAFT)
+  /// Parsed recipients awaiting finalize: [{ email, name? }]
+  recipientsJson   Json?
+  /// Uploaded PDFs in order: [{ fileName, storagePath }]
+  uploadedPdfs     Json?
   leftoverPdfNames String[]           @default([])
   leftoverEmails   String[]           @default([])
   errorMessage     String?            @db.Text

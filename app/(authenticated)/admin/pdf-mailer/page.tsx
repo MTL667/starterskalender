@@ -61,12 +61,43 @@ export default function PdfMailerPage() {
   const [fromCheck, setFromCheck] = useState<{ ok: boolean; message: string } | null>(null)
   const [checkingFrom, setCheckingFrom] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [parseWarnings, setParseWarnings] = useState<string[]>([])
   const [activeBatchId, setActiveBatchId] = useState<string | null>(null)
+  /** DRAFT batch id when create succeeded but upload/finalize not finished — enables resume. */
+  const [draftBatchId, setDraftBatchId] = useState<string | null>(null)
   const [batch, setBatch] = useState<BatchDetail | null>(null)
   const [history, setHistory] = useState<BatchSummary[]>([])
   const recipientsLoadGen = useRef(0)
+
+  const PDF_CHUNK_SIZE = 10
+  const PDF_CHUNK_MAX_BYTES = 25 * 1024 * 1024
+
+  /** Split files into chunks of at most 10 files or 25MB total (server limits). */
+  const buildPdfChunks = (all: File[]): File[][] => {
+    const chunks: File[][] = []
+    let current: File[] = []
+    let bytes = 0
+    for (const file of all) {
+      const nextBytes = bytes + file.size
+      if (
+        current.length > 0 &&
+        (current.length >= PDF_CHUNK_SIZE || nextBytes > PDF_CHUNK_MAX_BYTES)
+      ) {
+        chunks.push(current)
+        current = []
+        bytes = 0
+      }
+      // Single file over 25MB still goes alone — server rejects >15MB per file.
+      current.push(file)
+      bytes += file.size
+    }
+    if (current.length) chunks.push(current)
+    return chunks
+  }
+
+  const invalidateDraft = () => setDraftBatchId(null)
 
   const loadHistory = useCallback(async () => {
     const res = await fetch('/api/admin/pdf-mailer/batches')
@@ -99,6 +130,7 @@ export default function PdfMailerPage() {
   const onDropFiles = (list: FileList | null) => {
     if (!list) return
     const pdfs = Array.from(list).filter(f => f.name.toLowerCase().endsWith('.pdf'))
+    invalidateDraft()
     setFiles(prev => [...prev, ...pdfs])
   }
 
@@ -136,6 +168,7 @@ export default function PdfMailerPage() {
         setError(t('recipientsFileEmpty'))
         return
       }
+      setDraftBatchId(null)
       setRecipients(text)
       setRecipientsFileName(file.name)
       setParseWarnings([])
@@ -185,24 +218,81 @@ export default function PdfMailerPage() {
     setSubmitting(true)
     setError(null)
     try {
-      const form = new FormData()
-      form.set('recipients', recipients)
-      form.set('fromEmail', fromEmail)
-      form.set('subject', subject)
-      form.set('bodyHtml', bodyHtml)
-      form.set('start', 'true')
-      for (const f of files) form.append('pdfs', f)
+      let batchId = draftBatchId
+      let uploaded = 0
 
-      const res = await fetch('/api/admin/pdf-mailer/batches', { method: 'POST', body: form })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || t('submitError'))
+      if (batchId) {
+        setUploadProgress(t('uploadProgressResume'))
+        const statusRes = await fetch(`/api/admin/pdf-mailer/batches/${batchId}`)
+        const statusData = await statusRes.json()
+        if (!statusRes.ok || statusData.status !== 'DRAFT') {
+          setDraftBatchId(null)
+          batchId = null
+        } else {
+          uploaded = Number(statusData.uploadedCount) || 0
+          if (uploaded > files.length) {
+            throw new Error(t('uploadResumeMismatch'))
+          }
+        }
+      }
 
-      setParseWarnings(Array.isArray(data.parseWarnings) ? data.parseWarnings : [])
-      setActiveBatchId(data.batchId)
-      await loadBatch(data.batchId)
+      if (!batchId) {
+        setUploadProgress(t('uploadProgressCreating'))
+        const createRes = await fetch('/api/admin/pdf-mailer/batches', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipients, fromEmail, subject, bodyHtml }),
+        })
+        const createData = await createRes.json()
+        if (!createRes.ok) throw new Error(createData.error || t('submitError'))
+
+        setParseWarnings(Array.isArray(createData.parseWarnings) ? createData.parseWarnings : [])
+        batchId = createData.batchId as string
+        setDraftBatchId(batchId)
+        setActiveBatchId(batchId)
+        uploaded = 0
+      } else {
+        setActiveBatchId(batchId)
+      }
+
+      const remaining = files.slice(uploaded)
+      const chunks = buildPdfChunks(remaining)
+      for (const chunk of chunks) {
+        setUploadProgress(
+          t('uploadProgressChunk', {
+            current: Math.min(uploaded + chunk.length, files.length),
+            total: files.length,
+          })
+        )
+        const form = new FormData()
+        form.set('startIndex', String(uploaded))
+        for (const f of chunk) form.append('pdfs', f)
+
+        const upRes = await fetch(`/api/admin/pdf-mailer/batches/${batchId}/pdfs`, {
+          method: 'POST',
+          body: form,
+        })
+        const upData = await upRes.json()
+        if (!upRes.ok) {
+          throw new Error(upData.error || t('uploadChunkError'))
+        }
+        uploaded = Number(upData.uploadedCount) || uploaded + chunk.length
+      }
+
+      setUploadProgress(t('uploadProgressFinalize'))
+      const finRes = await fetch(`/api/admin/pdf-mailer/batches/${batchId}/finalize`, {
+        method: 'POST',
+      })
+      const finData = await finRes.json()
+      if (!finRes.ok) throw new Error(finData.error || t('finalizeError'))
+
+      setDraftBatchId(null)
+      await loadBatch(batchId)
       await loadHistory()
+      setUploadProgress(null)
     } catch (err: any) {
       setError(err.message || t('submitError'))
+      setUploadProgress(null)
     } finally {
       setSubmitting(false)
     }
@@ -281,6 +371,7 @@ export default function PdfMailerPage() {
               rows={6}
               value={recipients}
               onChange={e => {
+                invalidateDraft()
                 setRecipients(e.target.value)
                 setRecipientsFileName(null)
                 setError(null)
@@ -323,7 +414,7 @@ export default function PdfMailerPage() {
               </ul>
             )}
             {files.length > 0 && (
-              <Button type="button" variant="ghost" size="sm" onClick={() => setFiles([])}>
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setDraftBatchId(null); setFiles([]) }}>
                 {t('clearPdfs')}
               </Button>
             )}
@@ -337,6 +428,7 @@ export default function PdfMailerPage() {
                 type="email"
                 value={fromEmail}
                 onChange={e => {
+                  invalidateDraft()
                   setFromEmail(e.target.value)
                   setFromCheck(null)
                 }}
@@ -356,15 +448,37 @@ export default function PdfMailerPage() {
 
           <div className="space-y-2">
             <Label htmlFor="subject">{t('subject')}</Label>
-            <Input id="subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder={t('subjectPlaceholder')} />
+            <Input
+              id="subject"
+              value={subject}
+              onChange={e => {
+                invalidateDraft()
+                setSubject(e.target.value)
+              }}
+              placeholder={t('subjectPlaceholder')}
+            />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="bodyHtml">{t('body')}</Label>
-            <Textarea id="bodyHtml" rows={6} value={bodyHtml} onChange={e => setBodyHtml(e.target.value)} />
+            <Textarea
+              id="bodyHtml"
+              rows={6}
+              value={bodyHtml}
+              onChange={e => {
+                invalidateDraft()
+                setBodyHtml(e.target.value)
+              }}
+            />
             <p className="text-xs text-muted-foreground">{t('placeholdersHint')}</p>
           </div>
 
+          {uploadProgress && (
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {uploadProgress}
+            </p>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
           {parseWarnings.length > 0 && (
             <div className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm space-y-1">
@@ -379,7 +493,7 @@ export default function PdfMailerPage() {
 
           <Button onClick={handleSubmit} disabled={submitting || !recipients || !files.length || !fromEmail || !subject || !bodyHtml}>
             {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
-            {t('startBatch')}
+            {draftBatchId ? t('retryUpload') : t('startBatch')}
           </Button>
         </CardContent>
       </Card>

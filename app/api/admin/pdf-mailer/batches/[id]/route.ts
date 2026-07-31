@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth-utils'
 import { prisma } from '@/lib/prisma'
 import { runPdfMailBatch } from '@/lib/pdf-mail-batch-engine'
+import { asUploadedPdfs } from '@/lib/pdf-mail-batch-store'
 
 export async function GET(
   _req: NextRequest,
@@ -27,8 +28,10 @@ export async function GET(
 
   // Don't expose filesystem paths to the client
   const items = batch.items.map(({ pdfStoragePath: _, ...rest }) => rest)
+  const uploadedCount = asUploadedPdfs(batch.uploadedPdfs).length
+  const { recipientsJson: _rj, uploadedPdfs: _up, ...safeBatch } = batch
 
-  return NextResponse.json({ ...batch, items })
+  return NextResponse.json({ ...safeBatch, items, uploadedCount })
 }
 
 export async function POST(
