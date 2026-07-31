@@ -41,6 +41,27 @@ describe('parseRecipientList', () => {
     ])
   })
 
+  it('parses two-column ACEG export Naam;Werk - E-mail (with BOM)', () => {
+    const csv =
+      '\uFEFFNaam;Werk - E-mail\r\nPELGRIMS Yves;yves@aceg.be\r\nDE LAUSNAY Koen;koendl@aceg.be\r\n'
+    const { recipients, errors } = parseRecipientList(csv)
+    expect(errors).toEqual([])
+    expect(recipients).toEqual([
+      { email: 'yves@aceg.be', name: 'PELGRIMS Yves' },
+      { email: 'koendl@aceg.be', name: 'DE LAUSNAY Koen' },
+    ])
+  })
+
+  it('recovers when name column is first and headers are unknown', () => {
+    const csv = 'ColA;ColB\nPELGRIMS Yves;yves@aceg.be\nAnn;ann@aceg.be'
+    const { recipients, errors } = parseRecipientList(csv)
+    expect(errors).toEqual([])
+    expect(recipients).toEqual([
+      { email: 'yves@aceg.be', name: 'PELGRIMS Yves' },
+      { email: 'ann@aceg.be', name: 'Ann' },
+    ])
+  })
+
   it('flags invalid and duplicate emails', () => {
     const { recipients, errors } = parseRecipientList('not-an-email\na@x.be\na@x.be')
     expect(recipients).toEqual([{ email: 'a@x.be', name: null }])

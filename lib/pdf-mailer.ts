@@ -33,13 +33,12 @@ function detectDelimiter(headerLine: string): string {
 }
 
 function isEmailHeader(header: string): boolean {
-  const h = header.toLowerCase().trim()
+  // Normalize fancy dashes so "Werk – E-mail" still matches
+  const h = header.toLowerCase().trim().replace(/[\u2010-\u2015]/g, '-')
   if (!h) return false
   if (h === 'email' || h === 'e-mail' || h === 'mail') return true
-  // "Werk - E-mail", "work e-mail"
-  if (h.includes('e-mail')) return true
-  // "work email" but not bare words that merely end with email as substring noise
-  if (/(^|[\s_\-])email([\s_\-]|$)/i.test(h)) return true
+  // "Werk - E-mail", "work email", "e_mail"
+  if (/e-?mail/.test(h)) return true
   return false
 }
 
@@ -73,22 +72,25 @@ export function parseRecipientList(raw: string): { recipients: PdfMailRecipient[
   const multiColumn = headerParts.length > 1
   const emailHeaderIdx = headerParts.findIndex(isEmailHeader)
   const nameHeaderIdx = headerParts.findIndex(isNameHeader)
-  // Only treat first line as header when it looks like a real column header row
+  const firstLineHasEmail = Boolean(findEmailInParts(headerParts))
+  // Header row: known column names, or multi-column first line with no email cell
   const looksLikeHeader =
     (multiColumn && (emailHeaderIdx >= 0 || nameHeaderIdx >= 0)) ||
+    (multiColumn && !firstLineHasEmail) ||
     (!multiColumn && ['email', 'e-mail', 'mail', 'name', 'naam'].includes(headerParts[0]?.toLowerCase()))
 
   const dataLines = looksLikeHeader ? lines.slice(1) : lines
   const emailIdx = emailHeaderIdx >= 0 ? emailHeaderIdx : looksLikeHeader ? -1 : 0
-  const nameIdx = nameHeaderIdx >= 0 ? nameHeaderIdx : looksLikeHeader ? -1 : 1
+  const nameIdx = nameHeaderIdx >= 0 ? nameHeaderIdx : -1
 
   for (let i = 0; i < dataLines.length; i++) {
     const line = dataLines[i]
     let email = line
     let name: string | null = null
+    const parts =
+      line.includes(delimiter) || looksLikeHeader ? splitCsvLine(line, delimiter) : [line]
 
-    if (line.includes(delimiter) || looksLikeHeader) {
-      const parts = splitCsvLine(line, delimiter)
+    if (parts.length > 1 || looksLikeHeader) {
       if (emailIdx >= 0) {
         email = parts[emailIdx] || ''
       } else {
@@ -96,12 +98,20 @@ export function parseRecipientList(raw: string): { recipients: PdfMailRecipient[
       }
       if (nameIdx >= 0) {
         name = parts[nameIdx] || null
-      } else if (!looksLikeHeader && parts.length > 1) {
-        name = parts[1] || null
       }
     }
 
     email = email.trim().toLowerCase()
+    // Fallback: chosen column was a name — pick the cell that looks like an email
+    if ((!email || !EMAIL_RE.test(email)) && parts.length > 1) {
+      const found = findEmailInParts(parts)
+      if (found) email = found.trim().toLowerCase()
+    }
+    // Name = first non-email cell when header didn't name a name column
+    if ((!name || name.trim().toLowerCase() === email) && parts.length > 1 && email) {
+      name = parts.find(p => p.trim().toLowerCase() !== email)?.trim() || null
+    }
+
     if (!email) {
       errors.push(`Line ${i + 1}: empty email`)
       continue

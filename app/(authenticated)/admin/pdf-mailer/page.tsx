@@ -244,7 +244,14 @@ export default function PdfMailerPage() {
           body: JSON.stringify({ recipients, fromEmail, subject, bodyHtml }),
         })
         const createData = await createRes.json()
-        if (!createRes.ok) throw new Error(createData.error || t('submitError'))
+        if (!createRes.ok) {
+          const details = Array.isArray(createData.details)
+            ? createData.details.slice(0, 5).join('; ')
+            : ''
+          throw new Error(
+            [createData.error || t('submitError'), details].filter(Boolean).join(' — ')
+          )
+        }
 
         setParseWarnings(Array.isArray(createData.parseWarnings) ? createData.parseWarnings : [])
         batchId = createData.batchId as string
