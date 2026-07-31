@@ -53,6 +53,10 @@ tests/support/.auth/
 /public/uploads/*
 !/public/uploads/.gitkeep
 
+# private pdf-mailer storage
+/storage/pdf-mailer/*
+!/storage/pdf-mailer/.gitkeep
+
 # cursor local config
 .cursor/
 

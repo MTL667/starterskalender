@@ -106,3 +106,10 @@
 - **Brittle Graph UPN error matching** — `isUpnDomainError` depends on English Graph message substrings; localized/reformatted errors skip recovery. Consider Graph error codes if Microsoft exposes stable ones.
 - **No automated tests for cross-tenant provisioning** — authz boundaries, `resolveLicenseConfig` / startFresh, license-options, and UPN matcher lack unit/integration coverage.
 - **LICENSE_SELECTION_REQUIRED as engine safety-net only** — UI pre-checks before retry; if engine fails with this coded error outside the dialog, there is no dedicated recovery UI yet.
+
+## Deferred from: admin PDF batch mailer (2026-07-31)
+
+- **SendGrid webhook signature verification** — existing document webhook also unsigned; forgeable events. Add ECDSA verification for Event Webhook.
+- **Durable batch worker** — fire-and-forget in-process send can die mid-batch on serverless/restarts; consider queue/cron resume for stuck SENDING.
+- **PDF retention cleanup** — files under storage/pdf-mailer grow unbounded; add TTL/cleanup job.
+- **Verified senders pagination** — From check only loads first 100 SendGrid verified senders.

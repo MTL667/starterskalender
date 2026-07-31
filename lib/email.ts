@@ -134,27 +134,40 @@ export async function sendReminderEmail(input: SendReminderEmailInput): Promise<
 /**
  * Stuurt een algemene e-mail
  */
+export interface EmailAttachment {
+  content: string // base64
+  filename: string
+  type?: string
+  disposition?: 'attachment' | 'inline'
+}
+
 export interface SendEmailInput {
   to: string | string[]
   subject: string
   html: string
   replyTo?: string
+  from?: string
   customArgs?: Record<string, string>
+  attachments?: EmailAttachment[]
 }
 
-export async function sendEmail(input: SendEmailInput): Promise<void> {
-  const { to, subject, html, replyTo, customArgs } = input
+export interface SendEmailResult {
+  messageId?: string
+}
+
+export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
+  const { to, subject, html, replyTo, from, customArgs, attachments } = input
 
   const recipients = Array.isArray(to) ? to : [to]
 
   if (recipients.length === 0) {
     console.warn('No recipients for email')
-    return
+    return {}
   }
 
   const msg: any = {
     to: recipients,
-    from: process.env.SENDGRID_FROM_EMAIL || process.env.MAIL_FROM || 'noreply@example.com',
+    from: from || process.env.SENDGRID_FROM_EMAIL || process.env.MAIL_FROM || 'noreply@example.com',
     replyTo: replyTo || process.env.MAIL_REPLY_TO,
     subject,
     html,
@@ -164,13 +177,26 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     msg.customArgs = customArgs
   }
 
+  if (attachments?.length) {
+    msg.attachments = attachments.map(a => ({
+      content: a.content,
+      filename: a.filename,
+      type: a.type || 'application/pdf',
+      disposition: a.disposition || 'attachment',
+    }))
+  }
+
   try {
+    let response: any
     if (recipients.length === 1) {
-      await sgMail.send(msg)
+      response = await sgMail.send(msg)
     } else {
-      await sgMail.sendMultiple(msg)
+      response = await sgMail.sendMultiple(msg)
     }
+    const headers = response?.[0]?.headers || {}
+    const messageId = headers['x-message-id'] || headers['X-Message-Id']
     console.log(`Email sent to ${recipients.length} recipient(s)`)
+    return { messageId: messageId ? String(messageId) : undefined }
   } catch (error: any) {
     console.error('Failed to send email:', error)
     throw error

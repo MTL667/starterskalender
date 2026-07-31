@@ -1445,3 +1445,62 @@ model OooTemplate {
   @@unique([entityId, jobRoleId])
   @@index([entityId])
 }
+
+enum PdfMailBatchStatus {
+  DRAFT
+  SENDING
+  COMPLETED
+  FAILED
+}
+
+enum PdfMailItemStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
+  BOUNCED
+  SKIPPED
+}
+
+model PdfMailBatch {
+  id               String             @id @default(cuid())
+  createdBy        String
+  fromEmail        String
+  subject          String
+  bodyHtml         String             @db.Text
+  status           PdfMailBatchStatus @default(DRAFT)
+  leftoverPdfNames String[]           @default([])
+  leftoverEmails   String[]           @default([])
+  errorMessage     String?            @db.Text
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  items            PdfMailBatchItem[]
+
+  @@index([createdBy, createdAt])
+  @@index([status])
+}
+
+model PdfMailBatchItem {
+  id              String            @id @default(cuid())
+  batchId         String
+  batch           PdfMailBatch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  sortIndex       Int
+  recipientEmail  String?
+  recipientName   String?
+  pdfFileName     String?
+  pdfStoragePath  String?
+  status          PdfMailItemStatus @default(PENDING)
+  errorMessage    String?           @db.Text
+  sgMessageId     String?
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  bouncedAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([batchId, sortIndex])
+  @@index([sgMessageId])
+  @@index([status])
+}

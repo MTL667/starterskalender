@@ -52,9 +52,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 
 # Maak uploads folder aan met correcte permissions  
-RUN mkdir -p /app/public/uploads && \
-    chown -R nextjs:nodejs /app/public/uploads && \
-    chmod 755 /app/public/uploads
+RUN mkdir -p /app/public/uploads /app/storage/pdf-mailer && \
+    chown -R nextjs:nodejs /app/public/uploads /app/storage && \
+    chmod 755 /app/public/uploads /app/storage
 
 # Kopieer package.json voor dependencies info
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json

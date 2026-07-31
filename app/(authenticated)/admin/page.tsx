@@ -133,6 +133,12 @@ export default async function AdminPage() {
       href: '/admin/mail-test',
     },
     {
+      title: t('pdfMailer'),
+      description: t('pdfMailerDescription'),
+      icon: MailOpen,
+      href: '/admin/pdf-mailer',
+    },
+    {
       title: t('emailTemplates'),
       description: t('emailTemplatesDescription'),
       icon: MailOpen,

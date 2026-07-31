@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logDocumentEvent } from '@/lib/document-audit'
+import { prisma } from '@/lib/prisma'
 
 const EVENT_MAP: Record<string, string> = {
   delivered: 'EMAIL_DELIVERED',
@@ -20,7 +21,29 @@ export async function POST(request: NextRequest) {
 
     for (const event of events) {
       const documentId = event.documentId || event.custom_args?.documentId
+      const pdfBatchItemId = event.pdfBatchItemId || event.custom_args?.pdfBatchItemId
       const eventType = EVENT_MAP[event.event]
+
+      if (pdfBatchItemId && eventType) {
+        const data: Record<string, unknown> = {}
+        if (event.event === 'delivered') {
+          data.status = 'DELIVERED'
+          data.deliveredAt = new Date()
+        } else if (['bounce', 'dropped', 'spamreport'].includes(event.event)) {
+          data.status = 'BOUNCED'
+          data.bouncedAt = new Date()
+          if (event.reason) data.errorMessage = String(event.reason)
+        }
+        if (event.sg_message_id) {
+          data.sgMessageId = String(event.sg_message_id)
+        }
+        if (Object.keys(data).length > 0) {
+          await prisma.pdfMailBatchItem.updateMany({
+            where: { id: String(pdfBatchItemId) },
+            data,
+          })
+        }
+      }
 
       if (!documentId || !eventType) continue
 
