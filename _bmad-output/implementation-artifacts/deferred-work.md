@@ -113,3 +113,7 @@
 - **Durable batch worker** — fire-and-forget in-process send can die mid-batch on serverless/restarts; consider queue/cron resume for stuck SENDING.
 - **PDF retention cleanup** — files under storage/pdf-mailer grow unbounded; add TTL/cleanup job.
 - **Verified senders pagination** — From check only loads first 100 SendGrid verified senders.
+
+## Deferred from: PDF mailer CSV drop UI (2026-07-31)
+
+- **Non-UTF-8 CSV encoding** — `file.text()` assumes UTF-8; Windows-1252 Excel exports may mangle accents. Add encoding detect/choice if users report corruption.

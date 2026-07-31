@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { ArrowLeft, FileText, Loader2, Mail, Upload, CheckCircle2, XCircle } from 'lucide-react'
@@ -51,6 +51,7 @@ export default function PdfMailerPage() {
   const tc = useTranslations('common')
 
   const [recipients, setRecipients] = useState('')
+  const [recipientsFileName, setRecipientsFileName] = useState<string | null>(null)
   const [fromEmail, setFromEmail] = useState('')
   const [subject, setSubject] = useState('')
   const [bodyHtml, setBodyHtml] = useState(
@@ -65,6 +66,7 @@ export default function PdfMailerPage() {
   const [activeBatchId, setActiveBatchId] = useState<string | null>(null)
   const [batch, setBatch] = useState<BatchDetail | null>(null)
   const [history, setHistory] = useState<BatchSummary[]>([])
+  const recipientsLoadGen = useRef(0)
 
   const loadHistory = useCallback(async () => {
     const res = await fetch('/api/admin/pdf-mailer/batches')
@@ -98,6 +100,63 @@ export default function PdfMailerPage() {
     if (!list) return
     const pdfs = Array.from(list).filter(f => f.name.toLowerCase().endsWith('.pdf'))
     setFiles(prev => [...prev, ...pdfs])
+  }
+
+  const isRecipientListFile = (file: File) => {
+    const name = file.name.toLowerCase()
+    return (
+      name.endsWith('.csv') ||
+      name.endsWith('.txt') ||
+      file.type === 'text/csv' ||
+      file.type === 'text/plain' ||
+      file.type === 'application/vnd.ms-excel'
+    )
+  }
+
+  const loadRecipientsFile = useCallback(async (file: File | null | undefined) => {
+    if (!file) return
+    if (!isRecipientListFile(file)) {
+      setError(t('recipientsFileInvalid'))
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError(t('recipientsFileTooLarge'))
+      return
+    }
+    if (recipients.trim() && !window.confirm(t('recipientsOverwriteConfirm'))) {
+      return
+    }
+
+    const gen = ++recipientsLoadGen.current
+    try {
+      let text = await file.text()
+      if (gen !== recipientsLoadGen.current) return
+      text = text.replace(/^\uFEFF/, '')
+      if (!text.trim()) {
+        setError(t('recipientsFileEmpty'))
+        return
+      }
+      setRecipients(text)
+      setRecipientsFileName(file.name)
+      setParseWarnings([])
+      setError(null)
+    } catch {
+      if (gen !== recipientsLoadGen.current) return
+      setError(t('recipientsFileReadError'))
+    }
+  }, [recipients, t])
+
+  const onDropRecipients = (list: FileList | null) => {
+    if (!list?.length) return
+    const matches = Array.from(list).filter(isRecipientListFile)
+    if (matches.length === 0) {
+      setError(t('recipientsFileInvalid'))
+      return
+    }
+    if (matches.length > 1) {
+      setParseWarnings([t('recipientsFileMultiPicked', { file: matches[0].name, count: matches.length })])
+    }
+    void loadRecipientsFile(matches[0])
   }
 
   const handleValidateFrom = async () => {
@@ -180,11 +239,52 @@ export default function PdfMailerPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="recipients">{t('recipients')}</Label>
+            <div
+              role="button"
+              tabIndex={0}
+              className="border border-dashed rounded-lg p-4 text-center cursor-pointer hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onDragOver={e => e.preventDefault()}
+              onDrop={e => {
+                e.preventDefault()
+                onDropRecipients(e.dataTransfer.files)
+              }}
+              onClick={() => document.getElementById('recipients-file-input')?.click()}
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  document.getElementById('recipients-file-input')?.click()
+                }
+              }}
+            >
+              <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">{t('dropRecipients')}</p>
+              <input
+                id="recipients-file-input"
+                type="file"
+                accept=".csv,.txt,text/csv,text/plain,application/vnd.ms-excel"
+                className="hidden"
+                aria-label={t('dropRecipients')}
+                onChange={e => {
+                  void loadRecipientsFile(e.target.files?.[0])
+                  e.target.value = ''
+                }}
+              />
+            </div>
+            {recipientsFileName && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" />
+                {t('recipientsFileLoaded', { file: recipientsFileName })}
+              </p>
+            )}
             <Textarea
               id="recipients"
               rows={6}
               value={recipients}
-              onChange={e => setRecipients(e.target.value)}
+              onChange={e => {
+                setRecipients(e.target.value)
+                setRecipientsFileName(null)
+                setError(null)
+              }}
               placeholder={t('recipientsPlaceholder')}
             />
           </div>
