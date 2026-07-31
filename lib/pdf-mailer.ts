@@ -20,7 +20,43 @@ export type PairingResult = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i
 
-/** Parse paste (one email per line) or CSV with email[,name]. */
+function splitCsvLine(line: string, delimiter: string): string[] {
+  return line.split(delimiter).map(p => p.trim().replace(/^["']|["']$/g, ''))
+}
+
+function detectDelimiter(headerLine: string): string {
+  const semis = (headerLine.match(/;/g) || []).length
+  const commas = (headerLine.match(/,/g) || []).length
+  if (semis > commas) return ';'
+  if (commas > 0) return ','
+  return semis > 0 ? ';' : ','
+}
+
+function isEmailHeader(header: string): boolean {
+  const h = header.toLowerCase().trim()
+  if (!h) return false
+  if (h === 'email' || h === 'e-mail' || h === 'mail') return true
+  // "Werk - E-mail", "work e-mail"
+  if (h.includes('e-mail')) return true
+  // "work email" but not bare words that merely end with email as substring noise
+  if (/(^|[\s_\-])email([\s_\-]|$)/i.test(h)) return true
+  return false
+}
+
+function isNameHeader(header: string): boolean {
+  const h = header.toLowerCase().trim()
+  return h === 'name' || h === 'naam' || h === 'full name' || h === 'volledige naam' || h === 'display name'
+}
+
+function findEmailInParts(parts: string[]): string {
+  const hit = parts.find(p => EMAIL_RE.test(p.trim()))
+  return hit?.trim() || ''
+}
+
+/**
+ * Parse paste (one email per line) or CSV.
+ * Supports EN headers (email,name) and BE/NL variants (Naam;Werk - E-mail) with `;`.
+ */
 export function parseRecipientList(raw: string): { recipients: PdfMailRecipient[]; errors: string[] } {
   const recipients: PdfMailRecipient[] = []
   const errors: string[] = []
@@ -32,26 +68,37 @@ export function parseRecipientList(raw: string): { recipients: PdfMailRecipient[
   const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
   if (lines.length === 0) return { recipients, errors: ['Empty recipient list'] }
 
-  const first = lines[0].toLowerCase()
-  const looksLikeHeader = first.includes('email') && (first.includes(',') || first.includes(';'))
+  const delimiter = detectDelimiter(lines[0])
+  const headerParts = splitCsvLine(lines[0], delimiter)
+  const multiColumn = headerParts.length > 1
+  const emailHeaderIdx = headerParts.findIndex(isEmailHeader)
+  const nameHeaderIdx = headerParts.findIndex(isNameHeader)
+  // Only treat first line as header when it looks like a real column header row
+  const looksLikeHeader =
+    (multiColumn && (emailHeaderIdx >= 0 || nameHeaderIdx >= 0)) ||
+    (!multiColumn && ['email', 'e-mail', 'mail', 'name', 'naam'].includes(headerParts[0]?.toLowerCase()))
+
   const dataLines = looksLikeHeader ? lines.slice(1) : lines
-  const delimiter = text.includes(';') && !text.includes(',') ? ';' : ','
+  const emailIdx = emailHeaderIdx >= 0 ? emailHeaderIdx : looksLikeHeader ? -1 : 0
+  const nameIdx = nameHeaderIdx >= 0 ? nameHeaderIdx : looksLikeHeader ? -1 : 1
 
   for (let i = 0; i < dataLines.length; i++) {
     const line = dataLines[i]
     let email = line
     let name: string | null = null
 
-    if (line.includes(delimiter)) {
-      const parts = line.split(delimiter).map(p => p.trim().replace(/^["']|["']$/g, ''))
-      const emailIdx = looksLikeHeader
-        ? first.split(/[,;]/).map(h => h.trim()).findIndex(h => h === 'email')
-        : 0
-      const nameIdx = looksLikeHeader
-        ? first.split(/[,;]/).map(h => h.trim()).findIndex(h => h === 'name')
-        : 1
-      email = parts[emailIdx >= 0 ? emailIdx : 0] || ''
-      name = nameIdx >= 0 ? parts[nameIdx] || null : parts[1] || null
+    if (line.includes(delimiter) || looksLikeHeader) {
+      const parts = splitCsvLine(line, delimiter)
+      if (emailIdx >= 0) {
+        email = parts[emailIdx] || ''
+      } else {
+        email = findEmailInParts(parts)
+      }
+      if (nameIdx >= 0) {
+        name = parts[nameIdx] || null
+      } else if (!looksLikeHeader && parts.length > 1) {
+        name = parts[1] || null
+      }
     }
 
     email = email.trim().toLowerCase()

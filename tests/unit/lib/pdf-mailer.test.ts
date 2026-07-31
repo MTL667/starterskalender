@@ -25,6 +25,22 @@ describe('parseRecipientList', () => {
     ])
   })
 
+  it('parses ACEG-style semicolon CSV with Naam and Werk - E-mail', () => {
+    const csv = [
+      'Kostenplaatsverdeling;Naam;Werk - E-mail',
+      'Direct;PELGRIMS Yves;yves@aceg.be',
+      'Direct;DE LAUSNAY Koen;koendl@aceg.be',
+      "Direct;T'JAMPENS Manuel;manuel@aceg.be",
+    ].join('\n')
+    const { recipients, errors } = parseRecipientList(csv)
+    expect(errors).toEqual([])
+    expect(recipients).toEqual([
+      { email: 'yves@aceg.be', name: 'PELGRIMS Yves' },
+      { email: 'koendl@aceg.be', name: 'DE LAUSNAY Koen' },
+      { email: 'manuel@aceg.be', name: "T'JAMPENS Manuel" },
+    ])
+  })
+
   it('flags invalid and duplicate emails', () => {
     const { recipients, errors } = parseRecipientList('not-an-email\na@x.be\na@x.be')
     expect(recipients).toEqual([{ email: 'a@x.be', name: null }])
