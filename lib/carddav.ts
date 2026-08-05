@@ -1,5 +1,10 @@
 import { decrypt } from './crypto'
 
+/** Nextcloud default personal address book — only target for read-account wipe */
+export const CARDDAV_READ_WIPE_BOOK = 'contacts'
+
+const CARDDAV_FETCH_TIMEOUT_MS = 30_000
+
 export interface CardDavConfig {
   url: string
   username: string
@@ -38,6 +43,70 @@ export function decryptConfig(entity: {
     password: decrypt(entity.cardDavPasswordEnc),
     addressBook: entity.cardDavAddressBook,
   }
+}
+
+export function decryptReadConfig(entity: {
+  cardDavReadUrl: string | null
+  cardDavReadUsername: string | null
+  cardDavReadPasswordEnc: string | null
+}): CardDavConfig {
+  if (!entity.cardDavReadUrl || !entity.cardDavReadUsername || !entity.cardDavReadPasswordEnc) {
+    throw new Error('Incomplete CardDAV read configuration')
+  }
+  return {
+    url: entity.cardDavReadUrl,
+    username: entity.cardDavReadUsername,
+    password: decrypt(entity.cardDavReadPasswordEnc),
+    addressBook: CARDDAV_READ_WIPE_BOOK,
+  }
+}
+
+/** Skip wipe when MASTER book would be the same collection name as the personal wipe target. */
+export function shouldSkipReadWipe(masterAddressBook: string | null | undefined): boolean {
+  if (!masterAddressBook) return false
+  return (
+    masterAddressBook.trim().replace(/^\/+|\/+$/g, '').toLowerCase() === CARDDAV_READ_WIPE_BOOK
+  )
+}
+
+/** Refuse wipe when read-account credentials match MASTER (Never: wipe via MASTER credentials). */
+export function isReadConfigSameAsMaster(
+  read: { username: string; url: string },
+  master: { username: string | null; url: string | null },
+): boolean {
+  if (!master.username || !master.url) return false
+  const norm = (s: string) => s.trim().replace(/\/+$/, '').toLowerCase()
+  return (
+    norm(read.username) === norm(master.username) &&
+    norm(read.url) === norm(master.url)
+  )
+}
+
+function bookRootUrl(config: CardDavConfig): string {
+  const base = config.url.replace(/\/+$/, '')
+  const book = config.addressBook.replace(/^\/+|\/+$/g, '')
+  return `${base}/${book}/`
+}
+
+/** Extract contact UIDs from a CardDAV PROPFIND / multistatus XML body (only under wipe book path). */
+export function parseContactUidsFromPropfindXml(
+  xml: string,
+  book: string = CARDDAV_READ_WIPE_BOOK,
+): string[] {
+  const clean = (v: string) => v.replace(/&#\d+;/g, '').trim()
+  const bookSeg = book.replace(/^\/+|\/+$/g, '').toLowerCase()
+  const uids = new Set<string>()
+  const hrefRe = /<[^:>]*:?href[^>]*>([^<]+)<\/[^:>]*:?href>/gi
+  let match: RegExpExecArray | null
+  while ((match = hrefRe.exec(xml)) !== null) {
+    const href = decodeURIComponent(match[1].trim())
+    if (!href.toLowerCase().includes(`/${bookSeg}/`)) continue
+    const vcfMatch = href.match(/\/([^/]+)\.vcf\/?$/i)
+    if (vcfMatch?.[1]) {
+      uids.add(clean(vcfMatch[1]))
+    }
+  }
+  return [...uids]
 }
 
 function authHeader(config: CardDavConfig): string {
@@ -133,6 +202,7 @@ export async function deleteContact(
     const res = await fetch(url, {
       method: 'DELETE',
       headers: { Authorization: authHeader(config) },
+      signal: AbortSignal.timeout(CARDDAV_FETCH_TIMEOUT_MS),
     })
     if (res.status === 404) {
       return { success: true }
@@ -255,9 +325,7 @@ export async function searchByName(
 }
 
 export async function testConnection(config: CardDavConfig): Promise<CardDavResult<boolean>> {
-  const base = config.url.replace(/\/+$/, '')
-  const book = config.addressBook.replace(/^\/+|\/+$/g, '')
-  const url = `${base}/${book}/`
+  const url = bookRootUrl(config)
 
   try {
     const res = await fetch(url, {
@@ -282,6 +350,62 @@ export async function testConnection(config: CardDavConfig): Promise<CardDavResu
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) }
   }
+}
+
+export async function listContactUids(config: CardDavConfig): Promise<CardDavResult<string[]>> {
+  const url = bookRootUrl(config)
+  try {
+    const res = await fetch(url, {
+      method: 'PROPFIND',
+      headers: {
+        Authorization: authHeader(config),
+        'Content-Type': 'application/xml; charset=utf-8',
+        Depth: '1',
+      },
+      body: `<?xml version="1.0" encoding="UTF-8"?>
+<D:propfind xmlns:D="DAV:">
+  <D:prop>
+    <D:getetag/>
+    <D:resourcetype/>
+  </D:prop>
+</D:propfind>`,
+      signal: AbortSignal.timeout(CARDDAV_FETCH_TIMEOUT_MS),
+    })
+    if (!res.ok && res.status !== 207) {
+      return { success: false, error: `PROPFIND list ${url} → ${res.status} ${res.statusText}` }
+    }
+    const xml = await res.text()
+    return {
+      success: true,
+      data: parseContactUidsFromPropfindXml(xml, config.addressBook),
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+export async function wipeAddressBook(
+  config: CardDavConfig,
+): Promise<CardDavResult<{ wiped: number; failed: number }>> {
+  if (
+    config.addressBook.replace(/^\/+|\/+$/g, '').toLowerCase() !== CARDDAV_READ_WIPE_BOOK
+  ) {
+    return { success: false, error: `Invalid wipe target: only "${CARDDAV_READ_WIPE_BOOK}" allowed` }
+  }
+
+  const listed = await listContactUids(config)
+  if (!listed.success || !listed.data) {
+    return { success: false, error: listed.error || 'Failed to list contacts' }
+  }
+
+  let wiped = 0
+  let failed = 0
+  for (const uid of listed.data) {
+    const result = await deleteContact(config, uid)
+    if (result.success) wiped++
+    else failed++
+  }
+  return { success: true, data: { wiped, failed } }
 }
 
 function escapeXml(str: string): string {

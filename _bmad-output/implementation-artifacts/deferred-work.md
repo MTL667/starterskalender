@@ -129,3 +129,10 @@
 
 - **aria-live on preview summary** — dynamic count updates not announced to screen readers.
 - **Client-side PDF magic-byte check in preview** — counts use file list length/extension only; corrupt .pdf still counted until upload.
+
+## Deferred from: CardDAV read-account wipe (2026-08-05)
+
+- **Read-account connection test / dry-run** — MASTER has test+bulk-sync; read wipe has no preflight before enabling hourly deletes.
+- **PROPFIND pagination** — Depth:1 may truncate on huge books; add REPORT paging if needed in production.
+- **Cron overlap lock** — concurrent hourly runs on the same entity lack an idempotency/lock; low risk with Cronicle single-instance.
+- **Per-UID failure detail in audit** — aggregates only; operators need logs for which contact failed.

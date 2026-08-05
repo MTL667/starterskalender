@@ -24,9 +24,10 @@ export async function GET(request: NextRequest) {
     const includeEntra = searchParams.get('includeEntra') === 'true'
 
     const entities = await getVisibleEntities(user)
-    const safe = entities.map(({ cardDavPasswordEnc, ...rest }) => ({
+    const safe = entities.map(({ cardDavPasswordEnc, cardDavReadPasswordEnc, ...rest }) => ({
       ...rest,
       cardDavPasswordSet: !!cardDavPasswordEnc,
+      cardDavReadPasswordSet: !!cardDavReadPasswordEnc,
     }))
 
     if (includeEntra) {

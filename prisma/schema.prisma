@@ -230,12 +230,18 @@ model Entity {
   slaWarningDays  Int @default(7)
   slaExceededDays Int @default(14)
 
-  // CardDAV configuratie
+  // CardDAV configuratie (MASTER read-write)
   cardDavEnabled     Boolean @default(false)
   cardDavUrl         String? // Nextcloud CardDAV base URL
   cardDavUsername     String? // App username
   cardDavPasswordEnc String? // AES-encrypted app password
   cardDavAddressBook String? // Address book path/name
+
+  // CardDAV read-account (Jamf) — wipe altijd standaardboek "contacts"
+  cardDavReadEnabled     Boolean @default(false)
+  cardDavReadUrl         String?
+  cardDavReadUsername    String?
+  cardDavReadPasswordEnc String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

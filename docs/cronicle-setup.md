@@ -92,6 +92,7 @@ Configureer deze jobs in Cronicle (via de web UI):
 |-----|----------|--------|----------|--------------|
 | Entra Consent Sweep | `/api/cron/entra-consent-sweep` | GET | Dagelijks 06:00 | Valideert Entra consent + cert expiry |
 | CardDAV Cleanup | `/api/cron/carddav-cleanup` | GET | Dagelijks 03:00 | Verwijdert soft-deleted contacten (>30d) |
+| CardDAV Read Wipe | `/api/cron/carddav-read-wipe` | GET | Elk uur | Leegt persoonlijk `contacts`-boek van Jamf read-accounts |
 
 #### Recruitment (GDPR)
 
@@ -146,6 +147,7 @@ Per job in Cronicle:
 # Entra & CardDAV
 0 6 * * *         → entra-consent-sweep
 0 3 * * *         → carddav-cleanup
+0 * * * *         → carddav-read-wipe
 
 # Recruitment GDPR
 0 9 * * *         → retention-notify

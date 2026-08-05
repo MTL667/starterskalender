@@ -29,6 +29,10 @@ interface Entity {
   cardDavUsername: string | null
   cardDavPasswordSet: boolean
   cardDavAddressBook: string | null
+  cardDavReadEnabled: boolean
+  cardDavReadUrl: string | null
+  cardDavReadUsername: string | null
+  cardDavReadPasswordSet: boolean
 }
 
 export default function EntitiesAdminPage() {
@@ -55,6 +59,10 @@ export default function EntitiesAdminPage() {
     cardDavUsername: '',
     cardDavPassword: '',
     cardDavAddressBook: '',
+    cardDavReadEnabled: false,
+    cardDavReadUrl: '',
+    cardDavReadUsername: '',
+    cardDavReadPassword: '',
   })
   const [cardDavTestStatus, setCardDavTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
   const [cardDavTestError, setCardDavTestError] = useState('')
@@ -111,6 +119,10 @@ export default function EntitiesAdminPage() {
       cardDavUsername: entity.cardDavUsername || '',
       cardDavPassword: '',
       cardDavAddressBook: entity.cardDavAddressBook || '',
+      cardDavReadEnabled: entity.cardDavReadEnabled,
+      cardDavReadUrl: entity.cardDavReadUrl || '',
+      cardDavReadUsername: entity.cardDavReadUsername || '',
+      cardDavReadPassword: '',
     })
     setCardDavTestStatus('idle')
     setBulkSyncStatus('idle')
@@ -132,6 +144,10 @@ export default function EntitiesAdminPage() {
       cardDavUsername: '',
       cardDavPassword: '',
       cardDavAddressBook: '',
+      cardDavReadEnabled: false,
+      cardDavReadUrl: '',
+      cardDavReadUsername: '',
+      cardDavReadPassword: '',
     })
     setCardDavTestStatus('idle')
     setBulkSyncStatus('idle')
@@ -147,6 +163,17 @@ export default function EntitiesAdminPage() {
       .map(e => e.trim())
       .filter(e => e)
 
+    const readEnabled = formData.cardDavEnabled && formData.cardDavReadEnabled
+    if (
+      readEnabled &&
+      (!formData.cardDavReadUrl.trim() ||
+        !formData.cardDavReadUsername.trim() ||
+        (!formData.cardDavReadPassword && !selectedEntity?.cardDavReadPasswordSet))
+    ) {
+      alert('Read-account vereist URL, gebruikersnaam en wachtwoord')
+      return
+    }
+
     const data: any = {
       name: formData.name,
       colorHex: formData.colorHex,
@@ -158,9 +185,15 @@ export default function EntitiesAdminPage() {
       cardDavUrl: formData.cardDavUrl || null,
       cardDavUsername: formData.cardDavUsername || null,
       cardDavAddressBook: formData.cardDavAddressBook || null,
+      cardDavReadEnabled: readEnabled,
+      cardDavReadUrl: formData.cardDavReadUrl || null,
+      cardDavReadUsername: formData.cardDavReadUsername || null,
     }
     if (formData.cardDavPassword) {
       data.cardDavPassword = formData.cardDavPassword
+    }
+    if (formData.cardDavReadPassword) {
+      data.cardDavReadPassword = formData.cardDavReadPassword
     }
 
     try {
@@ -498,11 +531,18 @@ export default function EntitiesAdminPage() {
 
               <div className="border-t pt-4 mt-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <input
+                    <input
                     type="checkbox"
                     id="cardDavEnabled"
                     checked={formData.cardDavEnabled}
-                    onChange={(e) => setFormData({ ...formData, cardDavEnabled: e.target.checked })}
+                    onChange={(e) => {
+                      const enabled = e.target.checked
+                      setFormData({
+                        ...formData,
+                        cardDavEnabled: enabled,
+                        ...(enabled ? {} : { cardDavReadEnabled: false }),
+                      })
+                    }}
                     className="rounded"
                   />
                   <Label htmlFor="cardDavEnabled">CardDAV synchronisatie inschakelen</Label>
@@ -639,6 +679,58 @@ export default function EntitiesAdminPage() {
                         )}
                       </div>
                     )}
+
+                    <div className="border-t pt-3 mt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <input
+                          type="checkbox"
+                          id="cardDavReadEnabled"
+                          checked={formData.cardDavReadEnabled}
+                          onChange={(e) => setFormData({ ...formData, cardDavReadEnabled: e.target.checked })}
+                          className="rounded"
+                        />
+                        <Label htmlFor="cardDavReadEnabled">Read-account (Jamf) opschonen</Label>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Uurlijkse cron wist contacten in het standaard persoonlijke adresboek <code>contacts</code> van dit account.
+                        De gedeelde MASTER-adresboek blijft onaangeroerd.
+                      </p>
+                      {formData.cardDavReadEnabled && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label htmlFor="cardDavReadUrl">Read-account Server URL</Label>
+                            <Input
+                              id="cardDavReadUrl"
+                              value={formData.cardDavReadUrl}
+                              onChange={(e) => setFormData({ ...formData, cardDavReadUrl: e.target.value })}
+                              placeholder="https://cloud.example.com/remote.php/dav/addressbooks/users/entity-read"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="cardDavReadUsername">Read-account gebruikersnaam</Label>
+                            <Input
+                              id="cardDavReadUsername"
+                              value={formData.cardDavReadUsername}
+                              onChange={(e) => setFormData({ ...formData, cardDavReadUsername: e.target.value })}
+                              placeholder="entity-read"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="cardDavReadPassword">Read-account app wachtwoord</Label>
+                            <Input
+                              id="cardDavReadPassword"
+                              type="password"
+                              value={formData.cardDavReadPassword}
+                              onChange={(e) => setFormData({ ...formData, cardDavReadPassword: e.target.value })}
+                              placeholder={selectedEntity?.cardDavReadPasswordSet ? '••••••••' : 'Vul in...'}
+                            />
+                            {selectedEntity?.cardDavReadPasswordSet && !formData.cardDavReadPassword && (
+                              <p className="text-xs text-muted-foreground mt-1">Laat leeg om huidig wachtwoord te behouden</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
