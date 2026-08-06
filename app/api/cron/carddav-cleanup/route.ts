@@ -67,7 +67,6 @@ export async function GET(req: Request) {
 
     if (deleted > 0) {
       await createAuditLog({
-        actorId: 'system',
         action: 'CARDDAV_AUTO_CLEANUP',
         target: 'System',
         meta: { deleted, failed, candidates: candidates.length },

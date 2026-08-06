@@ -136,3 +136,9 @@
 - **PROPFIND pagination** — Depth:1 may truncate on huge books; add REPORT paging if needed in production.
 - **Cron overlap lock** — concurrent hourly runs on the same entity lack an idempotency/lock; low risk with Cronicle single-instance.
 - **Per-UID failure detail in audit** — aggregates only; operators need logs for which contact failed.
+
+## Deferred from: audit system-actor FK fix (2026-08-06)
+
+- **createAuditLog swallows all write failures** — FK/other errors only `console.error`; callers assume success. Pre-existing.
+- **Invalid real user actorIds still FK-fail silently** — no existence check before insert; only system placeholders sanitized.
+- **Offboarding lifecycle UPN invalid** — `Property userPrincipalName is invalid` on rename; separate from CardDAV wipe audit.

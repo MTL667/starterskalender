@@ -66,12 +66,23 @@ export interface AuditLogInput {
   meta?: Record<string, any>
 }
 
+/** Cron/system callers historically used these placeholders — not real User ids (FK). */
+function resolveActorId(actorId?: string): string | null {
+  if (!actorId) return null
+  if (actorId.trim().toLowerCase() === 'system') return null
+  return actorId
+}
+
+/** @internal exported for unit tests */
+export { resolveActorId }
+
 /**
  * Maakt een audit log entry
  */
 export async function createAuditLog(input: AuditLogInput): Promise<void> {
   try {
     const timestamp = new Date().toISOString()
+    const actorId = resolveActorId(input.actorId)
 
     await prisma.$transaction(async (tx) => {
       const prevEntry = await tx.auditLog.findFirst({
@@ -85,7 +96,7 @@ export async function createAuditLog(input: AuditLogInput): Promise<void> {
 
       await tx.auditLog.create({
         data: {
-          actorId: input.actorId,
+          actorId,
           action: input.action,
           target: input.target,
           meta: input.meta ? JSON.parse(JSON.stringify(input.meta)) : null,

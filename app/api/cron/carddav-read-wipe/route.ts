@@ -84,7 +84,6 @@ export async function GET(req: Request) {
 
     if (entities.length > 0) {
       await createAuditLog({
-        actorId: 'system',
         action: 'CARDDAV_READ_WIPE',
         target: 'System',
         meta: {
